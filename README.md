@@ -1,46 +1,69 @@
-# Temporal Hypothesis Generation
+# Project: Temporal Hypothesis Generation
 
-A benchmark for evaluating LLMs on hypothesis verification and question answering over temporal adverse event data from VAERS (Vaccine Adverse Event Reporting System).
+A benchmark for temporal hypothesis verification over clinical narratives,
+built on the MedTempo corpus.
 
-## Project Overview
+## What this project is
 
-Hypothesis/claim verification and question answering are fundamentally similar tasks. This project builds a large-scale benchmark dataset by:
+We construct a dataset of natural-language hypotheses about temporal
+patterns of vaccine adverse events, with gold labels computed deterministically
+from expert-annotated timelines (MedTempo). The framework receives only raw
+narratives plus a hypothesis, and must locate the temporal evidence and
+return a verdict.
 
-1. **Template-based generation** — Define fill-in-the-blank templates for hypotheses (claims) and questions. Each template has placeholders (e.g., symptom names, temporal relationships) that get populated from the source data, producing tens of thousands of instances automatically.
+This is positioned as agentic temporal claim verification, not deep research.
+It is the natural follow-on to the CRAFT paper (timeline extraction):
+CRAFT extracts; this framework verifies hypotheses against extracted information.
 
-2. **Automatic gold labeling** — Because instances are derived from structured, human-annotated data via templates, gold labels (true/false for claims, yes/no or specific answers for questions) are deterministic and require no additional human annotation.
+## Where the plan lives
 
-3. **Model evaluation & interpretation** — Once the benchmark is constructed, run LLM predictions on the hypotheses/questions and analyze model behavior and reasoning.
+Before implementing anything, read the plan docs:
 
-## Data
+- `docs/plan/01_overview.md`      — project framing and contribution
+- `docs/plan/02_dataset_design.md` — MedTempo schema, leveled order, gold-label rules
+- `docs/plan/03_templates.md`     — the 30 template groups and three registers
+- `docs/plan/decisions.md`        — locked decisions (single source of truth)
+- `docs/plan/open_questions.md`   — items still under discussion (do not assume)
 
-### Source: `data/o4mini_annotation_final.csv`
+If a question is in `open_questions.md`, do not guess an answer in code. Ask.
 
-Gold-standard human annotations of VAERS free-text adverse event reports. Each row represents one report with:
+## Conventions
 
-| Column | Description |
-|---|---|
-| `vaers_id` | Unique VAERS report identifier |
-| `symptom_text` | Free-text adverse event narrative |
-| `symptom_list` | MedDRA-coded symptoms extracted from the text |
-| `final_result` | Gold-standard temporal grouping (JSON): symptoms grouped by when they occurred |
-| `final_corrected_version` | Corrected grouping if the LLM output needed fixing |
-| `num_groups` | Number of distinct temporal stages in the report |
-| `agreement` | Whether LLM and human annotators agreed |
-| `llm_result_final` | The LLM (o4-mini) output used for annotation |
+- **Mechanical generation only.** Slot-filling and templated paraphrase only.
+  No LLM-based rewrites for the benchmark.
+- **Three active registers.** Research, Media, Clinical. Chart-style has been
+  dropped. The "Original" canonical seed is kept as a baseline.
+- **MedTempo is private scaffolding.** Used to compute gold labels during dataset
+  construction. Never released as part of the benchmark; the framework never
+  sees its annotations at inference time.
+- **Framework input is narrative + hypothesis only.** No relations, no event
+  lists, no metadata beyond what the hypothesis text contains.
+- **Gold labels use leveled-order representation.** See `02_dataset_design.md`
+  for the format and the computation rules.
 
-The core annotation task: symptoms that occurred at the same time after vaccination are placed in the same group. A report with `num_groups=3` means symptoms occurred across three distinct time windows.
+## Out of scope for v1
 
-## Roadmap
+Do not implement these unless explicitly asked:
 
-- [ ] **Phase 1 — Database**: Convert `o4mini_annotation_final.csv` into a relational database (SQLite or PostgreSQL) for efficient querying during template population.
-- [ ] **Phase 2 — Templates**: Design hypothesis and question templates with named placeholders.
-- [ ] **Phase 3 — Dataset generation**: Populate templates from the database; derive gold labels automatically.
-- [ ] **Phase 4 — Model evaluation**: Run LLM predictions; implement evaluation metrics and interpretation tools.
+- Significance-test (SIG) hypothesis groups
+- Three-vaccine multi-cohort groups (only 2-vaccine pair comparisons in v1)
+- Lay or forum-register paraphrases
+- LLM-based hypothesis generation
+- Connections to other temporal corpora (i2b2, MACCROBAT, THYME); MedTempo only
 
-## Repository Structure
+## Coding conventions
 
-```
-data/
-  o4mini_annotation_final.csv   # Gold-standard annotation dataset
-```
+- Python primary language. Type hints on public functions.
+- Tests live next to the code they test (`tests/` mirroring `src/`).
+- Use `pytest`. Run tests before committing.
+- Plan docs in `docs/plan/` are append-friendly Markdown; do not silently rewrite
+  decisions, append to `decisions.md` instead.
+
+## How to work with this repo
+
+- New decisions land in `docs/plan/decisions.md` with a date.
+- Resolved items in `open_questions.md` move to `decisions.md`; delete from open.
+- The 30 group seeds in `03_templates.md` are the canonical template list.
+  Any changes go through `decisions.md` first.
+- When implementing a new component, first verify the relevant plan doc
+  describes it. If the plan is silent, surface the gap rather than improvising.
