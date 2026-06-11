@@ -27,6 +27,18 @@ Before implementing anything, read the plan docs:
 
 If a question is in `open_questions.md`, do not guess an answer in code. Ask.
 
+## Where the templates live
+
+The canonical template definitions are in `data/templates/`:
+
+- `data/templates/pairwise.yaml`    — precedes and co-occurs groups
+- `data/templates/sequence.yaml`    — sequence groups
+- `data/templates/first_last.yaml`  — first / last groups
+
+These YAML files are the **single source of truth** for the templates.
+The .docx under `docs/reference/` is a generated artifact for advisor
+meetings, produced by `scripts/render_templates_docx.py`.
+
 ## Conventions
 
 - **Mechanical generation only.** Slot-filling and templated paraphrase only.

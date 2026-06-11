@@ -1,0 +1,212 @@
+family: first_last
+description: 'Superlative ordering: which of a named candidate set is earliest or latest.'
+notes: 'Tie-handling: when multiple candidates share the earliest (or latest) level, the report is marked insufficient for
+  CHOICE instances. Denominator is restricted to reports containing all named candidates.'
+common:
+  registers:
+  - original
+  - research
+  - media
+  - clinical
+groups:
+- id: F-R1
+  primitive: first_last
+  level: report
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - C
+  - r
+  variants:
+    original:
+      question: In report {r}, which of {A}, {B}, {C} occurs first?
+      claim: In report {r}, {A} occurs first among {A}, {B}, {C}.
+    research:
+      question: Of {A}, {B}, {C}, which is the earliest event in this report?
+      claim: In this report, {A} is the earliest of {A}, {B}, {C}.
+    media:
+      question: In this case, which came first, {A}, {B}, or {C}?
+      claim: In this case, {A} came first.
+    clinical:
+      question: Of {A}, {B}, {C}, which appeared first in this patient?
+      claim: In this patient, {A} appeared first.
+- id: F-R2
+  primitive: first_last
+  level: report
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - C
+  - r
+  variants:
+    original:
+      question: In report {r}, which of {A}, {B}, {C} occurs last?
+      claim: In report {r}, {C} occurs last among {A}, {B}, {C}.
+    research:
+      question: Of {A}, {B}, {C}, which is the latest event in this report?
+      claim: In this report, {C} is the latest of {A}, {B}, {C}.
+    media:
+      question: In this case, which came last, {A}, {B}, or {C}?
+      claim: In this case, {C} came last.
+    clinical:
+      question: Of {A}, {B}, {C}, which appeared last in this patient?
+      claim: In this patient, {C} appeared last.
+- id: F-R3
+  primitive: first_last
+  level: report
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - C
+  - r
+  variants:
+    original:
+      question: In report {r}, is {A} the first of {A}, {B}, {C} to occur?
+      claim: In report {r}, {A} is the first of {A}, {B}, {C} to occur.
+    research:
+      question: In this report, is {A} the earliest of {A}, {B}, {C}?
+      claim: In this report, {A} is the earliest of {A}, {B}, {C}.
+    media:
+      question: In this case, did {A} come first among {A}, {B}, {C}?
+      claim: In this case, {A} came first among {A}, {B}, {C}.
+    clinical:
+      question: Did {A} appear first among {A}, {B}, {C} in this patient?
+      claim: In this patient, {A} appeared first among {A}, {B}, {C}.
+- id: F-V1
+  primitive: first_last
+  level: vaccine
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - C
+  - v
+  variants:
+    original:
+      question: After {v}, which of {A}, {B}, {C} typically occurs first?
+      claim: After {v}, {A} typically occurs first among {A}, {B}, {C}.
+    research:
+      question: In {v} reports with all three, which event is the typical earliest among {A}, {B}, {C}?
+      claim: In {v} reports with all three, {A} is typically the earliest.
+    media:
+      question: After {v}, which usually comes first, {A}, {B}, or {C}?
+      claim: After {v}, {A} usually comes first.
+    clinical:
+      question: In {v} patients, which of {A}, {B}, {C} typically appears first?
+      claim: In {v} patients, {A} typically appears first.
+- id: F-V2
+  primitive: first_last
+  level: vaccine
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - C
+  - v
+  variants:
+    original:
+      question: After {v}, which of {A}, {B}, {C} typically occurs last?
+      claim: After {v}, {C} typically occurs last among {A}, {B}, {C}.
+    research:
+      question: In {v} reports with all three, which is the typical latest among {A}, {B}, {C}?
+      claim: In {v} reports with all three, {C} is typically the latest.
+    media:
+      question: After {v}, which usually comes last, {A}, {B}, or {C}?
+      claim: After {v}, {C} usually comes last.
+    clinical:
+      question: In {v} patients, which of {A}, {B}, {C} typically appears last?
+      claim: In {v} patients, {C} typically appears last.
+- id: F-V3
+  primitive: first_last
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - C
+  - v
+  variants:
+    original:
+      question: After {v}, is {A} usually the first of {A}, {B}, {C}?
+      claim: After {v}, {A} is usually the first of {A}, {B}, {C}.
+    research:
+      question: In {v} reports with all three, is {A} the earliest in the majority of cases?
+      claim: In {v} reports with all three, {A} is the earliest in the majority of cases.
+    media:
+      question: After {v}, does {A} usually come first among {A}, {B}, {C}?
+      claim: After {v}, {A} usually comes first among {A}, {B}, {C}.
+    clinical:
+      question: In {v} patients, is {A} usually the earliest of {A}, {B}, {C}?
+      claim: In {v} patients, {A} is usually the earliest of {A}, {B}, {C}.
+- id: F-M1
+  primitive: first_last
+  level: multi
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - C
+  - v1
+  - v2
+  variants:
+    original:
+      question: Is the typical first event among {A}, {B}, {C} the same after {v1} and {v2}?
+      claim: The typical first event among {A}, {B}, {C} is the same after {v1} and {v2}.
+    research:
+      question: Is the modal earliest event among {A}, {B}, {C} the same between {v1} and {v2} cohorts?
+      claim: The modal earliest event is the same in {v1} and {v2} cohorts.
+    media:
+      question: Do {v1} and {v2} have the same typical first event among {A}, {B}, {C}?
+      claim: '{v1} and {v2} have the same typical first event among {A}, {B}, {C}.'
+    clinical:
+      question: Is the usual first event among {A}, {B}, {C} the same in {v1} and {v2} patients?
+      claim: The usual first event is the same in {v1} and {v2} patients.
+- id: F-M2
+  primitive: first_last
+  level: multi
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - C
+  - v1
+  - v2
+  variants:
+    original:
+      question: Do {v1} and {v2} differ in which of {A}, {B}, {C} appears first?
+      claim: '{v1} and {v2} differ in which of {A}, {B}, {C} appears first.'
+    research:
+      question: Is the modal first event among {A}, {B}, {C} different between {v1} and {v2}?
+      claim: The modal first event differs between {v1} and {v2}.
+    media:
+      question: Do {v1} and {v2} differ in which of {A}, {B}, {C} usually comes first?
+      claim: '{v1} and {v2} differ in which usually comes first.'
+    clinical:
+      question: Does the usual first event among {A}, {B}, {C} differ between {v1} and {v2} patients?
+      claim: The usual first event differs between {v1} and {v2} patients.
+- id: F-M3
+  primitive: first_last
+  level: multi
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - C
+  - v1
+  - v2
+  variants:
+    original:
+      question: Is {A} the first event more often after {v1} or {v2}?
+      claim: '{A} is the first event more often after {v1} than {v2}.'
+    research:
+      question: Between {v1} and {v2}, which cohort more often has {A} as the earliest of {A}, {B}, {C}?
+      claim: '{v1} more often has {A} as the earliest of {A}, {B}, {C}.'
+    media:
+      question: Is {A} the first event more often after {v1} or {v2}?
+      claim: '{A} is the first event more often after {v1} than {v2}.'
+    clinical:
+      question: In which group is {A} more often the first of {A}, {B}, {C}, {v1} or {v2}?
+      claim: In {v1} recipients, {A} is more often the first.

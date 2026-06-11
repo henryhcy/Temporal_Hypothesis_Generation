@@ -1,0 +1,291 @@
+family: pairwise
+description: 'Pairwise temporal relation between two events: precedes or co-occurs.'
+notes: 'Each group asserts a relation between events A and B over a cohort scope.
+
+  PROP groups assert a value {p} in the claim form.'
+common:
+  registers:
+  - original
+  - research
+  - media
+  - clinical
+groups:
+- id: P-R1
+  primitive: precedes
+  level: report
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - r
+  variants:
+    original:
+      question: Did {A} occur before {B} in report {r}?
+      claim: In report {r}, {A} occurred before {B}.
+    research:
+      question: In this report, does {A} precede {B}?
+      claim: This report records {A} preceding {B}.
+    media:
+      question: In this case, did {A} happen before {B}?
+      claim: In this case, {A} happened before {B}.
+    clinical:
+      question: Did {A} come before {B} in this patient?
+      claim: In this patient, {A} came before {B}.
+- id: P-R2
+  primitive: precedes
+  level: report
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - r
+  variants:
+    original:
+      question: Which came first in report {r}, {A} or {B}?
+      claim: In report {r}, {A} came first, before {B}.
+    research:
+      question: Of {A} and {B}, which is the earlier event in this report?
+      claim: In this report, {A} is the earlier event.
+    media:
+      question: In this case, which came first, {A} or {B}?
+      claim: In this case, {A} came first.
+    clinical:
+      question: Between {A} and {B}, which came first in this patient?
+      claim: In this patient, {A} came first.
+- id: P-V1
+  primitive: precedes
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: Does {A} typically occur before {B} after {v}?
+      claim: After {v}, {A} typically occurs before {B}.
+    research:
+      question: Among {v} reports, does {A} precede {B} in the majority of cases?
+      claim: Among {v} reports, {A} precedes {B} in the majority of cases.
+    media:
+      question: After {v}, do most people get {A} before {B}?
+      claim: After {v}, most people get {A} before {B}.
+    clinical:
+      question: In {v} recipients, does {A} usually come before {B}?
+      claim: In {v} recipients, {A} usually comes before {B}.
+- id: P-V2
+  primitive: precedes
+  level: vaccine
+  answer_type: PROP
+  slots:
+  - A
+  - B
+  - v
+  - p
+  variants:
+    original:
+      question: In what fraction of {v} reports does {A} precede {B}?
+      claim: In about {p}% of {v} reports, {A} precedes {B}.
+    research:
+      question: Among {v} reports with both {A} and {B}, what proportion show {A} preceding {B}?
+      claim: Among {v} reports with both events, {A} precedes {B} in {p}% of cases.
+    media:
+      question: What share of {v} cases show {A} before {B}?
+      claim: About {p}% of {v} cases show {A} before {B}.
+    clinical:
+      question: How often does {A} precede {B} in {v} recipients?
+      claim: '{A} precedes {B} in roughly {p}% of {v} recipients.'
+- id: P-V3
+  primitive: precedes
+  level: vaccine
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: After {v}, which usually comes first, {A} or {B}?
+      claim: After {v}, {A} usually comes before {B}.
+    research:
+      question: Among {v} reports with both, which more often precedes the other, {A} or {B}?
+      claim: Among {v} reports with both, {A} more often precedes {B}.
+    media:
+      question: After {v}, which side effect tends to come first, {A} or {B}?
+      claim: After {v}, {A} tends to come first.
+    clinical:
+      question: In {v} patients, what usually shows up first, {A} or {B}?
+      claim: In {v} patients, {A} usually shows up first.
+- id: P-M1
+  primitive: precedes
+  level: multi
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - v1
+  - v2
+  variants:
+    original:
+      question: Does the {A}-before-{B} rate differ between {v1} and {v2}?
+      claim: The {A}-before-{B} rate differs between {v1} and {v2}.
+    research:
+      question: Among reports with both events, is the {A}-precedes-{B} proportion different between {v1} and {v2}?
+      claim: The {A}-precedes-{B} proportion differs between {v1} and {v2} cohorts.
+    media:
+      question: Is there a real difference between {v1} and {v2} in how often {A} comes before {B}?
+      claim: '{v1} and {v2} differ in how often {A} comes before {B}.'
+    clinical:
+      question: Do my {v1} and {v2} patients differ in how often {A} comes before {B}?
+      claim: '{v1} and {v2} recipients differ in the rate of {A} before {B}.'
+- id: P-M2
+  primitive: precedes
+  level: multi
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - v1
+  - v2
+  variants:
+    original:
+      question: After which vaccine, {v1} or {v2}, does {A} more often precede {B}?
+      claim: '{A} precedes {B} more often after {v1} than after {v2}.'
+    research:
+      question: Between {v1} and {v2}, which cohort shows a higher {A}-preceding-{B} proportion?
+      claim: '{v1} shows a higher {A}-precedes-{B} proportion than {v2}.'
+    media:
+      question: Is {A}-before-{B} more common after {v1} or {v2}?
+      claim: '{A}-before-{B} is more common after {v1} than {v2}.'
+    clinical:
+      question: In which group is {A} more often the precursor to {B}, {v1} or {v2} recipients?
+      claim: '{v1} recipients more often have {A} as a precursor to {B}.'
+- id: C-R1
+  primitive: co_occurs
+  level: report
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - r
+  variants:
+    original:
+      question: Do {A} and {B} co-occur in report {r}?
+      claim: In report {r}, {A} and {B} co-occur.
+    research:
+      question: In this report, are {A} and {B} concurrent?
+      claim: In this report, {A} and {B} are concurrent.
+    media:
+      question: In this case, did {A} and {B} happen at the same time?
+      claim: In this case, {A} and {B} happened at the same time.
+    clinical:
+      question: Did this patient have {A} and {B} together?
+      claim: This patient had {A} and {B} together.
+- id: C-V1
+  primitive: co_occurs
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: Do {A} and {B} typically co-occur after {v}?
+      claim: After {v}, {A} and {B} typically co-occur.
+    research:
+      question: In {v} reports, are {A} and {B} concurrent in the majority of cases?
+      claim: In {v} reports, {A} and {B} are concurrent in the majority of cases.
+    media:
+      question: After {v}, do {A} and {B} usually show up together?
+      claim: After {v}, {A} and {B} usually show up together.
+    clinical:
+      question: In {v} recipients, do {A} and {B} typically present together?
+      claim: In {v} recipients, {A} and {B} typically present together.
+- id: C-V2
+  primitive: co_occurs
+  level: vaccine
+  answer_type: PROP
+  slots:
+  - A
+  - B
+  - v
+  - p
+  variants:
+    original:
+      question: What fraction of {v} reports show {A} and {B} together?
+      claim: In about {p}% of {v} reports, {A} and {B} occur together.
+    research:
+      question: Among {v} reports with both events, what proportion show {A} and {B} concurrently?
+      claim: Among {v} reports with both events, {A} and {B} are concurrent in {p}% of cases.
+    media:
+      question: What share of {v} cases have {A} and {B} together?
+      claim: About {p}% of {v} cases have {A} and {B} together.
+    clinical:
+      question: How often do {A} and {B} present together in {v} patients?
+      claim: '{A} and {B} present together in roughly {p}% of {v} patients.'
+- id: C-V3
+  primitive: co_occurs
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: After {v}, is co-occurrence the dominant relation for {A} and {B}?
+      claim: After {v}, co-occurrence is the dominant relation for {A} and {B}.
+    research:
+      question: Among {v} reports with both events, is concurrent presentation more common than ordered?
+      claim: Among {v} reports with both events, concurrent presentation is more common than ordered.
+    media:
+      question: After {v}, are {A} and {B} more often together than in order?
+      claim: After {v}, {A} and {B} are more often together than in order.
+    clinical:
+      question: In {v} recipients with both, is concurrence more common than sequential onset?
+      claim: In {v} recipients with both, concurrence is more common than sequential onset.
+- id: C-M1
+  primitive: co_occurs
+  level: multi
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - v1
+  - v2
+  variants:
+    original:
+      question: Does the {A}-{B} co-occurrence rate differ between {v1} and {v2}?
+      claim: The {A}-{B} co-occurrence rate differs between {v1} and {v2}.
+    research:
+      question: Among reports with both events, is the co-occurrence proportion different between {v1} and {v2}?
+      claim: The co-occurrence proportion differs between {v1} and {v2}.
+    media:
+      question: Is there a real difference between {v1} and {v2} in how often {A} and {B} happen together?
+      claim: '{v1} and {v2} differ in how often {A} and {B} happen together.'
+    clinical:
+      question: Do my {v1} and {v2} patients differ in how often {A} and {B} co-occur?
+      claim: '{v1} and {v2} recipients differ in {A}-{B} co-occurrence rates.'
+- id: C-M2
+  primitive: co_occurs
+  level: multi
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - v1
+  - v2
+  variants:
+    original:
+      question: After which vaccine, {v1} or {v2}, do {A} and {B} more often co-occur?
+      claim: '{A} and {B} co-occur more often after {v1} than after {v2}.'
+    research:
+      question: Between {v1} and {v2}, which cohort shows higher {A}-{B} co-occurrence?
+      claim: '{v1} shows higher {A}-{B} co-occurrence than {v2}.'
+    media:
+      question: Is {A} and {B} together more common after {v1} or {v2}?
+      claim: '{A} and {B} together is more common after {v1} than {v2}.'
+    clinical:
+      question: In which group are {A} and {B} more often concurrent, {v1} or {v2}?
+      claim: In {v1} recipients, {A} and {B} are more often concurrent.

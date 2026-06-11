@@ -15,8 +15,13 @@ build/
 # Generated database (built from source data, not committed)
 data/medtempo.db
 
-# Temporary exploration scripts
+# Temporary exploration and investigation scripts
 inspect*.py
+investigate_*.py
+
+# Uploaded zip files and extraction temp dirs
+*.zip
+_zip_extract/
 
 # IDE
 .vscode/

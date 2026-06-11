@@ -1,59 +1,59 @@
-# Project: Temporal Hypothesis Generation
+# Temporal Hypothesis Generation
 
-A benchmark for temporal hypothesis verification over clinical narratives,
-built on the MedTempo corpus.
+A benchmark and framework for **temporal hypothesis verification over
+clinical narratives**, built on the MedTempo corpus.
 
-## What this project is
+Given a natural-language hypothesis about the temporal pattern of vaccine
+adverse events, and the relevant report narratives, the framework returns
+a verdict (supported / refuted / insufficient) grounded in the temporal
+structure of the reports.
 
-We construct a dataset of natural-language hypotheses about temporal
-patterns of vaccine adverse events, with gold labels computed deterministically
-from expert-annotated timelines (MedTempo). The framework receives only raw
-narratives plus a hypothesis, and must locate the temporal evidence and
-return a verdict.
+## Status
 
-This is positioned as agentic temporal claim verification, not deep research.
-It is the natural follow-on to the CRAFT paper (timeline extraction):
-CRAFT extracts; this framework verifies hypotheses against extracted information.
+Under active development. Currently in dataset design and template
+generation phase.
 
-## Where the plan lives
+## Documentation
 
-Before implementing anything, read the plan docs:
+Project plans, design decisions, and open questions live in `docs/plan/`.
+For a project introduction and contribution framing, start with
+[`docs/plan/01_overview.md`](docs/plan/01_overview.md).
 
-- `docs/plan/01_overview.md`      — project framing and contribution
-- `docs/plan/02_dataset_design.md` — MedTempo schema, leveled order, gold-label rules
-- `docs/plan/03_templates.md`     — the 30 template groups and three registers
-- `docs/plan/decisions.md`        — locked decisions (single source of truth)
-- `docs/plan/open_questions.md`   — items still under discussion (do not assume)
+For a quick orientation:
 
-If a question is in `open_questions.md`, do not guess an answer in code. Ask.
+- **What this project is** — see [`docs/plan/01_overview.md`](docs/plan/01_overview.md)
+- **What's been decided** — see [`docs/plan/decisions.md`](docs/plan/decisions.md)
+- **What's still open** — see [`docs/plan/open_questions.md`](docs/plan/open_questions.md)
 
-## Conventions
+## Repository layout
 
-- **Mechanical generation only.** Slot-filling and templated paraphrase only.
-  No LLM-based rewrites for the benchmark.
-- **Three active registers.** Research, Media, Clinical. Chart-style has been
-  dropped. The "Original" canonical seed is kept as a baseline.
-- **MedTempo is private scaffolding.** Used to compute gold labels during dataset
-  construction. Never released as part of the benchmark; the framework never
-  sees its annotations at inference time.
-- **Framework input is narrative + hypothesis only.** No relations, no event
-  lists, no metadata beyond what the hypothesis text contains.
-- **Gold labels use leveled-order representation.** See `02_dataset_design.md`
-  for the format and the computation rules.
-
-## Out of scope for v1
-
-Do not implement these unless explicitly asked:
-
-- Significance-test (SIG) hypothesis groups
-- Three-vaccine multi-cohort groups (only 2-vaccine pair comparisons in v1)
-- Lay or forum-register paraphrases
-- LLM-based hypothesis generation
-- Connections to other temporal corpora (i2b2, MACCROBAT, THYME); MedTempo only
+```
+.
+├── CLAUDE.md                     Instructions for Claude Code working in this repo
+├── README.md                     This file
+├── data/
+│   └── templates/                Template YAML files (source of truth)
+│       ├── pairwise.yaml         precedes + co-occurs (13 groups)
+│       ├── sequence.yaml         sequence (8 groups)
+│       └── first_last.yaml       first / last (9 groups)
+├── docs/
+│   ├── plan/                     Project plans, design docs, decisions
+│   │   ├── 01_overview.md
+│   │   ├── 02_dataset_design.md
+│   │   ├── 03_templates.md
+│   │   ├── decisions.md
+│   │   └── open_questions.md
+│   └── reference/                Generated artifacts (e.g., .docx renders)
+│       └── Temporal_Hypothesis_Templates.docx
+├── scripts/
+│   └── render_templates_docx.py  Regenerates the .docx from YAML
+├── src/                          Implementation (gold-label generator, framework)
+└── tests/                        Test suite
+```
 
 ## Setup
 
-Requires Python 3.10+. Works on Windows (3.11) and Linux/macOS (3.10+).
+Requires Python 3.10+. Works on Windows and Linux/macOS.
 
 **Windows (PowerShell):**
 ```powershell
@@ -75,28 +75,24 @@ pip install -e ".[dev]"
 ```bash
 python scripts/build_db.py
 ```
-This reads `data/o4mini_annotation_final.csv` and `data/VAERS_Sampled_Data_v4.csv`
-and writes `data/medtempo.db`.
+
+**Regenerate the .docx template reference** (requires `.[render]` extras):
+```bash
+pip install -e ".[render]"
+python scripts/render_templates_docx.py
+```
 
 **Run tests:**
 ```bash
 pytest
 ```
 
-## Coding conventions
+## Working with this repo
 
-- Python primary language. Type hints on public functions.
-- Use `pathlib.Path` for all file paths — never string concatenation with `/` or `\`.
-- Tests live in `tests/` mirroring `src/`.
-- Use `pytest`. Run tests before committing.
-- Plan docs in `docs/plan/` are append-friendly Markdown; do not silently rewrite
-  decisions, append to `decisions.md` instead.
+If you are using Claude Code on this repo, the conventions and pointers
+to plan documents are in `CLAUDE.md`. Claude Code reads it automatically
+at the start of each session.
 
-## How to work with this repo
+## Citation
 
-- New decisions land in `docs/plan/decisions.md` with a date.
-- Resolved items in `open_questions.md` move to `decisions.md`; delete from open.
-- The 30 group seeds in `03_templates.md` are the canonical template list.
-  Any changes go through `decisions.md` first.
-- When implementing a new component, first verify the relevant plan doc
-  describes it. If the plan is silent, surface the gap rather than improvising.
+To be added on publication.
