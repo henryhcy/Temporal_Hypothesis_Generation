@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import sqlite3
 from pathlib import Path
 
@@ -26,10 +27,13 @@ def _parse_levels(gold_json: str) -> list[list[str]] | None:
     """Parse a leveled-order JSON string into list[list[str]].
 
     Returns None if the string is not a JSON array or cannot be parsed.
+    Trailing commas (a common human-editing artefact) are stripped before parsing.
     """
     text = gold_json.strip() if isinstance(gold_json, str) else ""
     if not text.startswith("["):
         return None
+    # Remove trailing commas before } or ] — handles manual annotation errors
+    text = re.sub(r",\s*([}\]])", r"\1", text)
     try:
         raw = json.loads(text)
     except json.JSONDecodeError:
