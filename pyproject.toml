@@ -1,0 +1,23 @@
+[project]
+name = "temporal-hypo"
+version = "0.1.0"
+description = "Temporal hypothesis verification benchmark over VAERS adverse event reports"
+requires-python = ">=3.10"
+dependencies = [
+    "pandas>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+]
+
+[build-system]
+requires = ["setuptools>=42"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

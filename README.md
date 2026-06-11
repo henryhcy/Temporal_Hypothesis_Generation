@@ -51,10 +51,43 @@ Do not implement these unless explicitly asked:
 - LLM-based hypothesis generation
 - Connections to other temporal corpora (i2b2, MACCROBAT, THYME); MedTempo only
 
+## Setup
+
+Requires Python 3.10+. Works on Windows (3.11) and Linux/macOS (3.10+).
+
+**Windows (PowerShell):**
+```powershell
+python -m venv .venv
+.venv\Scripts\activate
+pip install --upgrade pip setuptools
+pip install -e ".[dev]"
+```
+
+**Linux / macOS (bash):**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install --upgrade pip setuptools
+pip install -e ".[dev]"
+```
+
+**Build the database** (run once after cloning, and again if source CSVs change):
+```bash
+python scripts/build_db.py
+```
+This reads `data/o4mini_annotation_final.csv` and `data/VAERS_Sampled_Data_v4.csv`
+and writes `data/medtempo.db`.
+
+**Run tests:**
+```bash
+pytest
+```
+
 ## Coding conventions
 
 - Python primary language. Type hints on public functions.
-- Tests live next to the code they test (`tests/` mirroring `src/`).
+- Use `pathlib.Path` for all file paths — never string concatenation with `/` or `\`.
+- Tests live in `tests/` mirroring `src/`.
 - Use `pytest`. Run tests before committing.
 - Plan docs in `docs/plan/` are append-friendly Markdown; do not silently rewrite
   decisions, append to `decisions.md` instead.

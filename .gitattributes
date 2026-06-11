@@ -1,0 +1,16 @@
+# Normalize line endings: commit as LF, check out as platform-native
+* text=auto
+
+# Force LF for Python and SQL (avoids CRLF in source on Windows)
+*.py   text eol=lf
+*.sql  text eol=lf
+*.md   text eol=lf
+*.toml text eol=lf
+*.txt  text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+
+# Treat data files as binary to avoid mangling
+*.csv  binary
+*.db   binary
+*.docx binary
