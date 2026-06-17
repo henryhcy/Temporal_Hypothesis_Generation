@@ -15,6 +15,9 @@ build/
 # Generated database (built from source data, not committed)
 data/medtempo.db
 
+# Pilot artifacts (regenerable via scripts/run_pilot.py; not committed)
+data/pilot/
+
 # Temporary exploration and investigation scripts
 inspect*.py
 investigate_*.py

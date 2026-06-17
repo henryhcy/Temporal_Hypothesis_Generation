@@ -22,10 +22,20 @@ Before implementing anything, read the plan docs:
 - `docs/plan/01_overview.md`      — project framing and contribution
 - `docs/plan/02_dataset_design.md` — MedTempo schema, leveled order, gold-label rules
 - `docs/plan/03_templates.md`     — the 30 template groups and three registers
+- `docs/plan/04_corpus_survey.md` — pilot + distribution report spec; run BEFORE the full benchmark
 - `docs/plan/decisions.md`        — locked decisions (single source of truth)
 - `docs/plan/open_questions.md`   — items still under discussion (do not assume)
 
 If a question is in `open_questions.md`, do not guess an answer in code. Ask.
+
+Current phase is a PILOT. The sampling numbers in `decisions.md` (T = 100,
+45/45/10 verdict balance, quantile bands) are provisional inputs to the pilot,
+not final values. The pilot has two jobs: (1) generate a small dataset across
+all 30 groups using the provisional numbers, and (2) emit a distribution
+report (`04_corpus_survey.md`, Part A) that we use to recalibrate those
+numbers. Do not scale to the full benchmark until the distribution report has
+been reviewed. Validate the gold-label computation against a hand-checkable
+sample (Part C) before trusting the distributions.
 
 ## Where the templates live
 

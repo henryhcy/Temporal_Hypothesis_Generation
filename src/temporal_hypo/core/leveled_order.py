@@ -83,6 +83,25 @@ def first_among(
     return [t for t, i in indices.items() if i == min_idx]
 
 
+def last_among(
+    levels: list[list[str]], terms: list[str]
+) -> list[str] | Literal["missing"]:
+    """Return the subset of terms that occur at the latest level.
+
+    Mirror of first_among. Returns 'missing' if any term in the list is
+    absent from levels. Returns a list with more than one element when
+    multiple terms tie for the latest position.
+    """
+    indices: dict[str, int] = {}
+    for term in terms:
+        idx = level_of(levels, term)
+        if idx is None:
+            return "missing"
+        indices[term] = idx
+    max_idx = max(indices.values())
+    return [t for t, i in indices.items() if i == max_idx]
+
+
 def sequence_holds(
     levels: list[list[str]], terms: list[str]
 ) -> bool | Literal["missing"]:

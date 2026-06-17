@@ -8,8 +8,11 @@ from temporal_hypo.core.aggregation import (
     bool_verdict,
     co_occurs_fraction,
     differ_verdict,
+    direction_verdict,
     first_among_fractions,
     get_cohort,
+    last_among_fractions,
+    ordering_distribution,
     precedes_fraction,
     prop_verdict,
     sequence_fraction,
@@ -251,3 +254,110 @@ def test_differ_verdict():
     assert differ_verdict(0.70, 0.55) == "supported"  # 15pp > 10pp
     assert differ_verdict(0.70, 0.62) == "refuted"    # 8pp ≤ 10pp
     assert differ_verdict(0.70, 0.60) == "refuted"    # exactly 10pp — not strictly greater
+
+
+def test_direction_verdict():
+    assert direction_verdict(0.60, 0.40) == "supported"   # cohort 1 higher
+    assert direction_verdict(0.40, 0.60) == "refuted"     # cohort 1 lower
+    assert direction_verdict(0.50, 0.50) == "insufficient"  # exact tie
+
+
+# ---------------------------------------------------------------------------
+# last_among_fractions (mirror of first_among, locked rule 4 by symmetry)
+# ---------------------------------------------------------------------------
+
+def test_last_among_fractions_basic():
+    reports = [
+        (i + 1, "Pfizer", [["A"], ["B"], ["C"]] if i < 6 else [["A"], ["C"], ["B"]])
+        for i in range(12)
+    ]
+    conn, ids = _make_db(reports)
+    result = last_among_fractions(conn, ["A", "B", "C"], ids)
+    assert result is not None
+    assert abs(result["C"] - 6 / 12) < 1e-9   # C last in first 6
+    assert abs(result["B"] - 6 / 12) < 1e-9   # B last in last 6
+    assert result["A"] == 0.0
+    assert result["tie_rate"] == 0.0
+    conn.close()
+
+
+def test_last_among_fractions_ties_excluded():
+    reports = [
+        (1, "Pfizer", [["A"], ["B", "C"]]),   # tie between B and C for last
+    ] + [
+        (i + 2, "Pfizer", [["A"], ["B"], ["C"]]) for i in range(11)
+    ]
+    conn, ids = _make_db(reports)
+    result = last_among_fractions(conn, ["A", "B", "C"], ids)
+    assert result is not None
+    assert int(result["n"]) == 12
+    assert abs(result["tie_rate"] - 1 / 12) < 1e-9
+    assert abs(result["C"] - 11 / 12) < 1e-9   # C last in the 11 strict reports
+    conn.close()
+
+
+def test_last_among_fractions_insufficient():
+    reports = [(i + 1, "Pfizer", [["A"], ["B"]]) for i in range(9)]
+    conn, ids = _make_db(reports)
+    assert last_among_fractions(conn, ["A", "B"], ids) is None
+    conn.close()
+
+
+# ---------------------------------------------------------------------------
+# ordering_distribution (sequence modal / consistency)
+# ---------------------------------------------------------------------------
+
+def test_ordering_distribution_modal():
+    # 8 reports A→B→C, 4 reports A→C→B
+    reports = [
+        (i + 1, "Pfizer", [["A"], ["B"], ["C"]] if i < 8 else [["A"], ["C"], ["B"]])
+        for i in range(12)
+    ]
+    conn, ids = _make_db(reports)
+    dist = ordering_distribution(conn, ["A", "B", "C"], ids)
+    assert dist is not None
+    assert dist["n"] == 12
+    assert dist["tie"] == 0
+    assert dist["modal"] == ("A", "B", "C")
+    assert dist["modal_count"] == 8
+    assert abs(dist["modal_share"] - 8 / 12) < 1e-9
+    assert dist["modal_tie"] is False
+    conn.close()
+
+
+def test_ordering_distribution_ties_bucket():
+    # reports where two of the three co-occur go to the tie bucket
+    reports = [
+        (1, "Pfizer", [["A", "B"], ["C"]]),   # A,B co-occur — tie bucket
+    ] + [
+        (i + 2, "Pfizer", [["A"], ["B"], ["C"]]) for i in range(11)
+    ]
+    conn, ids = _make_db(reports)
+    dist = ordering_distribution(conn, ["A", "B", "C"], ids)
+    assert dist is not None
+    assert dist["n"] == 12
+    assert dist["tie"] == 1
+    assert dist["modal_count"] == 11
+    assert abs(dist["modal_share"] - 11 / 12) < 1e-9
+    conn.close()
+
+
+def test_ordering_distribution_modal_tie_flag():
+    # equal split between two orderings → modal_tie True
+    reports = [
+        (i + 1, "Pfizer", [["A"], ["B"], ["C"]] if i < 6 else [["C"], ["B"], ["A"]])
+        for i in range(12)
+    ]
+    conn, ids = _make_db(reports)
+    dist = ordering_distribution(conn, ["A", "B", "C"], ids)
+    assert dist is not None
+    assert dist["modal_count"] == 6
+    assert dist["modal_tie"] is True
+    conn.close()
+
+
+def test_ordering_distribution_insufficient():
+    reports = [(i + 1, "Pfizer", [["A"], ["B"], ["C"]]) for i in range(9)]
+    conn, ids = _make_db(reports)
+    assert ordering_distribution(conn, ["A", "B", "C"], ids) is None
+    conn.close()

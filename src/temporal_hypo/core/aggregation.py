@@ -11,7 +11,14 @@ from __future__ import annotations
 import sqlite3
 from typing import Literal
 
-from temporal_hypo.core.leveled_order import first_among, load_levels, precedes, sequence_holds
+from temporal_hypo.core.leveled_order import (
+    first_among,
+    last_among,
+    level_of,
+    load_levels,
+    precedes,
+    sequence_holds,
+)
 
 _MIN_N = 10
 
@@ -140,6 +147,106 @@ def first_among_fractions(
     return fracs
 
 
+def last_among_fractions(
+    conn: sqlite3.Connection,
+    terms: list[str],
+    cohort: list[int],
+) -> dict[str, float] | None:
+    """Per-term fraction of reports where the term occurs last.
+
+    Mirror of first_among_fractions using last_among. Denominator: reports
+    containing all named candidates. Tie-reports are excluded from per-term
+    counts but tracked separately as 'tie_rate'. Returns None if denom < 10.
+
+    Return format: {term: fraction, ..., 'tie_rate': float, 'n': int}
+    """
+    denom = 0
+    ties = 0
+    term_counts: dict[str, int] = {t: 0 for t in terms}
+
+    for vid in cohort:
+        levels = load_levels(conn, vid)
+        result = last_among(levels, terms)
+        if result == "missing":
+            continue
+        denom += 1
+        if len(result) > 1:
+            ties += 1
+        else:
+            term_counts[result[0]] += 1
+
+    if denom < _MIN_N:
+        return None
+
+    fracs: dict[str, float] = {t: term_counts[t] / denom for t in terms}
+    fracs["tie_rate"] = ties / denom
+    fracs["n"] = float(denom)
+    return fracs
+
+
+def ordering_distribution(
+    conn: sqlite3.Connection,
+    terms: list[str],
+    cohort: list[int],
+) -> dict | None:
+    """Distribution over strict orderings of `terms` across the cohort.
+
+    Denominator (n): reports containing all of `terms`. Reports where any two
+    of the terms share a level go to the 'tie' bucket (no strict total order
+    among the three). Reports with all terms at distinct levels are counted
+    under the permutation key giving their temporal order (a tuple of terms,
+    earliest first). Returns None if n < 10.
+
+    Used by the sequence modal/consistency groups (S-V3, S-V4, S-M3). The
+    "modal ordering" is the argmax strict permutation; "consistency" is its
+    share of n. This pins the otherwise-ambiguous definition: a single
+    ordering dominates iff modal_share > 0.5 (mirrors the BOOL majority rule).
+
+    Return format:
+        {'counts': {perm_tuple: int, ...}, 'tie': int, 'n': int,
+         'modal': perm_tuple | None, 'modal_count': int,
+         'modal_share': float, 'modal_tie': bool}
+    """
+    n = 0
+    tie = 0
+    counts: dict[tuple[str, ...], int] = {}
+    for vid in cohort:
+        levels = load_levels(conn, vid)
+        idxs = [level_of(levels, t) for t in terms]
+        if any(i is None for i in idxs):
+            continue
+        n += 1
+        if len(set(idxs)) < len(idxs):
+            tie += 1
+            continue
+        order = tuple(
+            t for t, _ in sorted(zip(terms, idxs), key=lambda pair: pair[1])
+        )
+        counts[order] = counts.get(order, 0) + 1
+
+    if n < _MIN_N:
+        return None
+
+    modal: tuple[str, ...] | None = None
+    modal_count = 0
+    modal_tie = False
+    if counts:
+        modal_count = max(counts.values())
+        winners = [p for p, c in counts.items() if c == modal_count]
+        modal = winners[0]
+        modal_tie = len(winners) > 1
+
+    return {
+        "counts": counts,
+        "tie": tie,
+        "n": n,
+        "modal": modal,
+        "modal_count": modal_count,
+        "modal_share": modal_count / n,
+        "modal_tie": modal_tie,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Verdict helpers (pure functions, no DB)
 # ---------------------------------------------------------------------------
@@ -167,3 +274,20 @@ def differ_verdict(
 ) -> Literal["supported", "refuted"]:
     """|p1 - p2| > 10 percentage points → supported (decisions.md rule 8)."""
     return "supported" if abs(p1 - p2) > 0.10 else "refuted"
+
+
+def direction_verdict(
+    p1: float, p2: float
+) -> Literal["supported", "refuted", "insufficient"]:
+    """Multi-vaccine CHOICE direction: claim asserts cohort 1 > cohort 2.
+
+    Supported if p1 > p2, refuted if p1 < p2, insufficient on an exact tie.
+    Used by P-M2 / C-M2 / S-M2 (which cohort shows the higher proportion).
+    The confidence interval on the difference (Wilson-Newcombe) carries the
+    uncertainty; this verdict only encodes the point-estimate direction.
+    """
+    if p1 > p2:
+        return "supported"
+    if p1 < p2:
+        return "refuted"
+    return "insufficient"

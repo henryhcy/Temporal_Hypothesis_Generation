@@ -6,6 +6,7 @@ import pytest
 
 from temporal_hypo.core.leveled_order import (
     first_among,
+    last_among,
     level_of,
     load_levels,
     precedes,
@@ -91,6 +92,28 @@ def test_first_among_all_absent():
 
 def test_first_among_single_term():
     assert first_among(LEVELS, ["fatigue"]) == ["fatigue"]
+
+
+# ---------------------------------------------------------------------------
+# last_among (mirror of first_among)
+# ---------------------------------------------------------------------------
+
+def test_last_among_single_winner():
+    assert last_among(LEVELS, ["headache", "fever", "fatigue"]) == ["fatigue"]
+
+
+def test_last_among_tie():
+    result = last_among(LEVELS, ["fever", "rash"])
+    assert set(result) == {"fever", "rash"}
+    assert len(result) == 2
+
+
+def test_last_among_absent_term():
+    assert last_among(LEVELS, ["fatigue", "nausea"]) == "missing"
+
+
+def test_last_among_single_term():
+    assert last_among(LEVELS, ["headache"]) == ["headache"]
 
 
 # ---------------------------------------------------------------------------
