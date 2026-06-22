@@ -13,6 +13,7 @@ statistical denominator). This is a deliberate, documented pilot deviation.
 
 from __future__ import annotations
 
+from temporal_hypo.core.answers import answer_key, claimed_p_for, core_significance
 from temporal_hypo.generation.cores import InstanceFacts
 from temporal_hypo.generation.templates import FORMATS, REGISTERS, Group, render
 
@@ -35,6 +36,8 @@ def build_records(
     """Expand one realized instance into register x format JSONL records."""
     c = facts.core
     ci = facts.ci
+    sig = core_significance(c)
+    options, gold_answer = answer_key(c)
     factual_core = {
         "primitive": c.primitive,
         "events": list(facts.events_assigned),
@@ -54,6 +57,13 @@ def build_records(
         "ci_width": _round(ci[1] - ci[0]) if ci else None,
         "effect_size": _round(facts.effect_size),
         "confidence_tag": facts.confidence_tag,
+        # significance test on the gold value (None for report-level / insufficient)
+        "p_value": _round(sig.p_value, 6),
+        "significant": sig.significant,
+        "sig_test": sig.test,
+        # explicit CHOICE answer key (None for BOOL/PROP)
+        "options": options,
+        "gold_answer": gold_answer,
         "cohort": {
             "level": c.level,
             "vaccines": list(facts.vaccines_assigned),
@@ -78,5 +88,7 @@ def build_records(
             rec["register"] = register
             rec["format"] = fmt
             rec["text"] = text
+            # claimed proportion is meaningful only for PROP claim-format text
+            rec["claimed_p"] = _round(claimed_p_for(facts, fmt))
             records.append(rec)
     return records

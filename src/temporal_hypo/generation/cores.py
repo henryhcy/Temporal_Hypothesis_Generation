@@ -298,7 +298,7 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
         else:
             nv = "supported" if unique else "insufficient"
         extra = {"fracs": fracs, "winner": winner, "unique": unique,
-                 "tie_rate": res["tie_rate"]}
+                 "tie_rate": res["tie_rate"], "counts": res["counts"]}
         return _new_core(group, mode, computable=True, natural_verdict=nv,
                          proportion=wfrac, n=n, k=round(wfrac * n),
                          extra=extra, **base)
@@ -369,7 +369,8 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
         return _new_core(group, mode, computable=True, natural_verdict=nv,
                          proportion=d1["modal_share"], n=d1["n"], k=d1["modal_count"],
                          proportion2=d2["modal_share"], n2=d2["n"], k2=d2["modal_count"],
-                         extra={"modal1": d1["modal"], "modal2": d2["modal"]}, **base)
+                         extra={"modal1": d1["modal"], "modal2": d2["modal"],
+                                "counts1": d1["counts"], "counts2": d2["counts"]}, **base)
 
     if mode in ("multi_same_first", "multi_differ_first", "multi_dir_first"):
         f1 = corpus.first_among_fractions(index, list(combo), c1)
@@ -398,7 +399,9 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
         return _new_core(group, mode, computable=True, natural_verdict=nv,
                          proportion=f1[w1], n=int(f1["n"]), k=round(f1[w1] * int(f1["n"])),
                          proportion2=f2[w2], n2=int(f2["n"]),
-                         extra={"w1": w1, "w2": w2}, **base)
+                         extra={"w1": w1, "w2": w2,
+                                "counts1": f1["counts"], "counts2": f2["counts"]},
+                         **base)
 
     raise ValueError(f"unhandled multi mode: {mode}")
 
