@@ -77,8 +77,9 @@ Using the provisional numbers, generate a small dataset across all 30 groups:
 - Apply the 45/45/10 verdict balance, with insufficient capped.
 - Apply quantile frequency banding and one-synonym-per-instance sampling.
 - Output in the per-instance JSONL schema from `02_dataset_design.md`,
-  extended with the confidence fields (point estimate, 95% CI, effect size,
-  confidence tag) from `decisions.md`.
+  extended with the statistical fields from `decisions.md`: point estimate,
+  p-value (with the test name and null stated), 95% CI, effect size, and a
+  high/moderate/low confidence tag.
 
 The pilot dataset is for inspection, not release. We read a sample of
 generated instances to confirm the templates, slot-filling, and gold labels

@@ -62,15 +62,43 @@ decision changes, append a new entry that supersedes it.
   pending items.
 
 ### Significance reframed as confidence quantification
-- The statistical contribution is reframed from per-hypothesis null testing
-  to CONFIDENCE QUANTIFICATION on every gold value.
-- Each cohort-level instance carries: point estimate, 95% confidence
-  interval, an effect size, and a high/moderate/low confidence tag.
+- The statistical contribution reports BOTH a significance test (p-value) and
+  a confidence interval for every eligible gold value. The p-value answers
+  "is the effect real (vs a chance baseline)"; the CI answers "how precise is
+  the estimate." They are two summaries of the same computation and are
+  reported together.
+- Each cohort-level instance carries: point estimate, p-value (with its test
+  and null stated), 95% confidence interval, an effect size, and a
+  high/moderate/low confidence tag.
+
+- Test families (exact tests preferred over normal approximations):
+  - One proportion vs chance baseline: binomial exact test. Null p = 0.5 for
+    pairwise/co-occurs, 1/6 for sequence (6 orderings), 1/3 for first-among-3.
+  - Two proportions (multi-vaccine pair): Fisher's exact test on the 2x2
+    table; chi-square of independence as a large-n equivalent when all
+    expected cell counts >= 5.
+  - Multinomial / distribution (modal ordering, first-event distribution,
+    "same across cohorts"): chi-square goodness-of-fit (vs uniform) or
+    chi-square test of homogeneity. Guard: expected counts >= 5 per cell;
+    merge rare categories or use a permutation/Monte-Carlo chi-square when
+    cells are too sparse.
+
+- Significance verdict: "significant" if p < 0.05 AND the minimum-n threshold
+  is met; otherwise `insufficient`. Alpha = 0.05 fixed throughout.
+
 - Interval methods: Wilson for single proportions, Wilson-Newcombe for
   differences, bootstrap for sequence and multi-vaccine groups, Sison-Glaz
   (or equivalent) for multinomial groups.
 - Effect size: Cohen's h or odds ratio for proportion differences (exact
   choice still open).
+
+- Note on interpretation: for single-cohort groups, most real symptom pairs
+  will test as significant (clinical events have genuine temporal structure),
+  so the significance verdict is a weaker discriminator than the direction or
+  proportion for those groups. The multi-vaccine "do they differ" tests are
+  the more diagnostic significance verdicts, since a true difference vs noise
+  is genuinely uncertain. Weight/treat multi-vaccine SIG as the harder track.
+
 - t-test is NOT used: outcomes are categorical (yes/no per report), so
   binomial / Fisher / chi-square and their CIs are the correct tools. A
   rank-based test (Wilcoxon rank-sum on rank-distance) may be added as a
@@ -79,8 +107,8 @@ decision changes, append a new entry that supersedes it.
   independent); documented as a known limitation.
 - Confidence level: 95% throughout (alpha = 0.05 convention).
 - Report-level groups are deterministic per report (single observation) and
-  do not carry an interval, though they may be annotated with their cohort's
-  confidence context.
+  do not carry an interval or p-value, though they may be annotated with their
+  cohort's confidence context.
 
 ---
 
