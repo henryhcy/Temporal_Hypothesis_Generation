@@ -1,0 +1,584 @@
+{
+  "A1_viable_core_counts": {
+    "per_group": {
+      "P-R1": {
+        "viable_cores": 3166,
+        "total_enumerated": 3166
+      },
+      "P-R2": {
+        "viable_cores": 3166,
+        "total_enumerated": 3166
+      },
+      "P-V1": {
+        "viable_cores": 575,
+        "total_enumerated": 959
+      },
+      "P-V2": {
+        "viable_cores": 575,
+        "total_enumerated": 959
+      },
+      "P-V3": {
+        "viable_cores": 575,
+        "total_enumerated": 959
+      },
+      "P-M1": {
+        "viable_cores": 322,
+        "total_enumerated": 579
+      },
+      "P-M2": {
+        "viable_cores": 322,
+        "total_enumerated": 579
+      },
+      "C-R1": {
+        "viable_cores": 3166,
+        "total_enumerated": 3166
+      },
+      "C-V1": {
+        "viable_cores": 959,
+        "total_enumerated": 959
+      },
+      "C-V2": {
+        "viable_cores": 959,
+        "total_enumerated": 959
+      },
+      "C-V3": {
+        "viable_cores": 959,
+        "total_enumerated": 959
+      },
+      "C-M1": {
+        "viable_cores": 579,
+        "total_enumerated": 579
+      },
+      "C-M2": {
+        "viable_cores": 579,
+        "total_enumerated": 579
+      },
+      "S-R1": {
+        "viable_cores": 3166,
+        "total_enumerated": 3166
+      },
+      "S-V1": {
+        "viable_cores": 756,
+        "total_enumerated": 756
+      },
+      "S-V2": {
+        "viable_cores": 756,
+        "total_enumerated": 756
+      },
+      "S-V3": {
+        "viable_cores": 756,
+        "total_enumerated": 756
+      },
+      "S-V4": {
+        "viable_cores": 756,
+        "total_enumerated": 756
+      },
+      "S-M1": {
+        "viable_cores": 387,
+        "total_enumerated": 387
+      },
+      "S-M2": {
+        "viable_cores": 387,
+        "total_enumerated": 387
+      },
+      "S-M3": {
+        "viable_cores": 359,
+        "total_enumerated": 387
+      },
+      "F-R1": {
+        "viable_cores": 3166,
+        "total_enumerated": 3166
+      },
+      "F-R2": {
+        "viable_cores": 3166,
+        "total_enumerated": 3166
+      },
+      "F-R3": {
+        "viable_cores": 3166,
+        "total_enumerated": 3166
+      },
+      "F-V1": {
+        "viable_cores": 756,
+        "total_enumerated": 756
+      },
+      "F-V2": {
+        "viable_cores": 756,
+        "total_enumerated": 756
+      },
+      "F-V3": {
+        "viable_cores": 756,
+        "total_enumerated": 756
+      },
+      "F-M1": {
+        "viable_cores": 387,
+        "total_enumerated": 387
+      },
+      "F-M2": {
+        "viable_cores": 387,
+        "total_enumerated": 387
+      },
+      "F-M3": {
+        "viable_cores": 387,
+        "total_enumerated": 387
+      }
+    },
+    "viable_target": 50,
+    "under_target_groups": [],
+    "starved_groups": []
+  },
+  "A2_cohort_size_distribution": {
+    "pairwise": {
+      "summary": {
+        "count": 6404,
+        "min": 10.0,
+        "p25": 12.0,
+        "median": 16.0,
+        "p75": 25.0,
+        "max": 213.0
+      },
+      "histogram": {
+        "<= 10": 742,
+        "10-25": 4082,
+        "25-50": 1136,
+        "50-100": 326,
+        "100-250": 118,
+        "> 250": 0
+      }
+    },
+    "sequence": {
+      "summary": {
+        "count": 4157,
+        "min": 10.0,
+        "p25": 11.0,
+        "median": 14.0,
+        "p75": 19.0,
+        "max": 116.0
+      },
+      "histogram": {
+        "<= 10": 607,
+        "10-25": 2950,
+        "25-50": 460,
+        "50-100": 136,
+        "100-250": 4,
+        "> 250": 0
+      }
+    },
+    "first_last": {
+      "summary": {
+        "count": 3429,
+        "min": 10.0,
+        "p25": 11.0,
+        "median": 14.0,
+        "p75": 19.0,
+        "max": 116.0
+      },
+      "histogram": {
+        "<= 10": 492,
+        "10-25": 2442,
+        "25-50": 381,
+        "50-100": 111,
+        "100-250": 3,
+        "> 250": 0
+      }
+    }
+  },
+  "A3_natural_verdict_distribution": {
+    "per_group": {
+      "P-R1": {
+        "supported": 1196,
+        "refuted": 1970,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.3778,
+          "refuted": 0.6222,
+          "insufficient": 0.0
+        }
+      },
+      "P-R2": {
+        "supported": 1196,
+        "refuted": 0,
+        "insufficient": 1970,
+        "fractions": {
+          "supported": 0.3778,
+          "refuted": 0.0,
+          "insufficient": 0.6222
+        }
+      },
+      "P-V1": {
+        "supported": 260,
+        "refuted": 286,
+        "insufficient": 413,
+        "fractions": {
+          "supported": 0.2711,
+          "refuted": 0.2982,
+          "insufficient": 0.4307
+        }
+      },
+      "P-V2": {
+        "supported": 575,
+        "refuted": 0,
+        "insufficient": 384,
+        "fractions": {
+          "supported": 0.5996,
+          "refuted": 0.0,
+          "insufficient": 0.4004
+        }
+      },
+      "P-V3": {
+        "supported": 260,
+        "refuted": 286,
+        "insufficient": 413,
+        "fractions": {
+          "supported": 0.2711,
+          "refuted": 0.2982,
+          "insufficient": 0.4307
+        }
+      },
+      "P-M1": {
+        "supported": 180,
+        "refuted": 142,
+        "insufficient": 257,
+        "fractions": {
+          "supported": 0.3109,
+          "refuted": 0.2453,
+          "insufficient": 0.4439
+        }
+      },
+      "P-M2": {
+        "supported": 155,
+        "refuted": 162,
+        "insufficient": 262,
+        "fractions": {
+          "supported": 0.2677,
+          "refuted": 0.2798,
+          "insufficient": 0.4525
+        }
+      },
+      "C-R1": {
+        "supported": 1970,
+        "refuted": 1196,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.6222,
+          "refuted": 0.3778,
+          "insufficient": 0.0
+        }
+      },
+      "C-V1": {
+        "supported": 205,
+        "refuted": 716,
+        "insufficient": 38,
+        "fractions": {
+          "supported": 0.2138,
+          "refuted": 0.7466,
+          "insufficient": 0.0396
+        }
+      },
+      "C-V2": {
+        "supported": 959,
+        "refuted": 0,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 1.0,
+          "refuted": 0.0,
+          "insufficient": 0.0
+        }
+      },
+      "C-V3": {
+        "supported": 205,
+        "refuted": 716,
+        "insufficient": 38,
+        "fractions": {
+          "supported": 0.2138,
+          "refuted": 0.7466,
+          "insufficient": 0.0396
+        }
+      },
+      "C-M1": {
+        "supported": 289,
+        "refuted": 290,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.4991,
+          "refuted": 0.5009,
+          "insufficient": 0.0
+        }
+      },
+      "C-M2": {
+        "supported": 325,
+        "refuted": 248,
+        "insufficient": 6,
+        "fractions": {
+          "supported": 0.5613,
+          "refuted": 0.4283,
+          "insufficient": 0.0104
+        }
+      },
+      "S-R1": {
+        "supported": 489,
+        "refuted": 2677,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.1545,
+          "refuted": 0.8455,
+          "insufficient": 0.0
+        }
+      },
+      "S-V1": {
+        "supported": 0,
+        "refuted": 756,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.0,
+          "refuted": 1.0,
+          "insufficient": 0.0
+        }
+      },
+      "S-V2": {
+        "supported": 756,
+        "refuted": 0,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 1.0,
+          "refuted": 0.0,
+          "insufficient": 0.0
+        }
+      },
+      "S-V3": {
+        "supported": 458,
+        "refuted": 0,
+        "insufficient": 298,
+        "fractions": {
+          "supported": 0.6058,
+          "refuted": 0.0,
+          "insufficient": 0.3942
+        }
+      },
+      "S-V4": {
+        "supported": 0,
+        "refuted": 755,
+        "insufficient": 1,
+        "fractions": {
+          "supported": 0.0,
+          "refuted": 0.9987,
+          "insufficient": 0.0013
+        }
+      },
+      "S-M1": {
+        "supported": 34,
+        "refuted": 353,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.0879,
+          "refuted": 0.9121,
+          "insufficient": 0.0
+        }
+      },
+      "S-M2": {
+        "supported": 99,
+        "refuted": 156,
+        "insufficient": 132,
+        "fractions": {
+          "supported": 0.2558,
+          "refuted": 0.4031,
+          "insufficient": 0.3411
+        }
+      },
+      "S-M3": {
+        "supported": 104,
+        "refuted": 255,
+        "insufficient": 28,
+        "fractions": {
+          "supported": 0.2687,
+          "refuted": 0.6589,
+          "insufficient": 0.0724
+        }
+      },
+      "F-R1": {
+        "supported": 1196,
+        "refuted": 0,
+        "insufficient": 1970,
+        "fractions": {
+          "supported": 0.3778,
+          "refuted": 0.0,
+          "insufficient": 0.6222
+        }
+      },
+      "F-R2": {
+        "supported": 1299,
+        "refuted": 0,
+        "insufficient": 1867,
+        "fractions": {
+          "supported": 0.4103,
+          "refuted": 0.0,
+          "insufficient": 0.5897
+        }
+      },
+      "F-R3": {
+        "supported": 1196,
+        "refuted": 0,
+        "insufficient": 1970,
+        "fractions": {
+          "supported": 0.3778,
+          "refuted": 0.0,
+          "insufficient": 0.6222
+        }
+      },
+      "F-V1": {
+        "supported": 632,
+        "refuted": 0,
+        "insufficient": 124,
+        "fractions": {
+          "supported": 0.836,
+          "refuted": 0.0,
+          "insufficient": 0.164
+        }
+      },
+      "F-V2": {
+        "supported": 649,
+        "refuted": 0,
+        "insufficient": 107,
+        "fractions": {
+          "supported": 0.8585,
+          "refuted": 0.0,
+          "insufficient": 0.1415
+        }
+      },
+      "F-V3": {
+        "supported": 40,
+        "refuted": 716,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.0529,
+          "refuted": 0.9471,
+          "insufficient": 0.0
+        }
+      },
+      "F-M1": {
+        "supported": 231,
+        "refuted": 156,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.5969,
+          "refuted": 0.4031,
+          "insufficient": 0.0
+        }
+      },
+      "F-M2": {
+        "supported": 156,
+        "refuted": 231,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.4031,
+          "refuted": 0.5969,
+          "insufficient": 0.0
+        }
+      },
+      "F-M3": {
+        "supported": 220,
+        "refuted": 154,
+        "insufficient": 13,
+        "fractions": {
+          "supported": 0.5685,
+          "refuted": 0.3979,
+          "insufficient": 0.0336
+        }
+      }
+    },
+    "per_family": {
+      "pairwise": {
+        "supported": 7775,
+        "refuted": 6012,
+        "insufficient": 3781,
+        "fractions": {
+          "supported": 0.4426,
+          "refuted": 0.3422,
+          "insufficient": 0.2152
+        }
+      },
+      "sequence": {
+        "supported": 1940,
+        "refuted": 4952,
+        "insufficient": 459,
+        "fractions": {
+          "supported": 0.2639,
+          "refuted": 0.6736,
+          "insufficient": 0.0624
+        }
+      },
+      "first_last": {
+        "supported": 5619,
+        "refuted": 1257,
+        "insufficient": 6051,
+        "fractions": {
+          "supported": 0.4347,
+          "refuted": 0.0972,
+          "insufficient": 0.4681
+        }
+      }
+    }
+  },
+  "A4_ci_width_distribution": {
+    "summary": {
+      "count": 9894,
+      "min": 0.0542,
+      "p25": 0.2775,
+      "median": 0.3699,
+      "p75": 0.4434,
+      "max": 0.5268
+    },
+    "histogram": {
+      "<= 0.15": 264,
+      "0.15-0.3": 2693,
+      "0.3-0.45": 4863,
+      "0.45-0.6": 2074,
+      "> 0.6": 0
+    },
+    "fraction_low_confidence_gt_0.30": 0.7011,
+    "note": "provisional low-confidence cut = CI width > 0.30; A4 calibrates it"
+  },
+  "A5_multi_vaccine_overlap": {
+    "per_pair": {
+      "Pfizer+Moderna": {
+        "both_clear": 1160,
+        "one_thin": 160,
+        "total": 1320,
+        "fraction_insufficient": 0.1212,
+        "enough_for_reduced_budget": true
+      },
+      "Pfizer+Janssen": {
+        "both_clear": 1452,
+        "one_thin": 188,
+        "total": 1640,
+        "fraction_insufficient": 0.1146,
+        "enough_for_reduced_budget": true
+      },
+      "Moderna+Janssen": {
+        "both_clear": 1484,
+        "one_thin": 194,
+        "total": 1678,
+        "fraction_insufficient": 0.1156,
+        "enough_for_reduced_budget": true
+      }
+    },
+    "janssen_pairs_flagged": []
+  },
+  "A6_representation_diagnostics": {
+    "first_last_tie_rate": {
+      "summary": {
+        "count": 2268,
+        "min": 0.0,
+        "p25": 0.3846,
+        "median": 0.5,
+        "p75": 0.6283,
+        "max": 1.0
+      },
+      "note": "per-core fraction of reports with >=2 candidates tied at the earliest/latest level (first/last vaccine groups)"
+    },
+    "first_level_co_occurrence_rate": 0.6226,
+    "duplicate_term_across_levels_count": 7,
+    "cycle_check": "N/A",
+    "disconnected_component_rate": "N/A",
+    "na_rationale": "Annotations are stored as leveled orders (a single acyclic chain of co-exist clusters); raw pairwise relations are not retained, so cycles and disconnected components are not recoverable. The duplicate-term-across-levels count is the computable integrity check."
+  }
+}

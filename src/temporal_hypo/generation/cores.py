@@ -47,6 +47,19 @@ K_PAIR = 25
 K_TRIPLE = 16
 MAX_REPORT_CORES = 300
 
+# Locked viability threshold (mirrors corpus._MIN_N).
+_MIN_N = 10
+
+# Modes whose cores are event TRIPLES rather than pairs.
+_VACCINE_TRIPLE_MODES = {
+    "seq_bool", "prop_sequence", "modal_choice", "consistency_bool",
+    "first_choice", "last_choice", "first_bool",
+}
+_MULTI_TRIPLE_MODES = {
+    "multi_differ_sequence", "multi_dir_sequence", "multi_same_modal_order",
+    "multi_same_first", "multi_differ_first", "multi_dir_first",
+}
+
 # Per-group statistic + verdict mode. The single source of truth mapping each
 # of the 30 groups to its gold computation.
 MODE_BY_GROUP: dict[str, str] = {
@@ -204,11 +217,7 @@ def _new_core(group: Group, mode: str, **kw) -> ViableCore:
 
 def _enum_vaccine(index: CorpusIndex, group: Group, mode: str) -> list[ViableCore]:
     cores: list[ViableCore] = []
-    triple_modes = {
-        "seq_bool", "prop_sequence", "modal_choice", "consistency_bool",
-        "first_choice", "last_choice", "first_bool",
-    }
-    is_triple = mode in triple_modes
+    is_triple = mode in _VACCINE_TRIPLE_MODES
     for vax in VACCINES:
         cohort = index.cohort(vax)
         k = K_TRIPLE if is_triple else K_PAIR
@@ -308,10 +317,7 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
 
 def _enum_multi(index: CorpusIndex, group: Group, mode: str) -> list[ViableCore]:
     cores: list[ViableCore] = []
-    triple = mode in (
-        "multi_differ_sequence", "multi_dir_sequence", "multi_same_modal_order",
-        "multi_same_first", "multi_differ_first", "multi_dir_first",
-    )
+    triple = mode in _MULTI_TRIPLE_MODES
     for v1, v2 in VACCINE_PAIRS:
         c1, c2 = index.cohort(v1), index.cohort(v2)
         k = K_TRIPLE if triple else K_PAIR
@@ -490,6 +496,103 @@ def _build_report_core(index, group, mode, vid, tmap, combo) -> ViableCore | Non
                                 "unique": unique, "idxs": idxs}, **base)
 
     raise ValueError(f"unhandled report mode: {mode}")
+
+
+# ---------------------------------------------------------------------------
+# whole-population enumeration (no top-K cap): every viable core
+# ---------------------------------------------------------------------------
+
+def _cooccurring_pairs(index: CorpusIndex, cohort: list[int]) -> list[tuple[str, str]]:
+    """All ordered (a<b name) term pairs co-occurring in >= _MIN_N cohort reports.
+
+    Co-occurrence in >= _MIN_N reports is necessary for any pair core to be
+    viable (the ordered/both-present denominators are subsets of it), so this is
+    the exact candidate set -- enumerated in one cohort pass, not by testing all
+    O(T^2) term combinations.
+    """
+    cnt: dict[tuple[str, str], int] = {}
+    for vid in cohort:
+        terms = sorted(index.report_terms[vid])
+        for pair in combinations(terms, 2):
+            cnt[pair] = cnt.get(pair, 0) + 1
+    return sorted(p for p, c in cnt.items() if c >= _MIN_N)
+
+
+def _cooccurring_triples(
+    index: CorpusIndex, cohort: list[int]
+) -> list[tuple[str, str, str]]:
+    """All term triples present together in >= _MIN_N cohort reports."""
+    cnt: dict[tuple[str, str, str], int] = {}
+    for vid in cohort:
+        terms = sorted(index.report_terms[vid])
+        if len(terms) < 3:
+            continue
+        for combo in combinations(terms, 3):
+            cnt[combo] = cnt.get(combo, 0) + 1
+    return sorted(c for c, k in cnt.items() if k >= _MIN_N)
+
+
+def enumerate_group_full(index: CorpusIndex, group: Group) -> list[ViableCore]:
+    """Whole-population enumeration for a group: every viable core, no top-K cap.
+
+    Mirrors ``enumerate_group`` but draws candidates from the full co-occurrence
+    set (pairs/triples clearing _MIN_N) instead of the top-K most-frequent terms,
+    and lifts the report-level core cap. Used by the full diagnostic run.
+    """
+    mode = MODE_BY_GROUP[group.id]
+    if group.level == "vaccine":
+        return _enum_vaccine_full(index, group, mode)
+    if group.level == "multi":
+        return _enum_multi_full(index, group, mode)
+    return _enum_report_full(index, group, mode)
+
+
+def _enum_vaccine_full(index, group, mode) -> list[ViableCore]:
+    cores: list[ViableCore] = []
+    is_triple = mode in _VACCINE_TRIPLE_MODES
+    for vax in VACCINES:
+        cohort = index.cohort(vax)
+        combos = (_cooccurring_triples(index, cohort) if is_triple
+                  else _cooccurring_pairs(index, cohort))
+        for combo in combos:
+            core = _build_vaccine_core(index, group, mode, vax, cohort, combo)
+            if core is not None:
+                cores.append(core)
+    return cores
+
+
+def _enum_multi_full(index, group, mode) -> list[ViableCore]:
+    cores: list[ViableCore] = []
+    triple = mode in _MULTI_TRIPLE_MODES
+    for v1, v2 in VACCINE_PAIRS:
+        c1, c2 = index.cohort(v1), index.cohort(v2)
+        if triple:
+            cand = set(_cooccurring_triples(index, c1)) & set(_cooccurring_triples(index, c2))
+        else:
+            cand = set(_cooccurring_pairs(index, c1)) & set(_cooccurring_pairs(index, c2))
+        for combo in sorted(cand):
+            core = _build_multi_core(index, group, mode, (v1, v2), c1, c2, combo)
+            if core is not None:
+                cores.append(core)
+    return cores
+
+
+def _enum_report_full(index, group, mode) -> list[ViableCore]:
+    # One core per report (earliest two/three events), no MAX_REPORT_CORES cap.
+    cores: list[ViableCore] = []
+    triple = mode in ("rep_seq_bool", "rep_first_choice", "rep_last_choice",
+                       "rep_first_bool")
+    need = 3 if triple else 2
+    for vid in sorted(index.report_terms):
+        tmap = index.report_terms[vid]
+        present = sorted(tmap, key=lambda t: (tmap[t], t))
+        if len(present) < need:
+            continue
+        core = _build_report_core(index, group, mode, vid, tmap,
+                                  tuple(present[:need]))
+        if core is not None:
+            cores.append(core)
+    return cores
 
 
 # ---------------------------------------------------------------------------

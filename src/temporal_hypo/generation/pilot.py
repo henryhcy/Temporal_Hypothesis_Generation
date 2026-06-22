@@ -14,7 +14,12 @@ from pathlib import Path
 from temporal_hypo.generation import cores as cores_mod
 from temporal_hypo.generation import instances as inst_mod
 from temporal_hypo.generation import report_a, writers
-from temporal_hypo.generation.cores import enumerate_group, feasible_polarities, realize
+from temporal_hypo.generation.cores import (
+    enumerate_group,
+    enumerate_group_full,
+    feasible_polarities,
+    realize,
+)
 from temporal_hypo.generation.corpus import CorpusIndex
 from temporal_hypo.generation.sampling import balance_group
 from temporal_hypo.generation.templates import load_groups, render
@@ -58,6 +63,14 @@ VALIDATION_GROUPS = [
     "F-V1", "F-V2", "F-V3", "P-M1", "P-M2", "C-M1", "C-M2", "S-M1",
     "S-M2", "S-M3", "F-M1", "F-M3", "P-R1", "C-R1", "S-R1", "F-R1",
 ]
+
+
+def _natural_verdict_counts(chosen) -> dict:
+    """Summarise the natural-verdict distribution of a full-mode group."""
+    counts = {"supported": 0, "refuted": 0, "insufficient": 0}
+    for _core, verdict, _band in chosen:
+        counts[verdict] = counts.get(verdict, 0) + 1
+    return {"counts": counts, "n_cores": len(chosen)}
 
 
 def _pick_polarity(core) -> str:
@@ -115,14 +128,18 @@ def _validation_entry(core, group, index) -> dict:
 
 
 def run_pilot(
-    db_path: Path, out_dir: Path, *, seed: int = 0, t: int = 100
+    db_path: Path, out_dir: Path, *, seed: int = 0, t: int = 100,
+    full: bool = False
 ) -> dict:
     conn = sqlite3.connect(str(db_path))
     index = CorpusIndex.load(conn)
     groups = load_groups()
 
     # Enumerate the viable-core population once (canonical group order).
-    cores_by_group = {gid: enumerate_group(index, g) for gid, g in groups.items()}
+    # full=True draws the whole viable population (no top-K cap); otherwise the
+    # provisional top-K breadth used for the balanced pilot.
+    enum = enumerate_group_full if full else enumerate_group
+    cores_by_group = {gid: enum(index, g) for gid, g in groups.items()}
 
     # --- Part A ----------------------------------------------------------
     report = report_a.build_report(index, conn, groups, cores_by_group)
@@ -133,22 +150,31 @@ def run_pilot(
     )
 
     # --- Part B ----------------------------------------------------------
+    out_name = "instances.jsonl" if full else "pilot_instances.jsonl"
     all_records: list[dict] = []
     b_summary: dict[str, dict] = {}
     for gid, group in groups.items():
-        sel = balance_group(cores_by_group[gid], gid, t=t, seed=seed)
-        b_summary[gid] = {
-            "counts": sel.counts,
-            "targets": sel.targets,
-            "under_target": sel.under_target,
-            "pool_sizes": sel.pool_sizes,
-        }
-        for seq, (core, polarity, band) in enumerate(sel.chosen):
+        if full:
+            # whole-population: emit every viable core once at its natural
+            # verdict -- no balancing, no refuted-by-flip, no insufficient cap.
+            chosen = [(c, c.natural_verdict, None)
+                      for c in cores_by_group[gid] if c.computable]
+            b_summary[gid] = _natural_verdict_counts(chosen)
+        else:
+            sel = balance_group(cores_by_group[gid], gid, t=t, seed=seed)
+            chosen = sel.chosen
+            b_summary[gid] = {
+                "counts": sel.counts,
+                "targets": sel.targets,
+                "under_target": sel.under_target,
+                "pool_sizes": sel.pool_sizes,
+            }
+        for seq, (core, polarity, band) in enumerate(chosen):
             facts = realize(core, polarity)
             all_records.extend(
                 inst_mod.build_records(facts, group, seq=seq, band=band)
             )
-    writers.write_jsonl(all_records, out_dir / "pilot_instances.jsonl")
+    writers.write_jsonl(all_records, out_dir / out_name)
 
     # --- Part C ----------------------------------------------------------
     samples = []

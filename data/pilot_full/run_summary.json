@@ -1,0 +1,248 @@
+{
+  "n_instances": 289216,
+  "n_groups": 30,
+  "part_b": {
+    "P-R1": {
+      "counts": {
+        "supported": 1196,
+        "refuted": 1970,
+        "insufficient": 0
+      },
+      "n_cores": 3166
+    },
+    "P-R2": {
+      "counts": {
+        "supported": 1196,
+        "refuted": 0,
+        "insufficient": 1970
+      },
+      "n_cores": 3166
+    },
+    "P-V1": {
+      "counts": {
+        "supported": 260,
+        "refuted": 286,
+        "insufficient": 29
+      },
+      "n_cores": 575
+    },
+    "P-V2": {
+      "counts": {
+        "supported": 575,
+        "refuted": 0,
+        "insufficient": 0
+      },
+      "n_cores": 575
+    },
+    "P-V3": {
+      "counts": {
+        "supported": 260,
+        "refuted": 286,
+        "insufficient": 29
+      },
+      "n_cores": 575
+    },
+    "P-M1": {
+      "counts": {
+        "supported": 180,
+        "refuted": 142,
+        "insufficient": 0
+      },
+      "n_cores": 322
+    },
+    "P-M2": {
+      "counts": {
+        "supported": 155,
+        "refuted": 162,
+        "insufficient": 5
+      },
+      "n_cores": 322
+    },
+    "C-R1": {
+      "counts": {
+        "supported": 1970,
+        "refuted": 1196,
+        "insufficient": 0
+      },
+      "n_cores": 3166
+    },
+    "C-V1": {
+      "counts": {
+        "supported": 205,
+        "refuted": 716,
+        "insufficient": 38
+      },
+      "n_cores": 959
+    },
+    "C-V2": {
+      "counts": {
+        "supported": 959,
+        "refuted": 0,
+        "insufficient": 0
+      },
+      "n_cores": 959
+    },
+    "C-V3": {
+      "counts": {
+        "supported": 205,
+        "refuted": 716,
+        "insufficient": 38
+      },
+      "n_cores": 959
+    },
+    "C-M1": {
+      "counts": {
+        "supported": 289,
+        "refuted": 290,
+        "insufficient": 0
+      },
+      "n_cores": 579
+    },
+    "C-M2": {
+      "counts": {
+        "supported": 325,
+        "refuted": 248,
+        "insufficient": 6
+      },
+      "n_cores": 579
+    },
+    "S-R1": {
+      "counts": {
+        "supported": 489,
+        "refuted": 2677,
+        "insufficient": 0
+      },
+      "n_cores": 3166
+    },
+    "S-V1": {
+      "counts": {
+        "supported": 0,
+        "refuted": 756,
+        "insufficient": 0
+      },
+      "n_cores": 756
+    },
+    "S-V2": {
+      "counts": {
+        "supported": 756,
+        "refuted": 0,
+        "insufficient": 0
+      },
+      "n_cores": 756
+    },
+    "S-V3": {
+      "counts": {
+        "supported": 458,
+        "refuted": 0,
+        "insufficient": 298
+      },
+      "n_cores": 756
+    },
+    "S-V4": {
+      "counts": {
+        "supported": 0,
+        "refuted": 755,
+        "insufficient": 1
+      },
+      "n_cores": 756
+    },
+    "S-M1": {
+      "counts": {
+        "supported": 34,
+        "refuted": 353,
+        "insufficient": 0
+      },
+      "n_cores": 387
+    },
+    "S-M2": {
+      "counts": {
+        "supported": 99,
+        "refuted": 156,
+        "insufficient": 132
+      },
+      "n_cores": 387
+    },
+    "S-M3": {
+      "counts": {
+        "supported": 104,
+        "refuted": 255,
+        "insufficient": 0
+      },
+      "n_cores": 359
+    },
+    "F-R1": {
+      "counts": {
+        "supported": 1196,
+        "refuted": 0,
+        "insufficient": 1970
+      },
+      "n_cores": 3166
+    },
+    "F-R2": {
+      "counts": {
+        "supported": 1299,
+        "refuted": 0,
+        "insufficient": 1867
+      },
+      "n_cores": 3166
+    },
+    "F-R3": {
+      "counts": {
+        "supported": 1196,
+        "refuted": 0,
+        "insufficient": 1970
+      },
+      "n_cores": 3166
+    },
+    "F-V1": {
+      "counts": {
+        "supported": 632,
+        "refuted": 0,
+        "insufficient": 124
+      },
+      "n_cores": 756
+    },
+    "F-V2": {
+      "counts": {
+        "supported": 649,
+        "refuted": 0,
+        "insufficient": 107
+      },
+      "n_cores": 756
+    },
+    "F-V3": {
+      "counts": {
+        "supported": 40,
+        "refuted": 716,
+        "insufficient": 0
+      },
+      "n_cores": 756
+    },
+    "F-M1": {
+      "counts": {
+        "supported": 231,
+        "refuted": 156,
+        "insufficient": 0
+      },
+      "n_cores": 387
+    },
+    "F-M2": {
+      "counts": {
+        "supported": 156,
+        "refuted": 231,
+        "insufficient": 0
+      },
+      "n_cores": 387
+    },
+    "F-M3": {
+      "counts": {
+        "supported": 220,
+        "refuted": 154,
+        "insufficient": 13
+      },
+      "n_cores": 387
+    }
+  },
+  "validation_entries": 24,
+  "out_dir": "/Users/user/Downloads/Temporal_Hypothesis_Generation/data/pilot_full"
+}

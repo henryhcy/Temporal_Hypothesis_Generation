@@ -18,6 +18,11 @@ data/medtempo.db
 # Pilot artifacts (regenerable via scripts/run_pilot.py; not committed)
 data/pilot/
 
+# Whole-population diagnostic: the ~270MB instances file is regenerable
+# (scripts/run_pilot.py --full); keep the small reports under data/pilot_full/.
+data/pilot_full/instances.jsonl
+data/pilot_full_run.log
+
 # Temporary exploration and investigation scripts
 inspect*.py
 investigate_*.py
