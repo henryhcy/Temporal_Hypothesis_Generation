@@ -166,3 +166,105 @@ provisional.
   computable (non-insufficient) cores to fill even a reduced budget, drop that
   pair from the affected multi-vaccine groups in the pilot and note it as a
   limitation.
+
+---
+
+## Significance tests: final design (see 05_significance_tests.md)
+
+### Two test representations per group
+- CATEGORICAL test on the outcome label (binomial / multinomial counts).
+- POSITION-BASED test on the event level indices (rank methods).
+- Complementary, can disagree at the margin (diagnostic). Co-occurs has no
+  position analog and is categorical-only.
+
+### Categorical tests (exact primary, chi-square as large-n approximation)
+- Binomial exact (1 cohort, 2 categories), null p0 = 1/2, 1/6, or 1/3.
+- Fisher's exact (2 cohorts, 2 categories, 2x2).
+- Exact multinomial goodness-of-fit (1 cohort, k categories); chi-square GOF
+  is the large-n approximation.
+- Fisher-Freeman-Halton exact (2 cohorts, k categories, 2xk); chi-square
+  homogeneity is the large-n approximation.
+
+### Position-based tests (non-parametric, no mean/variance)
+- Wilcoxon signed-rank (1 cohort, paired events).
+- Mann-Whitney U (2 cohorts).
+- Friedman (1 cohort, 3 events ranked within report).
+- Kendall's W (concordance, consistency questions).
+- Kruskal-Wallis (3+ cohorts; reserved for future three-vaccine groups).
+
+### Minimum-n constraint on every test
+- Family floor: 20 per cohort for pairwise/co-occurs, 30 per cohort for
+  sequence and first/last.
+- Raised by the expected-count >= 5 guard for k-category distribution tests
+  (1xk needs n >= 5k; 2xk needs each cohort large enough that every cell
+  expects 5). The 2x6 sequence homogeneity group (S-M3) often fails and may be
+  deferred.
+- Below threshold the verdict is `insufficient`. Numbers are provisional;
+  recalibrated from the pilot.
+
+### Model runs the test
+- The same closed-form tests run twice: offline for the gold label, and by the
+  model at inference using a code-execution tool. Both use the same test and
+  the same min-n helper, so they match by construction; discrepancy reflects
+  the model's count extraction, which is the capability under test.
+
+### No permutation; min-n gating instead
+- Permutation/Monte-Carlo is excluded everywhere: it is not a closed-form step
+  the model can run, and the gold label must use whatever the model runs.
+  Sparse cases are gated to `insufficient` by the shared min-n helper.
+
+### Shared min-n helper
+- Standalone helper called by BOTH dataset creation and model evaluation.
+  Gate-only (testable yes/no + reason, does not pick the test). Optional
+  test-type argument enables the cell-adequacy check. Build the gold-label
+  generator to call it, not inline the thresholds.
+
+### Verdict polarity
+- Most groups: significant = asserted effect is real.
+- S-M3 and F-M1 ask "is it the SAME": significant = differs = "no" (inverted).
+- F-M2 asks "do they differ": natural polarity. Per-group polarity flag needed.
+
+### Evaluation modes (deferred to eval phase; see open_questions.md)
+- Test-chosen-by-model (agentic, headline): grade on the verdict, allow valid
+  alternative tests.
+- Test-given-in-prompt (isolation): grade execution given the specified test.
+
+---
+
+## Sequence family: strict order over an orderable denominator (2026-07-01)
+
+Context: strict 3-event orderings are rare in MedTempo (a specific triple is
+fully orderable in only 15–32% of its reports; modal ordering share <=0.5), so
+the sequence groups starved. Strict ordering is KEPT (co-occurrence must not
+count as an order); the fix is to the denominator and floor, not the semantics.
+
+### Strict ordering already captures gapped subsequences
+- `sequence_holds` compares only the three events' levels, so `a<b<d<e<c`
+  already yields `a<b<c` (intervening events ignored). No weak/co-occurrence
+  reading is needed or wanted. A weak-order experiment was tried and REVERTED.
+
+### Orderable denominator (amends the earlier rule 3)
+- Sequence gold (`sequence_fraction`, `ordering_distribution`) now conditions on
+  the ORDERABLE denominator: only reports where the three events occur at
+  DISTINCT levels count; co-occurrence reports are excluded (not counted as
+  evidence for or against the order). This makes "majority ordering" achievable
+  and is consistent with pairwise-precedes, which already excludes co-exist from
+  its denominator (rule 1). Supersedes the earlier "denominator = reports
+  containing all three events" for sequence.
+
+### Sequence viability floor lowered to n>=5 (provisional)
+- `SEQ_MIN_N = 5` on the orderable denominator (min_n `sequence` floor = 5;
+  first/last stays 30). Small n is acceptable because we control benchmark size
+  and only need >=5–10 supported ("true") examples per template. Verified
+  supported-capable cores per sequence template: S-V1 62, S-V2 275, S-V3 192,
+  S-V4 62, S-M1 44, S-M2 75, S-M3 25, S-R1 489. Number is provisional/tunable.
+
+### Deferred: wording/scope review
+- Do NOT reword templates yet. The per-template true-case distribution is
+  emitted by `scripts/make_examples.py` (examples.md). Review it before any
+  wording change. Note: S-V4 (consistency) is viable under the orderable
+  denominator (62 true cases) — likely no reword needed; S-M3 (25) is the
+  poorest sequence template.
+- Known nuance to revisit: `seq_bool` computes on the canonical ordering while
+  the supported instance names the modal ordering (example shows k on the
+  canonical) -- a display/semantics coherence item for the wording review.

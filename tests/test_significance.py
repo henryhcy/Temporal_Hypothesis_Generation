@@ -59,13 +59,34 @@ def test_chi2_gof_uniform_and_skew():
     assert r2["method"] == "asymptotic" and r2["p"] < 0.001
 
 
-def test_chi2_gof_monte_carlo_when_sparse():
-    # tiny expected counts (8/6 ~ 1.33 < 5) trigger the seeded MC fallback
-    r = S.chi2_gof([6, 1, 1, 0, 0, 0], seed=0)
-    assert r["method"] == "monte_carlo"
-    assert 0.0 < r["p"] <= 1.0
-    # determinism: same seed -> same p
-    assert r["p"] == S.chi2_gof([6, 1, 1, 0, 0, 0], seed=0)["p"]
+def test_multinomial_gof_exact():
+    # uniform observed -> p = 1
+    assert approx(S.multinomial_gof_exact([10, 10, 10])["p"], 1.0)
+    # a known small case; exact p is deterministic (no Monte-Carlo)
+    r = S.multinomial_gof_exact([8, 1, 1])
+    assert r["method"] == "exact" and 0.0 < r["p"] < 0.05
+    assert r["p"] == S.multinomial_gof_exact([8, 1, 1])["p"]  # deterministic
+
+
+def test_gof_chooser_exact_when_sparse_else_chi2():
+    assert S.multinomial_gof([8, 1, 1])["method"] == "exact"        # expected 3.3 < 5
+    assert S.multinomial_gof([30, 30, 30])["method"] == "asymptotic"  # expected 30
+
+
+def test_fisher_freeman_halton():
+    # 2x2 FFH must equal the 2x2 Fisher exact test
+    ffh = S.fisher_freeman_halton([[8, 2], [1, 5]])["p"]
+    assert approx(ffh, S.fisher_exact_2x2(8, 10, 1, 6), 1e-9)
+    # identical rows -> p = 1
+    assert approx(S.fisher_freeman_halton([[5, 5, 5], [5, 5, 5]])["p"], 1.0)
+    # strong 2x3 divergence -> small p
+    assert S.fisher_freeman_halton([[10, 0, 0], [0, 0, 10]])["p"] < 0.001
+
+
+def test_no_monte_carlo_anywhere():
+    # 05 forbids permutation/Monte-Carlo; the module must not expose it
+    assert not hasattr(S, "_mc_gof_p")
+    assert not hasattr(S, "_mc_contingency_p")
 
 
 def test_chi2_contingency_homogeneity():

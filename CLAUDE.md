@@ -23,6 +23,8 @@ Before implementing anything, read the plan docs:
 - `docs/plan/02_dataset_design.md` — MedTempo schema, leveled order, gold-label rules
 - `docs/plan/03_templates.md`     — the 30 template groups and three registers
 - `docs/plan/04_corpus_survey.md` — pilot + distribution report spec; run BEFORE the full benchmark
+- `docs/plan/05_significance_tests.md` — significance-test reference: both tracks, per-group assignments, min-n
+- `docs/plan/06_pilot_examples.md` — pilot task: per-template diagnostics and worked supported/refuted examples
 - `docs/plan/decisions.md`        — locked decisions (single source of truth)
 - `docs/plan/open_questions.md`   — items still under discussion (do not assume)
 
@@ -36,6 +38,13 @@ report (`04_corpus_survey.md`, Part A) that we use to recalibrate those
 numbers. Do not scale to the full benchmark until the distribution report has
 been reviewed. Validate the gold-label computation against a hand-checkable
 sample (Part C) before trusting the distributions.
+
+The concrete starting task for this phase is `06_pilot_examples.md`:
+per-template diagnostics plus worked supported and refuted examples. A core
+must actually exist in the data (events genuinely co-occur and clear the
+min-n gate) before it can yield a hypothesis. Refuted hypotheses assert a
+false relation about a real, existing core; never build them from events that
+never co-occur.
 
 ## Where the templates live
 

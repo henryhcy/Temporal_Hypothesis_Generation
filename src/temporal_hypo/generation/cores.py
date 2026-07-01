@@ -262,6 +262,8 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
                          proportion=frac, n=n, k=k, **base)
 
     if mode in ("seq_bool", "prop_sequence", "modal_choice", "consistency_bool"):
+        # STRICT ordering over the ORDERABLE denominator (ordering_distribution
+        # now excludes co-occurrence and floors at SEQ_MIN_N).
         a, b, c = combo
         dist = corpus.ordering_distribution(index, [a, b, c], cohort)
         if dist is None:
@@ -785,13 +787,14 @@ def _realize_symmetric_bool(core, polarity):
 
 
 def _realize_seq_bool(core, polarity):
+    # STRICT: supported names the modal ordering; refuted names another observed
+    # ordering (or a swap). Gold recomputed from that ordering's rate.
     d = core.extra
     n = core.n
     if polarity == "supported":
         order = d["modal"]
         cnt = d["modal_count"]
     elif d["modal"] is None:
-        # no strict ordering ever observed (all reports tie): assert any order
         order, cnt = core.events, 0
     else:
         order = _other_permutation(d["modal"], d["counts"])

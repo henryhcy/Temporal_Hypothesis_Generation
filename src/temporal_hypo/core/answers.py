@@ -130,18 +130,18 @@ def core_significance(core) -> Significance:
         observed = _gof_observed(core)
         if observed is None:
             return Significance(None, None, None)
-        r = sig.chi2_gof(observed)
+        r = sig.multinomial_gof(observed)   # exact when sparse, else chi-square
         return Significance(r["p"], sig.significance_verdict(r["p"], core.n) == "significant",
-                            "chi2_gof", r)
+                            f"multinomial_gof_{r['method']}", r)
 
     if m in _HOMO:
         table = _homo_table(core)
         if table is None:
             return Significance(None, None, None)
-        r = sig.chi2_contingency(table)
+        r = sig.contingency_test(table)     # Fisher-Freeman-Halton when sparse
         n = min(core.n or 0, core.n2 or 0)
         return Significance(r["p"], sig.significance_verdict(r["p"], n) == "significant",
-                            "chi2_contingency", r)
+                            f"homogeneity_{r['method']}", r)
 
     return Significance(None, None, None)
 

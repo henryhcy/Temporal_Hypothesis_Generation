@@ -174,6 +174,20 @@ def test_sequence_fraction_basic():
     conn.close()
 
 
+def test_sequence_fraction_gapped_subsequence():
+    """Strict ordering captures a<b<c from a longer chain with GAPS (a<b<d<e<c),
+    and EXCLUDES co-occurrence (no weak ordering)."""
+    # 8 reports A<B<D<E<C: a<b<c holds via the gapped subsequence
+    reports = [(i + 1, "Pfizer", [["A"], ["B"], ["D"], ["E"], ["C"]]) for i in range(8)]
+    # 4 reports where B,C co-occur: not orderable, excluded from the denominator
+    reports += [(i + 9, "Pfizer", [["A"], ["B", "C"]]) for i in range(4)]
+    conn, ids = _make_db(reports)
+    frac, n = sequence_fraction(conn, "A", "B", "C", ids)
+    assert n == 8                      # only the orderable reports count
+    assert abs(frac - 1.0) < 1e-9      # a<b<c holds in all 8 (gaps ignored)
+    conn.close()
+
+
 def test_sequence_fraction_excludes_missing():
     """Reports missing any of the three events are not counted."""
     reports = [
@@ -335,10 +349,10 @@ def test_ordering_distribution_ties_bucket():
     conn, ids = _make_db(reports)
     dist = ordering_distribution(conn, ["A", "B", "C"], ids)
     assert dist is not None
-    assert dist["n"] == 12
+    assert dist["n"] == 11          # ORDERABLE denominator: tie report excluded
     assert dist["tie"] == 1
     assert dist["modal_count"] == 11
-    assert abs(dist["modal_share"] - 11 / 12) < 1e-9
+    assert abs(dist["modal_share"] - 11 / 11) < 1e-9
     conn.close()
 
 
@@ -357,7 +371,8 @@ def test_ordering_distribution_modal_tie_flag():
 
 
 def test_ordering_distribution_insufficient():
-    reports = [(i + 1, "Pfizer", [["A"], ["B"], ["C"]]) for i in range(9)]
+    # below the sequence floor (SEQ_MIN_N=5) of ORDERABLE reports -> None
+    reports = [(i + 1, "Pfizer", [["A"], ["B"], ["C"]]) for i in range(4)]
     conn, ids = _make_db(reports)
     assert ordering_distribution(conn, ["A", "B", "C"], ids) is None
     conn.close()

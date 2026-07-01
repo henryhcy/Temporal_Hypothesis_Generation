@@ -1,0 +1,817 @@
+\documentclass[11pt]{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{microtype}
+\usepackage[hidelinks]{hyperref}
+
+% Wrapping left-aligned X column
+\newcolumntype{L}{>{\raggedright\arraybackslash}X}
+
+\title{Temporal Hypothesis Generation:\\Current Findings and Template Catalogue}
+\author{Project working note}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+This project builds a benchmark and framework for \emph{temporal hypothesis
+verification over clinical narratives}. Given a natural-language hypothesis about the
+temporal pattern of vaccine adverse events together with the relevant report narratives,
+the framework returns a verdict---\emph{supported}, \emph{refuted}, or \emph{insufficient}---grounded
+in the temporal structure of the reports. The substrate is \textbf{MedTempo}: 3{,}166
+expert-annotated VAERS reports for three vaccines (Pfizer, Moderna, Johnson), encoding
+ordinal relations (\emph{before}, \emph{after}, \emph{co-exist}) with no timestamps.
+MedTempo is private scaffolding used only to compute deterministic gold labels; the
+framework sees narrative text plus the hypothesis at inference, nothing else.
+
+The positioning is \textbf{agentic temporal claim verification with statistical grounding}:
+distinct from temporal knowledge-graph QA (which assumes a clean timestamped graph), from
+scientific claim verification (which lacks population-level aggregation), and from classical
+pharmacovigilance signal detection (which is not driven by natural-language hypotheses).
+The work is currently in its dataset-design and template-generation phase; the results below
+come from a full enumeration \emph{pilot} whose job is to characterise the corpus and
+recalibrate sampling before scaling to the target benchmark of 10{,}000--15{,}000 instances.
+\section{Current Findings (Pilot)}
+The pilot enumerates every viable factual core in MedTempo across all 30 template
+groups and computes the deterministic gold label for each, before any verdict balancing.
+The full-enumeration run produced \textbf{289{,}216} candidate instances over the 30 groups.
+Key observations:
+\begin{itemize}
+  \item \textbf{Coverage is healthy.} No group is starved: every group clears the
+  provisional 50-viable-core target. Report-level groups draw on all 3{,}166 reports;
+  vaccine-level groups on 575--959 cohorts; multi-vaccine groups on 322--579 cohorts.
+  \item \textbf{Cohorts are small.} Median cohort size is $n=16$ (pairwise) and $n=14$
+  (sequence, first/last), with a long thin tail---roughly 11--15\% of cohorts sit at or
+  below the $n=10$ inclusion threshold.
+  \item \textbf{Natural verdicts are skewed and group-dependent} (Table~\ref{tab:verdicts}),
+  which is exactly why a balancing pass is required. Sequence claims are mostly
+  \emph{refuted} under strict ordering (67\%), first/last claims are heavily
+  \emph{insufficient} (47\%, driven by ties and missing candidates), and pairwise sits
+  closest to balanced.
+  \item \textbf{Estimates are wide.} Across single-proportion cores the median Wilson
+  95\% CI width is 0.37, and \textbf{70\%} of cores are ``low-confidence'' (CI width
+  $>0.30$)---a direct consequence of small cohorts, and the main input to recalibrating
+  the low-band floor.
+  \item \textbf{Multi-vaccine overlap is sufficient.} All three vaccine pairs yield enough
+  jointly-computable cores (insufficiency 11--12\%); no Johnson fallback is triggered.
+  \item \textbf{Representation integrity holds.} First/last tie rate is substantial
+  (median 0.50) and 62\% of reports have a co-occurrence at the earliest level; only 7
+  duplicate-term-across-levels anomalies were found. Cycles/disconnected components are
+  not recoverable by construction (annotations are stored as acyclic leveled orders).
+\end{itemize}
+\begin{table}[h]
+\centering
+\caption{Natural verdict distribution per family (no balancing), from the pilot
+distribution report.}
+\label{tab:verdicts}
+\begin{tabular}{@{}lccc@{}}
+\toprule
+\textbf{Family} & \textbf{Supported} & \textbf{Refuted} & \textbf{Insufficient} \\
+\midrule
+pairwise   & 0.443 & 0.342 & 0.215 \\
+sequence   & 0.264 & 0.674 & 0.062 \\
+first/last & 0.435 & 0.097 & 0.468 \\
+\bottomrule
+\end{tabular}
+\end{table}
+\noindent\textbf{Implication.} The pilot confirms the design is generative
+across all 30 groups but that (i) small cohorts make many single-proportion estimates
+imprecise, and (ii) natural verdict skew varies sharply by group, so the target
+45/45/10 supported/refuted/insufficient balance must be enforced per group rather than
+assumed. These numbers are the inputs to the second-pass sampling recalibration; the
+benchmark is not scaled until the distribution report is reviewed.
+\section{Template Catalogue}
+\subsection{How the templates are composed}
+Templates are the single source of truth in three YAML files under
+\texttt{data/templates/} (\texttt{pairwise.yaml}, \texttt{sequence.yaml},
+\texttt{first\_last.yaml}); the advisor-facing \texttt{.docx} is a generated artefact.
+Each \textbf{group} is a typed temporal question with a fixed slot schema, and is composed
+along four orthogonal axes:
+\begin{description}
+  \item[Family / primitive] the temporal relation being tested:
+  \texttt{precedes} or \texttt{co\_occurs} (pairwise, two events), \texttt{sequence}
+  (strict ordering of three events), or \texttt{first\_last} (superlative argmax over a
+  candidate set).
+  \item[Level (cohort scope)] \texttt{report} (a single narrative), \texttt{vaccine}
+  (aggregate over one vaccine's cohort), or \texttt{multi} (compare two vaccine cohorts).
+  \item[Answer type] \texttt{BOOL} (yes/no), \texttt{CHOICE} (pick the correct option),
+  or \texttt{PROP} (assert a proportion; supported if within 5 percentage points of truth).
+  \item[Register (surface form)] each group is mechanically projected into four
+  registers---\textbf{Original} (canonical seed), \textbf{Research}, \textbf{Media}, and
+  \textbf{Clinical}---with no LLM rewriting. A negation modifier is additionally applied to
+  a subset of BOOL instances at generation time (flipping both the assertion and the gold
+  verdict); it is not stored in the YAML.
+\end{description}
+Every group instantiates both a \textbf{question} and a \textbf{claim} per register, so each group yields $4\times2$ surface forms before slot-filling and negation. The $30$ groups break down by family and level as follows:
+\begin{center}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+\textbf{Family} & \textbf{Report} & \textbf{Vaccine} & \textbf{Multi} & \textbf{Total} \\
+\midrule
+\texttt{pairwise} & 3 & 6 & 4 & 13 \\
+\texttt{sequence} & 1 & 4 & 3 & 8 \\
+\texttt{first\_last} & 3 & 3 & 3 & 9 \\
+\midrule
+\textbf{Total} & \textbf{7} & \textbf{13} & \textbf{10} & \textbf{30} \\
+\bottomrule
+\end{tabular}
+\end{center}
+\paragraph{Slots.} Placeholders are filled mechanically from MedTempo
+term types plus a manual synonym table:
+\begin{center}
+\begin{tabular}{@{}lll@{}}
+\toprule
+\textbf{Slot} & \textbf{Type} & \textbf{Meaning} \\
+\midrule
+\texttt{\{A\}}, \texttt{\{B\}}, \texttt{\{C\}} & event   & Event term type (+ synonyms) \\
+\texttt{\{v\}}                                 & vaccine & Single vaccine \\
+\texttt{\{v1\}}, \texttt{\{v2\}}               & vaccine & Two vaccines (multi-vaccine groups) \\
+\texttt{\{r\}}                                 & context & Report identifier / contextual reference \\
+\texttt{\{p\}}                                 & value   & Asserted proportion (PROP instances only) \\
+\bottomrule
+\end{tabular}
+\end{center}
+\paragraph{Verdict mechanics.} \texttt{BOOL}: supported iff the assertion
+matches the data. \texttt{CHOICE}: supported iff it names the correct option. \texttt{PROP}:
+supported iff the asserted \texttt{\{p\}} is within 5 percentage points of the true
+proportion. \texttt{Insufficient}: cohort below the $n=10$ threshold, indeterminable
+ordering (ties, disconnected components), or required events missing from a cohort report.
+\subsection*{}
+\subsection{Full template listing (all groups $\times$ all registers)}
+The following enumerates every group with its metadata and all four register
+variants of both the question and the claim. Slot placeholders are shown in braces.
+\subsection{Pairwise (precedes / co-occurs)}
+\noindent\emph{Pairwise temporal relation between two events: precedes or co-occurs.}
+
+\noindent\textbf{Family rule.} Each group asserts a relation between events A and B over a cohort scope.
+PROP groups assert a value \{p\} in the claim form.
+
+\paragraph{\textbf{P-R1}}\mbox{}\\
+Primitive: \texttt{precedes} \quad Level: \texttt{report} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, r}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Did \{A\} occur before \{B\} in report \{r\}? & In report \{r\}, \{A\} occurred before \{B\}. \\
+Research & In this report, does \{A\} precede \{B\}? & This report records \{A\} preceding \{B\}. \\
+Media & In this case, did \{A\} happen before \{B\}? & In this case, \{A\} happened before \{B\}. \\
+Clinical & Did \{A\} come before \{B\} in this patient? & In this patient, \{A\} came before \{B\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{P-R2}}\mbox{}\\
+Primitive: \texttt{precedes} \quad Level: \texttt{report} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, r}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Which came first in report \{r\}, \{A\} or \{B\}? & In report \{r\}, \{A\} came first, before \{B\}. \\
+Research & Of \{A\} and \{B\}, which is the earlier event in this report? & In this report, \{A\} is the earlier event. \\
+Media & In this case, which came first, \{A\} or \{B\}? & In this case, \{A\} came first. \\
+Clinical & Between \{A\} and \{B\}, which came first in this patient? & In this patient, \{A\} came first. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{P-V1}}\mbox{}\\
+Primitive: \texttt{precedes} \quad Level: \texttt{vaccine} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does \{A\} typically occur before \{B\} after \{v\}? & After \{v\}, \{A\} typically occurs before \{B\}. \\
+Research & Among \{v\} reports, does \{A\} precede \{B\} in the majority of cases? & Among \{v\} reports, \{A\} precedes \{B\} in the majority of cases. \\
+Media & After \{v\}, do most people get \{A\} before \{B\}? & After \{v\}, most people get \{A\} before \{B\}. \\
+Clinical & In \{v\} recipients, does \{A\} usually come before \{B\}? & In \{v\} recipients, \{A\} usually comes before \{B\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{P-V2}}\mbox{}\\
+Primitive: \texttt{precedes} \quad Level: \texttt{vaccine} \quad Answer: \texttt{PROP} \quad Slots: \texttt{A, B, v, p}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In what fraction of \{v\} reports does \{A\} precede \{B\}? & In about \{p\}\% of \{v\} reports, \{A\} precedes \{B\}. \\
+Research & Among \{v\} reports with both \{A\} and \{B\}, what proportion show \{A\} preceding \{B\}? & Among \{v\} reports with both events, \{A\} precedes \{B\} in \{p\}\% of cases. \\
+Media & What share of \{v\} cases show \{A\} before \{B\}? & About \{p\}\% of \{v\} cases show \{A\} before \{B\}. \\
+Clinical & How often does \{A\} precede \{B\} in \{v\} recipients? & \{A\} precedes \{B\} in roughly \{p\}\% of \{v\} recipients. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{P-V3}}\mbox{}\\
+Primitive: \texttt{precedes} \quad Level: \texttt{vaccine} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After \{v\}, which usually comes first, \{A\} or \{B\}? & After \{v\}, \{A\} usually comes before \{B\}. \\
+Research & Among \{v\} reports with both, which more often precedes the other, \{A\} or \{B\}? & Among \{v\} reports with both, \{A\} more often precedes \{B\}. \\
+Media & After \{v\}, which side effect tends to come first, \{A\} or \{B\}? & After \{v\}, \{A\} tends to come first. \\
+Clinical & In \{v\} patients, what usually shows up first, \{A\} or \{B\}? & In \{v\} patients, \{A\} usually shows up first. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{P-M1}}\mbox{}\\
+Primitive: \texttt{precedes} \quad Level: \texttt{multi} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does the \{A\}-before-\{B\} rate differ between \{v1\} and \{v2\}? & The \{A\}-before-\{B\} rate differs between \{v1\} and \{v2\}. \\
+Research & Among reports with both events, is the \{A\}-precedes-\{B\} proportion different between \{v1\} and \{v2\}? & The \{A\}-precedes-\{B\} proportion differs between \{v1\} and \{v2\} cohorts. \\
+Media & Is there a real difference between \{v1\} and \{v2\} in how often \{A\} comes before \{B\}? & \{v1\} and \{v2\} differ in how often \{A\} comes before \{B\}. \\
+Clinical & Do my \{v1\} and \{v2\} patients differ in how often \{A\} comes before \{B\}? & \{v1\} and \{v2\} recipients differ in the rate of \{A\} before \{B\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{P-M2}}\mbox{}\\
+Primitive: \texttt{precedes} \quad Level: \texttt{multi} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After which vaccine, \{v1\} or \{v2\}, does \{A\} more often precede \{B\}? & \{A\} precedes \{B\} more often after \{v1\} than after \{v2\}. \\
+Research & Between \{v1\} and \{v2\}, which cohort shows a higher \{A\}-preceding-\{B\} proportion? & \{v1\} shows a higher \{A\}-precedes-\{B\} proportion than \{v2\}. \\
+Media & Is \{A\}-before-\{B\} more common after \{v1\} or \{v2\}? & \{A\}-before-\{B\} is more common after \{v1\} than \{v2\}. \\
+Clinical & In which group is \{A\} more often the precursor to \{B\}, \{v1\} or \{v2\} recipients? & \{v1\} recipients more often have \{A\} as a precursor to \{B\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{C-R1}}\mbox{}\\
+Primitive: \texttt{co\_occurs} \quad Level: \texttt{report} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, r}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do \{A\} and \{B\} co-occur in report \{r\}? & In report \{r\}, \{A\} and \{B\} co-occur. \\
+Research & In this report, are \{A\} and \{B\} concurrent? & In this report, \{A\} and \{B\} are concurrent. \\
+Media & In this case, did \{A\} and \{B\} happen at the same time? & In this case, \{A\} and \{B\} happened at the same time. \\
+Clinical & Did this patient have \{A\} and \{B\} together? & This patient had \{A\} and \{B\} together. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{C-V1}}\mbox{}\\
+Primitive: \texttt{co\_occurs} \quad Level: \texttt{vaccine} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do \{A\} and \{B\} typically co-occur after \{v\}? & After \{v\}, \{A\} and \{B\} typically co-occur. \\
+Research & In \{v\} reports, are \{A\} and \{B\} concurrent in the majority of cases? & In \{v\} reports, \{A\} and \{B\} are concurrent in the majority of cases. \\
+Media & After \{v\}, do \{A\} and \{B\} usually show up together? & After \{v\}, \{A\} and \{B\} usually show up together. \\
+Clinical & In \{v\} recipients, do \{A\} and \{B\} typically present together? & In \{v\} recipients, \{A\} and \{B\} typically present together. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{C-V2}}\mbox{}\\
+Primitive: \texttt{co\_occurs} \quad Level: \texttt{vaccine} \quad Answer: \texttt{PROP} \quad Slots: \texttt{A, B, v, p}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & What fraction of \{v\} reports show \{A\} and \{B\} together? & In about \{p\}\% of \{v\} reports, \{A\} and \{B\} occur together. \\
+Research & Among \{v\} reports with both events, what proportion show \{A\} and \{B\} concurrently? & Among \{v\} reports with both events, \{A\} and \{B\} are concurrent in \{p\}\% of cases. \\
+Media & What share of \{v\} cases have \{A\} and \{B\} together? & About \{p\}\% of \{v\} cases have \{A\} and \{B\} together. \\
+Clinical & How often do \{A\} and \{B\} present together in \{v\} patients? & \{A\} and \{B\} present together in roughly \{p\}\% of \{v\} patients. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{C-V3}}\mbox{}\\
+Primitive: \texttt{co\_occurs} \quad Level: \texttt{vaccine} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After \{v\}, is co-occurrence the dominant relation for \{A\} and \{B\}? & After \{v\}, co-occurrence is the dominant relation for \{A\} and \{B\}. \\
+Research & Among \{v\} reports with both events, is concurrent presentation more common than ordered? & Among \{v\} reports with both events, concurrent presentation is more common than ordered. \\
+Media & After \{v\}, are \{A\} and \{B\} more often together than in order? & After \{v\}, \{A\} and \{B\} are more often together than in order. \\
+Clinical & In \{v\} recipients with both, is concurrence more common than sequential onset? & In \{v\} recipients with both, concurrence is more common than sequential onset. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{C-M1}}\mbox{}\\
+Primitive: \texttt{co\_occurs} \quad Level: \texttt{multi} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does the \{A\}-\{B\} co-occurrence rate differ between \{v1\} and \{v2\}? & The \{A\}-\{B\} co-occurrence rate differs between \{v1\} and \{v2\}. \\
+Research & Among reports with both events, is the co-occurrence proportion different between \{v1\} and \{v2\}? & The co-occurrence proportion differs between \{v1\} and \{v2\}. \\
+Media & Is there a real difference between \{v1\} and \{v2\} in how often \{A\} and \{B\} happen together? & \{v1\} and \{v2\} differ in how often \{A\} and \{B\} happen together. \\
+Clinical & Do my \{v1\} and \{v2\} patients differ in how often \{A\} and \{B\} co-occur? & \{v1\} and \{v2\} recipients differ in \{A\}-\{B\} co-occurrence rates. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{C-M2}}\mbox{}\\
+Primitive: \texttt{co\_occurs} \quad Level: \texttt{multi} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After which vaccine, \{v1\} or \{v2\}, do \{A\} and \{B\} more often co-occur? & \{A\} and \{B\} co-occur more often after \{v1\} than after \{v2\}. \\
+Research & Between \{v1\} and \{v2\}, which cohort shows higher \{A\}-\{B\} co-occurrence? & \{v1\} shows higher \{A\}-\{B\} co-occurrence than \{v2\}. \\
+Media & Is \{A\} and \{B\} together more common after \{v1\} or \{v2\}? & \{A\} and \{B\} together is more common after \{v1\} than \{v2\}. \\
+Clinical & In which group are \{A\} and \{B\} more often concurrent, \{v1\} or \{v2\}? & In \{v1\} recipients, \{A\} and \{B\} are more often concurrent. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\subsection{Sequence (three-event ordering)}
+\noindent\emph{Ordering of three events.}
+
+\noindent\textbf{Family rule.} Strict ordering: \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} requires level\_of(A) $<$ level\_of(B) $<$ level\_of(C). Co-occurrence within the sequence does not satisfy strict ordering. Denominator is restricted to reports containing all three events.
+
+\paragraph{\textbf{S-R1}}\mbox{}\\
+Primitive: \texttt{sequence} \quad Level: \texttt{report} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, r}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do \{A\}, \{B\}, \{C\} occur in the order \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} in report \{r\}? & In report \{r\}, \{A\}, \{B\}, \{C\} occur in the order \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Research & In this report, is the observed ordering of \{A\}, \{B\}, \{C\} exactly \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & In this report, the observed ordering is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Media & In this case, did things go \{A\}, then \{B\}, then \{C\}? & In this case, the progression was \{A\}, then \{B\}, then \{C\}. \\
+Clinical & Did this patient progress \{A\}, then \{B\}, then \{C\}? & This patient progressed \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{S-V1}}\mbox{}\\
+Primitive: \texttt{sequence} \quad Level: \texttt{vaccine} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After \{v\}, do \{A\}, \{B\}, \{C\} typically occur as \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & After \{v\}, \{A\}, \{B\}, \{C\} typically occur as \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Research & In \{v\} reports with all three events, does the observed ordering match \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} in the majority? & In \{v\} reports with all three, the ordering matches \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} in the majority. \\
+Media & After \{v\}, do people usually go \{A\}, then \{B\}, then \{C\}? & After \{v\}, people usually go \{A\}, then \{B\}, then \{C\}. \\
+Clinical & In \{v\} recipients with all three, is the typical progression \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & In \{v\} recipients with all three, the typical progression is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{S-V2}}\mbox{}\\
+Primitive: \texttt{sequence} \quad Level: \texttt{vaccine} \quad Answer: \texttt{PROP} \quad Slots: \texttt{A, B, C, v, p}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & What fraction of \{v\} reports show the sequence \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & In about \{p\}\% of \{v\} reports, the sequence is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Research & Among \{v\} reports with all three events, what proportion show the ordering \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & Among \{v\} reports with all three events, \{p\}\% show \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Media & What share of \{v\} cases show \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & About \{p\}\% of \{v\} cases show \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Clinical & How often do \{v\} patients show \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & \{v\} patients show \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} in roughly \{p\}\% of cases. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{S-V3}}\mbox{}\\
+Primitive: \texttt{sequence} \quad Level: \texttt{vaccine} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, C, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After \{v\}, what is the most common ordering of \{A\}, \{B\}, \{C\}? & After \{v\}, the most common ordering of \{A\}, \{B\}, \{C\} is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Research & Among \{v\} reports with all three events, what is the modal ordering of \{A\}, \{B\}, \{C\}? & Among \{v\} reports with all three, the modal ordering is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Media & After \{v\}, what's the most common order people experience \{A\}, \{B\}, and \{C\}? & After \{v\}, the most common order is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Clinical & What's the most common progression of \{A\}, \{B\}, \{C\} in \{v\} patients? & The most common progression in \{v\} patients is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{S-V4}}\mbox{}\\
+Primitive: \texttt{sequence} \quad Level: \texttt{vaccine} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After \{v\}, is the ordering of \{A\}, \{B\}, \{C\} consistent across reports? & After \{v\}, the ordering of \{A\}, \{B\}, \{C\} is consistent across reports. \\
+Research & In \{v\} reports with all three, does a single ordering dominate across cases? & In \{v\} reports with all three, a single ordering of \{A\}, \{B\}, \{C\} dominates. \\
+Media & After \{v\}, do people usually experience \{A\}, \{B\}, \{C\} in the same order? & After \{v\}, people usually experience \{A\}, \{B\}, \{C\} in the same order. \\
+Clinical & In \{v\} patients, is the progression of \{A\}, \{B\}, \{C\} consistent across cases? & In \{v\} patients, the progression of \{A\}, \{B\}, \{C\} is consistent. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{S-M1}}\mbox{}\\
+Primitive: \texttt{sequence} \quad Level: \texttt{multi} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does the \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} rate differ between \{v1\} and \{v2\}? & The \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} rate differs between \{v1\} and \{v2\}. \\
+Research & Among reports with all three events, is the \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} proportion different between \{v1\} and \{v2\}? & The \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} proportion differs between \{v1\} and \{v2\}. \\
+Media & Is there a real difference between \{v1\} and \{v2\} in how often things go \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & \{v1\} and \{v2\} differ in how often things go \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}. \\
+Clinical & Do \{v1\} and \{v2\} patients differ in how often they follow \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & \{v1\} and \{v2\} recipients differ in the \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} rate. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{S-M2}}\mbox{}\\
+Primitive: \texttt{sequence} \quad Level: \texttt{multi} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, C, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is the sequence \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} more common after \{v1\} or \{v2\}? & The sequence \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} is more common after \{v1\} than \{v2\}. \\
+Research & Between \{v1\} and \{v2\}, which cohort shows a higher proportion of \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\}? & \{v1\} shows a higher proportion of \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} than \{v2\}. \\
+Media & Is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} more common after \{v1\} or \{v2\}? & \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} is more common after \{v1\} than \{v2\}. \\
+Clinical & In which group is \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} more common, \{v1\} or \{v2\} recipients? & \{A\} $\rightarrow$  \{B\} $\rightarrow$  \{C\} is more common in \{v1\} recipients. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{S-M3}}\mbox{}\\
+Primitive: \texttt{sequence} \quad Level: \texttt{multi} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is the typical ordering of \{A\}, \{B\}, \{C\} the same after \{v1\} and \{v2\}? & The typical ordering of \{A\}, \{B\}, \{C\} is the same after \{v1\} and \{v2\}. \\
+Research & Is the modal ordering of \{A\}, \{B\}, \{C\} the same between \{v1\} and \{v2\} cohorts? & The modal ordering of \{A\}, \{B\}, \{C\} is the same in \{v1\} and \{v2\} cohorts. \\
+Media & Do \{v1\} and \{v2\} produce the same typical order of \{A\}, \{B\}, \{C\}? & \{v1\} and \{v2\} produce the same typical order of \{A\}, \{B\}, \{C\}. \\
+Clinical & Is the typical progression of \{A\}, \{B\}, \{C\} the same in \{v1\} and \{v2\} recipients? & The typical progression of \{A\}, \{B\}, \{C\} is the same in \{v1\} and \{v2\} recipients. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\subsection{First / Last (superlative)}
+\noindent\emph{Superlative ordering: which of a named candidate set is earliest or latest.}
+
+\noindent\textbf{Family rule.} Tie-handling: when multiple candidates share the earliest (or latest) level, the report is marked insufficient for CHOICE instances. Denominator is restricted to reports containing all named candidates.
+
+\paragraph{\textbf{F-R1}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{report} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, C, r}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report \{r\}, which of \{A\}, \{B\}, \{C\} occurs first? & In report \{r\}, \{A\} occurs first among \{A\}, \{B\}, \{C\}. \\
+Research & Of \{A\}, \{B\}, \{C\}, which is the earliest event in this report? & In this report, \{A\} is the earliest of \{A\}, \{B\}, \{C\}. \\
+Media & In this case, which came first, \{A\}, \{B\}, or \{C\}? & In this case, \{A\} came first. \\
+Clinical & Of \{A\}, \{B\}, \{C\}, which appeared first in this patient? & In this patient, \{A\} appeared first. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{F-R2}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{report} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, C, r}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report \{r\}, which of \{A\}, \{B\}, \{C\} occurs last? & In report \{r\}, \{C\} occurs last among \{A\}, \{B\}, \{C\}. \\
+Research & Of \{A\}, \{B\}, \{C\}, which is the latest event in this report? & In this report, \{C\} is the latest of \{A\}, \{B\}, \{C\}. \\
+Media & In this case, which came last, \{A\}, \{B\}, or \{C\}? & In this case, \{C\} came last. \\
+Clinical & Of \{A\}, \{B\}, \{C\}, which appeared last in this patient? & In this patient, \{C\} appeared last. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{F-R3}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{report} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, r}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report \{r\}, is \{A\} the first of \{A\}, \{B\}, \{C\} to occur? & In report \{r\}, \{A\} is the first of \{A\}, \{B\}, \{C\} to occur. \\
+Research & In this report, is \{A\} the earliest of \{A\}, \{B\}, \{C\}? & In this report, \{A\} is the earliest of \{A\}, \{B\}, \{C\}. \\
+Media & In this case, did \{A\} come first among \{A\}, \{B\}, \{C\}? & In this case, \{A\} came first among \{A\}, \{B\}, \{C\}. \\
+Clinical & Did \{A\} appear first among \{A\}, \{B\}, \{C\} in this patient? & In this patient, \{A\} appeared first among \{A\}, \{B\}, \{C\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{F-V1}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{vaccine} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, C, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After \{v\}, which of \{A\}, \{B\}, \{C\} typically occurs first? & After \{v\}, \{A\} typically occurs first among \{A\}, \{B\}, \{C\}. \\
+Research & In \{v\} reports with all three, which event is the typical earliest among \{A\}, \{B\}, \{C\}? & In \{v\} reports with all three, \{A\} is typically the earliest. \\
+Media & After \{v\}, which usually comes first, \{A\}, \{B\}, or \{C\}? & After \{v\}, \{A\} usually comes first. \\
+Clinical & In \{v\} patients, which of \{A\}, \{B\}, \{C\} typically appears first? & In \{v\} patients, \{A\} typically appears first. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{F-V2}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{vaccine} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, C, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After \{v\}, which of \{A\}, \{B\}, \{C\} typically occurs last? & After \{v\}, \{C\} typically occurs last among \{A\}, \{B\}, \{C\}. \\
+Research & In \{v\} reports with all three, which is the typical latest among \{A\}, \{B\}, \{C\}? & In \{v\} reports with all three, \{C\} is typically the latest. \\
+Media & After \{v\}, which usually comes last, \{A\}, \{B\}, or \{C\}? & After \{v\}, \{C\} usually comes last. \\
+Clinical & In \{v\} patients, which of \{A\}, \{B\}, \{C\} typically appears last? & In \{v\} patients, \{C\} typically appears last. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{F-V3}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{vaccine} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, v}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After \{v\}, is \{A\} usually the first of \{A\}, \{B\}, \{C\}? & After \{v\}, \{A\} is usually the first of \{A\}, \{B\}, \{C\}. \\
+Research & In \{v\} reports with all three, is \{A\} the earliest in the majority of cases? & In \{v\} reports with all three, \{A\} is the earliest in the majority of cases. \\
+Media & After \{v\}, does \{A\} usually come first among \{A\}, \{B\}, \{C\}? & After \{v\}, \{A\} usually comes first among \{A\}, \{B\}, \{C\}. \\
+Clinical & In \{v\} patients, is \{A\} usually the earliest of \{A\}, \{B\}, \{C\}? & In \{v\} patients, \{A\} is usually the earliest of \{A\}, \{B\}, \{C\}. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{F-M1}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{multi} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is the typical first event among \{A\}, \{B\}, \{C\} the same after \{v1\} and \{v2\}? & The typical first event among \{A\}, \{B\}, \{C\} is the same after \{v1\} and \{v2\}. \\
+Research & Is the modal earliest event among \{A\}, \{B\}, \{C\} the same between \{v1\} and \{v2\} cohorts? & The modal earliest event is the same in \{v1\} and \{v2\} cohorts. \\
+Media & Do \{v1\} and \{v2\} have the same typical first event among \{A\}, \{B\}, \{C\}? & \{v1\} and \{v2\} have the same typical first event among \{A\}, \{B\}, \{C\}. \\
+Clinical & Is the usual first event among \{A\}, \{B\}, \{C\} the same in \{v1\} and \{v2\} patients? & The usual first event is the same in \{v1\} and \{v2\} patients. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{F-M2}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{multi} \quad Answer: \texttt{BOOL} \quad Slots: \texttt{A, B, C, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do \{v1\} and \{v2\} differ in which of \{A\}, \{B\}, \{C\} appears first? & \{v1\} and \{v2\} differ in which of \{A\}, \{B\}, \{C\} appears first. \\
+Research & Is the modal first event among \{A\}, \{B\}, \{C\} different between \{v1\} and \{v2\}? & The modal first event differs between \{v1\} and \{v2\}. \\
+Media & Do \{v1\} and \{v2\} differ in which of \{A\}, \{B\}, \{C\} usually comes first? & \{v1\} and \{v2\} differ in which usually comes first. \\
+Clinical & Does the usual first event among \{A\}, \{B\}, \{C\} differ between \{v1\} and \{v2\} patients? & The usual first event differs between \{v1\} and \{v2\} patients. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\paragraph{\textbf{F-M3}}\mbox{}\\
+Primitive: \texttt{first\_last} \quad Level: \texttt{multi} \quad Answer: \texttt{CHOICE} \quad Slots: \texttt{A, B, C, v1, v2}\\[2pt]
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is \{A\} the first event more often after \{v1\} or \{v2\}? & \{A\} is the first event more often after \{v1\} than \{v2\}. \\
+Research & Between \{v1\} and \{v2\}, which cohort more often has \{A\} as the earliest of \{A\}, \{B\}, \{C\}? & \{v1\} more often has \{A\} as the earliest of \{A\}, \{B\}, \{C\}. \\
+Media & Is \{A\} the first event more often after \{v1\} or \{v2\}? & \{A\} is the first event more often after \{v1\} than \{v2\}. \\
+Clinical & In which group is \{A\} more often the first of \{A\}, \{B\}, \{C\}, \{v1\} or \{v2\}? & In \{v1\} recipients, \{A\} is more often the first. \\
+\bottomrule
+\end{tabularx}
+\vspace{4pt}
+
+\section{Worked Examples per Template (computed from MedTempo)}
+Each template group is shown with one real viable core: the conditioned counts, the significance test computed on the data, and the gold verdict. Refuted examples assert a false relation about the same real, co-occurring events.
+
+\subsection*{P-R1}
+\textbf{Qualified cores:} 3166 viable, 1196 supported-capable (true cases), 3166 refuted-capable. \\
+\textbf{Core:} events Dizziness, Injection site pain; cohort report VAERS-916915. \\
+\textbf{Counts:} (single report; deterministic). \\
+\textbf{Test:} none (report-level). \\
+\textbf{supported:} In report VAERS-916915, Dizziness occurred before Injection site pain. \\
+\textbf{refuted:} In report VAERS-916915, Injection site pain occurred before Dizziness. \\
+
+\subsection*{P-R2}
+\textbf{Qualified cores:} 3166 viable, 1196 supported-capable (true cases), 1196 refuted-capable. \\
+\textbf{Core:} events Dizziness, Injection site pain; cohort report VAERS-916915. \\
+\textbf{Counts:} (single report; deterministic). \\
+\textbf{Test:} none (report-level). \\
+\textbf{supported:} In report VAERS-916915, Dizziness came first, before Injection site pain. \\
+\textbf{refuted:} In report VAERS-916915, Injection site pain came first, before Dizziness. \\
+
+\subsection*{P-V1}
+\textbf{Qualified cores:} 173 viable, 168 supported-capable (true cases), 168 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache; cohort Janssen. \\
+\textbf{Counts:} k=44 / n=119  (rate 0.3697). \\
+\textbf{Test:} binomial exact, $p = 0.005727$ (significant). \\
+\textbf{supported:} After Janssen, Headache typically occurs before Fatigue. \\
+\textbf{refuted:} After Janssen, Fatigue typically occurs before Headache. \\
+
+\subsection*{P-V2}
+\textbf{Qualified cores:} 173 viable, 173 supported-capable (true cases), 173 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache; cohort Janssen. \\
+\textbf{Counts:} k=44 / n=119  (rate 0.3697). \\
+\textbf{Test:} binomial exact, $p = 0.005727$ (significant). \\
+\textbf{supported:} In about 37\% of Janssen reports, Fatigue precedes Headache. \\
+\textbf{refuted:} In about 57\% of Janssen reports, Fatigue precedes Headache. \\
+
+\subsection*{P-V3}
+\textbf{Qualified cores:} 173 viable, 168 supported-capable (true cases), 168 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache; cohort Janssen. \\
+\textbf{Counts:} k=44 / n=119  (rate 0.3697). \\
+\textbf{Test:} binomial exact, $p = 0.005727$ (significant). \\
+\textbf{supported:} After Janssen, Headache usually comes before Fatigue. \\
+\textbf{refuted:} After Janssen, Fatigue usually comes before Headache. \\
+
+\subsection*{P-M1}
+\textbf{Qualified cores:} 99 viable, 39 supported-capable (true cases), 60 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache; cohort Moderna vs Janssen. \\
+\textbf{Counts:} k=24 / n=67  |  cohort2 k=44 / n=119  (rate 0.3582). \\
+\textbf{Test:} Fisher exact (2x2), $p = 1$ (not significant). \\
+\textbf{refuted:} The Fatigue-before-Headache rate differs between Moderna and Janssen. \\
+
+\subsection*{P-M2}
+\textbf{Qualified cores:} 99 viable, 99 supported-capable (true cases), 99 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache; cohort Moderna vs Janssen. \\
+\textbf{Counts:} k=24 / n=67  |  cohort2 k=44 / n=119  (rate 0.3582). \\
+\textbf{Test:} Fisher exact (2x2), $p = 1$ (not significant). \\
+\textbf{supported:} Fatigue precedes Headache more often after Janssen than after Moderna. \\
+\textbf{refuted:} Fatigue precedes Headache more often after Moderna than after Janssen. \\
+
+\subsection*{C-R1}
+\textbf{Qualified cores:} 3166 viable, 1970 supported-capable (true cases), 1196 refuted-capable. \\
+\textbf{Core:} events Dizziness, Injection site pain; cohort report VAERS-916915. \\
+\textbf{Counts:} (single report; deterministic). \\
+\textbf{Test:} none (report-level). \\
+\textbf{refuted:} In report VAERS-916915, Dizziness and Injection site pain co-occur. \\
+
+\subsection*{C-V1}
+\textbf{Qualified cores:} 374 viable, 90 supported-capable (true cases), 271 refuted-capable. \\
+\textbf{Core:} events Headache, Pyrexia; cohort Janssen. \\
+\textbf{Counts:} k=111 / n=213  (rate 0.5211). \\
+\textbf{Test:} binomial exact, $p = 0.5837$ (not significant). \\
+\textbf{supported:} After Janssen, Headache and Pyrexia typically co-occur. \\
+
+\subsection*{C-V2}
+\textbf{Qualified cores:} 374 viable, 374 supported-capable (true cases), 374 refuted-capable. \\
+\textbf{Core:} events Headache, Pyrexia; cohort Janssen. \\
+\textbf{Counts:} k=111 / n=213  (rate 0.5211). \\
+\textbf{Test:} binomial exact, $p = 0.5837$ (not significant). \\
+\textbf{supported:} In about 52\% of Janssen reports, Headache and Pyrexia occur together. \\
+\textbf{refuted:} In about 72\% of Janssen reports, Headache and Pyrexia occur together. \\
+
+\subsection*{C-V3}
+\textbf{Qualified cores:} 374 viable, 90 supported-capable (true cases), 271 refuted-capable. \\
+\textbf{Core:} events Headache, Pyrexia; cohort Janssen. \\
+\textbf{Counts:} k=111 / n=213  (rate 0.5211). \\
+\textbf{Test:} binomial exact, $p = 0.5837$ (not significant). \\
+\textbf{supported:} After Janssen, co-occurrence is the dominant relation for Headache and Pyrexia. \\
+
+\subsection*{C-M1}
+\textbf{Qualified cores:} 232 viable, 89 supported-capable (true cases), 143 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache; cohort Moderna vs Janssen. \\
+\textbf{Counts:} k=70 / n=137  |  cohort2 k=77 / n=196  (rate 0.5109). \\
+\textbf{Test:} Fisher exact (2x2), $p = 0.03398$ (significant). \\
+\textbf{supported:} The Fatigue-Headache co-occurrence rate differs between Moderna and Janssen. \\
+
+\subsection*{C-M2}
+\textbf{Qualified cores:} 232 viable, 232 supported-capable (true cases), 232 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache; cohort Moderna vs Janssen. \\
+\textbf{Counts:} k=70 / n=137  |  cohort2 k=77 / n=196  (rate 0.5109). \\
+\textbf{Test:} Fisher exact (2x2), $p = 0.03398$ (significant). \\
+\textbf{supported:} Fatigue and Headache co-occur more often after Moderna than after Janssen. \\
+\textbf{refuted:} Fatigue and Headache co-occur more often after Janssen than after Moderna. \\
+
+\subsection*{S-R1}
+\textbf{Qualified cores:} 3166 viable, 489 supported-capable (true cases), 3166 refuted-capable. \\
+\textbf{Core:} events Dizziness, Injection site pain, Asthenia; cohort report VAERS-916915. \\
+\textbf{Counts:} (single report; deterministic). \\
+\textbf{Test:} none (report-level). \\
+\textbf{supported:} In report VAERS-916915, Dizziness, Injection site pain, Asthenia occur in the order Dizziness → Injection site pain → Asthenia. \\
+\textbf{refuted:} In report VAERS-916915, Asthenia, Injection site pain, Dizziness occur in the order Asthenia → Injection site pain → Dizziness. \\
+
+\subsection*{S-V1}
+\textbf{Qualified cores:} 275 viable, 62 supported-capable (true cases), 236 refuted-capable. \\
+\textbf{Core:} events Headache, Hyperhidrosis, Pyrexia; cohort Janssen. \\
+\textbf{Counts:} k=0 / n=13  (rate 0.0). \\
+\textbf{Test:} binomial exact, $p = 0.1446$ (not significant). \\
+\textbf{supported:} After Janssen, Headache, Pyrexia, Hyperhidrosis typically occur as Headache → Pyrexia → Hyperhidrosis. \\
+\textbf{refuted:} After Janssen, Pyrexia, Headache, Hyperhidrosis typically occur as Pyrexia → Headache → Hyperhidrosis. \\
+
+\subsection*{S-V2}
+\textbf{Qualified cores:} 275 viable, 275 supported-capable (true cases), 275 refuted-capable. \\
+\textbf{Core:} events Chills, Fatigue, Headache; cohort Janssen. \\
+\textbf{Counts:} k=1 / n=28  (rate 0.0357). \\
+\textbf{Test:} binomial exact, $p = 0.0733$ (not significant). \\
+\textbf{supported:} In about 4\% of Janssen reports, the sequence is Chills → Fatigue → Headache. \\
+\textbf{refuted:} In about 24\% of Janssen reports, the sequence is Chills → Fatigue → Headache. \\
+
+\subsection*{S-V3}
+\textbf{Qualified cores:} 275 viable, 192 supported-capable (true cases), 192 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache, Pyrexia; cohort Janssen. \\
+\textbf{Counts:} k=8 / n=25  (rate 0.32). \\
+\textbf{Test:} multinomial GOF (exact), $p = 0.03251$ (significant). \\
+\textbf{supported:} After Janssen, the most common ordering of Headache, Pyrexia, Fatigue is Headache → Pyrexia → Fatigue. \\
+\textbf{refuted:} After Janssen, the most common ordering of Fatigue, Pyrexia, Headache is Fatigue → Pyrexia → Headache. \\
+
+\subsection*{S-V4}
+\textbf{Qualified cores:} 275 viable, 62 supported-capable (true cases), 174 refuted-capable. \\
+\textbf{Core:} events Chills, Fatigue, Headache; cohort Janssen. \\
+\textbf{Counts:} k=8 / n=28  (rate 0.2857). \\
+\textbf{Test:} multinomial GOF (exact), $p = 0.1181$ (not significant). \\
+\textbf{refuted:} After Janssen, the ordering of Chills, Fatigue, Headache is consistent across reports. \\
+
+\subsection*{S-M1}
+\textbf{Qualified cores:} 90 viable, 44 supported-capable (true cases), 46 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache, Pain; cohort Moderna vs Janssen. \\
+\textbf{Counts:} k=1 / n=13  |  cohort2 k=7 / n=18  (rate 0.0769). \\
+\textbf{Test:} Fisher exact (2x2), $p = 0.09535$ (not significant). \\
+\textbf{supported:} The Fatigue → Headache → Pain rate differs between Moderna and Janssen. \\
+
+\subsection*{S-M2}
+\textbf{Qualified cores:} 90 viable, 75 supported-capable (true cases), 75 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache, Pain; cohort Moderna vs Janssen. \\
+\textbf{Counts:} k=1 / n=13  |  cohort2 k=7 / n=18  (rate 0.0769). \\
+\textbf{Test:} Fisher exact (2x2), $p = 0.09535$ (not significant). \\
+\textbf{supported:} The sequence Fatigue → Headache → Pain is more common after Janssen than Moderna. \\
+\textbf{refuted:} The sequence Fatigue → Headache → Pain is more common after Moderna than Janssen. \\
+
+\subsection*{S-M3}
+\textbf{Qualified cores:} 90 viable, 25 supported-capable (true cases), 65 refuted-capable. \\
+\textbf{Core:} events Fatigue, Headache, Pain; cohort Moderna vs Janssen. \\
+\textbf{Counts:} k=5 / n=13  |  cohort2 k=7 / n=18  (rate 0.3846). \\
+\textbf{Test:} Fisher-Freeman-Halton (exact), $p = 0.332$ (not significant). \\
+\textbf{refuted:} The typical ordering of Fatigue, Headache, Pain is the same after Moderna and Janssen. \\
+
+\subsection*{F-R1}
+\textbf{Qualified cores:} 3166 viable, 1196 supported-capable (true cases), 3166 refuted-capable. \\
+\textbf{Core:} events Dizziness, Injection site pain, Asthenia; cohort report VAERS-916915. \\
+\textbf{Counts:} (single report; deterministic). \\
+\textbf{Test:} none (report-level). \\
+\textbf{supported:} In report VAERS-916915, Dizziness occurs first among Dizziness, Injection site pain, Asthenia. \\
+\textbf{refuted:} In report VAERS-916915, Injection site pain occurs first among Injection site pain, Dizziness, Asthenia. \\
+
+\subsection*{F-R2}
+\textbf{Qualified cores:} 3166 viable, 1299 supported-capable (true cases), 3166 refuted-capable. \\
+\textbf{Core:} events Dizziness, Injection site pain, Asthenia; cohort report VAERS-916915. \\
+\textbf{Counts:} (single report; deterministic). \\
+\textbf{Test:} none (report-level). \\
+\textbf{supported:} In report VAERS-916915, Injection site pain occurs last among Asthenia, Dizziness, Injection site pain. \\
+\textbf{refuted:} In report VAERS-916915, Asthenia occurs last among Dizziness, Injection site pain, Asthenia. \\
+
+\subsection*{F-R3}
+\textbf{Qualified cores:} 3166 viable, 1196 supported-capable (true cases), 1196 refuted-capable. \\
+\textbf{Core:} events Dizziness, Injection site pain, Asthenia; cohort report VAERS-916915. \\
+\textbf{Counts:} (single report; deterministic). \\
+\textbf{Test:} none (report-level). \\
+\textbf{supported:} In report VAERS-916915, Dizziness is the first of Dizziness, Injection site pain, Asthenia to occur. \\
+\textbf{refuted:} In report VAERS-916915, Injection site pain is the first of Injection site pain, Dizziness, Asthenia to occur. \\
+
+\subsection*{F-V1}
+\textbf{Qualified cores:} 82 viable, 67 supported-capable (true cases), 82 refuted-capable. \\
+\textbf{Core:} events Chills, Headache, Pyrexia; cohort Janssen. \\
+\textbf{Counts:} k=22 / n=116  (rate 0.1897). \\
+\textbf{Test:} multinomial GOF (chi-square), $p = 0.0002104$ (significant). \\
+\textbf{supported:} After Janssen, Headache typically occurs first among Headache, Chills, Pyrexia. \\
+\textbf{refuted:} After Janssen, Pyrexia typically occurs first among Pyrexia, Chills, Headache. \\
+
+\subsection*{F-V2}
+\textbf{Qualified cores:} 82 viable, 73 supported-capable (true cases), 82 refuted-capable. \\
+\textbf{Core:} events Chills, Headache, Pyrexia; cohort Janssen. \\
+\textbf{Counts:} k=28 / n=116  (rate 0.2414). \\
+\textbf{Test:} multinomial GOF (chi-square), $p = 0.0001234$ (significant). \\
+\textbf{supported:} After Janssen, Pyrexia typically occurs last among Headache, Chills, Pyrexia. \\
+\textbf{refuted:} After Janssen, Pyrexia typically occurs last among Chills, Headache, Pyrexia. \\
+
+\subsection*{F-V3}
+\textbf{Qualified cores:} 82 viable, 2 supported-capable (true cases), 82 refuted-capable. \\
+\textbf{Core:} events Headache, Injection site pain, Pyrexia; cohort Janssen. \\
+\textbf{Counts:} k=20 / n=39  (rate 0.5128). \\
+\textbf{Test:} binomial exact, $p = 0.02573$ (significant). \\
+\textbf{supported:} After Janssen, Injection site pain is usually the first of Injection site pain, Headache, Pyrexia. \\
+\textbf{refuted:} After Janssen, Pyrexia is usually the first of Pyrexia, Headache, Injection site pain. \\
+
+\subsection*{F-M1}
+\textbf{Qualified cores:} 46 viable, 23 supported-capable (true cases), 23 refuted-capable. \\
+\textbf{Core:} events Chills, Headache, Pyrexia; cohort Pfizer vs Moderna. \\
+\textbf{Counts:} k=10 / n=67  |  cohort2 k=None / n=60  (rate 0.1493). \\
+\textbf{Test:} Fisher-Freeman-Halton (exact), $p = 0.5621$ (not significant). \\
+\textbf{supported:} The typical first event among Chills, Headache, Pyrexia is the same after Pfizer and Moderna. \\
+
+\subsection*{F-M2}
+\textbf{Qualified cores:} 46 viable, 23 supported-capable (true cases), 23 refuted-capable. \\
+\textbf{Core:} events Chills, Headache, Pyrexia; cohort Pfizer vs Moderna. \\
+\textbf{Counts:} k=10 / n=67  |  cohort2 k=None / n=60  (rate 0.1493). \\
+\textbf{Test:} Fisher-Freeman-Halton (exact), $p = 0.5621$ (not significant). \\
+\textbf{refuted:} Pfizer and Moderna differ in which of Chills, Headache, Pyrexia appears first. \\
+
+\subsection*{F-M3}
+\textbf{Qualified cores:} 46 viable, 45 supported-capable (true cases), 45 refuted-capable. \\
+\textbf{Core:} events Chills, Headache, Pyrexia; cohort Pfizer vs Moderna. \\
+\textbf{Counts:} k=10 / n=67  |  cohort2 k=7 / n=60  (rate 0.1493). \\
+\textbf{Test:} Fisher exact (2x2), $p = 0.6141$ (not significant). \\
+\textbf{supported:} Headache is the first event more often after Pfizer than Moderna. \\
+\textbf{refuted:} Headache is the first event more often after Moderna than Pfizer. \\
+
+
+\end{document}

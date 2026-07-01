@@ -117,7 +117,7 @@ def test_multi_differ_verdict(idx):
 def test_first_choice_winner(idx):
     r = compute_answer(idx, "F-V1", ("Headache", "Fatigue", "Pyrexia"),
                        vaccines=("Pfizer",))
-    assert r.sig_test == "chi2_gof"
+    assert r.sig_test.startswith("multinomial_gof")   # exact or chi-square
     assert r.options == ["Headache", "Fatigue", "Pyrexia"]
     assert r.gold_answer == "Headache"          # first in 16/20
 

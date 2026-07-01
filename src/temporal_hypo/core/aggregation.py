@@ -21,6 +21,8 @@ from temporal_hypo.core.leveled_order import (
 )
 
 _MIN_N = 10
+# Sequence uses a smaller floor over the ORDERABLE denominator (see corpus.py).
+SEQ_MIN_N = 5
 
 
 def get_cohort(conn: sqlite3.Connection, vaccine: str | None = None) -> list[int]:
@@ -91,23 +93,29 @@ def sequence_fraction(
     C: str,
     cohort: list[int],
 ) -> tuple[float, int] | None:
-    """Fraction of cohort reports where A→B→C holds strictly (locked rule 3).
+    """Fraction of ORDERABLE cohort reports where A→B→C holds strictly.
 
-    Denominator: reports containing all three events.
-    Returns None if denominator < 10.
+    Denominator: reports where A, B, C occur at DISTINCT levels (co-occurrence
+    excluded, as in pairwise-precedes). Gaps are fine (a<b<d<e<c counts as
+    a<b<c). Returns None below SEQ_MIN_N.
     """
-    all_present = 0
+    orderable = 0
     seq_count = 0
     for vid in cohort:
         levels = load_levels(conn, vid)
-        result = sequence_holds(levels, [A, B, C])
-        if result != "missing":
-            all_present += 1
-            if result is True:
-                seq_count += 1
-    if all_present < _MIN_N:
+        ia = level_of(levels, A)
+        ib = level_of(levels, B)
+        ic = level_of(levels, C)
+        if ia is None or ib is None or ic is None:
+            continue
+        if ia == ib or ib == ic or ia == ic:
+            continue   # co-occurrence: triple not fully orderable, excluded
+        orderable += 1
+        if ia < ib < ic:
+            seq_count += 1
+    if orderable < SEQ_MIN_N:
         return None
-    return (seq_count / all_present, all_present)
+    return (seq_count / orderable, orderable)
 
 
 def first_among_fractions(
@@ -207,7 +215,9 @@ def ordering_distribution(
          'modal': perm_tuple | None, 'modal_count': int,
          'modal_share': float, 'modal_tie': bool}
     """
-    n = 0
+    # ORDERABLE denominator: n counts only distinct-level reports; co-occurrence
+    # (tie) reports are excluded from n (mirrors pairwise-precedes).
+    n_orderable = 0
     tie = 0
     counts: dict[tuple[str, ...], int] = {}
     for vid in cohort:
@@ -215,16 +225,16 @@ def ordering_distribution(
         idxs = [level_of(levels, t) for t in terms]
         if any(i is None for i in idxs):
             continue
-        n += 1
         if len(set(idxs)) < len(idxs):
             tie += 1
             continue
+        n_orderable += 1
         order = tuple(
             t for t, _ in sorted(zip(terms, idxs), key=lambda pair: pair[1])
         )
         counts[order] = counts.get(order, 0) + 1
 
-    if n < _MIN_N:
+    if n_orderable < SEQ_MIN_N:
         return None
 
     modal: tuple[str, ...] | None = None
@@ -239,10 +249,10 @@ def ordering_distribution(
     return {
         "counts": counts,
         "tie": tie,
-        "n": n,
+        "n": n_orderable,
         "modal": modal,
         "modal_count": modal_count,
-        "modal_share": modal_count / n,
+        "modal_share": modal_count / n_orderable,
         "modal_tie": modal_tie,
     }
 

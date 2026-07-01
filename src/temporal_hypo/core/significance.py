@@ -27,7 +27,6 @@ These are annotations on the gold value; the benchmark label stays the
 from __future__ import annotations
 
 import math
-import random
 from typing import Sequence
 
 ALPHA = 0.05
@@ -192,17 +191,12 @@ def _chi2_gof_stat(observed: Sequence[float], expected: Sequence[float]) -> floa
     return stat
 
 
-def chi2_gof(
-    observed: Sequence[int],
-    expected: Sequence[float] | None = None,
-    *,
-    mc_b: int = 2000,
-    seed: int = 0,
-) -> dict:
-    """Chi-square goodness-of-fit. expected defaults to uniform over the cells.
+def chi2_gof(observed: Sequence[int],
+             expected: Sequence[float] | None = None) -> dict:
+    """Asymptotic chi-square goodness-of-fit (large-n approximation only).
 
-    Returns dict(stat, df, p, min_expected, method, n). When any expected cell is
-    below MIN_EXPECTED, a seeded Monte-Carlo p-value replaces the asymptotic one.
+    Per 05_significance_tests.md this is used only when every expected cell >= 5;
+    the exact multinomial GOF is primary otherwise. No Monte-Carlo.
     """
     obs = list(observed)
     total = sum(obs)
@@ -210,31 +204,15 @@ def chi2_gof(
     if cells < 2 or total <= 0:
         return {"stat": 0.0, "df": max(0, cells - 1), "p": 1.0,
                 "min_expected": 0.0, "method": "degenerate", "n": total}
-    if expected is None:
-        exp = [total / cells] * cells
-    else:
-        exp = list(expected)
+    exp = [total / cells] * cells if expected is None else list(expected)
     df = cells - 1
     stat = _chi2_gof_stat(obs, exp)
-    min_exp = min(exp)
-    if min_exp < MIN_EXPECTED:
-        p = _mc_gof_p(obs, exp, stat, b=mc_b, seed=seed)
-        method = "monte_carlo"
-    else:
-        p = chi2_sf(stat, df)
-        method = "asymptotic"
-    return {"stat": stat, "df": df, "p": p, "min_expected": min_exp,
-            "method": method, "n": total}
+    return {"stat": stat, "df": df, "p": chi2_sf(stat, df),
+            "min_expected": min(exp), "method": "asymptotic", "n": total}
 
 
-def chi2_contingency(table: Sequence[Sequence[int]], *, mc_b: int = 5000,
-                     seed: int = 0) -> dict:
-    """Chi-square for an R x C contingency table (homogeneity / independence).
-
-    Returns dict(stat, df, p, min_expected, method, n). Monte-Carlo fallback
-    (resampling each row from the pooled column distribution) when any expected
-    cell is below MIN_EXPECTED.
-    """
+def chi2_contingency(table: Sequence[Sequence[int]]) -> dict:
+    """Asymptotic chi-square for an R x C contingency table. No Monte-Carlo."""
     rows = [list(r) for r in table]
     R = len(rows)
     C = len(rows[0]) if rows else 0
@@ -245,66 +223,112 @@ def chi2_contingency(table: Sequence[Sequence[int]], *, mc_b: int = 5000,
     row_sums = [sum(r) for r in rows]
     col_sums = [sum(rows[i][j] for i in range(R)) for j in range(C)]
     exp = [[row_sums[i] * col_sums[j] / total for j in range(C)] for i in range(R)]
-    stat = 0.0
-    for i in range(R):
-        for j in range(C):
-            if exp[i][j] > 0:
-                stat += (rows[i][j] - exp[i][j]) ** 2 / exp[i][j]
+    stat = sum((rows[i][j] - exp[i][j]) ** 2 / exp[i][j]
+               for i in range(R) for j in range(C) if exp[i][j] > 0)
     df = (R - 1) * (C - 1)
     min_exp = min(exp[i][j] for i in range(R) for j in range(C))
-    if min_exp < MIN_EXPECTED:
-        p = _mc_contingency_p(rows, row_sums, col_sums, total, stat,
-                              b=mc_b, seed=seed)
-        method = "monte_carlo"
-    else:
-        p = chi2_sf(stat, df)
-        method = "asymptotic"
-    return {"stat": stat, "df": df, "p": p, "min_expected": min_exp,
-            "method": method, "n": total}
+    return {"stat": stat, "df": df, "p": chi2_sf(stat, df),
+            "min_expected": min_exp, "method": "asymptotic", "n": total}
 
 
-def _mc_gof_p(observed: Sequence[int], expected: Sequence[float], stat_obs: float,
-              *, b: int, seed: int) -> float:
-    total = int(round(sum(observed)))
-    cells = len(observed)
-    weights = [e / sum(expected) for e in expected]
-    rng = random.Random(seed)
-    idx = list(range(cells))
-    ge = 0
-    for _ in range(b):
-        draw = rng.choices(idx, weights=weights, k=total)
-        counts = [0] * cells
-        for d in draw:
-            counts[d] += 1
-        if _chi2_gof_stat(counts, expected) >= stat_obs - 1e-12:
-            ge += 1
-    return (ge + 1) / (b + 1)
+# ---------------------------------------------------------------------------
+# exact tests (no permutation / Monte-Carlo; feasible because the conditioned
+# multinomial samples are small once co-exist reports thin the strict orderings)
+# ---------------------------------------------------------------------------
+
+def _compositions(n: int, k: int):
+    """Yield every length-k non-negative integer tuple summing to n."""
+    if k == 1:
+        yield (n,)
+        return
+    for first in range(n + 1):
+        for rest in _compositions(n - first, k - 1):
+            yield (first,) + rest
 
 
-def _mc_contingency_p(rows, row_sums, col_sums, total, stat_obs, *, b, seed) -> float:
-    R = len(rows)
-    C = len(col_sums)
-    pooled_w = [c / total for c in col_sums]
-    exp = [[row_sums[i] * col_sums[j] / total for j in range(C)] for i in range(R)]
-    rng = random.Random(seed)
-    idx = list(range(C))
-    ge = 0
-    for _ in range(b):
-        stat = 0.0
-        sim = []
-        for i in range(R):
-            draw = rng.choices(idx, weights=pooled_w, k=row_sums[i])
-            counts = [0] * C
-            for d in draw:
-                counts[d] += 1
-            sim.append(counts)
-        for i in range(R):
-            for j in range(C):
-                if exp[i][j] > 0:
-                    stat += (sim[i][j] - exp[i][j]) ** 2 / exp[i][j]
-        if stat >= stat_obs - 1e-12:
-            ge += 1
-    return (ge + 1) / (b + 1)
+def multinomial_gof_exact(observed: Sequence[int],
+                          expected: Sequence[float] | None = None) -> dict:
+    """Exact multinomial goodness-of-fit: sum the probabilities of all tables
+    (same n) whose chi-square statistic is at least the observed one."""
+    obs = list(observed)
+    n = sum(obs)
+    k = len(obs)
+    if k < 2 or n <= 0:
+        return {"stat": 0.0, "df": max(0, k - 1), "p": 1.0,
+                "method": "exact", "n": n}
+    p = [1.0 / k] * k if expected is None else [e / sum(expected) for e in expected]
+    exp = [pi * n for pi in p]
+    stat_obs = _chi2_gof_stat(obs, exp)
+    log_n_fact = math.lgamma(n + 1)
+    logp = [math.log(pi) if pi > 0 else -math.inf for pi in p]
+    total = 0.0
+    for comp in _compositions(n, k):
+        if _chi2_gof_stat(comp, exp) >= stat_obs * (1 - 1e-9):
+            lp = log_n_fact
+            for ci, lpi in zip(comp, logp):
+                lp += ci * lpi - math.lgamma(ci + 1)
+            total += math.exp(lp)
+    return {"stat": stat_obs, "df": k - 1, "p": min(1.0, total),
+            "method": "exact", "n": n}
+
+
+def fisher_freeman_halton(table: Sequence[Sequence[int]]) -> dict:
+    """Exact test for a 2xk contingency table (Fisher-Freeman-Halton),
+    two-sided by the probability criterion, with margins held fixed."""
+    rows = [list(r) for r in table]
+    if len(rows) != 2:
+        raise ValueError("FFH expects a 2xk table")
+    C = len(rows[0])
+    r1, r2 = sum(rows[0]), sum(rows[1])
+    total = r1 + r2
+    col = [rows[0][j] + rows[1][j] for j in range(C)]
+    if total <= 0:
+        return {"p": 1.0, "method": "exact", "n": total}
+
+    def logprob(a):
+        lp = math.lgamma(r1 + 1) + math.lgamma(r2 + 1) - math.lgamma(total + 1)
+        for j in range(C):
+            lp += (math.lgamma(col[j] + 1) - math.lgamma(a[j] + 1)
+                   - math.lgamma(col[j] - a[j] + 1))
+        return lp
+
+    p_obs = logprob(rows[0])
+    acc = 0.0
+
+    def rec(j, remaining, cur):
+        nonlocal acc
+        if j == C - 1:
+            if 0 <= remaining <= col[j]:
+                lp = logprob(cur + [remaining])
+                if lp <= p_obs + 1e-9:
+                    acc += math.exp(lp)
+            return
+        for v in range(0, min(col[j], remaining) + 1):
+            rec(j + 1, remaining - v, cur + [v])
+
+    rec(0, r1, [])
+    return {"p": min(1.0, acc), "method": "exact", "n": total}
+
+
+def multinomial_gof(observed: Sequence[int],
+                    expected: Sequence[float] | None = None,
+                    *, min_expected: float = MIN_EXPECTED) -> dict:
+    """Multinomial GOF: chi-square when every expected cell >= min_expected,
+    else the exact test (05: exact is primary, chi-square is the >=5 shortcut)."""
+    r = chi2_gof(observed, expected)
+    if r["min_expected"] < min_expected:
+        return multinomial_gof_exact(observed, expected)
+    return r
+
+
+def contingency_test(table: Sequence[Sequence[int]],
+                     *, min_expected: float = MIN_EXPECTED) -> dict:
+    """2xk homogeneity: chi-square when every expected cell >= min_expected,
+    else Fisher-Freeman-Halton exact."""
+    r = chi2_contingency(table)
+    if r["min_expected"] < min_expected:
+        return fisher_freeman_halton(table)
+    return r
 
 
 # ---------------------------------------------------------------------------
