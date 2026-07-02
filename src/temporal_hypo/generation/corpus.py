@@ -155,6 +155,36 @@ def sequence_fraction(
     return (seq / orderable, orderable)
 
 
+def pair_distances(
+    index: CorpusIndex, a: str, b: str, cohort: list[int]
+) -> list[int]:
+    """Per-report rank-distance d = level(a) - level(b) for reports containing
+    both (co-exist -> d=0). The position track keeps ALL present reports."""
+    out: list[int] = []
+    for vid in cohort:
+        t = index.report_terms[vid]
+        ia, ib = t.get(a), t.get(b)
+        if ia is None or ib is None:
+            continue
+        out.append(ia - ib)
+    return out
+
+
+def triple_positions(
+    index: CorpusIndex, terms: list[str], cohort: list[int]
+) -> list[tuple[int, ...]]:
+    """Per-report tuple of level indices for reports containing all terms
+    (co-occurrence kept -> tied ranks downstream)."""
+    out: list[tuple[int, ...]] = []
+    for vid in cohort:
+        t = index.report_terms[vid]
+        vals = [t.get(x) for x in terms]
+        if any(v is None for v in vals):
+            continue
+        out.append(tuple(vals))
+    return out
+
+
 def _extreme_among_fractions(
     index: CorpusIndex, terms: list[str], cohort: list[int], *, last: bool
 ) -> dict | None:

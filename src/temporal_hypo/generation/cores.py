@@ -282,12 +282,15 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
             return _new_core(group, mode, computable=True, natural_verdict=nv,
                              proportion=dist["modal_share"], n=n,
                              k=dist["modal_count"], extra=dist, **base)
-        # seq_bool / prop_sequence: canonical specific order = combo as given
-        canon = dist["counts"].get((a, b, c), 0)
-        frac = canon / n
+        # seq_bool / prop_sequence: focus on the MODAL (actually-occurring)
+        # ordering. A canonical order that never appears in the data is not a
+        # usable claim -- the modal is the real, supportable ordering; other
+        # orderings serve as refuted instances.
+        modal_count = dist["modal_count"]
+        frac = dist["modal_share"]
         nv = bool_verdict(frac) if mode == "seq_bool" else "supported"
         return _new_core(group, mode, computable=True, natural_verdict=nv,
-                         proportion=frac, n=n, k=canon, extra=dist, **base)
+                         proportion=frac, n=n, k=modal_count, extra=dist, **base)
 
     if mode in ("first_choice", "last_choice", "first_bool"):
         terms = list(combo)
@@ -770,13 +773,18 @@ def _realize_directional(core, polarity):
 
 def _realize_prop(core, polarity):
     frac, n, k = core.proportion, core.n, core.k
+    # prop_sequence states the % for the MODAL ordering (the one that occurs),
+    # not the canonical order which may never appear.
+    events = core.events
+    if core.mode == "prop_sequence" and core.extra.get("modal"):
+        events = core.extra["modal"]
     if polarity == "supported":
         pct = round(frac * 100)
     else:
         pct = _refuted_prop_pct(frac)
     verdict = prop_verdict(pct / 100, frac)
     fk = None if polarity == "supported" else "value"
-    return _mk(core, polarity, fk, core.events, verdict=verdict,
+    return _mk(core, polarity, fk, events, verdict=verdict,
                proportion=frac, n=n, k=k, p_value=pct)
 
 

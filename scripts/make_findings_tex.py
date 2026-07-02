@@ -138,6 +138,7 @@ PREAMBLE = r"""\documentclass[11pt]{article}
 \usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{microtype}
+\usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
 
 % Wrapping left-aligned X column
