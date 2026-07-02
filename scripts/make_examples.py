@@ -33,7 +33,7 @@ from temporal_hypo.generation.cores import (
 from temporal_hypo.core import positions
 from temporal_hypo.generation import corpus
 from temporal_hypo.generation.corpus import CorpusIndex
-from temporal_hypo.generation.templates import load_groups, render
+from temporal_hypo.generation.templates import REGISTERS, load_groups, render
 
 _REPO = Path(__file__).resolve().parent.parent
 
@@ -179,10 +179,17 @@ def _example_for(index, group, core) -> dict:
     rendered = {}
     for pol in polarities:
         facts = realize(core, pol)
+        # render every register's filled question + claim so the worked example
+        # is self-contained (no need to cross-reference the template catalogue).
         rendered[pol] = {
             "gold_verdict": facts.gold_verdict,
-            "question": render(group, "original", "question", facts.slot_values),
-            "claim": render(group, "original", "claim", facts.slot_values),
+            "registers": {
+                reg: {
+                    "question": render(group, reg, "question", facts.slot_values),
+                    "claim": render(group, reg, "claim", facts.slot_values),
+                }
+                for reg in REGISTERS
+            },
         }
 
     test = None
@@ -460,9 +467,13 @@ def _render_md(entries, stats) -> str:
         if e["gold_answer"] is not None:
             out.append(f"- **Options**: {e['options']}  ->  correct: **{e['gold_answer']}**")
         for pol, r in e["examples"].items():
-            out.append(f"- **{r['gold_verdict'].upper()}** example:")
-            out.append(f"    - Q: {r['question']}")
-            out.append(f"    - Claim: {r['claim']}")
+            out.append(f"- **{r['gold_verdict'].upper()}** example "
+                       f"(filled, all registers):")
+            for reg in REGISTERS:
+                rv = r["registers"][reg]
+                out.append(f"    - **{reg.capitalize()}**")
+                out.append(f"        - Q: {rv['question']}")
+                out.append(f"        - Claim: {rv['claim']}")
         out.append("")
 
     out += ["## Statistical methods (how each p-value is computed)", ""]
@@ -474,7 +485,8 @@ def _render_md(entries, stats) -> str:
 
 def _esc(s) -> str:
     for a, b in [("\\", r"\textbackslash{}"), ("&", r"\&"), ("%", r"\%"),
-                 ("_", r"\_"), ("#", r"\#"), ("{", r"\{"), ("}", r"\}")]:
+                 ("_", r"\_"), ("#", r"\#"), ("{", r"\{"), ("}", r"\}"),
+                 ("→", r"$\rightarrow$ ")]:  # arrow escaped last (adds a backslash)
         s = str(s).replace(a, b)
     return s
 
@@ -574,8 +586,19 @@ def _render_tex(entries, stats) -> str:
                        + _esc(pt["detail"]) + f"), $p = {pv}$" + r". \\")
             out.append(r"\emph{how:} " + _esc(pt["how"]) + r". \\")
         for pol, r in e["examples"].items():
-            out.append(r"\textbf{" + _esc(r["gold_verdict"]) + r":} "
-                       + _esc(r["claim"]) + r" \\")
+            out.append(r"\textbf{" + _esc(r["gold_verdict"].capitalize())
+                       + r" example} (filled, all registers): \\")
+            out.append(r"\begin{tabularx}{\linewidth}{@{}l L L@{}}")
+            out.append(r"\toprule")
+            out.append(r"\textbf{Register} & \textbf{Question} & \textbf{Claim} \\")
+            out.append(r"\midrule")
+            for reg in REGISTERS:
+                rv = r["registers"][reg]
+                out.append(_esc(reg.capitalize()) + " & " + _esc(rv["question"])
+                           + " & " + _esc(rv["claim"]) + r" \\")
+            out.append(r"\bottomrule")
+            out.append(r"\end{tabularx}")
+            out.append(r"\vspace{3pt}")
         out.append("")
 
     out.append(r"\subsection*{Statistical methods (how each p-value is computed)}")

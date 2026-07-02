@@ -608,8 +608,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Core:} events Dizziness, Injection site pain; cohort report VAERS-916915. \\
 \textbf{Counts:} (single report; deterministic). \\
 \textbf{Categorical test:} none (report-level). \\
-\textbf{supported:} In report VAERS-916915, Dizziness occurred before Injection site pain. \\
-\textbf{refuted:} In report VAERS-916915, Injection site pain occurred before Dizziness. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Did Dizziness occur before Injection site pain in report VAERS-916915? & In report VAERS-916915, Dizziness occurred before Injection site pain. \\
+Research & In this report, does Dizziness precede Injection site pain? & This report records Dizziness preceding Injection site pain. \\
+Media & In this case, did Dizziness happen before Injection site pain? & In this case, Dizziness happened before Injection site pain. \\
+Clinical & Did Dizziness come before Injection site pain in this patient? & In this patient, Dizziness came before Injection site pain. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Did Injection site pain occur before Dizziness in report VAERS-916915? & In report VAERS-916915, Injection site pain occurred before Dizziness. \\
+Research & In this report, does Injection site pain precede Dizziness? & This report records Injection site pain preceding Dizziness. \\
+Media & In this case, did Injection site pain happen before Dizziness? & In this case, Injection site pain happened before Dizziness. \\
+Clinical & Did Injection site pain come before Dizziness in this patient? & In this patient, Injection site pain came before Dizziness. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{P-R2}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -617,8 +639,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Core:} events Dizziness, Injection site pain; cohort report VAERS-916915. \\
 \textbf{Counts:} (single report; deterministic). \\
 \textbf{Categorical test:} none (report-level). \\
-\textbf{supported:} In report VAERS-916915, Dizziness came first, before Injection site pain. \\
-\textbf{refuted:} In report VAERS-916915, Injection site pain came first, before Dizziness. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Which came first in report VAERS-916915, Dizziness or Injection site pain? & In report VAERS-916915, Dizziness came first, before Injection site pain. \\
+Research & Of Dizziness and Injection site pain, which is the earlier event in this report? & In this report, Dizziness is the earlier event. \\
+Media & In this case, which came first, Dizziness or Injection site pain? & In this case, Dizziness came first. \\
+Clinical & Between Dizziness and Injection site pain, which came first in this patient? & In this patient, Dizziness came first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Which came first in report VAERS-916915, Injection site pain or Dizziness? & In report VAERS-916915, Injection site pain came first, before Dizziness. \\
+Research & Of Injection site pain and Dizziness, which is the earlier event in this report? & In this report, Injection site pain is the earlier event. \\
+Media & In this case, which came first, Injection site pain or Dizziness? & In this case, Injection site pain came first. \\
+Clinical & Between Injection site pain and Dizziness, which came first in this patient? & In this patient, Injection site pain came first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{P-V1}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -629,8 +673,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
 \textbf{Position-based test:} Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), $p = 0.002862$. \\
 \emph{how:} Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction. \\
-\textbf{supported:} After Janssen, Headache typically occurs before Fatigue. \\
-\textbf{refuted:} After Janssen, Fatigue typically occurs before Headache. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does Headache typically occur before Fatigue after Janssen? & After Janssen, Headache typically occurs before Fatigue. \\
+Research & Among Janssen reports, does Headache precede Fatigue in the majority of cases? & Among Janssen reports, Headache precedes Fatigue in the majority of cases. \\
+Media & After Janssen, do most people get Headache before Fatigue? & After Janssen, most people get Headache before Fatigue. \\
+Clinical & In Janssen recipients, does Headache usually come before Fatigue? & In Janssen recipients, Headache usually comes before Fatigue. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does Fatigue typically occur before Headache after Janssen? & After Janssen, Fatigue typically occurs before Headache. \\
+Research & Among Janssen reports, does Fatigue precede Headache in the majority of cases? & Among Janssen reports, Fatigue precedes Headache in the majority of cases. \\
+Media & After Janssen, do most people get Fatigue before Headache? & After Janssen, most people get Fatigue before Headache. \\
+Clinical & In Janssen recipients, does Fatigue usually come before Headache? & In Janssen recipients, Fatigue usually comes before Headache. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{P-V2}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -641,8 +707,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
 \textbf{Position-based test:} Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), $p = 0.002862$. \\
 \emph{how:} Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction. \\
-\textbf{supported:} In about 37\% of Janssen reports, Fatigue precedes Headache. \\
-\textbf{refuted:} In about 57\% of Janssen reports, Fatigue precedes Headache. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In what fraction of Janssen reports does Fatigue precede Headache? & In about 37\% of Janssen reports, Fatigue precedes Headache. \\
+Research & Among Janssen reports with both Fatigue and Headache, what proportion show Fatigue preceding Headache? & Among Janssen reports with both events, Fatigue precedes Headache in 37\% of cases. \\
+Media & What share of Janssen cases show Fatigue before Headache? & About 37\% of Janssen cases show Fatigue before Headache. \\
+Clinical & How often does Fatigue precede Headache in Janssen recipients? & Fatigue precedes Headache in roughly 37\% of Janssen recipients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In what fraction of Janssen reports does Fatigue precede Headache? & In about 57\% of Janssen reports, Fatigue precedes Headache. \\
+Research & Among Janssen reports with both Fatigue and Headache, what proportion show Fatigue preceding Headache? & Among Janssen reports with both events, Fatigue precedes Headache in 57\% of cases. \\
+Media & What share of Janssen cases show Fatigue before Headache? & About 57\% of Janssen cases show Fatigue before Headache. \\
+Clinical & How often does Fatigue precede Headache in Janssen recipients? & Fatigue precedes Headache in roughly 57\% of Janssen recipients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{P-V3}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -653,8 +741,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
 \textbf{Position-based test:} Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), $p = 0.002862$. \\
 \emph{how:} Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction. \\
-\textbf{supported:} After Janssen, Headache usually comes before Fatigue. \\
-\textbf{refuted:} After Janssen, Fatigue usually comes before Headache. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, which usually comes first, Headache or Fatigue? & After Janssen, Headache usually comes before Fatigue. \\
+Research & Among Janssen reports with both, which more often precedes the other, Headache or Fatigue? & Among Janssen reports with both, Headache more often precedes Fatigue. \\
+Media & After Janssen, which side effect tends to come first, Headache or Fatigue? & After Janssen, Headache tends to come first. \\
+Clinical & In Janssen patients, what usually shows up first, Headache or Fatigue? & In Janssen patients, Headache usually shows up first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, which usually comes first, Fatigue or Headache? & After Janssen, Fatigue usually comes before Headache. \\
+Research & Among Janssen reports with both, which more often precedes the other, Fatigue or Headache? & Among Janssen reports with both, Fatigue more often precedes Headache. \\
+Media & After Janssen, which side effect tends to come first, Fatigue or Headache? & After Janssen, Fatigue tends to come first. \\
+Clinical & In Janssen patients, what usually shows up first, Fatigue or Headache? & In Janssen patients, Fatigue usually shows up first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{P-M1}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -665,7 +775,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability. \\
 \textbf{Position-based test:} Mann-Whitney U (level(Headache)-level(Nausea) between Pfizer/Moderna; n=89/85), $p = 0.002855$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} The Headache-before-Nausea rate differs between Pfizer and Moderna. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does the Headache-before-Nausea rate differ between Pfizer and Moderna? & The Headache-before-Nausea rate differs between Pfizer and Moderna. \\
+Research & Among reports with both events, is the Headache-precedes-Nausea proportion different between Pfizer and Moderna? & The Headache-precedes-Nausea proportion differs between Pfizer and Moderna cohorts. \\
+Media & Is there a real difference between Pfizer and Moderna in how often Headache comes before Nausea? & Pfizer and Moderna differ in how often Headache comes before Nausea. \\
+Clinical & Do my Pfizer and Moderna patients differ in how often Headache comes before Nausea? & Pfizer and Moderna recipients differ in the rate of Headache before Nausea. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{P-M2}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -676,8 +797,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability. \\
 \textbf{Position-based test:} Mann-Whitney U (level(Headache)-level(Nausea) between Pfizer/Moderna; n=89/85), $p = 0.002855$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} Headache precedes Nausea more often after Pfizer than after Moderna. \\
-\textbf{refuted:} Headache precedes Nausea more often after Moderna than after Pfizer. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After which vaccine, Pfizer or Moderna, does Headache more often precede Nausea? & Headache precedes Nausea more often after Pfizer than after Moderna. \\
+Research & Between Pfizer and Moderna, which cohort shows a higher Headache-preceding-Nausea proportion? & Pfizer shows a higher Headache-precedes-Nausea proportion than Moderna. \\
+Media & Is Headache-before-Nausea more common after Pfizer or Moderna? & Headache-before-Nausea is more common after Pfizer than Moderna. \\
+Clinical & In which group is Headache more often the precursor to Nausea, Pfizer or Moderna recipients? & Pfizer recipients more often have Headache as a precursor to Nausea. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After which vaccine, Moderna or Pfizer, does Headache more often precede Nausea? & Headache precedes Nausea more often after Moderna than after Pfizer. \\
+Research & Between Moderna and Pfizer, which cohort shows a higher Headache-preceding-Nausea proportion? & Moderna shows a higher Headache-precedes-Nausea proportion than Pfizer. \\
+Media & Is Headache-before-Nausea more common after Moderna or Pfizer? & Headache-before-Nausea is more common after Moderna than Pfizer. \\
+Clinical & In which group is Headache more often the precursor to Nausea, Moderna or Pfizer recipients? & Moderna recipients more often have Headache as a precursor to Nausea. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{C-R1}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -685,7 +828,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Core:} events Arthralgia, Chills; cohort report VAERS-917671. \\
 \textbf{Counts:} (single report; deterministic). \\
 \textbf{Categorical test:} none (report-level). \\
-\textbf{supported:} In report VAERS-917671, Arthralgia and Chills co-occur. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do Arthralgia and Chills co-occur in report VAERS-917671? & In report VAERS-917671, Arthralgia and Chills co-occur. \\
+Research & In this report, are Arthralgia and Chills concurrent? & In this report, Arthralgia and Chills are concurrent. \\
+Media & In this case, did Arthralgia and Chills happen at the same time? & In this case, Arthralgia and Chills happened at the same time. \\
+Clinical & Did this patient have Arthralgia and Chills together? & This patient had Arthralgia and Chills together. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{C-V1}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -694,7 +848,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Counts:} k=150 / n=204  (rate 0.7353). \\
 \textbf{Categorical test:} binomial exact, $p = 1.209e-11$ (significant). \\
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
-\textbf{supported:} After Janssen, Chills and Pyrexia typically co-occur. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do Chills and Pyrexia typically co-occur after Janssen? & After Janssen, Chills and Pyrexia typically co-occur. \\
+Research & In Janssen reports, are Chills and Pyrexia concurrent in the majority of cases? & In Janssen reports, Chills and Pyrexia are concurrent in the majority of cases. \\
+Media & After Janssen, do Chills and Pyrexia usually show up together? & After Janssen, Chills and Pyrexia usually show up together. \\
+Clinical & In Janssen recipients, do Chills and Pyrexia typically present together? & In Janssen recipients, Chills and Pyrexia typically present together. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{C-V2}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -703,8 +868,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Counts:} k=111 / n=213  (rate 0.5211). \\
 \textbf{Categorical test:} binomial exact, $p = 0.5837$ (not significant). \\
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
-\textbf{supported:} In about 52\% of Janssen reports, Headache and Pyrexia occur together. \\
-\textbf{refuted:} In about 72\% of Janssen reports, Headache and Pyrexia occur together. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & What fraction of Janssen reports show Headache and Pyrexia together? & In about 52\% of Janssen reports, Headache and Pyrexia occur together. \\
+Research & Among Janssen reports with both events, what proportion show Headache and Pyrexia concurrently? & Among Janssen reports with both events, Headache and Pyrexia are concurrent in 52\% of cases. \\
+Media & What share of Janssen cases have Headache and Pyrexia together? & About 52\% of Janssen cases have Headache and Pyrexia together. \\
+Clinical & How often do Headache and Pyrexia present together in Janssen patients? & Headache and Pyrexia present together in roughly 52\% of Janssen patients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & What fraction of Janssen reports show Headache and Pyrexia together? & In about 72\% of Janssen reports, Headache and Pyrexia occur together. \\
+Research & Among Janssen reports with both events, what proportion show Headache and Pyrexia concurrently? & Among Janssen reports with both events, Headache and Pyrexia are concurrent in 72\% of cases. \\
+Media & What share of Janssen cases have Headache and Pyrexia together? & About 72\% of Janssen cases have Headache and Pyrexia together. \\
+Clinical & How often do Headache and Pyrexia present together in Janssen patients? & Headache and Pyrexia present together in roughly 72\% of Janssen patients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{C-V3}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -713,7 +900,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Counts:} k=150 / n=204  (rate 0.7353). \\
 \textbf{Categorical test:} binomial exact, $p = 1.209e-11$ (significant). \\
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
-\textbf{supported:} After Janssen, co-occurrence is the dominant relation for Chills and Pyrexia. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, is co-occurrence the dominant relation for Chills and Pyrexia? & After Janssen, co-occurrence is the dominant relation for Chills and Pyrexia. \\
+Research & Among Janssen reports with both events, is concurrent presentation more common than ordered? & Among Janssen reports with both events, concurrent presentation is more common than ordered. \\
+Media & After Janssen, are Chills and Pyrexia more often together than in order? & After Janssen, Chills and Pyrexia are more often together than in order. \\
+Clinical & In Janssen recipients with both, is concurrence more common than sequential onset? & In Janssen recipients with both, concurrence is more common than sequential onset. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{C-M1}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -724,7 +922,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability. \\
 \textbf{Position-based test:} Mann-Whitney U (|level(Fatigue)-level(Headache)| between Moderna/Janssen; n=137/196), $p = 0.0297$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} The Fatigue-Headache co-occurrence rate differs between Moderna and Janssen. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does the Fatigue-Headache co-occurrence rate differ between Moderna and Janssen? & The Fatigue-Headache co-occurrence rate differs between Moderna and Janssen. \\
+Research & Among reports with both events, is the co-occurrence proportion different between Moderna and Janssen? & The co-occurrence proportion differs between Moderna and Janssen. \\
+Media & Is there a real difference between Moderna and Janssen in how often Fatigue and Headache happen together? & Moderna and Janssen differ in how often Fatigue and Headache happen together. \\
+Clinical & Do my Moderna and Janssen patients differ in how often Fatigue and Headache co-occur? & Moderna and Janssen recipients differ in Fatigue-Headache co-occurrence rates. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{C-M2}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -735,8 +944,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability. \\
 \textbf{Position-based test:} Mann-Whitney U (|level(Fatigue)-level(Headache)| between Moderna/Janssen; n=137/196), $p = 0.0297$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} Fatigue and Headache co-occur more often after Moderna than after Janssen. \\
-\textbf{refuted:} Fatigue and Headache co-occur more often after Janssen than after Moderna. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After which vaccine, Moderna or Janssen, do Fatigue and Headache more often co-occur? & Fatigue and Headache co-occur more often after Moderna than after Janssen. \\
+Research & Between Moderna and Janssen, which cohort shows higher Fatigue-Headache co-occurrence? & Moderna shows higher Fatigue-Headache co-occurrence than Janssen. \\
+Media & Is Fatigue and Headache together more common after Moderna or Janssen? & Fatigue and Headache together is more common after Moderna than Janssen. \\
+Clinical & In which group are Fatigue and Headache more often concurrent, Moderna or Janssen? & In Moderna recipients, Fatigue and Headache are more often concurrent. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After which vaccine, Janssen or Moderna, do Fatigue and Headache more often co-occur? & Fatigue and Headache co-occur more often after Janssen than after Moderna. \\
+Research & Between Janssen and Moderna, which cohort shows higher Fatigue-Headache co-occurrence? & Janssen shows higher Fatigue-Headache co-occurrence than Moderna. \\
+Media & Is Fatigue and Headache together more common after Janssen or Moderna? & Fatigue and Headache together is more common after Janssen than Moderna. \\
+Clinical & In which group are Fatigue and Headache more often concurrent, Janssen or Moderna? & In Janssen recipients, Fatigue and Headache are more often concurrent. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{S-R1}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -744,8 +975,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Core:} events Dizziness, Injection site pain, Asthenia; cohort report VAERS-916915. \\
 \textbf{Counts:} (single report; deterministic). \\
 \textbf{Categorical test:} none (report-level). \\
-\textbf{supported:} In report VAERS-916915, Dizziness, Injection site pain, Asthenia occur in the order Dizziness → Injection site pain → Asthenia. \\
-\textbf{refuted:} In report VAERS-916915, Asthenia, Injection site pain, Dizziness occur in the order Asthenia → Injection site pain → Dizziness. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do Dizziness, Injection site pain, Asthenia occur in the order Dizziness $\rightarrow$  Injection site pain $\rightarrow$  Asthenia in report VAERS-916915? & In report VAERS-916915, Dizziness, Injection site pain, Asthenia occur in the order Dizziness $\rightarrow$  Injection site pain $\rightarrow$  Asthenia. \\
+Research & In this report, is the observed ordering of Dizziness, Injection site pain, Asthenia exactly Dizziness $\rightarrow$  Injection site pain $\rightarrow$  Asthenia? & In this report, the observed ordering is Dizziness $\rightarrow$  Injection site pain $\rightarrow$  Asthenia. \\
+Media & In this case, did things go Dizziness, then Injection site pain, then Asthenia? & In this case, the progression was Dizziness, then Injection site pain, then Asthenia. \\
+Clinical & Did this patient progress Dizziness, then Injection site pain, then Asthenia? & This patient progressed Dizziness $\rightarrow$  Injection site pain $\rightarrow$  Asthenia. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do Asthenia, Injection site pain, Dizziness occur in the order Asthenia $\rightarrow$  Injection site pain $\rightarrow$  Dizziness in report VAERS-916915? & In report VAERS-916915, Asthenia, Injection site pain, Dizziness occur in the order Asthenia $\rightarrow$  Injection site pain $\rightarrow$  Dizziness. \\
+Research & In this report, is the observed ordering of Asthenia, Injection site pain, Dizziness exactly Asthenia $\rightarrow$  Injection site pain $\rightarrow$  Dizziness? & In this report, the observed ordering is Asthenia $\rightarrow$  Injection site pain $\rightarrow$  Dizziness. \\
+Media & In this case, did things go Asthenia, then Injection site pain, then Dizziness? & In this case, the progression was Asthenia, then Injection site pain, then Dizziness. \\
+Clinical & Did this patient progress Asthenia, then Injection site pain, then Dizziness? & This patient progressed Asthenia $\rightarrow$  Injection site pain $\rightarrow$  Dizziness. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{S-V1}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -756,8 +1009,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
 \textbf{Position-based test:} Friedman (Q=12.17 df=2; n=33 reports), $p = 0.002276$. \\
 \emph{how:} Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums. \\
-\textbf{supported:} After Janssen, Headache, Pyrexia, Hyperhidrosis typically occur as Headache → Pyrexia → Hyperhidrosis. \\
-\textbf{refuted:} After Janssen, Pyrexia, Headache, Hyperhidrosis typically occur as Pyrexia → Headache → Hyperhidrosis. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, do Headache, Pyrexia, Hyperhidrosis typically occur as Headache $\rightarrow$  Pyrexia $\rightarrow$  Hyperhidrosis? & After Janssen, Headache, Pyrexia, Hyperhidrosis typically occur as Headache $\rightarrow$  Pyrexia $\rightarrow$  Hyperhidrosis. \\
+Research & In Janssen reports with all three events, does the observed ordering match Headache $\rightarrow$  Pyrexia $\rightarrow$  Hyperhidrosis in the majority? & In Janssen reports with all three, the ordering matches Headache $\rightarrow$  Pyrexia $\rightarrow$  Hyperhidrosis in the majority. \\
+Media & After Janssen, do people usually go Headache, then Pyrexia, then Hyperhidrosis? & After Janssen, people usually go Headache, then Pyrexia, then Hyperhidrosis. \\
+Clinical & In Janssen recipients with all three, is the typical progression Headache $\rightarrow$  Pyrexia $\rightarrow$  Hyperhidrosis? & In Janssen recipients with all three, the typical progression is Headache $\rightarrow$  Pyrexia $\rightarrow$  Hyperhidrosis. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, do Pyrexia, Headache, Hyperhidrosis typically occur as Pyrexia $\rightarrow$  Headache $\rightarrow$  Hyperhidrosis? & After Janssen, Pyrexia, Headache, Hyperhidrosis typically occur as Pyrexia $\rightarrow$  Headache $\rightarrow$  Hyperhidrosis. \\
+Research & In Janssen reports with all three events, does the observed ordering match Pyrexia $\rightarrow$  Headache $\rightarrow$  Hyperhidrosis in the majority? & In Janssen reports with all three, the ordering matches Pyrexia $\rightarrow$  Headache $\rightarrow$  Hyperhidrosis in the majority. \\
+Media & After Janssen, do people usually go Pyrexia, then Headache, then Hyperhidrosis? & After Janssen, people usually go Pyrexia, then Headache, then Hyperhidrosis. \\
+Clinical & In Janssen recipients with all three, is the typical progression Pyrexia $\rightarrow$  Headache $\rightarrow$  Hyperhidrosis? & In Janssen recipients with all three, the typical progression is Pyrexia $\rightarrow$  Headache $\rightarrow$  Hyperhidrosis. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{S-V2}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -768,8 +1043,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
 \textbf{Position-based test:} Friedman (Q=7.71 df=2; n=88 reports), $p = 0.02115$. \\
 \emph{how:} Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums. \\
-\textbf{supported:} In about 29\% of Janssen reports, the sequence is Headache → Chills → Fatigue. \\
-\textbf{refuted:} In about 49\% of Janssen reports, the sequence is Headache → Chills → Fatigue. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & What fraction of Janssen reports show the sequence Headache $\rightarrow$  Chills $\rightarrow$  Fatigue? & In about 29\% of Janssen reports, the sequence is Headache $\rightarrow$  Chills $\rightarrow$  Fatigue. \\
+Research & Among Janssen reports with all three events, what proportion show the ordering Headache $\rightarrow$  Chills $\rightarrow$  Fatigue? & Among Janssen reports with all three events, 29\% show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue. \\
+Media & What share of Janssen cases show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue? & About 29\% of Janssen cases show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue. \\
+Clinical & How often do Janssen patients show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue? & Janssen patients show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue in roughly 29\% of cases. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & What fraction of Janssen reports show the sequence Headache $\rightarrow$  Chills $\rightarrow$  Fatigue? & In about 49\% of Janssen reports, the sequence is Headache $\rightarrow$  Chills $\rightarrow$  Fatigue. \\
+Research & Among Janssen reports with all three events, what proportion show the ordering Headache $\rightarrow$  Chills $\rightarrow$  Fatigue? & Among Janssen reports with all three events, 49\% show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue. \\
+Media & What share of Janssen cases show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue? & About 49\% of Janssen cases show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue. \\
+Clinical & How often do Janssen patients show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue? & Janssen patients show Headache $\rightarrow$  Chills $\rightarrow$  Fatigue in roughly 49\% of cases. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{S-V3}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -780,8 +1077,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} exact multinomial goodness-of-fit -- sum the multinomial probabilities of every table (same n) whose chi-square statistic vs uniform is >= the observed. \\
 \textbf{Position-based test:} Friedman (Q=0.35 df=2; n=90 reports), $p = 0.8412$. \\
 \emph{how:} Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums. \\
-\textbf{supported:} After Janssen, the most common ordering of Headache, Pyrexia, Fatigue is Headache → Pyrexia → Fatigue. \\
-\textbf{refuted:} After Janssen, the most common ordering of Fatigue, Pyrexia, Headache is Fatigue → Pyrexia → Headache. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, what is the most common ordering of Headache, Pyrexia, Fatigue? & After Janssen, the most common ordering of Headache, Pyrexia, Fatigue is Headache $\rightarrow$  Pyrexia $\rightarrow$  Fatigue. \\
+Research & Among Janssen reports with all three events, what is the modal ordering of Headache, Pyrexia, Fatigue? & Among Janssen reports with all three, the modal ordering is Headache $\rightarrow$  Pyrexia $\rightarrow$  Fatigue. \\
+Media & After Janssen, what's the most common order people experience Headache, Pyrexia, and Fatigue? & After Janssen, the most common order is Headache $\rightarrow$  Pyrexia $\rightarrow$  Fatigue. \\
+Clinical & What's the most common progression of Headache, Pyrexia, Fatigue in Janssen patients? & The most common progression in Janssen patients is Headache $\rightarrow$  Pyrexia $\rightarrow$  Fatigue. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, what is the most common ordering of Fatigue, Pyrexia, Headache? & After Janssen, the most common ordering of Fatigue, Pyrexia, Headache is Fatigue $\rightarrow$  Pyrexia $\rightarrow$  Headache. \\
+Research & Among Janssen reports with all three events, what is the modal ordering of Fatigue, Pyrexia, Headache? & Among Janssen reports with all three, the modal ordering is Fatigue $\rightarrow$  Pyrexia $\rightarrow$  Headache. \\
+Media & After Janssen, what's the most common order people experience Fatigue, Pyrexia, and Headache? & After Janssen, the most common order is Fatigue $\rightarrow$  Pyrexia $\rightarrow$  Headache. \\
+Clinical & What's the most common progression of Fatigue, Pyrexia, Headache in Janssen patients? & The most common progression in Janssen patients is Fatigue $\rightarrow$  Pyrexia $\rightarrow$  Headache. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{S-V4}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -792,7 +1111,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} exact multinomial goodness-of-fit -- sum the multinomial probabilities of every table (same n) whose chi-square statistic vs uniform is >= the observed. \\
 \textbf{Position-based test:} Kendall's W (W=0.184; n=33 reports), $p = 0.002276$. \\
 \emph{how:} Kendall's W -- normalised concordance (0..1) of the within-report rankings; p from chi-square on n(k-1)W. \\
-\textbf{supported:} After Janssen, the ordering of Headache, Hyperhidrosis, Pyrexia is consistent across reports. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, is the ordering of Headache, Hyperhidrosis, Pyrexia consistent across reports? & After Janssen, the ordering of Headache, Hyperhidrosis, Pyrexia is consistent across reports. \\
+Research & In Janssen reports with all three, does a single ordering dominate across cases? & In Janssen reports with all three, a single ordering of Headache, Hyperhidrosis, Pyrexia dominates. \\
+Media & After Janssen, do people usually experience Headache, Hyperhidrosis, Pyrexia in the same order? & After Janssen, people usually experience Headache, Hyperhidrosis, Pyrexia in the same order. \\
+Clinical & In Janssen patients, is the progression of Headache, Hyperhidrosis, Pyrexia consistent across cases? & In Janssen patients, the progression of Headache, Hyperhidrosis, Pyrexia is consistent. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{S-M1}
 \textcolor{red}{\textbf{Presented example:} failed (no successful core exists; gold set but the test is not significant)} \\
@@ -804,7 +1134,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability. \\
 \textbf{Position-based test:} Mann-Whitney U (per event) (Fatigue's within-triple rank between Moderna/Janssen; n=48/81), $p = 0.7497$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} The Fatigue → Headache → Pain rate differs between Moderna and Janssen. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Does the Fatigue $\rightarrow$  Headache $\rightarrow$  Pain rate differ between Moderna and Janssen? & The Fatigue $\rightarrow$  Headache $\rightarrow$  Pain rate differs between Moderna and Janssen. \\
+Research & Among reports with all three events, is the Fatigue $\rightarrow$  Headache $\rightarrow$  Pain proportion different between Moderna and Janssen? & The Fatigue $\rightarrow$  Headache $\rightarrow$  Pain proportion differs between Moderna and Janssen. \\
+Media & Is there a real difference between Moderna and Janssen in how often things go Fatigue $\rightarrow$  Headache $\rightarrow$  Pain? & Moderna and Janssen differ in how often things go Fatigue $\rightarrow$  Headache $\rightarrow$  Pain. \\
+Clinical & Do Moderna and Janssen patients differ in how often they follow Fatigue $\rightarrow$  Headache $\rightarrow$  Pain? & Moderna and Janssen recipients differ in the Fatigue $\rightarrow$  Headache $\rightarrow$  Pain rate. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{S-M2}
 \textcolor{red}{\textbf{Presented example:} failed (no successful core exists; gold set but the test is not significant)} \\
@@ -816,8 +1157,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability. \\
 \textbf{Position-based test:} Mann-Whitney U (per event) (Fatigue's within-triple rank between Moderna/Janssen; n=48/81), $p = 0.7497$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} The sequence Fatigue → Headache → Pain is more common after Janssen than Moderna. \\
-\textbf{refuted:} The sequence Fatigue → Headache → Pain is more common after Moderna than Janssen. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is the sequence Fatigue $\rightarrow$  Headache $\rightarrow$  Pain more common after Janssen or Moderna? & The sequence Fatigue $\rightarrow$  Headache $\rightarrow$  Pain is more common after Janssen than Moderna. \\
+Research & Between Janssen and Moderna, which cohort shows a higher proportion of Fatigue $\rightarrow$  Headache $\rightarrow$  Pain? & Janssen shows a higher proportion of Fatigue $\rightarrow$  Headache $\rightarrow$  Pain than Moderna. \\
+Media & Is Fatigue $\rightarrow$  Headache $\rightarrow$  Pain more common after Janssen or Moderna? & Fatigue $\rightarrow$  Headache $\rightarrow$  Pain is more common after Janssen than Moderna. \\
+Clinical & In which group is Fatigue $\rightarrow$  Headache $\rightarrow$  Pain more common, Janssen or Moderna recipients? & Fatigue $\rightarrow$  Headache $\rightarrow$  Pain is more common in Janssen recipients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is the sequence Fatigue $\rightarrow$  Headache $\rightarrow$  Pain more common after Moderna or Janssen? & The sequence Fatigue $\rightarrow$  Headache $\rightarrow$  Pain is more common after Moderna than Janssen. \\
+Research & Between Moderna and Janssen, which cohort shows a higher proportion of Fatigue $\rightarrow$  Headache $\rightarrow$  Pain? & Moderna shows a higher proportion of Fatigue $\rightarrow$  Headache $\rightarrow$  Pain than Janssen. \\
+Media & Is Fatigue $\rightarrow$  Headache $\rightarrow$  Pain more common after Moderna or Janssen? & Fatigue $\rightarrow$  Headache $\rightarrow$  Pain is more common after Moderna than Janssen. \\
+Clinical & In which group is Fatigue $\rightarrow$  Headache $\rightarrow$  Pain more common, Moderna or Janssen recipients? & Fatigue $\rightarrow$  Headache $\rightarrow$  Pain is more common in Moderna recipients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{S-M3}
 \textcolor{red}{\textbf{Presented example:} failed (no successful core exists; gold set but the test is not significant)} \\
@@ -829,7 +1192,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher-Freeman-Halton -- sum the probabilities of every 2xk table with the observed margins that are <= the observed table's. \\
 \textbf{Position-based test:} Mann-Whitney U (per event) (Fatigue's within-triple rank between Moderna/Janssen; n=39/65), $p = 0.6701$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} The typical ordering of Fatigue, Pain, Pyrexia is the same after Moderna and Janssen. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is the typical ordering of Fatigue, Pain, Pyrexia the same after Moderna and Janssen? & The typical ordering of Fatigue, Pain, Pyrexia is the same after Moderna and Janssen. \\
+Research & Is the modal ordering of Fatigue, Pain, Pyrexia the same between Moderna and Janssen cohorts? & The modal ordering of Fatigue, Pain, Pyrexia is the same in Moderna and Janssen cohorts. \\
+Media & Do Moderna and Janssen produce the same typical order of Fatigue, Pain, Pyrexia? & Moderna and Janssen produce the same typical order of Fatigue, Pain, Pyrexia. \\
+Clinical & Is the typical progression of Fatigue, Pain, Pyrexia the same in Moderna and Janssen recipients? & The typical progression of Fatigue, Pain, Pyrexia is the same in Moderna and Janssen recipients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-R1}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -837,8 +1211,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Core:} events Dizziness, Injection site pain, Asthenia; cohort report VAERS-916915. \\
 \textbf{Counts:} (single report; deterministic). \\
 \textbf{Categorical test:} none (report-level). \\
-\textbf{supported:} In report VAERS-916915, Dizziness occurs first among Dizziness, Injection site pain, Asthenia. \\
-\textbf{refuted:} In report VAERS-916915, Injection site pain occurs first among Injection site pain, Dizziness, Asthenia. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report VAERS-916915, which of Dizziness, Injection site pain, Asthenia occurs first? & In report VAERS-916915, Dizziness occurs first among Dizziness, Injection site pain, Asthenia. \\
+Research & Of Dizziness, Injection site pain, Asthenia, which is the earliest event in this report? & In this report, Dizziness is the earliest of Dizziness, Injection site pain, Asthenia. \\
+Media & In this case, which came first, Dizziness, Injection site pain, or Asthenia? & In this case, Dizziness came first. \\
+Clinical & Of Dizziness, Injection site pain, Asthenia, which appeared first in this patient? & In this patient, Dizziness appeared first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report VAERS-916915, which of Injection site pain, Dizziness, Asthenia occurs first? & In report VAERS-916915, Injection site pain occurs first among Injection site pain, Dizziness, Asthenia. \\
+Research & Of Injection site pain, Dizziness, Asthenia, which is the earliest event in this report? & In this report, Injection site pain is the earliest of Injection site pain, Dizziness, Asthenia. \\
+Media & In this case, which came first, Injection site pain, Dizziness, or Asthenia? & In this case, Injection site pain came first. \\
+Clinical & Of Injection site pain, Dizziness, Asthenia, which appeared first in this patient? & In this patient, Injection site pain appeared first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-R2}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -846,8 +1242,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Core:} events Dizziness, Injection site pain, Asthenia; cohort report VAERS-916915. \\
 \textbf{Counts:} (single report; deterministic). \\
 \textbf{Categorical test:} none (report-level). \\
-\textbf{supported:} In report VAERS-916915, Injection site pain occurs last among Asthenia, Dizziness, Injection site pain. \\
-\textbf{refuted:} In report VAERS-916915, Asthenia occurs last among Dizziness, Injection site pain, Asthenia. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report VAERS-916915, which of Asthenia, Dizziness, Injection site pain occurs last? & In report VAERS-916915, Injection site pain occurs last among Asthenia, Dizziness, Injection site pain. \\
+Research & Of Asthenia, Dizziness, Injection site pain, which is the latest event in this report? & In this report, Injection site pain is the latest of Asthenia, Dizziness, Injection site pain. \\
+Media & In this case, which came last, Asthenia, Dizziness, or Injection site pain? & In this case, Injection site pain came last. \\
+Clinical & Of Asthenia, Dizziness, Injection site pain, which appeared last in this patient? & In this patient, Injection site pain appeared last. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report VAERS-916915, which of Dizziness, Injection site pain, Asthenia occurs last? & In report VAERS-916915, Asthenia occurs last among Dizziness, Injection site pain, Asthenia. \\
+Research & Of Dizziness, Injection site pain, Asthenia, which is the latest event in this report? & In this report, Asthenia is the latest of Dizziness, Injection site pain, Asthenia. \\
+Media & In this case, which came last, Dizziness, Injection site pain, or Asthenia? & In this case, Asthenia came last. \\
+Clinical & Of Dizziness, Injection site pain, Asthenia, which appeared last in this patient? & In this patient, Asthenia appeared last. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-R3}
 \textbf{Presented example:} n/a (PROP tolerance / report-level; no significance test) \\
@@ -855,8 +1273,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \textbf{Core:} events Dizziness, Injection site pain, Asthenia; cohort report VAERS-916915. \\
 \textbf{Counts:} (single report; deterministic). \\
 \textbf{Categorical test:} none (report-level). \\
-\textbf{supported:} In report VAERS-916915, Dizziness is the first of Dizziness, Injection site pain, Asthenia to occur. \\
-\textbf{refuted:} In report VAERS-916915, Injection site pain is the first of Injection site pain, Dizziness, Asthenia to occur. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report VAERS-916915, is Dizziness the first of Dizziness, Injection site pain, Asthenia to occur? & In report VAERS-916915, Dizziness is the first of Dizziness, Injection site pain, Asthenia to occur. \\
+Research & In this report, is Dizziness the earliest of Dizziness, Injection site pain, Asthenia? & In this report, Dizziness is the earliest of Dizziness, Injection site pain, Asthenia. \\
+Media & In this case, did Dizziness come first among Dizziness, Injection site pain, Asthenia? & In this case, Dizziness came first among Dizziness, Injection site pain, Asthenia. \\
+Clinical & Did Dizziness appear first among Dizziness, Injection site pain, Asthenia in this patient? & In this patient, Dizziness appeared first among Dizziness, Injection site pain, Asthenia. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & In report VAERS-916915, is Injection site pain the first of Injection site pain, Dizziness, Asthenia to occur? & In report VAERS-916915, Injection site pain is the first of Injection site pain, Dizziness, Asthenia to occur. \\
+Research & In this report, is Injection site pain the earliest of Injection site pain, Dizziness, Asthenia? & In this report, Injection site pain is the earliest of Injection site pain, Dizziness, Asthenia. \\
+Media & In this case, did Injection site pain come first among Injection site pain, Dizziness, Asthenia? & In this case, Injection site pain came first among Injection site pain, Dizziness, Asthenia. \\
+Clinical & Did Injection site pain appear first among Injection site pain, Dizziness, Asthenia in this patient? & In this patient, Injection site pain appeared first among Injection site pain, Dizziness, Asthenia. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-V1}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -867,8 +1307,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} chi-square goodness-of-fit vs uniform (large-n approximation, used only when every expected cell >= 5). \\
 \textbf{Position-based test:} Friedman (Q=13.05 df=2; n=116 reports), $p = 0.001469$. \\
 \emph{how:} Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums. \\
-\textbf{supported:} After Janssen, Headache typically occurs first among Headache, Chills, Pyrexia. \\
-\textbf{refuted:} After Janssen, Pyrexia typically occurs first among Pyrexia, Chills, Headache. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, which of Headache, Chills, Pyrexia typically occurs first? & After Janssen, Headache typically occurs first among Headache, Chills, Pyrexia. \\
+Research & In Janssen reports with all three, which event is the typical earliest among Headache, Chills, Pyrexia? & In Janssen reports with all three, Headache is typically the earliest. \\
+Media & After Janssen, which usually comes first, Headache, Chills, or Pyrexia? & After Janssen, Headache usually comes first. \\
+Clinical & In Janssen patients, which of Headache, Chills, Pyrexia typically appears first? & In Janssen patients, Headache typically appears first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, which of Pyrexia, Chills, Headache typically occurs first? & After Janssen, Pyrexia typically occurs first among Pyrexia, Chills, Headache. \\
+Research & In Janssen reports with all three, which event is the typical earliest among Pyrexia, Chills, Headache? & In Janssen reports with all three, Pyrexia is typically the earliest. \\
+Media & After Janssen, which usually comes first, Pyrexia, Chills, or Headache? & After Janssen, Pyrexia usually comes first. \\
+Clinical & In Janssen patients, which of Pyrexia, Chills, Headache typically appears first? & In Janssen patients, Pyrexia typically appears first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-V2}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -879,8 +1341,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} chi-square goodness-of-fit vs uniform (large-n approximation, used only when every expected cell >= 5). \\
 \textbf{Position-based test:} Friedman (Q=13.05 df=2; n=116 reports), $p = 0.001469$. \\
 \emph{how:} Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums. \\
-\textbf{supported:} After Janssen, Pyrexia typically occurs last among Headache, Chills, Pyrexia. \\
-\textbf{refuted:} After Janssen, Pyrexia typically occurs last among Chills, Headache, Pyrexia. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, which of Headache, Chills, Pyrexia typically occurs last? & After Janssen, Pyrexia typically occurs last among Headache, Chills, Pyrexia. \\
+Research & In Janssen reports with all three, which is the typical latest among Headache, Chills, Pyrexia? & In Janssen reports with all three, Pyrexia is typically the latest. \\
+Media & After Janssen, which usually comes last, Headache, Chills, or Pyrexia? & After Janssen, Pyrexia usually comes last. \\
+Clinical & In Janssen patients, which of Headache, Chills, Pyrexia typically appears last? & In Janssen patients, Pyrexia typically appears last. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, which of Chills, Headache, Pyrexia typically occurs last? & After Janssen, Pyrexia typically occurs last among Chills, Headache, Pyrexia. \\
+Research & In Janssen reports with all three, which is the typical latest among Chills, Headache, Pyrexia? & In Janssen reports with all three, Pyrexia is typically the latest. \\
+Media & After Janssen, which usually comes last, Chills, Headache, or Pyrexia? & After Janssen, Pyrexia usually comes last. \\
+Clinical & In Janssen patients, which of Chills, Headache, Pyrexia typically appears last? & In Janssen patients, Pyrexia typically appears last. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-V3}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -891,8 +1375,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3). \\
 \textbf{Position-based test:} Friedman (Q=10.36 df=2; n=39 reports), $p = 0.005622$. \\
 \emph{how:} Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums. \\
-\textbf{supported:} After Janssen, Injection site pain is usually the first of Injection site pain, Headache, Pyrexia. \\
-\textbf{refuted:} After Janssen, Pyrexia is usually the first of Pyrexia, Headache, Injection site pain. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, is Injection site pain usually the first of Injection site pain, Headache, Pyrexia? & After Janssen, Injection site pain is usually the first of Injection site pain, Headache, Pyrexia. \\
+Research & In Janssen reports with all three, is Injection site pain the earliest in the majority of cases? & In Janssen reports with all three, Injection site pain is the earliest in the majority of cases. \\
+Media & After Janssen, does Injection site pain usually come first among Injection site pain, Headache, Pyrexia? & After Janssen, Injection site pain usually comes first among Injection site pain, Headache, Pyrexia. \\
+Clinical & In Janssen patients, is Injection site pain usually the earliest of Injection site pain, Headache, Pyrexia? & In Janssen patients, Injection site pain is usually the earliest of Injection site pain, Headache, Pyrexia. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & After Janssen, is Pyrexia usually the first of Pyrexia, Headache, Injection site pain? & After Janssen, Pyrexia is usually the first of Pyrexia, Headache, Injection site pain. \\
+Research & In Janssen reports with all three, is Pyrexia the earliest in the majority of cases? & In Janssen reports with all three, Pyrexia is the earliest in the majority of cases. \\
+Media & After Janssen, does Pyrexia usually come first among Pyrexia, Headache, Injection site pain? & After Janssen, Pyrexia usually comes first among Pyrexia, Headache, Injection site pain. \\
+Clinical & In Janssen patients, is Pyrexia usually the earliest of Pyrexia, Headache, Injection site pain? & In Janssen patients, Pyrexia is usually the earliest of Pyrexia, Headache, Injection site pain. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-M1}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -903,7 +1409,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher-Freeman-Halton -- sum the probabilities of every 2xk table with the observed margins that are <= the observed table's. \\
 \textbf{Position-based test:} Mann-Whitney U (per event) (Chills's within-triple rank between Pfizer/Moderna; n=57/52), $p = 0.02167$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{refuted:} The typical first event among Chills, Pain, Pyrexia is the same after Pfizer and Moderna. \\
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is the typical first event among Chills, Pain, Pyrexia the same after Pfizer and Moderna? & The typical first event among Chills, Pain, Pyrexia is the same after Pfizer and Moderna. \\
+Research & Is the modal earliest event among Chills, Pain, Pyrexia the same between Pfizer and Moderna cohorts? & The modal earliest event is the same in Pfizer and Moderna cohorts. \\
+Media & Do Pfizer and Moderna have the same typical first event among Chills, Pain, Pyrexia? & Pfizer and Moderna have the same typical first event among Chills, Pain, Pyrexia. \\
+Clinical & Is the usual first event among Chills, Pain, Pyrexia the same in Pfizer and Moderna patients? & The usual first event is the same in Pfizer and Moderna patients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-M2}
 \textbf{Presented example:} successful (p-value corroborates the gold label) \\
@@ -914,7 +1431,18 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher-Freeman-Halton -- sum the probabilities of every 2xk table with the observed margins that are <= the observed table's. \\
 \textbf{Position-based test:} Mann-Whitney U (per event) (Chills's within-triple rank between Pfizer/Moderna; n=57/52), $p = 0.02167$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} Pfizer and Moderna differ in which of Chills, Pain, Pyrexia appears first. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Do Pfizer and Moderna differ in which of Chills, Pain, Pyrexia appears first? & Pfizer and Moderna differ in which of Chills, Pain, Pyrexia appears first. \\
+Research & Is the modal first event among Chills, Pain, Pyrexia different between Pfizer and Moderna? & The modal first event differs between Pfizer and Moderna. \\
+Media & Do Pfizer and Moderna differ in which of Chills, Pain, Pyrexia usually comes first? & Pfizer and Moderna differ in which usually comes first. \\
+Clinical & Does the usual first event among Chills, Pain, Pyrexia differ between Pfizer and Moderna patients? & The usual first event differs between Pfizer and Moderna patients. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{F-M3}
 \textcolor{red}{\textbf{Presented example:} failed (no successful core exists; gold set but the test is not significant)} \\
@@ -926,8 +1454,30 @@ Templates whose worked example has a p-value that does not corroborate the gold 
 \emph{how:} Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability. \\
 \textbf{Position-based test:} Mann-Whitney U (per event) (Chills's within-triple rank between Pfizer/Moderna; n=67/60), $p = 0.7023$. \\
 \emph{how:} Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction. \\
-\textbf{supported:} Headache is the first event more often after Pfizer than Moderna. \\
-\textbf{refuted:} Headache is the first event more often after Moderna than Pfizer. \\
+\textbf{Supported example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is Headache the first event more often after Pfizer or Moderna? & Headache is the first event more often after Pfizer than Moderna. \\
+Research & Between Pfizer and Moderna, which cohort more often has Headache as the earliest of Headache, Chills, Pyrexia? & Pfizer more often has Headache as the earliest of Headache, Chills, Pyrexia. \\
+Media & Is Headache the first event more often after Pfizer or Moderna? & Headache is the first event more often after Pfizer than Moderna. \\
+Clinical & In which group is Headache more often the first of Headache, Chills, Pyrexia, Pfizer or Moderna? & In Pfizer recipients, Headache is more often the first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
+\textbf{Refuted example} (filled, all registers): \\
+\begin{tabularx}{\linewidth}{@{}l L L@{}}
+\toprule
+\textbf{Register} & \textbf{Question} & \textbf{Claim} \\
+\midrule
+Original & Is Headache the first event more often after Moderna or Pfizer? & Headache is the first event more often after Moderna than Pfizer. \\
+Research & Between Moderna and Pfizer, which cohort more often has Headache as the earliest of Headache, Chills, Pyrexia? & Moderna more often has Headache as the earliest of Headache, Chills, Pyrexia. \\
+Media & Is Headache the first event more often after Moderna or Pfizer? & Headache is the first event more often after Moderna than Pfizer. \\
+Clinical & In which group is Headache more often the first of Headache, Chills, Pyrexia, Moderna or Pfizer? & In Moderna recipients, Headache is more often the first. \\
+\bottomrule
+\end{tabularx}
+\vspace{3pt}
 
 \subsection*{Statistical methods (how each p-value is computed)}
 \begin{itemize}
