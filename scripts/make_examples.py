@@ -31,6 +31,7 @@ from temporal_hypo.generation.cores import (
     realize,
 )
 from temporal_hypo.core import positions
+from temporal_hypo.core import significance as _sig
 from temporal_hypo.generation import corpus
 from temporal_hypo.generation.corpus import CorpusIndex
 from temporal_hypo.generation.templates import REGISTERS, load_groups, render
@@ -117,6 +118,72 @@ def _pick_core(group, graded):
     return max(graded, key=key)[0]
 
 
+# --- fail-case reporting (definite gold verdict the categorical test can't back) --
+
+def _fail_reason(core, sig) -> str:
+    """Why a definite-gold core is not significant: the significance min-n GATE,
+    a small n, a weak effect, or a small between-cohort gap."""
+    n = core.n or 0
+    # A small p that is STILL 'not significant' means the significance verdict's
+    # min-n floor (>=MIN_N) overrode it. Common for sequence: the family viability
+    # floor is 5 but significance requires n>=10, so an exact test on a near-
+    # unanimous but tiny sample (e.g. 7/8, p=0.000) is gated out.
+    if sig.p_value is not None and sig.p_value < _sig.ALPHA:
+        return (f"p={sig.p_value:.3f} < 0.05 but n={n} below the significance "
+                f"min-n gate ({_sig.MIN_N}): verdict forced to insufficient")
+    p = core.proportion or 0.0
+    if sig.test == "binom_exact":
+        null = sig.details.get("null", 0.5)
+        delta = abs(p - null)
+        if n < 20 and delta < 0.2:
+            return f"small n and weak effect (rate {p:.2f} vs null {null:.2f}, n={n})"
+        if n < 20:
+            return f"n too small (n={n}) to reject at a=0.05"
+        return f"effect too weak (rate {p:.2f} vs null {null:.2f}, n={n})"
+    if sig.test == "fisher_exact":
+        d = abs(p - (core.proportion2 or 0.0))
+        lo = min(core.n or 0, core.n2 or 0)
+        if lo < 20 and d < 0.2:
+            return f"small cohorts and small gap (gap={d:.2f}, n={core.n}/{core.n2})"
+        if lo < 20:
+            return f"cohorts too small (n={core.n}/{core.n2})"
+        return f"difference too small (gap={d:.2f}, n={core.n}/{core.n2})"
+    # multinomial GOF / homogeneity distribution tests
+    return f"distribution too close to uniform / n small (n={core.n})"
+
+
+def _ladder(items, k=10):
+    """A representative ladder of <=k items from a sorted list (endpoints kept)."""
+    n = len(items)
+    if n <= k:
+        return items
+    return [items[round(i * (n - 1) / (k - 1))] for i in range(k)]
+
+
+def _fail_case(core, sig) -> dict:
+    return {
+        "events": list(core.events), "vaccines": list(core.vaccines),
+        "k": core.k, "n": core.n, "k2": core.k2, "n2": core.n2,
+        "p": sig.p_value, "test": sig.test, "reason": _fail_reason(core, sig),
+    }
+
+
+def _fc_cohort(fc) -> str:
+    v = fc["vaccines"]
+    return f"{v[0]} vs {v[1]}" if len(v) == 2 else (v[0] if v else "?")
+
+
+def _fc_counts(fc) -> str:
+    s = f"{fc['k']}/{fc['n']}"
+    if fc["n2"] is not None:
+        s += f" ; {fc['k2']}/{fc['n2']}"
+    return s
+
+
+def _pv(p) -> str:
+    return "n/a" if p is None else f"{p:.3f}"
+
+
 def _focal_ranks(index, ev, cohort):
     """The focal (first) event's within-triple rank per report in a cohort."""
     return [positions._avg_ranks(list(pos))[0]
@@ -137,17 +204,23 @@ def _position_test(index, group, core) -> dict | None:
                 corpus.pair_distances(index, ev[0], ev[1], cohort))
             return {"name": "Wilcoxon signed-rank",
                     "detail": f"level({ev[0]})-level({ev[1]}); n={r['n']} ({r['method']})",
-                    "p_value": r["p"], "how": _HOW["wilcoxon"]}
+                    "p_value": r["p"], "how": _HOW["wilcoxon"],
+                    "null": f"H0: the {ev[0]}-vs-{ev[1]} rank-distances are symmetric "
+                            "about 0 (neither event tends to come earlier)"}
         blocks = corpus.triple_positions(index, list(ev), cohort)
         if gid == "S-V4":                          # consistency -> Kendall's W
             r = positions.kendalls_w(blocks)
             return {"name": "Kendall's W",
                     "detail": f"W={r['W']:.3f}; n={len(blocks)} reports",
-                    "p_value": r["p"], "how": _HOW["kendall"]}
+                    "p_value": r["p"], "how": _HOW["kendall"],
+                    "null": "H0: no agreement in the event rankings across reports "
+                            "(W = 0, orderings unrelated report-to-report)"}
         r = positions.friedman(blocks)             # triple ordering -> Friedman
         return {"name": "Friedman",
                 "detail": f"Q={r['Q']:.2f} df={r['df']}; n={len(blocks)} reports",
-                "p_value": r["p"], "how": _HOW["friedman"]}
+                "p_value": r["p"], "how": _HOW["friedman"],
+                "null": f"H0: {ev[0]}, {ev[1]}, {ev[2]} share one within-report rank "
+                        "distribution (no systematic ordering)"}
     # multi-vaccine: compare the two cohorts
     c1, c2 = index.cohort(vax[0]), index.cohort(vax[1])
     if len(ev) == 2:                               # pair -> Mann-Whitney on d
@@ -161,13 +234,58 @@ def _position_test(index, group, core) -> dict | None:
         r = positions.mann_whitney_u(d1, d2)
         return {"name": "Mann-Whitney U",
                 "detail": f"{lbl} between {vax[0]}/{vax[1]}; n={r['n1']}/{r['n2']}",
-                "p_value": r["p"], "how": _HOW["mannwhitney"]}
+                "p_value": r["p"], "how": _HOW["mannwhitney"],
+                "null": f"H0: {vax[0]} and {vax[1]} draw {lbl} from the same "
+                        "distribution (no cohort difference in rank-distance)"}
     r = positions.mann_whitney_u(_focal_ranks(index, ev, c1),  # multi triple, per event
                                  _focal_ranks(index, ev, c2))
     return {"name": "Mann-Whitney U (per event)",
             "detail": f"{ev[0]}'s within-triple rank between {vax[0]}/{vax[1]}; "
                       f"n={r['n1']}/{r['n2']}",
-            "p_value": r["p"], "how": _HOW["mannwhitney"]}
+            "p_value": r["p"], "how": _HOW["mannwhitney"],
+            "null": f"H0: {ev[0]}'s within-triple rank has the same distribution "
+                    f"for {vax[0]} and {vax[1]}"}
+
+
+def _null_hypothesis(mode, events, vaccines) -> str:
+    """The categorical-test null H0 for a group's mode -- what the p-value tests
+    against. Uses the core's real event/vaccine names for readability."""
+    ev = list(events)
+    a = ev[0] if ev else "A"
+    b = ev[1] if len(ev) > 1 else "B"
+    seq = " -> ".join(ev) if len(ev) >= 2 else a
+    v1 = vaccines[0] if len(vaccines) > 0 else "v1"
+    v2 = vaccines[1] if len(vaccines) > 1 else "v2"
+    if mode in ("dir_bool", "dir_choice", "prop_precedes"):
+        return f"H0: P({a} precedes {b}) = 0.5 (no directional preference among ordered reports)"
+    if mode in ("sym_bool_cooccurs", "prop_cooccurs"):
+        return f"H0: P({a} and {b} co-occur) = 0.5 (among reports containing both)"
+    if mode in ("seq_bool", "prop_sequence"):
+        return f"H0: P(ordering = {seq}) = 1/6 (chance rate among the 6 orderings)"
+    if mode == "modal_choice":
+        return "H0: the 6 orderings are equally likely -- uniform (no modal ordering)"
+    if mode == "consistency_bool":
+        return "H0: the 6 orderings are equally likely -- uniform (no consistent ordering)"
+    if mode == "first_bool":
+        return f"H0: P({a} is first) = 1/3 (chance rate among the 3 candidates)"
+    if mode in ("first_choice", "last_choice"):
+        which = "last" if mode == "last_choice" else "first"
+        return f"H0: the 3 candidates are equally likely to be {which} -- uniform"
+    if mode in ("multi_differ_precedes", "multi_dir_precedes"):
+        return f"H0: P({a} precedes {b}) is equal for {v1} and {v2} (p1 = p2)"
+    if mode in ("multi_differ_cooccurs", "multi_dir_cooccurs"):
+        return f"H0: the {a}/{b} co-occurrence rate is equal for {v1} and {v2} (p1 = p2)"
+    if mode in ("multi_differ_sequence", "multi_dir_sequence"):
+        return f"H0: P(ordering = {seq}) is equal for {v1} and {v2} (p1 = p2)"
+    if mode == "multi_dir_first":
+        return f"H0: the first-event rate is equal for {v1} and {v2} (p1 = p2)"
+    if mode in ("multi_same_first", "multi_differ_first"):
+        return f"H0: {v1} and {v2} have the same first-event distribution (homogeneity)"
+    if mode == "multi_same_modal_order":
+        return f"H0: {v1} and {v2} have the same ordering distribution (homogeneity)"
+    if mode.startswith("rep_"):
+        return "H0: none -- single deterministic observation, no sampling distribution"
+    return "H0: (unspecified)"
 
 
 def _example_for(index, group, core) -> dict:
@@ -192,6 +310,7 @@ def _example_for(index, group, core) -> dict:
             },
         }
 
+    null_h = _null_hypothesis(ans.mode, core.events, core.vaccines)
     test = None
     if ans.sig_test is not None:
         test = {
@@ -199,6 +318,7 @@ def _example_for(index, group, core) -> dict:
             "p_value": ans.p_value,
             "significant": ans.significant,
             "how": _HOW.get(ans.sig_test, ""),
+            "null": null_h,
         }
     pos = _position_test(index, group, core)
 
@@ -231,6 +351,7 @@ def _example_for(index, group, core) -> dict:
         "effect_size": round(ans.effect_size, 4) if ans.effect_size is not None else None,
         "options": ans.options, "gold_answer": ans.gold_answer,
         "gold_verdict": ans.verdict,
+        "null": null_h,
         "test": test, "position_test": pos,
         "mismatch": {"type1": type1, "type2": type2},
         "status": status,
@@ -269,6 +390,19 @@ def run(db_path: Path, out_dir: Path) -> dict:
         e["definite_cores"] = len(definite)
         e["fail_cores"] = fail
         e["fail_rate"] = (fail / len(definite)) if definite else None
+        # concrete fail cases: definite-gold cores the test does NOT corroborate,
+        # laddered by p (closest-to-significant -> no-effect) so >=10 show the range.
+        fails = sorted((cs for cs in definite if not cs[1].significant),
+                       key=lambda cs: (cs[1].p_value if cs[1].p_value is not None else 1.0))
+        e["fail_examples"] = [_fail_case(c, s) for c, s in _ladder(fails, 10)]
+        if fails:
+            ns = sorted(c.n for c, _ in fails if c.n is not None)
+            ps = sorted(s.p_value for _, s in fails if s.p_value is not None)
+            e["fail_summary"] = {"count": len(fails),
+                                 "median_n": ns[len(ns) // 2] if ns else None,
+                                 "median_p": round(ps[len(ps) // 2], 4) if ps else None}
+        else:
+            e["fail_summary"] = {"count": 0, "median_n": None, "median_p": None}
         overall["definite"] += len(definite)
         overall["fail"] += fail
         # keyed by primitive so co-occurs shows separately from precedes
@@ -283,9 +417,10 @@ def run(db_path: Path, out_dir: Path) -> dict:
     with open(out_dir / "examples.jsonl", "w", encoding="utf-8") as f:
         for e in entries:
             f.write(json.dumps(e) + "\n")
-    md = _render_md(entries, stats)
+    md = _render_md(entries, stats) + _failcases_md(entries)
     (out_dir / "examples.md").write_text(md, encoding="utf-8")
-    (out_dir / "examples.tex").write_text(_render_tex(entries, stats), encoding="utf-8")
+    tex = _render_tex(entries, stats) + _failcases_tex(entries)
+    (out_dir / "examples.tex").write_text(tex, encoding="utf-8")
     # committed, directly-readable review copy under docs/reference/
     ref = _REPO / "docs" / "reference" / "Worked_Examples.md"
     ref.write_text(md, encoding="utf-8")
@@ -451,15 +586,18 @@ def _render_md(entries, stats) -> str:
             pv = "n/a" if t["p_value"] is None else f"{t['p_value']:.4g}"
             out.append(f"- **Categorical test**: {t['name']}, p = {pv} "
                        f"({'significant' if t['significant'] else 'not significant'})")
+            out.append(f"    - *{t['null']}*")
             out.append(f"    - *how p is computed*: {t['how']}")
         else:
             out.append("- **Categorical test**: none (report-level: single "
                        "observation, no sampling distribution)")
+            out.append(f"    - *{e['null']}*")
         if e["position_test"]:
             pt = e["position_test"]
             pv = "n/a" if pt["p_value"] is None else f"{pt['p_value']:.4g}"
             out.append(f"- **Position-based test**: {pt['name']} "
                        f"({pt['detail']}), p = {pv}")
+            out.append(f"    - *{pt['null']}*")
             out.append(f"    - *how p is computed*: {pt['how']}")
         if e["ci"]:
             out.append(f"- **95% CI**: {e['ci']}"
@@ -576,14 +714,17 @@ def _render_tex(entries, stats) -> str:
             line = (r"\textbf{Categorical test:} " + _esc(t["name"])
                     + f", $p = {pv}$ ({sig})")
             out.append((r"\textcolor{red}{" + line + "}" if flag else line) + r". \\")
+            out.append(r"\emph{" + _esc(t["null"]) + r"} \\")
             out.append(r"\emph{how:} " + _esc(t["how"]) + r". \\")
         else:
-            out.append(r"\textbf{Categorical test:} none (report-level). \\")
+            out.append(r"\textbf{Categorical test:} none (report-level). "
+                       + r"\emph{" + _esc(e["null"]) + r"} \\")
         if e["position_test"]:
             pt = e["position_test"]
             pv = "n/a" if pt["p_value"] is None else f"{pt['p_value']:.4g}"
             out.append(r"\textbf{Position-based test:} " + _esc(pt["name"]) + " ("
                        + _esc(pt["detail"]) + f"), $p = {pv}$" + r". \\")
+            out.append(r"\emph{" + _esc(pt["null"]) + r"} \\")
             out.append(r"\emph{how:} " + _esc(pt["how"]) + r". \\")
         for pol, r in e["examples"].items():
             out.append(r"\textbf{" + _esc(r["gold_verdict"].capitalize())
@@ -607,6 +748,73 @@ def _render_tex(entries, stats) -> str:
         out.append(r"\item \textbf{" + _esc(_METHOD_NAME[key]) + ":} "
                    + _esc(_HOW[key]))
     out.append(r"\end{itemize}")
+    return "\n".join(out) + "\n"
+
+
+_FAILCASE_INTRO_MD = (
+    "For each testable group, up to 10 failing cores -- a **definite** gold verdict "
+    "(supported/refuted) that the categorical test does **not** corroborate at "
+    "alpha=0.05 -- laddered from closest-to-significant (lowest p) to no-effect "
+    "(highest p) so the range of failure modes is visible. *Processed* = the "
+    "group's definite categorical cores; *failed* = those the test can't "
+    "corroborate. Report-level and PROP groups carry no categorical test, so they "
+    "process 0 cores and have no fail cases.")
+
+
+def _failcases_md(entries) -> str:
+    out = ["", "## Fail-case examples per template (why the gold label is not "
+           "significant)", "", _FAILCASE_INTRO_MD, ""]
+    for e in entries:
+        if e.get("note"):
+            continue
+        dc = e.get("definite_cores", 0)
+        if not e.get("fail_examples"):
+            out.append(f"### {e['group_id']} — 0 processed "
+                       f"(no categorical test: {e['answer_type']}/{e['level']})")
+            out.append("")
+            continue
+        fs = e["fail_summary"]
+        out.append(f"### {e['group_id']} — {dc} processed, {e['fail_cores']} failed "
+                   f"({_pct(e['fail_cores'], dc)}); median n {fs['median_n']}, "
+                   f"median p {fs['median_p']}")
+        out.append(f"*Tested against — {e['null']}*")
+        out.append("")
+        out.append("| # | events | cohort | counts (k/n) | p | why it failed |")
+        out.append("|--:|---|---|---|--:|---|")
+        for i, fc in enumerate(e["fail_examples"], 1):
+            out.append(f"| {i} | {', '.join(fc['events'])} | {_fc_cohort(fc)} "
+                       f"| {_fc_counts(fc)} | {_pv(fc['p'])} | {fc['reason']} |")
+        out.append("")
+    return "\n".join(out) + "\n"
+
+
+def _failcases_tex(entries) -> str:
+    out = [r"\subsection*{Fail-case examples per template (why the gold label is "
+           r"not significant)}",
+           r"For each testable group, up to 10 failing cores --- a definite gold "
+           r"verdict the categorical test does not corroborate at $\alpha=0.05$ --- "
+           r"laddered from closest-to-significant to no-effect. \emph{Processed} = "
+           r"the group's definite categorical cores; \emph{failed} = those the test "
+           r"cannot corroborate.", ""]
+    for e in entries:
+        if e.get("note") or not e.get("fail_examples"):
+            continue
+        fs = e["fail_summary"]
+        out.append(r"\paragraph{" + _esc(e["group_id"]) + "} "
+                   + f"{e['definite_cores']} processed, {e['fail_cores']} failed "
+                   + f"({_esc(_pct(e['fail_cores'], e['definite_cores']))}); "
+                   + f"median n {fs['median_n']}, median p {fs['median_p']}. "
+                   + r"\emph{Tested against --- " + _esc(e["null"]) + r"} \\")
+        out.append(r"\begin{longtable}{@{}r p{3.9cm} p{2.5cm} l l p{4.4cm}@{}}")
+        out.append(r"\toprule")
+        out.append(r"\# & Events & Cohort & Counts & $p$ & Why it failed \\")
+        out.append(r"\midrule \endhead")
+        for i, fc in enumerate(e["fail_examples"], 1):
+            out.append(f"{i} & " + _esc(", ".join(fc["events"])) + " & "
+                       + _esc(_fc_cohort(fc)) + " & " + _esc(_fc_counts(fc)) + " & "
+                       + _esc(_pv(fc["p"])) + " & " + _esc(fc["reason"]) + r" \\")
+        out.append(r"\bottomrule")
+        out.append(r"\end{longtable}")
     return "\n".join(out) + "\n"
 
 

@@ -268,3 +268,67 @@ count as an order); the fix is to the denominator and floor, not the semantics.
 - Known nuance to revisit: `seq_bool` computes on the canonical ordering while
   the supported instance names the modal ordering (example shows k on the
   canonical) -- a display/semantics coherence item for the wording review.
+  RESOLVED (2026-07-01): `seq_bool`/`prop_sequence` now compute on the MODAL
+  ordering they name (k, p-value, and claim all reference the modal); the
+  canonical-vs-modal mismatch no longer occurs. See the entry below.
+
+---
+
+## Significance-as-verdict + reword BOOL sequence/first claims (2026-07-01)
+
+### Pipeline direction: the significance test IS the verdict (emerging)
+- The intended framework pipeline is: the model runs the significance test
+  first; a significant result in the asserted direction => `supported`, a
+  significant result in the opposite direction => `refuted`, not significant =>
+  `insufficient`. Under this pipeline the significance verdict and the
+  supported/refuted verdict COINCIDE -- they are no longer two separate axes
+  "reported together" (this refines the earlier "significance reframed as
+  confidence quantification" entry, which kept them separate).
+- This is the adopted direction; two sub-items are still open (below).
+
+### Why some templates need rewording (the null must equal the claim boundary)
+- "Significant => supported" is only coherent when the test's null p0 sits at
+  the boundary the claim asserts. This holds for pairwise (claim "majority",
+  null p0 = 0.5 -- same boundary) but BREAKS for the BOOL sequence/first-of-3
+  claims: they are worded "typically / in the majority" (boundary 0.5) while
+  their null is the CHANCE rate (1/6 for a 3-event ordering, 1/3 for
+  first-of-3). A 30% modal ordering is significant vs 1/6 yet is not a majority,
+  so test and claim disagree. Root cause: chance = 1/k, which equals 0.5 only
+  when k = 2 (pairwise).
+
+### Decision: reword to the chance null (not move the null to 0.5)
+- Chosen: reword the BOOL sequence/first claims so the wording matches the
+  existing chance null, rather than keep "majority" and move the null to 0.5
+  (which almost nothing in this corpus clears -- see the funnel below).
+  - `seq_bool` (S-V1, S-R1) and the seq_bool part of multi: "typically occur as
+    A -> B -> C" / "in the majority" => "A -> B -> C is the most common (modal)
+    ordering" (occurs more often than any other ordering / more often than
+    chance).
+  - `first_bool` (F-V3, F-R3, multi first): "X is usually the first" => "X is
+    the most common first event" (first more often than chance).
+- UNCHANGED: pairwise precedes/co-occurs (null already 0.5 = the majority
+  boundary, so "typically/majority" is correct); the CHOICE modal_choice /
+  first_choice groups (already tested vs uniform by GOF).
+
+### Supporting evidence: the report -> core dilution funnel
+- The corpus is fully used (all 3,166 reports; ~1,000 per vaccine, median 6
+  terms/report). Scarcity is in the VIABLE CORES, not the reports. Funnel:
+  pairwise pairs recur in a median ~30 reports (testable); triples co-occur in
+  >=5 reports for only a few hundred combos, and after the STRICT-ORDER shrink
+  the median orderable n is ~6 (max 9-28); multi-vaccine triples clear the
+  floor in both cohorts with a median min(n1,n2) of ~7-8. So a sequence question
+  is answered by ~6 strictly-ordered reports and a multi-vaccine question by
+  ~7-8 per cohort -- below the power any test needs. This is why raising T
+  cannot add significant cores (T caps how many enumerated cores we KEEP, not
+  how many reports stand behind a question), and why S-M1/S-M2/S-M3/F-M3 have
+  ZERO significant cores in the full enumeration.
+
+### Still open
+- Exact new claim strings per register (the YAML wording) for the reworded
+  groups -- not yet written.
+- The not-significant mapping: `refuted` vs `insufficient` (the clean option is
+  two-sided test + direction => supported / refuted / insufficient).
+- Handling of the zero-supported groups (S-M1, S-M2, S-M3, F-M3): raising min-n
+  will not help (already power-starved); candidates are drop or reword/rescope.
+- Whether to raise the per-cohort min-n floor and/or add significance-stratified
+  selection to lift the supported share where the inventory allows.

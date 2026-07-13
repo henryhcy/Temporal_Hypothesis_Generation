@@ -135,6 +135,7 @@ PREAMBLE = r"""\documentclass[11pt]{article}
 \usepackage[margin=1in]{geometry}
 \usepackage{booktabs}
 \usepackage{tabularx}
+\usepackage{longtable}
 \usepackage{amssymb}
 \usepackage{amsmath}
 \usepackage{microtype}
