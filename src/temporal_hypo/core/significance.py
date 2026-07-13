@@ -7,11 +7,16 @@ already follows.
 
 Test families (exact tests preferred over normal approximations):
 
-- One proportion vs a chance baseline -> two-sided exact **binomial** test.
-  Nulls by family: ``0.5`` (pairwise precedes / co-occurs), ``1/6`` (sequence --
-  one of 6 strict orderings), ``1/3`` (first-among-3).
-- Two proportions (multi-vaccine) -> two-sided **Fisher** exact on the 2x2 table;
-  ``chi2_contingency`` is the large-n equivalent.
+- One proportion vs a chance baseline -> exact **binomial** test, run
+  **one-sided in the observed direction** for directional claims (the callers in
+  ``core.answers`` pick ``greater``/``less``). Nulls by family: ``0.5``
+  (pairwise precedes / co-occurs), ``1/6`` (sequence -- one of 6 strict
+  orderings), ``1/3`` (first-among-3). The two-sided Sterne form is still the
+  default for direction-agnostic use.
+- Two proportions (multi-vaccine) -> **Fisher** exact on the 2x2 table:
+  one-sided for the directional ``multi_dir_*`` modes, two-sided for the
+  ``multi_differ_*`` "do they differ" modes; ``chi2_contingency`` is the large-n
+  equivalent.
 - Multinomial / distribution (modal ordering, first-event distribution, "same
   across cohorts") -> **chi-square** goodness-of-fit (vs uniform) or homogeneity.
   Guard: expected cell counts >= 5; when violated, a seeded Monte-Carlo p-value
@@ -50,7 +55,7 @@ def _log_choose(n: int, k: int) -> float:
 
 
 # ---------------------------------------------------------------------------
-# binomial exact test (two-sided, Sterne's "sum of smaller probabilities")
+# binomial exact test (Sterne two-sided, or one-sided greater/less)
 # ---------------------------------------------------------------------------
 
 def binom_pmf(k: int, n: int, p: float) -> float:
@@ -64,15 +69,33 @@ def binom_pmf(k: int, n: int, p: float) -> float:
     return math.exp(logp)
 
 
-def binom_exact_p(k: int, n: int, p0: float) -> float:
-    """Two-sided exact binomial p-value for k successes in n trials vs null p0.
+def binom_exact_p(k: int, n: int, p0: float,
+                  alternative: str = "two-sided") -> float:
+    """Exact binomial p-value for k successes in n trials vs null p0.
 
-    Sterne's method: sum the probabilities of every outcome no more likely than
-    the observed one. Matches the default two-sided ``scipy.stats.binomtest``.
+    ``alternative`` selects the tail(s), matching ``scipy.stats.binomtest``:
+
+    - ``"two-sided"`` (default): Sterne's method -- sum the probabilities of
+      every outcome no more likely than the observed one. This is
+      relabel-invariant: the p-value is a property of the data and does not
+      depend on the claim direction (k and n-k give the same p at p0=0.5).
+    - ``"greater"``: H1 that the true rate exceeds p0; p = P(X >= k).
+    - ``"less"``:    H1 that the true rate is below  p0; p = P(X <= k).
+
+    The one-sided forms make the p-value direction-aware. An effect in the
+    asserted direction gets ~half the two-sided p, so borderline cores clear
+    alpha, while the reverse direction gets a large p -- the mechanism behind
+    the one-sided significance-as-verdict decision (see decisions.md).
     """
     if n <= 0:
         return 1.0
     k = max(0, min(n, k))
+    if alternative == "greater":
+        return min(1.0, sum(binom_pmf(i, n, p0) for i in range(k, n + 1)))
+    if alternative == "less":
+        return min(1.0, sum(binom_pmf(i, n, p0) for i in range(0, k + 1)))
+    if alternative != "two-sided":
+        raise ValueError(f"unknown alternative: {alternative!r}")
     p_obs = binom_pmf(k, n, p0)
     if p_obs == 0.0:
         return 0.0
@@ -84,7 +107,8 @@ def binom_exact_p(k: int, n: int, p0: float) -> float:
 
 
 # ---------------------------------------------------------------------------
-# Fisher exact test (two-sided) on a 2x2 table
+# Fisher exact test (two-sided by probability, or one-sided greater/less)
+# on a 2x2 table
 # ---------------------------------------------------------------------------
 
 def _hyper_logpmf(a: int, r1: int, r2: int, c1: int, total: int) -> float:
@@ -92,11 +116,21 @@ def _hyper_logpmf(a: int, r1: int, r2: int, c1: int, total: int) -> float:
     return _log_choose(r1, a) + _log_choose(r2, c1 - a) - _log_choose(total, c1)
 
 
-def fisher_exact_2x2(k1: int, n1: int, k2: int, n2: int) -> float:
-    """Two-sided Fisher exact p-value for the 2x2 [[k1, n1-k1], [k2, n2-k2]].
+def fisher_exact_2x2(k1: int, n1: int, k2: int, n2: int,
+                     alternative: str = "two-sided") -> float:
+    """Fisher exact p-value for the 2x2 [[k1, n1-k1], [k2, n2-k2]].
 
-    Sums the hypergeometric probabilities of all tables (fixed margins) no more
-    likely than the observed one.
+    ``alternative`` selects the tail(s), matching ``scipy.stats.fisher_exact``
+    on the same table (the top-left cell a = k1 is the hypergeometric variable):
+
+    - ``"two-sided"`` (default): sum the hypergeometric probabilities of all
+      tables (fixed margins) no more likely than the observed one. Symmetric
+      under swapping the two cohorts, so direction-blind.
+    - ``"greater"``: H1 that p1 > p2 (odds ratio > 1); p = P(A >= k1).
+    - ``"less"``:    H1 that p1 < p2 (odds ratio < 1); p = P(A <= k1).
+
+    Used one-sided for the directional multi-vaccine modes (multi_dir_*) and
+    two-sided for the "do they differ" modes (multi_differ_*).
     """
     if n1 <= 0 or n2 <= 0:
         return 1.0
@@ -105,9 +139,17 @@ def fisher_exact_2x2(k1: int, n1: int, k2: int, n2: int) -> float:
     r1, r2 = n1, n2
     c1 = k1 + k2
     total = n1 + n2
-    p_obs = math.exp(_hyper_logpmf(k1, r1, r2, c1, total))
     lo = max(0, c1 - r2)
     hi = min(r1, c1)
+    if alternative == "greater":
+        return min(1.0, sum(math.exp(_hyper_logpmf(a, r1, r2, c1, total))
+                            for a in range(k1, hi + 1)))
+    if alternative == "less":
+        return min(1.0, sum(math.exp(_hyper_logpmf(a, r1, r2, c1, total))
+                            for a in range(lo, k1 + 1)))
+    if alternative != "two-sided":
+        raise ValueError(f"unknown alternative: {alternative!r}")
+    p_obs = math.exp(_hyper_logpmf(k1, r1, r2, c1, total))
     acc = 0.0
     for a in range(lo, hi + 1):
         pa = math.exp(_hyper_logpmf(a, r1, r2, c1, total))

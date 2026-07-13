@@ -210,10 +210,21 @@ still-degenerate groups (S-M*, F-M3).
   "supported" side of 0.5 (so gold = supported) but its 95% CI still includes
   0.50 (p = 0.10) — the sample is too small to rule out a coin flip. "Above 0.5"
   ≠ "significantly above 0.5." This is the whole reason for the 78.5% fail rate.
-- **Reversing a failing core does NOT rescue it.** Our tests are two-sided /
+- **Reversing a failing core does NOT rescue it** *(as of the two-sided regime;
+  see the 2026-07-13 update below).* Our tests are two-sided /
   relabel-invariant, so the p-value is a property of the DATA, not the claim
   direction: 29/46 and 17/46 both give p = 0.104; Fisher is identical under
   cohort/event swap. Reversing flips supported↔refuted but leaves p unchanged.
+
+  > **Update (2026-07-13): directional tests are now one-sided.** The directional
+  > binomial and `multi_dir_*` Fisher tests run one-sided in the observed
+  > direction, so the p-value IS direction-aware: 29/46 gives p ~ 0.052 for
+  > "greater" and ~0.96 for "less". This does not "rescue by reversing" (the
+  > reverse direction now correctly fails) but it does halve the tail for
+  > effects already on the supported side, lifting successful pairs +23.5%
+  > (1,976 -> 2,441). The `multi_differ_*` and omnibus tests stay two-sided.
+  > See `decisions.md`, "One-sided directional tests for the significance
+  > verdict".
   (The 67 that appear to flip are all S-V1 + F-V3 chance-null artifacts —
   "significantly BELOW chance" = a significant *refuted*, not a rescued
   supported.) Reversal is a **generation** tool for refuted items from

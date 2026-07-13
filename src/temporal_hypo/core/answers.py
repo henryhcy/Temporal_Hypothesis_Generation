@@ -45,7 +45,8 @@ _ARROW = " → "  # " -> " rendered as the templates render orderings
 # significance dispatch -- which test each group's gold value gets
 # ---------------------------------------------------------------------------
 
-# Single-proportion modes -> two-sided exact binomial vs a chance null.
+# Single-proportion modes -> one-sided exact binomial vs a chance null
+# (direction chosen from the observed proportion in core_significance).
 _BINOM_NULL = {
     "dir_bool": 0.5, "dir_choice": 0.5, "prop_precedes": 0.5,
     "sym_bool_cooccurs": 0.5, "prop_cooccurs": 0.5,
@@ -114,17 +115,31 @@ def core_significance(core) -> Significance:
     m = core.mode
 
     if m in _BINOM_NULL:
-        p = sig.binom_exact_p(core.k, core.n, _BINOM_NULL[m])
+        p0 = _BINOM_NULL[m]
+        # One-sided in the observed direction: an effect on the supported side
+        # tests "greater", one on the refuted side tests "less". This corroborates
+        # whichever gold verdict the core carries and does not reward the reverse.
+        phat = core.k / core.n if core.n else p0
+        alt = "greater" if phat > p0 else ("less" if phat < p0 else "two-sided")
+        p = sig.binom_exact_p(core.k, core.n, p0, alternative=alt)
         return Significance(p, sig.significance_verdict(p, core.n) == "significant",
-                            "binom_exact", {"null": _BINOM_NULL[m]})
+                            "binom_exact", {"null": p0, "alternative": alt})
 
     if m in _FISHER:
         if core.n2 is None or core.k2 is None:
             return Significance(None, None, None)
-        p = sig.fisher_exact_2x2(core.k, core.n, core.k2, core.n2)
+        # "differ" claims are inherently two-sided; directional multi_dir_* claims
+        # are one-sided toward the cohort with the higher rate.
+        if "differ" in m:
+            alt = "two-sided"
+        else:
+            p1 = core.k / core.n if core.n else 0.0
+            p2 = core.k2 / core.n2 if core.n2 else 0.0
+            alt = "greater" if p1 > p2 else ("less" if p1 < p2 else "two-sided")
+        p = sig.fisher_exact_2x2(core.k, core.n, core.k2, core.n2, alternative=alt)
         n = min(core.n, core.n2)
         return Significance(p, sig.significance_verdict(p, n) == "significant",
-                            "fisher_exact")
+                            "fisher_exact", {"alternative": alt})
 
     if m in _GOF:
         observed = _gof_observed(core)

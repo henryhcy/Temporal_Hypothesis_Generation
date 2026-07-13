@@ -28,6 +28,41 @@ def test_binom_exact_bounds():
         assert 0.0 <= S.binom_exact_p(k, 20, 0.5) <= 1.0
 
 
+# ---- binomial exact (one-sided) ------------------------------------------
+
+def test_binom_one_sided_known_values():
+    # vs scipy.stats.binomtest(8, 10, 0.5, alternative=...)
+    assert approx(S.binom_exact_p(8, 10, 0.5, "greater"), 0.0546875)
+    assert approx(S.binom_exact_p(8, 10, 0.5, "less"), 0.9892578125)
+    # a "greater" tail against a chance null rejects hard when all succeed
+    assert S.binom_exact_p(10, 10, 0.5, "greater") < 1e-2
+
+
+def test_binom_one_sided_halves_borderline():
+    # the whole point: a supported-side effect that is NOT two-sided significant
+    # becomes one-sided significant. 29/46 vs 0.5 is p~0.104 two-sided.
+    two = S.binom_exact_p(29, 46, 0.5)
+    grt = S.binom_exact_p(29, 46, 0.5, "greater")
+    assert two > 0.05          # two-sided fails
+    assert grt < two           # one-sided is the smaller (upper) tail
+    # and the reverse direction on the SAME data is nowhere near significant
+    assert S.binom_exact_p(29, 46, 0.5, "less") > 0.9
+
+
+def test_binom_reverse_means_differently():
+    # two-sided is relabel-invariant: 29/46 and 17/46 give the same p...
+    assert approx(S.binom_exact_p(29, 46, 0.5), S.binom_exact_p(17, 46, 0.5))
+    # ...but one-sided "greater" separates them (the reverse now means something)
+    assert S.binom_exact_p(29, 46, 0.5, "greater") \
+        != S.binom_exact_p(17, 46, 0.5, "greater")
+
+
+def test_binom_alternative_validation():
+    import pytest
+    with pytest.raises(ValueError):
+        S.binom_exact_p(5, 10, 0.5, "bogus")
+
+
 # ---- Fisher exact (two-sided) --------------------------------------------
 
 def test_fisher_known_value():
@@ -41,6 +76,26 @@ def test_fisher_identical_rows_is_one():
 
 def test_fisher_strong_difference_significant():
     assert S.fisher_exact_2x2(18, 20, 2, 20) < 0.001
+
+
+# ---- Fisher exact (one-sided) --------------------------------------------
+
+def test_fisher_one_sided_known_values():
+    # vs scipy.stats.fisher_exact([[8,2],[1,5]], alternative=...)
+    assert approx(S.fisher_exact_2x2(8, 10, 1, 6, "greater"), 0.0244755, 1e-5)
+    assert approx(S.fisher_exact_2x2(8, 10, 1, 6, "less"), 0.9991259, 1e-5)
+
+
+def test_fisher_one_sided_direction_separates():
+    # p1 > p2: "greater" is the smaller tail, "less" is large
+    assert S.fisher_exact_2x2(8, 10, 1, 6, "greater") \
+        < S.fisher_exact_2x2(8, 10, 1, 6, "less")
+
+
+def test_fisher_alternative_validation():
+    import pytest
+    with pytest.raises(ValueError):
+        S.fisher_exact_2x2(8, 10, 1, 6, "bogus")
 
 
 # ---- chi-square survival + GoF + contingency -----------------------------

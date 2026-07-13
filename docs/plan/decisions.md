@@ -327,8 +327,119 @@ count as an order); the fix is to the denominator and floor, not the semantics.
 - Exact new claim strings per register (the YAML wording) for the reworded
   groups -- not yet written.
 - The not-significant mapping: `refuted` vs `insufficient` (the clean option is
-  two-sided test + direction => supported / refuted / insufficient).
+  one-sided test + direction => supported / refuted / insufficient; see the
+  one-sided entry below, which now supplies the direction).
 - Handling of the zero-supported groups (S-M1, S-M2, S-M3, F-M3): raising min-n
   will not help (already power-starved); candidates are drop or reword/rescope.
 - Whether to raise the per-cohort min-n floor and/or add significance-stratified
   selection to lift the supported share where the inventory allows.
+
+---
+
+## One-sided directional tests for the significance verdict (2026-07-13)
+
+Supersedes the "two-sided throughout" wording in the earlier significance
+entries for the DIRECTIONAL tests only (the differ and omnibus tests are
+unchanged). Context: under significance-as-verdict, `supported == significant`,
+so the two-sided fail rate (78.5%, see `07_significance_findings.md`) is the
+hard cap on the supported class. Two-sided tests are relabel-invariant -- the
+p-value is a property of the data, not the claim direction -- so a supported-side
+effect at 29/46 (two-sided p ~ 0.104) fails even though the data clearly favor
+the claim.
+
+### Decision: run the directional tests one-sided in the observed direction
+- Single-proportion binomial modes (`dir_bool`, `dir_choice`, `prop_precedes`,
+  `sym_bool_cooccurs`, `prop_cooccurs`, `seq_bool`, `prop_sequence`,
+  `first_bool`) and the directional multi-vaccine Fisher modes
+  (`multi_dir_precedes`, `multi_dir_cooccurs`, `multi_dir_sequence`,
+  `multi_dir_first`) now test ONE-SIDED. The alternative is chosen from the
+  observed proportion: above the null -> `greater` (tests the supported
+  direction), below -> `less` (tests the refuted direction). So the test
+  corroborates whichever gold verdict the core carries and does NOT reward the
+  reverse claim.
+- The reverse hypothesis now "means differently": on the same 29/46 data,
+  "greater" gives p ~ 0.052 while "less" gives p ~ 0.96. This is the intended
+  break from the two-sided relabel-invariance noted in `07_findings` §7.
+
+### Unchanged (still two-sided / omnibus)
+- `multi_differ_*` stay TWO-SIDED: "do they differ" is a symmetric question.
+- The GOF (`modal_choice`, `consistency_bool`, `first_choice`, `last_choice`)
+  and homogeneity (`multi_same_first`, `multi_differ_first`,
+  `multi_same_modal_order`) tests are omnibus and have no one-sided form.
+
+### Measured effect (full corpus, `data/medtempo.db`)
+- Successful pairs (definite-gold categorical cores the test corroborates):
+  1,976 -> 2,441 (**+465, +23.5%**); fail rate 81.4% -> 77.1%.
+- Concentrated in the well-powered directional groups (P-V/C-V +53/+86 each,
+  F-V3 +20, C-M2 +12). The power-starved sequence-multi groups (S-M1/S-M2) stay
+  at 0 -- one-sided cannot add power that the n~6-8 cohorts do not have.
+- Implementation: `alternative` arg on `binom_exact_p` / `fisher_exact_2x2`
+  (`core/significance.py`, default still two-sided); direction chosen in
+  `core_significance` (`core/answers.py`).
+
+---
+
+## Template redesign for testability: null alignment, PROP removal (2026-07-13)
+
+Design session (not yet implemented in code except the one-sided tests above).
+Guiding principle established this session: **every cohort-level claim must rest
+on a principled null** -- either a chance baseline (0.5, 1/6, 1/3, uniform) or
+another group in the data. A claim whose only reference is the true value itself
+is fact-checking, not hypothesis testing, and does not belong in the benchmark.
+Report-level groups stay exact/deterministic (no test) and are unaffected.
+
+### LOCKED: S-V1 and F-V3 -> "most common", with a distributional test
+- Wording: `seq_bool` (S-V1) -> "A -> B -> C is the **most common** ordering";
+  `first_bool` (F-V3) -> "X is the **most common first** event". Keeps the vague,
+  test-requiring phrasing; drops "typically/usually/majority" which implied a
+  0.5 bar that the corpus cannot clear for 3-event orderings / first-of-3.
+- Test MUST change with the wording: "most common" is an argmax (distributional)
+  claim, NOT "beats chance 1/6". A binomial-vs-1/6 test does not verify it (a
+  25% ordering beats 1/6 yet may not be the mode). Use **modal-vs-runner-up**:
+  one-sided binomial of the claimed cell's count vs the runner-up's count, null
+  0.5 ("does the named ordering significantly out-count its nearest
+  competitor?"). Plain GOF-vs-uniform is rejected -- it only shows non-uniform,
+  not that the *named* ordering is the mode.
+- Consequence: S-V1 becomes a BOOL twin of S-V3 (modal_choice); F-V3 a twin of
+  F-V1 (first_choice). Accepted; the redundant slots get backfilled from the
+  replacement menu below.
+
+### LOCKED: remove the PROP groups (P-V2, C-V2, S-V2)
+- PROP claims ("in about {p}% of reports ...") are graded by a +/-5pp tolerance
+  match against the computed cohort rate = point-estimate fact-check, no null.
+  There is no non-arbitrary way to reword an absolute percentage into a test:
+  the reference is either the truth (fact-check) or an injected threshold
+  (arbitrary, or data-derived => leaky). So PROP is REMOVED, not reworded.
+- Latent bug to fix regardless: `prop_precedes`, `prop_cooccurs`,
+  `prop_sequence` are still in `_BINOM_NULL` (`core/answers.py`), so
+  `core_significance` attaches a chance-null p-value that does not correspond to
+  the PROP claim. Remove them from `_BINOM_NULL` when PROP is retired.
+  (`make_examples.py::_categorical_definite` already excludes PROP.)
+
+### LOCKED: S-V4 rule/test mismatch to fix
+- `consistency_bool` gold uses `modal_share > 0.5` but the test is GOF-vs-uniform
+  (departure from uniform). These can disagree independent of wording. Align the
+  gold rule to the test (or vice versa) so the verdict and the p-value agree.
+
+### PENDING: replacement groups for the retired PROP + redundant slots
+A valid replacement needs a principled reference. Menu (see also
+`open_questions.md`); recommended shortlist **R1 + R5 + R3**, primitive-preserving
+mapping P-V2->R1, C-V2->R5, S-V2->R7 (or R1 on orderings):
+- R1 pair-vs-pair precedence: "In {v}, A precedes B more often than C precedes
+  D." (two-proportion; McNemar if reports overlap.)
+- R2 event-vs-event first-rate: "In {v}, A is first more often than B is."
+- R3 conditional antecedent: "In {v}, B follows A more often than B follows C."
+- R4 temporal-gap magnitude: "In {v}, A and B are farther apart than C and D."
+  (Mann-Whitney on level distances; position-based.)
+- R5 association vs independence: "In {v}, A and B co-occur more than if
+  independent." (2x2 chi-square/Fisher on presence x presence; best co-occurs
+  replacement.)
+- R6 concentration vs uniform (overlaps S-V4; could BE the fixed S-V4).
+- R7 multiple-of-chance threshold: "A -> B -> C occurs at least twice the chance
+  rate (>1/3)." (binomial vs k*p0; keeps a number, anchored to chance not data.)
+- R8 strongest-pair superlative (CHOICE): "Among (A,B),(A,C),(A,D), A->B is the
+  strongest ordering." (argmax + modal-vs-runner-up.)
+
+Open: which subset to adopt; whether R6 folds into the S-V4 fix; exact
+four-register YAML strings and the gold-verdict rule per chosen group; inventory
+check for each replacement against the corpus before locking.

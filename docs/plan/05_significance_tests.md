@@ -48,9 +48,13 @@ only when every expected cell count is >= 5.
 - **Binomial exact** (one cohort, two categories). Tests whether a proportion
   departs from a chance baseline p0. Used for pairwise/co-occurs vaccine-level
   groups, sequence one-ordering groups, and first/last one-candidate groups.
+  Run **one-sided in the observed direction** (`greater` above the null,
+  `less` below) because these claims are directional; see the 2026-07-13
+  one-sided decision in `decisions.md`.
 - **Fisher's exact** (two cohorts, two categories, 2x2). Tests whether two
   cohort proportions differ. Used for multi-vaccine BOOL/CHOICE on a single
-  outcome.
+  outcome. **One-sided** for the directional `multi_dir_*` modes; **two-sided**
+  for the `multi_differ_*` "do they differ" modes.
 - **Exact multinomial goodness-of-fit** (one cohort, k categories), with
   chi-square goodness-of-fit as the large-n approximation. Tests whether a
   distribution departs from uniform. Used for "most common ordering" and
