@@ -39,14 +39,13 @@ mark such reports as `insufficient` for cross-component hypotheses and
 proceed. Pending corpus survey.
 
 ### Template replacement selection (PROP retirement + redundant backfill)
-Decided this session (see `decisions.md` 2026-07-13): remove PROP (P-V2, C-V2,
-S-V2); S-V1/F-V3 reworded to "most common" (become twins of S-V3/F-V1). Open:
-which replacement groups to adopt from the R1-R8 menu to fill the retired PROP
-slots and the redundant S-V1/S-V3, F-V3/F-V1 pairs. Recommended shortlist
-R1 (pair-vs-pair precedence) + R5 (association vs independence) + R3 (conditional
-antecedent). Still to do before locking: pick the subset, decide if R6 folds into
-the S-V4 fix, write four-register YAML + gold-verdict rule per chosen group, and
-run a corpus inventory check on each candidate.
+Remove PROP (P-V2, C-V2, S-V2); S-V1/F-V3 reworded to "most common" (become
+twins of S-V3/F-V1) -- see `decisions.md` 2026-07-13. The corpus inventory is
+now DONE (2026-07-14): narrowed to **R1, R3, R4, R5** (R2/R6/R7/R8 removed --
+too thin / degenerate / a restated S-V4; see `decisions.md`). Still open before
+locking: which of P-V2 -> R3, C-V2 -> R5, plus R4/R1 to instantiate; the exact
+four-register YAML strings and gold-verdict rule per chosen group; and whether R6
+folds into the S-V4 fix.
 
 ## Framework
 

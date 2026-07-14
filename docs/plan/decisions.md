@@ -443,3 +443,38 @@ mapping P-V2->R1, C-V2->R5, S-V2->R7 (or R1 on orderings):
 Open: which subset to adopt; whether R6 folds into the S-V4 fix; exact
 four-register YAML strings and the gold-verdict rule per chosen group; inventory
 check for each replacement against the corpus before locking.
+
+---
+
+## Replacement menu narrowed by the R1-R8 corpus inventory (2026-07-14)
+
+Ran all eight R1-R8 candidates over the full corpus
+(`scripts/replacement_inventory.py`; table in `Findings_and_Templates.tex`
+Section 5, "Replacement Template Inventory"). Viable = top-K enumerated cores
+clearing the family floor; Sig = one-sided-significant cores (the supported
+ceiling under significance-as-verdict).
+
+### KEPT (in discussion): R1, R3, R4, R5
+- **R3** conditional antecedent -- 372 sig cores (37.1%), median n 29. Powered;
+  maps P-V2 -> R3.
+- **R4** temporal-gap magnitude (Mann-Whitney on level distances) -- 1,635 sig
+  (38.7%), median n 34. Richest; position-based.
+- **R5** association vs independence (2x2 presence x presence) -- 144 sig
+  (25.3%), each core over the whole ~1,000-report cohort so significance is
+  robust; best co-occurs replacement, maps C-V2 -> R5.
+- **R1** pair-vs-pair precedence -- 415 sig (18.4%), median n 28. Solid.
+
+### REMOVED (do NOT re-propose these ideas): R2, R6, R7, R8
+Recorded so they are not regenerated if more replacements are needed later.
+- **R2** event-vs-event first-rate -- too thin: only 53 viable cores (a decisive
+  winner-vs-runner-up first-of-3 split is rare in the corpus).
+- **R6** concentration vs uniform -- not a new group: it is a GOF-non-uniform
+  test = a restated S-V4 (29 sig). Fold into the S-V4 fix instead of adding.
+- **R7** multiple-of-chance (>= 2x, i.e. > 1/3) -- too hard: 4.8% significant at
+  the n~7 orderable sizes; the 2x-chance bar is unreachable in this corpus.
+- **R8** strongest-pair superlative -- degenerate: ZERO significant cores (the
+  top precedes-pair and its runner-up are statistically indistinguishable).
+
+Still open: exact four-register YAML + gold-verdict rule for the kept
+R1/R3/R4/R5; which of P-V2 -> R3, C-V2 -> R5, plus R4/R1, to actually
+instantiate.

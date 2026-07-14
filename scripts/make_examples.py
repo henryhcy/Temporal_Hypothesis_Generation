@@ -49,11 +49,13 @@ _TEST_LABEL = {
 
 # How each p-value is computed (shown per example and in the methods appendix).
 _HOW = {
-    "binom_exact": "two-sided exact binomial -- sum the Binomial(n, p0) probabilities of "
-                   "outcomes no more likely than the observed k (null p0 = 1/2 pairwise/"
-                   "co-occurs, 1/6 sequence, 1/3 first-among-3)",
-    "fisher_exact": "Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables "
-                    "with the observed margins that are <= the observed table's probability",
+    "binom_exact": "exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 "
+                   "sequence, 1/3 first-among-3), ONE-SIDED in the observed direction "
+                   "(greater if the rate is above p0, less if below) so it corroborates the "
+                   "observed verdict, not the reverse",
+    "fisher_exact": "Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for "
+                    "the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "
+                    "\"do they differ\" claims",
     "multinomial_gof_exact": "exact multinomial goodness-of-fit -- sum the multinomial "
                              "probabilities of every table (same n) whose chi-square "
                              "statistic vs uniform is >= the observed",
@@ -184,6 +186,15 @@ def _pv(p) -> str:
     return "n/a" if p is None else f"{p:.3f}"
 
 
+def _side_label(alt) -> str:
+    """How the tail is taken for the categorical test (empty for omnibus GOF)."""
+    if alt in ("greater", "less"):
+        return f" (one-sided, {alt})"
+    if alt == "two-sided":
+        return " (two-sided)"
+    return ""
+
+
 def _focal_ranks(index, ev, cohort):
     """The focal (first) event's within-triple rank per report in a cohort."""
     return [positions._avg_ranks(list(pos))[0]
@@ -311,6 +322,8 @@ def _example_for(index, group, core) -> dict:
         }
 
     null_h = _null_hypothesis(ans.mode, core.events, core.vaccines)
+    sg = core_significance(core)
+    alt = sg.details.get("alternative") if sg.details else None
     test = None
     if ans.sig_test is not None:
         test = {
@@ -319,6 +332,7 @@ def _example_for(index, group, core) -> dict:
             "significant": ans.significant,
             "how": _HOW.get(ans.sig_test, ""),
             "null": null_h,
+            "alternative": alt,
         }
     pos = _position_test(index, group, core)
 
@@ -584,7 +598,8 @@ def _render_md(entries, stats) -> str:
         if e["test"]:
             t = e["test"]
             pv = "n/a" if t["p_value"] is None else f"{t['p_value']:.4g}"
-            out.append(f"- **Categorical test**: {t['name']}, p = {pv} "
+            out.append(f"- **Categorical test**: {t['name']}{_side_label(t.get('alternative'))}, "
+                       f"p = {pv} "
                        f"({'significant' if t['significant'] else 'not significant'})")
             out.append(f"    - *{t['null']}*")
             out.append(f"    - *how p is computed*: {t['how']}")
@@ -712,6 +727,7 @@ def _render_tex(entries, stats) -> str:
             pv = "n/a" if t["p_value"] is None else f"{t['p_value']:.4g}"
             sig = "significant" if t["significant"] else "not significant"
             line = (r"\textbf{Categorical test:} " + _esc(t["name"])
+                    + _esc(_side_label(t.get("alternative")))
                     + f", $p = {pv}$ ({sig})")
             out.append((r"\textcolor{red}{" + line + "}" if flag else line) + r". \\")
             out.append(r"\emph{" + _esc(t["null"]) + r"} \\")

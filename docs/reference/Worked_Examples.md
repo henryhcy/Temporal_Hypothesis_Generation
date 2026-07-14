@@ -177,9 +177,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 173 viable | 168 supported-capable (true cases) | 168 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Janssen
 - **Conditioned counts**: k=44 / n=119  (rate 0.3697)
-- **Categorical test**: binomial exact, p = 0.002863 (significant)
+- **Categorical test**: binomial exact (one-sided, less), p = 0.002863 (significant)
     - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
     - *H0: the Fatigue-vs-Headache rank-distances are symmetric about 0 (neither event tends to come earlier)*
     - *how p is computed*: Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction
@@ -216,9 +216,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 173 viable | 173 supported-capable (true cases) | 173 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Janssen
 - **Conditioned counts**: k=44 / n=119  (rate 0.3697)
-- **Categorical test**: binomial exact, p = 0.002863 (significant)
+- **Categorical test**: binomial exact (one-sided, less), p = 0.002863 (significant)
     - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
     - *H0: the Fatigue-vs-Headache rank-distances are symmetric about 0 (neither event tends to come earlier)*
     - *how p is computed*: Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction
@@ -255,9 +255,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 173 viable | 168 supported-capable (true cases) | 168 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Janssen
 - **Conditioned counts**: k=44 / n=119  (rate 0.3697)
-- **Categorical test**: binomial exact, p = 0.002863 (significant)
+- **Categorical test**: binomial exact (one-sided, less), p = 0.002863 (significant)
     - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
     - *H0: the Fatigue-vs-Headache rank-distances are symmetric about 0 (neither event tends to come earlier)*
     - *how p is computed*: Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction
@@ -295,9 +295,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 99 viable | 39 supported-capable (true cases) | 60 refuted-capable
 - **Core**: events ['Headache', 'Nausea'], cohort Pfizer vs Moderna
 - **Conditioned counts**: k=39 / n=48  |  cohort2 k=20 / n=34  (rate 0.8125)
-- **Categorical test**: Fisher exact (2x2), p = 0.04459 (significant)
+- **Categorical test**: Fisher exact (2x2) (two-sided), p = 0.04459 (significant)
     - *H0: P(Headache precedes Nausea) is equal for Pfizer and Moderna (p1 = p2)*
-    - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
+    - *how p is computed*: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Position-based test**: Mann-Whitney U (level(Headache)-level(Nausea) between Pfizer/Moderna; n=89/85), p = 0.002855
     - *H0: Pfizer and Moderna draw level(Headache)-level(Nausea) from the same distribution (no cohort difference in rank-distance)*
     - *how p is computed*: Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction
@@ -321,9 +321,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 99 viable | 99 supported-capable (true cases) | 99 refuted-capable
 - **Core**: events ['Headache', 'Nausea'], cohort Pfizer vs Moderna
 - **Conditioned counts**: k=39 / n=48  |  cohort2 k=20 / n=34  (rate 0.8125)
-- **Categorical test**: Fisher exact (2x2), p = 0.02436 (significant)
+- **Categorical test**: Fisher exact (2x2) (one-sided, greater), p = 0.02436 (significant)
     - *H0: P(Headache precedes Nausea) is equal for Pfizer and Moderna (p1 = p2)*
-    - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
+    - *how p is computed*: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Position-based test**: Mann-Whitney U (level(Headache)-level(Nausea) between Pfizer/Moderna; n=89/85), p = 0.002855
     - *H0: Pfizer and Moderna draw level(Headache)-level(Nausea) from the same distribution (no cohort difference in rank-distance)*
     - *how p is computed*: Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction
@@ -382,9 +382,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 374 viable | 90 supported-capable (true cases) | 271 refuted-capable
 - **Core**: events ['Chills', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=150 / n=204  (rate 0.7353)
-- **Categorical test**: binomial exact, p = 6.043e-12 (significant)
+- **Categorical test**: binomial exact (one-sided, greater), p = 6.043e-12 (significant)
     - *H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **95% CI**: [0.6708, 0.7911], effect size 0.49
 - **SUPPORTED** example (filled, all registers):
     - **Original**
@@ -405,9 +405,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 374 viable | 374 supported-capable (true cases) | 374 refuted-capable
 - **Core**: events ['Headache', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=111 / n=213  (rate 0.5211)
-- **Categorical test**: binomial exact, p = 0.2918 (not significant)
+- **Categorical test**: binomial exact (one-sided, greater), p = 0.2918 (not significant)
     - *H0: P(Headache and Pyrexia co-occur) = 0.5 (among reports containing both)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **95% CI**: [0.4543, 0.5872], effect size 0.0423
 - **SUPPORTED** example (filled, all registers):
     - **Original**
@@ -441,9 +441,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 374 viable | 90 supported-capable (true cases) | 271 refuted-capable
 - **Core**: events ['Chills', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=150 / n=204  (rate 0.7353)
-- **Categorical test**: binomial exact, p = 6.043e-12 (significant)
+- **Categorical test**: binomial exact (one-sided, greater), p = 6.043e-12 (significant)
     - *H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **95% CI**: [0.6708, 0.7911], effect size 0.49
 - **SUPPORTED** example (filled, all registers):
     - **Original**
@@ -464,9 +464,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 232 viable | 89 supported-capable (true cases) | 143 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Moderna vs Janssen
 - **Conditioned counts**: k=70 / n=137  |  cohort2 k=77 / n=196  (rate 0.5109)
-- **Categorical test**: Fisher exact (2x2), p = 0.03398 (significant)
+- **Categorical test**: Fisher exact (2x2) (two-sided), p = 0.03398 (significant)
     - *H0: the Fatigue/Headache co-occurrence rate is equal for Moderna and Janssen (p1 = p2)*
-    - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
+    - *how p is computed*: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Position-based test**: Mann-Whitney U (|level(Fatigue)-level(Headache)| between Moderna/Janssen; n=137/196), p = 0.0297
     - *H0: Moderna and Janssen draw |level(Fatigue)-level(Headache)| from the same distribution (no cohort difference in rank-distance)*
     - *how p is computed*: Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction
@@ -490,9 +490,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 232 viable | 232 supported-capable (true cases) | 232 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Moderna vs Janssen
 - **Conditioned counts**: k=70 / n=137  |  cohort2 k=77 / n=196  (rate 0.5109)
-- **Categorical test**: Fisher exact (2x2), p = 0.02154 (significant)
+- **Categorical test**: Fisher exact (2x2) (one-sided, greater), p = 0.02154 (significant)
     - *H0: the Fatigue/Headache co-occurrence rate is equal for Moderna and Janssen (p1 = p2)*
-    - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
+    - *how p is computed*: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Position-based test**: Mann-Whitney U (|level(Fatigue)-level(Headache)| between Moderna/Janssen; n=137/196), p = 0.0297
     - *H0: Moderna and Janssen draw |level(Fatigue)-level(Headache)| from the same distribution (no cohort difference in rank-distance)*
     - *how p is computed*: Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction
@@ -564,9 +564,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 275 viable | 62 supported-capable (true cases) | 236 refuted-capable
 - **Core**: events ['Headache', 'Hyperhidrosis', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=7 / n=13  (rate 0.5385)
-- **Categorical test**: binomial exact, p = 0.002398 (significant)
+- **Categorical test**: binomial exact (one-sided, greater), p = 0.002398 (significant)
     - *H0: P(ordering = Headache -> Hyperhidrosis -> Pyrexia) = 1/6 (chance rate among the 6 orderings)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **Position-based test**: Friedman (Q=12.17 df=2; n=33 reports), p = 0.002276
     - *H0: Headache, Hyperhidrosis, Pyrexia share one within-report rank distribution (no systematic ordering)*
     - *how p is computed*: Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums
@@ -603,9 +603,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 275 viable | 275 supported-capable (true cases) | 275 refuted-capable
 - **Core**: events ['Chills', 'Fatigue', 'Headache'], cohort Janssen
 - **Conditioned counts**: k=8 / n=28  (rate 0.2857)
-- **Categorical test**: binomial exact, p = 0.08153 (not significant)
+- **Categorical test**: binomial exact (one-sided, greater), p = 0.08153 (not significant)
     - *H0: P(ordering = Chills -> Fatigue -> Headache) = 1/6 (chance rate among the 6 orderings)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **Position-based test**: Friedman (Q=7.71 df=2; n=88 reports), p = 0.02115
     - *H0: Chills, Fatigue, Headache share one within-report rank distribution (no systematic ordering)*
     - *how p is computed*: Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums
@@ -709,9 +709,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Core**: events ['Fatigue', 'Headache', 'Pain'], cohort Moderna vs Janssen
 - **Conditioned counts**: k=1 / n=13  |  cohort2 k=7 / n=18  (rate 0.0769)
 - **⚠ P-VALUE vs GOLD MISMATCH** (red in the LaTeX findings): type1 (gold set but the test is not significant)
-- **Categorical test**: Fisher exact (2x2), p = 0.09535 (not significant)
+- **Categorical test**: Fisher exact (2x2) (two-sided), p = 0.09535 (not significant)
     - *H0: P(ordering = Fatigue -> Headache -> Pain) is equal for Moderna and Janssen (p1 = p2)*
-    - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
+    - *how p is computed*: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Position-based test**: Mann-Whitney U (per event) (Fatigue's within-triple rank between Moderna/Janssen; n=48/81), p = 0.7497
     - *H0: Fatigue's within-triple rank has the same distribution for Moderna and Janssen*
     - *how p is computed*: Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction
@@ -736,9 +736,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Core**: events ['Fatigue', 'Headache', 'Pain'], cohort Moderna vs Janssen
 - **Conditioned counts**: k=1 / n=13  |  cohort2 k=7 / n=18  (rate 0.0769)
 - **⚠ P-VALUE vs GOLD MISMATCH** (red in the LaTeX findings): type1 (gold set but the test is not significant)
-- **Categorical test**: Fisher exact (2x2), p = 0.05799 (not significant)
+- **Categorical test**: Fisher exact (2x2) (one-sided, less), p = 0.05799 (not significant)
     - *H0: P(ordering = Fatigue -> Headache -> Pain) is equal for Moderna and Janssen (p1 = p2)*
-    - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
+    - *how p is computed*: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Position-based test**: Mann-Whitney U (per event) (Fatigue's within-triple rank between Moderna/Janssen; n=48/81), p = 0.7497
     - *H0: Fatigue's within-triple rank has the same distribution for Moderna and Janssen*
     - *how p is computed*: Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction
@@ -986,9 +986,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 82 viable | 2 supported-capable (true cases) | 82 refuted-capable
 - **Core**: events ['Headache', 'Injection site pain', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=20 / n=39  (rate 0.5128)
-- **Categorical test**: binomial exact, p = 0.0155 (significant)
+- **Categorical test**: binomial exact (one-sided, greater), p = 0.0155 (significant)
     - *H0: P(Headache is first) = 1/3 (chance rate among the 3 candidates)*
-    - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
+    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
 - **Position-based test**: Friedman (Q=10.36 df=2; n=39 reports), p = 0.005622
     - *H0: Headache, Injection site pain, Pyrexia share one within-report rank distribution (no systematic ordering)*
     - *how p is computed*: Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums
@@ -1076,9 +1076,9 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Core**: events ['Chills', 'Headache', 'Pyrexia'], cohort Pfizer vs Moderna
 - **Conditioned counts**: k=10 / n=67  |  cohort2 k=7 / n=60  (rate 0.1493)
 - **⚠ P-VALUE vs GOLD MISMATCH** (red in the LaTeX findings): type1 (gold set but the test is not significant)
-- **Categorical test**: Fisher exact (2x2), p = 0.3924 (not significant)
+- **Categorical test**: Fisher exact (2x2) (one-sided, greater), p = 0.3924 (not significant)
     - *H0: the first-event rate is equal for Pfizer and Moderna (p1 = p2)*
-    - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
+    - *how p is computed*: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Position-based test**: Mann-Whitney U (per event) (Chills's within-triple rank between Pfizer/Moderna; n=67/60), p = 0.7023
     - *H0: Chills's within-triple rank has the same distribution for Pfizer and Moderna*
     - *how p is computed*: Mann-Whitney U -- pool and rank the two cohorts' values, U from the rank-sum; normal approximation with tie correction
@@ -1113,8 +1113,8 @@ Templates whose worked example has a p-value that does not match the gold label 
 
 ## Statistical methods (how each p-value is computed)
 
-- **Binomial exact**: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
-- **Fisher exact**: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
+- **Binomial exact**: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
+- **Fisher exact**: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Multinomial GOF (exact)**: exact multinomial goodness-of-fit -- sum the multinomial probabilities of every table (same n) whose chi-square statistic vs uniform is >= the observed
 - **Multinomial GOF (chi-square)**: chi-square goodness-of-fit vs uniform (large-n approximation, used only when every expected cell >= 5)
 - **Fisher-Freeman-Halton**: Fisher-Freeman-Halton -- sum the probabilities of every 2xk table with the observed margins that are <= the observed table's
