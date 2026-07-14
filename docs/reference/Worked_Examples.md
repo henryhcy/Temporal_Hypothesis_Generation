@@ -46,14 +46,14 @@ SAME real, co-occurring events.
 
 For every viable core with a definite gold verdict (supported/refuted) and an applicable categorical test (PROP and report-level excluded), we check whether the test is significant at alpha=0.05. A **fail** is a definite gold label the test does NOT corroborate. This is the population rate over ALL such cores.
 
-- **Overall population**: 2354/2998 (78.5%) of definite-verdict categorical cores are not significant.
+- **Overall population**: 2239/2998 (74.7%) of definite-verdict categorical cores are not significant.
 
 | family | definite cores | failed | fail rate |
 |---|--:|--:|--:|
-| pairwise-precedes | 534 | 350 | 350/534 (65.5%) |
-| co-occurs | 1186 | 876 | 876/1186 (73.9%) |
-| sequence | 919 | 876 | 876/919 (95.3%) |
-| first/last | 359 | 252 | 252/359 (70.2%) |
+| pairwise-precedes | 534 | 327 | 327/534 (61.2%) |
+| co-occurs | 1186 | 795 | 795/1186 (67.0%) |
+| sequence | 919 | 875 | 875/919 (95.2%) |
+| first/last | 359 | 242 | 242/359 (67.4%) |
 
 For the worked examples below we search each template's cores for a **successful** example (definite gold + significant test) to showcase; only when none exists do we present a failed one.
 
@@ -63,19 +63,19 @@ For the worked examples below we search each template's cores for a **successful
 |---|--:|--:|--:|:--:|
 | P-R1 | 0 | 0 | n/a | n/a |
 | P-R2 | 0 | 0 | n/a | n/a |
-| P-V1 | 168 | 91 | 91/168 (54.2%) | successful |
+| P-V1 | 168 | 81 | 81/168 (48.2%) | successful |
 | P-V2 | 0 | 0 | n/a | n/a |
-| P-V3 | 168 | 91 | 91/168 (54.2%) | successful |
+| P-V3 | 168 | 81 | 81/168 (48.2%) | successful |
 | P-M1 | 99 | 84 | 84/99 (84.8%) | successful |
-| P-M2 | 99 | 84 | 84/99 (84.8%) | successful |
+| P-M2 | 99 | 81 | 81/99 (81.8%) | successful |
 | C-R1 | 0 | 0 | n/a | n/a |
-| C-V1 | 361 | 220 | 220/361 (60.9%) | successful |
+| C-V1 | 361 | 184 | 184/361 (51.0%) | successful |
 | C-V2 | 0 | 0 | n/a | n/a |
-| C-V3 | 361 | 220 | 220/361 (60.9%) | successful |
+| C-V3 | 361 | 184 | 184/361 (51.0%) | successful |
 | C-M1 | 232 | 218 | 218/232 (94.0%) | successful |
-| C-M2 | 232 | 218 | 218/232 (94.0%) | successful |
+| C-M2 | 232 | 209 | 209/232 (90.1%) | successful |
 | S-R1 | 0 | 0 | n/a | n/a |
-| S-V1 | 236 | 216 | 216/236 (91.5%) | successful |
+| S-V1 | 236 | 215 | 215/236 (91.1%) | successful |
 | S-V2 | 0 | 0 | n/a | n/a |
 | S-V3 | 192 | 180 | 180/192 (93.8%) | successful |
 | S-V4 | 236 | 225 | 225/236 (95.3%) | successful |
@@ -87,7 +87,7 @@ For the worked examples below we search each template's cores for a **successful
 | F-R3 | 0 | 0 | n/a | n/a |
 | F-V1 | 67 | 42 | 42/67 (62.7%) | successful |
 | F-V2 | 73 | 36 | 36/73 (49.3%) | successful |
-| F-V3 | 82 | 41 | 41/82 (50.0%) | successful |
+| F-V3 | 82 | 31 | 31/82 (37.8%) | successful |
 | F-M1 | 46 | 44 | 44/46 (95.7%) | successful |
 | F-M2 | 46 | 44 | 44/46 (95.7%) | successful |
 | F-M3 | 45 | 45 | 45/45 (100.0%) | failed |
@@ -173,11 +173,11 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: In this patient, Injection site pain came first.
 
 ## P-V1  (pairwise, vaccine, BOOL)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 91/168 (54.2%) fail)
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 81/168 (48.2%) fail)
 - **Qualified cores**: 173 viable | 168 supported-capable (true cases) | 168 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Janssen
 - **Conditioned counts**: k=44 / n=119  (rate 0.3697)
-- **Categorical test**: binomial exact, p = 0.005727 (significant)
+- **Categorical test**: binomial exact, p = 0.002863 (significant)
     - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
     - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
 - **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
@@ -216,7 +216,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 173 viable | 173 supported-capable (true cases) | 173 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Janssen
 - **Conditioned counts**: k=44 / n=119  (rate 0.3697)
-- **Categorical test**: binomial exact, p = 0.005727 (significant)
+- **Categorical test**: binomial exact, p = 0.002863 (significant)
     - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
     - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
 - **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
@@ -251,11 +251,11 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: Fatigue precedes Headache in roughly 57% of Janssen recipients.
 
 ## P-V3  (pairwise, vaccine, CHOICE)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 91/168 (54.2%) fail)
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 81/168 (48.2%) fail)
 - **Qualified cores**: 173 viable | 168 supported-capable (true cases) | 168 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Janssen
 - **Conditioned counts**: k=44 / n=119  (rate 0.3697)
-- **Categorical test**: binomial exact, p = 0.005727 (significant)
+- **Categorical test**: binomial exact, p = 0.002863 (significant)
     - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
     - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
 - **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
@@ -317,11 +317,11 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: Pfizer and Moderna recipients differ in the rate of Headache before Nausea.
 
 ## P-M2  (pairwise, multi, CHOICE)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 84/99 (84.8%) fail)
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 81/99 (81.8%) fail)
 - **Qualified cores**: 99 viable | 99 supported-capable (true cases) | 99 refuted-capable
 - **Core**: events ['Headache', 'Nausea'], cohort Pfizer vs Moderna
 - **Conditioned counts**: k=39 / n=48  |  cohort2 k=20 / n=34  (rate 0.8125)
-- **Categorical test**: Fisher exact (2x2), p = 0.04459 (significant)
+- **Categorical test**: Fisher exact (2x2), p = 0.02436 (significant)
     - *H0: P(Headache precedes Nausea) is equal for Pfizer and Moderna (p1 = p2)*
     - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
 - **Position-based test**: Mann-Whitney U (level(Headache)-level(Nausea) between Pfizer/Moderna; n=89/85), p = 0.002855
@@ -378,11 +378,11 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: This patient had Arthralgia and Chills together.
 
 ## C-V1  (pairwise, vaccine, BOOL)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 220/361 (60.9%) fail)
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 184/361 (51.0%) fail)
 - **Qualified cores**: 374 viable | 90 supported-capable (true cases) | 271 refuted-capable
 - **Core**: events ['Chills', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=150 / n=204  (rate 0.7353)
-- **Categorical test**: binomial exact, p = 1.209e-11 (significant)
+- **Categorical test**: binomial exact, p = 6.043e-12 (significant)
     - *H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
     - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
 - **95% CI**: [0.6708, 0.7911], effect size 0.49
@@ -405,7 +405,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 374 viable | 374 supported-capable (true cases) | 374 refuted-capable
 - **Core**: events ['Headache', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=111 / n=213  (rate 0.5211)
-- **Categorical test**: binomial exact, p = 0.5837 (not significant)
+- **Categorical test**: binomial exact, p = 0.2918 (not significant)
     - *H0: P(Headache and Pyrexia co-occur) = 0.5 (among reports containing both)*
     - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
 - **95% CI**: [0.4543, 0.5872], effect size 0.0423
@@ -437,11 +437,11 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: Headache and Pyrexia present together in roughly 72% of Janssen patients.
 
 ## C-V3  (pairwise, vaccine, BOOL)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 220/361 (60.9%) fail)
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 184/361 (51.0%) fail)
 - **Qualified cores**: 374 viable | 90 supported-capable (true cases) | 271 refuted-capable
 - **Core**: events ['Chills', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=150 / n=204  (rate 0.7353)
-- **Categorical test**: binomial exact, p = 1.209e-11 (significant)
+- **Categorical test**: binomial exact, p = 6.043e-12 (significant)
     - *H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
     - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
 - **95% CI**: [0.6708, 0.7911], effect size 0.49
@@ -486,11 +486,11 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: Moderna and Janssen recipients differ in Fatigue-Headache co-occurrence rates.
 
 ## C-M2  (pairwise, multi, CHOICE)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 218/232 (94.0%) fail)
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 209/232 (90.1%) fail)
 - **Qualified cores**: 232 viable | 232 supported-capable (true cases) | 232 refuted-capable
 - **Core**: events ['Fatigue', 'Headache'], cohort Moderna vs Janssen
 - **Conditioned counts**: k=70 / n=137  |  cohort2 k=77 / n=196  (rate 0.5109)
-- **Categorical test**: Fisher exact (2x2), p = 0.03398 (significant)
+- **Categorical test**: Fisher exact (2x2), p = 0.02154 (significant)
     - *H0: the Fatigue/Headache co-occurrence rate is equal for Moderna and Janssen (p1 = p2)*
     - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
 - **Position-based test**: Mann-Whitney U (|level(Fatigue)-level(Headache)| between Moderna/Janssen; n=137/196), p = 0.0297
@@ -560,7 +560,7 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: This patient progressed Asthenia → Injection site pain → Dizziness.
 
 ## S-V1  (sequence, vaccine, BOOL)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 216/236 (91.5%) fail)
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 215/236 (91.1%) fail)
 - **Qualified cores**: 275 viable | 62 supported-capable (true cases) | 236 refuted-capable
 - **Core**: events ['Headache', 'Hyperhidrosis', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=7 / n=13  (rate 0.5385)
@@ -603,7 +603,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Qualified cores**: 275 viable | 275 supported-capable (true cases) | 275 refuted-capable
 - **Core**: events ['Chills', 'Fatigue', 'Headache'], cohort Janssen
 - **Conditioned counts**: k=8 / n=28  (rate 0.2857)
-- **Categorical test**: binomial exact, p = 0.1216 (not significant)
+- **Categorical test**: binomial exact, p = 0.08153 (not significant)
     - *H0: P(ordering = Chills -> Fatigue -> Headache) = 1/6 (chance rate among the 6 orderings)*
     - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
 - **Position-based test**: Friedman (Q=7.71 df=2; n=88 reports), p = 0.02115
@@ -736,7 +736,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Core**: events ['Fatigue', 'Headache', 'Pain'], cohort Moderna vs Janssen
 - **Conditioned counts**: k=1 / n=13  |  cohort2 k=7 / n=18  (rate 0.0769)
 - **⚠ P-VALUE vs GOLD MISMATCH** (red in the LaTeX findings): type1 (gold set but the test is not significant)
-- **Categorical test**: Fisher exact (2x2), p = 0.09535 (not significant)
+- **Categorical test**: Fisher exact (2x2), p = 0.05799 (not significant)
     - *H0: P(ordering = Fatigue -> Headache -> Pain) is equal for Moderna and Janssen (p1 = p2)*
     - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
 - **Position-based test**: Mann-Whitney U (per event) (Fatigue's within-triple rank between Moderna/Janssen; n=48/81), p = 0.7497
@@ -982,11 +982,11 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: In Janssen patients, Pyrexia typically appears last.
 
 ## F-V3  (first_last, vaccine, BOOL)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 41/82 (50.0%) fail)
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 31/82 (37.8%) fail)
 - **Qualified cores**: 82 viable | 2 supported-capable (true cases) | 82 refuted-capable
 - **Core**: events ['Headache', 'Injection site pain', 'Pyrexia'], cohort Janssen
 - **Conditioned counts**: k=20 / n=39  (rate 0.5128)
-- **Categorical test**: binomial exact, p = 0.02573 (significant)
+- **Categorical test**: binomial exact, p = 0.0155 (significant)
     - *H0: P(Headache is first) = 1/3 (chance rate among the 3 candidates)*
     - *how p is computed*: two-sided exact binomial -- sum the Binomial(n, p0) probabilities of outcomes no more likely than the observed k (null p0 = 1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3)
 - **Position-based test**: Friedman (Q=10.36 df=2; n=39 reports), p = 0.005622
@@ -1076,7 +1076,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Core**: events ['Chills', 'Headache', 'Pyrexia'], cohort Pfizer vs Moderna
 - **Conditioned counts**: k=10 / n=67  |  cohort2 k=7 / n=60  (rate 0.1493)
 - **⚠ P-VALUE vs GOLD MISMATCH** (red in the LaTeX findings): type1 (gold set but the test is not significant)
-- **Categorical test**: Fisher exact (2x2), p = 0.6141 (not significant)
+- **Categorical test**: Fisher exact (2x2), p = 0.3924 (not significant)
     - *H0: the first-event rate is equal for Pfizer and Moderna (p1 = p2)*
     - *how p is computed*: Fisher exact -- sum the hypergeometric probabilities of the 2x2 tables with the observed margins that are <= the observed table's probability
 - **Position-based test**: Mann-Whitney U (per event) (Chills's within-triple rank between Pfizer/Moderna; n=67/60), p = 0.7023
@@ -1133,39 +1133,39 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 
 ### P-R2 — 0 processed (no categorical test: CHOICE/report)
 
-### P-V1 — 168 processed, 91 failed (91/168 (54.2%)); median n 29, median p 0.4049
+### P-V1 — 168 processed, 81 failed (81/168 (48.2%)); median n 29, median p 0.2307
 *Tested against — H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Fatigue, Myalgia | Janssen | 8/27 | 0.052 | effect too weak (rate 0.30 vs null 0.50, n=27) |
-| 2 | Chills, Pain in extremity | Janssen | 29/46 | 0.104 | effect too weak (rate 0.63 vs null 0.50, n=46) |
-| 3 | Nausea, Pain in extremity | Janssen | 21/33 | 0.163 | effect too weak (rate 0.64 vs null 0.50, n=33) |
-| 4 | Fatigue, Vomiting | Janssen | 11/29 | 0.265 | effect too weak (rate 0.38 vs null 0.50, n=29) |
-| 5 | Arthralgia, Headache | Pfizer | 8/21 | 0.383 | effect too weak (rate 0.38 vs null 0.50, n=21) |
-| 6 | Dizziness, Pyrexia | Janssen | 20/46 | 0.461 | effect too weak (rate 0.43 vs null 0.50, n=46) |
-| 7 | Headache, Pyrexia | Janssen | 54/102 | 0.621 | effect too weak (rate 0.53 vs null 0.50, n=102) |
-| 8 | Chills, Pain | Moderna | 17/31 | 0.720 | effect too weak (rate 0.55 vs null 0.50, n=31) |
-| 9 | Pain, Pyrexia | Moderna | 19/40 | 0.875 | effect too weak (rate 0.47 vs null 0.50, n=40) |
-| 10 | Pain, Paraesthesia | Janssen | 10/21 | 1.000 | effect too weak (rate 0.48 vs null 0.50, n=21) |
+| 1 | Chills, Pain in extremity | Janssen | 29/46 | 0.052 | effect too weak (rate 0.63 vs null 0.50, n=46) |
+| 2 | Chills, Pain in extremity | Pfizer | 8/24 | 0.076 | effect too weak (rate 0.33 vs null 0.50, n=24) |
+| 3 | Dizziness, Nausea | Pfizer | 21/34 | 0.115 | effect too weak (rate 0.62 vs null 0.50, n=34) |
+| 4 | Dizziness, Fatigue | Janssen | 31/54 | 0.170 | effect too weak (rate 0.57 vs null 0.50, n=54) |
+| 5 | Dizziness, Fatigue | Moderna | 11/27 | 0.221 | effect too weak (rate 0.41 vs null 0.50, n=27) |
+| 6 | Nausea, Pain | Janssen | 26/58 | 0.256 | effect too weak (rate 0.45 vs null 0.50, n=58) |
+| 7 | Dizziness, Nausea | Moderna | 12/21 | 0.332 | effect too weak (rate 0.57 vs null 0.50, n=21) |
+| 8 | Pain, Pyrexia | Pfizer | 16/35 | 0.368 | effect too weak (rate 0.46 vs null 0.50, n=35) |
+| 9 | Headache, Pain in extremity | Janssen | 39/80 | 0.456 | effect too weak (rate 0.49 vs null 0.50, n=80) |
+| 10 | Fatigue, Pyrexia | Moderna | 26/53 | 0.500 | effect too weak (rate 0.49 vs null 0.50, n=53) |
 
 ### P-V2 — 0 processed (no categorical test: PROP/vaccine)
 
-### P-V3 — 168 processed, 91 failed (91/168 (54.2%)); median n 29, median p 0.4049
+### P-V3 — 168 processed, 81 failed (81/168 (48.2%)); median n 29, median p 0.2307
 *Tested against — H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Fatigue, Myalgia | Janssen | 8/27 | 0.052 | effect too weak (rate 0.30 vs null 0.50, n=27) |
-| 2 | Chills, Pain in extremity | Janssen | 29/46 | 0.104 | effect too weak (rate 0.63 vs null 0.50, n=46) |
-| 3 | Nausea, Pain in extremity | Janssen | 21/33 | 0.163 | effect too weak (rate 0.64 vs null 0.50, n=33) |
-| 4 | Fatigue, Vomiting | Janssen | 11/29 | 0.265 | effect too weak (rate 0.38 vs null 0.50, n=29) |
-| 5 | Arthralgia, Headache | Pfizer | 8/21 | 0.383 | effect too weak (rate 0.38 vs null 0.50, n=21) |
-| 6 | Dizziness, Pyrexia | Janssen | 20/46 | 0.461 | effect too weak (rate 0.43 vs null 0.50, n=46) |
-| 7 | Headache, Pyrexia | Janssen | 54/102 | 0.621 | effect too weak (rate 0.53 vs null 0.50, n=102) |
-| 8 | Chills, Pain | Moderna | 17/31 | 0.720 | effect too weak (rate 0.55 vs null 0.50, n=31) |
-| 9 | Pain, Pyrexia | Moderna | 19/40 | 0.875 | effect too weak (rate 0.47 vs null 0.50, n=40) |
-| 10 | Pain, Paraesthesia | Janssen | 10/21 | 1.000 | effect too weak (rate 0.48 vs null 0.50, n=21) |
+| 1 | Chills, Pain in extremity | Janssen | 29/46 | 0.052 | effect too weak (rate 0.63 vs null 0.50, n=46) |
+| 2 | Chills, Pain in extremity | Pfizer | 8/24 | 0.076 | effect too weak (rate 0.33 vs null 0.50, n=24) |
+| 3 | Dizziness, Nausea | Pfizer | 21/34 | 0.115 | effect too weak (rate 0.62 vs null 0.50, n=34) |
+| 4 | Dizziness, Fatigue | Janssen | 31/54 | 0.170 | effect too weak (rate 0.57 vs null 0.50, n=54) |
+| 5 | Dizziness, Fatigue | Moderna | 11/27 | 0.221 | effect too weak (rate 0.41 vs null 0.50, n=27) |
+| 6 | Nausea, Pain | Janssen | 26/58 | 0.256 | effect too weak (rate 0.45 vs null 0.50, n=58) |
+| 7 | Dizziness, Nausea | Moderna | 12/21 | 0.332 | effect too weak (rate 0.57 vs null 0.50, n=21) |
+| 8 | Pain, Pyrexia | Pfizer | 16/35 | 0.368 | effect too weak (rate 0.46 vs null 0.50, n=35) |
+| 9 | Headache, Pain in extremity | Janssen | 39/80 | 0.456 | effect too weak (rate 0.49 vs null 0.50, n=80) |
+| 10 | Fatigue, Pyrexia | Moderna | 26/53 | 0.500 | effect too weak (rate 0.49 vs null 0.50, n=53) |
 
 ### P-M1 — 99 processed, 84 failed (84/99 (84.8%)); median n 33, median p 0.5385
 *Tested against — H0: P(Headache precedes Nausea) is equal for Pfizer and Moderna (p1 = p2)*
@@ -1183,57 +1183,57 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 9 | Dizziness, Pyrexia | Moderna vs Janssen | 9/20 ; 20/46 | 1.000 | difference too small (gap=0.02, n=20/46) |
 | 10 | Feeling abnormal, Headache | Moderna vs Janssen | 7/26 ; 7/23 | 1.000 | difference too small (gap=0.04, n=26/23) |
 
-### P-M2 — 99 processed, 84 failed (84/99 (84.8%)); median n 33, median p 0.5385
+### P-M2 — 99 processed, 81 failed (81/99 (81.8%)); median n 33, median p 0.3213
 *Tested against — H0: P(Headache precedes Nausea) is equal for Pfizer and Moderna (p1 = p2)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Nausea, Vomiting | Pfizer vs Janssen | 13/21 ; 26/30 | 0.051 | difference too small (gap=0.25, n=21/30) |
-| 2 | Fatigue, Pain in extremity | Moderna vs Janssen | 16/44 ; 21/41 | 0.194 | difference too small (gap=0.15, n=44/41) |
-| 3 | Nausea, Pyrexia | Pfizer vs Janssen | 14/37 ; 29/58 | 0.293 | difference too small (gap=0.12, n=37/58) |
-| 4 | Fatigue, Pain | Moderna vs Janssen | 15/44 ; 27/63 | 0.423 | difference too small (gap=0.09, n=44/63) |
-| 5 | Asthenia, Chills | Moderna vs Janssen | 6/20 ; 5/24 | 0.509 | difference too small (gap=0.09, n=20/24) |
-| 6 | Chills, Dizziness | Pfizer vs Janssen | 11/20 ; 30/48 | 0.596 | difference too small (gap=0.07, n=20/48) |
-| 7 | Arthralgia, Pain | Moderna vs Janssen | 11/20 ; 19/31 | 0.773 | difference too small (gap=0.06, n=20/31) |
-| 8 | Pain, Pyrexia | Moderna vs Janssen | 19/40 ; 31/70 | 0.843 | difference too small (gap=0.03, n=40/70) |
-| 9 | Dizziness, Pyrexia | Moderna vs Janssen | 9/20 ; 20/46 | 1.000 | difference too small (gap=0.02, n=20/46) |
-| 10 | Feeling abnormal, Headache | Moderna vs Janssen | 7/26 ; 7/23 | 1.000 | difference too small (gap=0.04, n=26/23) |
+| 1 | Chills, Pain | Moderna vs Janssen | 17/31 ; 50/68 | 0.055 | difference too small (gap=0.19, n=31/68) |
+| 2 | Chills, Nausea | Pfizer vs Janssen | 21/26 ; 42/63 | 0.141 | difference too small (gap=0.14, n=26/63) |
+| 3 | Fatigue, Pain | Pfizer vs Moderna | 20/44 ; 15/44 | 0.192 | difference too small (gap=0.11, n=44/44) |
+| 4 | Headache, Pyrexia | Pfizer vs Moderna | 32/61 ; 25/56 | 0.255 | difference too small (gap=0.08, n=61/56) |
+| 5 | Arthralgia, Pain in extremity | Pfizer vs Janssen | 5/33 ; 7/30 | 0.307 | difference too small (gap=0.08, n=33/30) |
+| 6 | Headache, Nausea | Moderna vs Janssen | 20/34 ; 52/82 | 0.397 | difference too small (gap=0.05, n=34/82) |
+| 7 | Arthralgia, Pain | Moderna vs Janssen | 11/20 ; 19/31 | 0.437 | difference too small (gap=0.06, n=20/31) |
+| 8 | Fatigue, Pain | Pfizer vs Janssen | 20/44 ; 27/63 | 0.472 | difference too small (gap=0.03, n=44/63) |
+| 9 | Pain in extremity, Pyrexia | Pfizer vs Moderna | 24/33 ; 24/34 | 0.531 | difference too small (gap=0.02, n=33/34) |
+| 10 | Asthenia, Headache | Moderna vs Janssen | 7/25 ; 10/35 | 0.598 | difference too small (gap=0.01, n=25/35) |
 
 ### C-R1 — 0 processed (no categorical test: BOOL/report)
 
-### C-V1 — 361 processed, 220 failed (220/361 (60.9%)); median n 30, median p 0.4049
+### C-V1 — 361 processed, 184 failed (184/361 (51.0%)); median n 30, median p 0.2595
 *Tested against — H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Chills, Sleep disorder | Janssen | 10/32 | 0.050 | effect too weak (rate 0.31 vs null 0.50, n=32) |
-| 2 | Headache, Nausea | Moderna | 51/85 | 0.082 | effect too weak (rate 0.60 vs null 0.50, n=85) |
-| 3 | Decreased appetite, Headache | Janssen | 9/27 | 0.122 | effect too weak (rate 0.33 vs null 0.50, n=27) |
-| 4 | Malaise, Pyrexia | Moderna | 15/23 | 0.210 | effect too weak (rate 0.65 vs null 0.50, n=23) |
-| 5 | Cough, Fatigue | Moderna | 11/28 | 0.345 | effect too weak (rate 0.39 vs null 0.50, n=28) |
-| 6 | Chills, Diarrhoea | Janssen | 13/31 | 0.473 | effect too weak (rate 0.42 vs null 0.50, n=31) |
-| 7 | Fatigue, Injection site pain | Moderna | 19/34 | 0.608 | effect too weak (rate 0.56 vs null 0.50, n=34) |
-| 8 | Headache, Myalgia | Janssen | 38/73 | 0.815 | effect too weak (rate 0.52 vs null 0.50, n=73) |
-| 9 | Dizziness, Nausea | Moderna | 23/44 | 0.880 | effect too weak (rate 0.52 vs null 0.50, n=44) |
-| 10 | Muscle spasms, Pyrexia | Janssen | 10/21 | 1.000 | effect too weak (rate 0.48 vs null 0.50, n=21) |
+| 1 | Dizziness, Fatigue | Pfizer | 21/55 | 0.052 | effect too weak (rate 0.38 vs null 0.50, n=55) |
+| 2 | Arthralgia, Neck pain | Janssen | 7/22 | 0.067 | effect too weak (rate 0.32 vs null 0.50, n=22) |
+| 3 | Cough, Fatigue | Janssen | 12/32 | 0.108 | effect too weak (rate 0.38 vs null 0.50, n=32) |
+| 4 | Feeling abnormal, Pain | Janssen | 11/28 | 0.172 | effect too weak (rate 0.39 vs null 0.50, n=28) |
+| 5 | Hyperhidrosis, Pain | Moderna | 15/25 | 0.212 | effect too weak (rate 0.60 vs null 0.50, n=25) |
+| 6 | Headache, Pain | Pfizer | 56/105 | 0.279 | effect too weak (rate 0.53 vs null 0.50, n=105) |
+| 7 | Chills, Vomiting | Moderna | 12/27 | 0.351 | effect too weak (rate 0.44 vs null 0.50, n=27) |
+| 8 | Cough, Dyspnoea | Pfizer | 14/26 | 0.423 | effect too weak (rate 0.54 vs null 0.50, n=26) |
+| 9 | Chills, Fatigue | Pfizer | 37/76 | 0.454 | effect too weak (rate 0.49 vs null 0.50, n=76) |
+| 10 | Chills, Nausea | Pfizer | 27/53 | 0.500 | effect too weak (rate 0.51 vs null 0.50, n=53) |
 
 ### C-V2 — 0 processed (no categorical test: PROP/vaccine)
 
-### C-V3 — 361 processed, 220 failed (220/361 (60.9%)); median n 30, median p 0.4049
+### C-V3 — 361 processed, 184 failed (184/361 (51.0%)); median n 30, median p 0.2595
 *Tested against — H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Chills, Sleep disorder | Janssen | 10/32 | 0.050 | effect too weak (rate 0.31 vs null 0.50, n=32) |
-| 2 | Headache, Nausea | Moderna | 51/85 | 0.082 | effect too weak (rate 0.60 vs null 0.50, n=85) |
-| 3 | Decreased appetite, Headache | Janssen | 9/27 | 0.122 | effect too weak (rate 0.33 vs null 0.50, n=27) |
-| 4 | Malaise, Pyrexia | Moderna | 15/23 | 0.210 | effect too weak (rate 0.65 vs null 0.50, n=23) |
-| 5 | Cough, Fatigue | Moderna | 11/28 | 0.345 | effect too weak (rate 0.39 vs null 0.50, n=28) |
-| 6 | Chills, Diarrhoea | Janssen | 13/31 | 0.473 | effect too weak (rate 0.42 vs null 0.50, n=31) |
-| 7 | Fatigue, Injection site pain | Moderna | 19/34 | 0.608 | effect too weak (rate 0.56 vs null 0.50, n=34) |
-| 8 | Headache, Myalgia | Janssen | 38/73 | 0.815 | effect too weak (rate 0.52 vs null 0.50, n=73) |
-| 9 | Dizziness, Nausea | Moderna | 23/44 | 0.880 | effect too weak (rate 0.52 vs null 0.50, n=44) |
-| 10 | Muscle spasms, Pyrexia | Janssen | 10/21 | 1.000 | effect too weak (rate 0.48 vs null 0.50, n=21) |
+| 1 | Dizziness, Fatigue | Pfizer | 21/55 | 0.052 | effect too weak (rate 0.38 vs null 0.50, n=55) |
+| 2 | Arthralgia, Neck pain | Janssen | 7/22 | 0.067 | effect too weak (rate 0.32 vs null 0.50, n=22) |
+| 3 | Cough, Fatigue | Janssen | 12/32 | 0.108 | effect too weak (rate 0.38 vs null 0.50, n=32) |
+| 4 | Feeling abnormal, Pain | Janssen | 11/28 | 0.172 | effect too weak (rate 0.39 vs null 0.50, n=28) |
+| 5 | Hyperhidrosis, Pain | Moderna | 15/25 | 0.212 | effect too weak (rate 0.60 vs null 0.50, n=25) |
+| 6 | Headache, Pain | Pfizer | 56/105 | 0.279 | effect too weak (rate 0.53 vs null 0.50, n=105) |
+| 7 | Chills, Vomiting | Moderna | 12/27 | 0.351 | effect too weak (rate 0.44 vs null 0.50, n=27) |
+| 8 | Cough, Dyspnoea | Pfizer | 14/26 | 0.423 | effect too weak (rate 0.54 vs null 0.50, n=26) |
+| 9 | Chills, Fatigue | Pfizer | 37/76 | 0.454 | effect too weak (rate 0.49 vs null 0.50, n=76) |
+| 10 | Chills, Nausea | Pfizer | 27/53 | 0.500 | effect too weak (rate 0.51 vs null 0.50, n=53) |
 
 ### C-M1 — 232 processed, 218 failed (218/232 (94.0%)); median n 32, median p 0.577
 *Tested against — H0: the Fatigue/Headache co-occurrence rate is equal for Moderna and Janssen (p1 = p2)*
@@ -1251,25 +1251,25 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 9 | Feeling abnormal, Pain in extremity | Moderna vs Janssen | 5/22 ; 6/22 | 1.000 | difference too small (gap=0.05, n=22/22) |
 | 10 | Myalgia, Pain in extremity | Moderna vs Janssen | 7/22 ; 8/27 | 1.000 | difference too small (gap=0.02, n=22/27) |
 
-### C-M2 — 232 processed, 218 failed (218/232 (94.0%)); median n 32, median p 0.577
+### C-M2 — 232 processed, 209 failed (209/232 (90.1%)); median n 32, median p 0.3376
 *Tested against — H0: the Fatigue/Headache co-occurrence rate is equal for Moderna and Janssen (p1 = p2)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Arthralgia, Pain in extremity | Pfizer vs Janssen | 10/43 ; 23/53 | 0.052 | difference too small (gap=0.20, n=43/53) |
-| 2 | Chills, Nausea | Moderna vs Janssen | 37/72 ; 43/106 | 0.169 | difference too small (gap=0.11, n=72/106) |
-| 3 | Asthenia, Pain | Pfizer vs Janssen | 6/20 ; 16/34 | 0.262 | difference too small (gap=0.17, n=20/34) |
-| 4 | Dizziness, Nausea | Pfizer vs Janssen | 32/66 ; 57/102 | 0.429 | difference too small (gap=0.07, n=66/102) |
-| 5 | Fatigue, Nausea | Pfizer vs Janssen | 27/62 ; 40/106 | 0.515 | difference too small (gap=0.06, n=62/106) |
-| 6 | Arthralgia, Chills | Moderna vs Janssen | 18/32 ; 28/44 | 0.635 | difference too small (gap=0.07, n=32/44) |
-| 7 | Chest pain, Headache | Pfizer vs Janssen | 9/27 ; 8/30 | 0.773 | difference too small (gap=0.07, n=27/30) |
-| 8 | Pain in extremity, Pyrexia | Pfizer vs Janssen | 12/45 ; 23/76 | 0.836 | difference too small (gap=0.04, n=45/76) |
-| 9 | Feeling abnormal, Pain in extremity | Moderna vs Janssen | 5/22 ; 6/22 | 1.000 | difference too small (gap=0.05, n=22/22) |
-| 10 | Myalgia, Pain in extremity | Moderna vs Janssen | 7/22 ; 8/27 | 1.000 | difference too small (gap=0.02, n=22/27) |
+| 1 | Chills, Tremor | Moderna vs Janssen | 18/25 ; 14/30 | 0.052 | difference too small (gap=0.25, n=25/30) |
+| 2 | Myalgia, Pyrexia | Pfizer vs Janssen | 19/38 ; 36/56 | 0.122 | difference too small (gap=0.14, n=38/56) |
+| 3 | Fatigue, Injection site pain | Pfizer vs Janssen | 5/24 ; 15/43 | 0.178 | difference too small (gap=0.14, n=24/43) |
+| 4 | Chills, Pyrexia | Pfizer vs Moderna | 94/125 ; 96/136 | 0.243 | difference too small (gap=0.05, n=125/136) |
+| 5 | Injection site pain, Pyrexia | Pfizer vs Janssen | 5/20 ; 9/54 | 0.308 | difference too small (gap=0.08, n=20/54) |
+| 6 | Fatigue, Myalgia | Pfizer vs Moderna | 17/33 ; 26/45 | 0.375 | difference too small (gap=0.06, n=33/45) |
+| 7 | Dyspnoea, Pain | Moderna vs Janssen | 9/23 ; 13/39 | 0.424 | difference too small (gap=0.06, n=23/39) |
+| 8 | Dyspnoea, Fatigue | Moderna vs Janssen | 16/30 ; 22/44 | 0.482 | difference too small (gap=0.03, n=30/44) |
+| 9 | Chills, Dizziness | Pfizer vs Janssen | 9/29 ; 23/71 | 0.546 | difference too small (gap=0.01, n=29/71) |
+| 10 | Dizziness, Pain in extremity | Pfizer vs Janssen | 3/23 ; 5/40 | 0.619 | difference too small (gap=0.01, n=23/40) |
 
 ### S-R1 — 0 processed (no categorical test: BOOL/report)
 
-### S-V1 — 236 processed, 216 failed (216/236 (91.5%)); median n 6, median p 0.1348
+### S-V1 — 236 processed, 215 failed (215/236 (91.1%)); median n 6, median p 0.1348
 *Tested against — H0: P(ordering = Headache -> Hyperhidrosis -> Pyrexia) = 1/6 (chance rate among the 6 orderings)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
@@ -1278,12 +1278,12 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 2 | Decreased appetite, Headache, Nausea | Janssen | 4/6 | 0.009 | p=0.009 < 0.05 but n=6 below the significance min-n gate (10): verdict forced to insufficient |
 | 3 | Chills, Diarrhoea, Fatigue | Janssen | 3/5 | 0.035 | p=0.035 < 0.05 but n=5 below the significance min-n gate (10): verdict forced to insufficient |
 | 4 | Dizziness, Headache, Pain in extremity | Janssen | 4/10 | 0.070 | n too small (n=10) to reject at a=0.05 |
-| 5 | Fatigue, Headache, Hyperhidrosis | Janssen | 3/7 | 0.096 | n too small (n=7) to reject at a=0.05 |
-| 6 | Dizziness, Headache, Pain | Janssen | 3/9 | 0.178 | small n and weak effect (rate 0.33 vs null 0.17, n=9) |
-| 7 | Arthralgia, Chills, Pain in extremity | Janssen | 2/5 | 0.196 | n too small (n=5) to reject at a=0.05 |
-| 8 | Headache, Hypoaesthesia, Pyrexia | Janssen | 2/5 | 0.196 | n too small (n=5) to reject at a=0.05 |
-| 9 | Fatigue, Feeling abnormal, Headache | Janssen | 2/6 | 0.263 | small n and weak effect (rate 0.33 vs null 0.17, n=6) |
-| 10 | Chills, Injection site pain, Myalgia | Janssen | 1/5 | 1.000 | small n and weak effect (rate 0.20 vs null 0.17, n=5) |
+| 5 | Dyspnoea, Headache, Pain in extremity | Janssen | 3/7 | 0.096 | n too small (n=7) to reject at a=0.05 |
+| 6 | Chills, Headache, Myalgia | Janssen | 3/9 | 0.178 | small n and weak effect (rate 0.33 vs null 0.17, n=9) |
+| 7 | Nausea, Pain, Pain in extremity | Moderna | 2/5 | 0.196 | n too small (n=5) to reject at a=0.05 |
+| 8 | Feeling abnormal, Pain, Pyrexia | Janssen | 2/5 | 0.196 | n too small (n=5) to reject at a=0.05 |
+| 9 | Dyspnoea, Headache, Pyrexia | Janssen | 2/6 | 0.263 | small n and weak effect (rate 0.33 vs null 0.17, n=6) |
+| 10 | Chills, Injection site pain, Myalgia | Janssen | 1/5 | 0.598 | small n and weak effect (rate 0.20 vs null 0.17, n=5) |
 
 ### S-V2 — 0 processed (no categorical test: PROP/vaccine)
 
@@ -1335,21 +1335,21 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 9 | Dizziness, Fatigue, Headache | Moderna vs Janssen | 0/5 ; 1/16 | 1.000 | small cohorts and small gap (gap=0.06, n=5/16) |
 | 10 | Pain, Pain in extremity, Pyrexia | Moderna vs Janssen | 0/7 ; 0/13 | 1.000 | small cohorts and small gap (gap=0.00, n=7/13) |
 
-### S-M2 — 75 processed, 75 failed (75/75 (100.0%)); median n 6, median p 1.0
+### S-M2 — 75 processed, 75 failed (75/75 (100.0%)); median n 6, median p 0.5385
 *Tested against — H0: P(ordering = Fatigue -> Headache -> Pain) is equal for Moderna and Janssen (p1 = p2)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Chills, Myalgia, Pyrexia | Pfizer vs Janssen | 0/7 ; 3/6 | 0.070 | cohorts too small (n=7/6) |
-| 2 | Fatigue, Headache, Pain | Pfizer vs Janssen | 1/7 ; 7/18 | 0.362 | cohorts too small (n=7/18) |
-| 3 | Chills, Pain, Pain in extremity | Moderna vs Janssen | 0/9 ; 2/11 | 0.479 | small cohorts and small gap (gap=0.18, n=9/11) |
-| 4 | Chills, Headache, Pyrexia | Pfizer vs Janssen | 0/7 ; 4/22 | 0.546 | small cohorts and small gap (gap=0.18, n=7/22) |
-| 5 | Fatigue, Headache, Vomiting | Moderna vs Janssen | 1/5 ; 1/9 | 1.000 | small cohorts and small gap (gap=0.09, n=5/9) |
-| 6 | Fatigue, Nausea, Pyrexia | Moderna vs Janssen | 1/5 ; 4/12 | 1.000 | small cohorts and small gap (gap=0.13, n=5/12) |
-| 7 | Chills, Headache, Pain in extremity | Moderna vs Janssen | 1/5 ; 4/15 | 1.000 | small cohorts and small gap (gap=0.07, n=5/15) |
-| 8 | Chills, Fatigue, Pain | Pfizer vs Janssen | 0/5 ; 2/14 | 1.000 | small cohorts and small gap (gap=0.14, n=5/14) |
-| 9 | Arthralgia, Fatigue, Pain in extremity | Moderna vs Janssen | 1/5 ; 1/8 | 1.000 | small cohorts and small gap (gap=0.08, n=5/8) |
-| 10 | Nausea, Pain, Pain in extremity | Moderna vs Janssen | 0/5 ; 1/10 | 1.000 | small cohorts and small gap (gap=0.10, n=5/10) |
+| 1 | Fatigue, Headache, Pain | Moderna vs Janssen | 1/13 ; 7/18 | 0.058 | cohorts too small (n=13/18) |
+| 2 | Chills, Headache, Pyrexia | Pfizer vs Moderna | 0/7 ; 2/8 | 0.267 | cohorts too small (n=7/8) |
+| 3 | Chills, Headache, Pyrexia | Pfizer vs Janssen | 0/7 ; 4/22 | 0.308 | small cohorts and small gap (gap=0.18, n=7/22) |
+| 4 | Chills, Fatigue, Pyrexia | Moderna vs Janssen | 2/11 ; 1/14 | 0.407 | small cohorts and small gap (gap=0.11, n=11/14) |
+| 5 | Fatigue, Nausea, Pyrexia | Moderna vs Janssen | 1/5 ; 4/12 | 0.528 | small cohorts and small gap (gap=0.13, n=5/12) |
+| 6 | Fatigue, Pain, Pyrexia | Moderna vs Janssen | 0/12 ; 1/15 | 0.556 | small cohorts and small gap (gap=0.07, n=12/15) |
+| 7 | Chills, Fatigue, Injection site pain | Moderna vs Janssen | 1/6 ; 1/11 | 0.596 | small cohorts and small gap (gap=0.08, n=6/11) |
+| 8 | Chills, Injection site pain, Pain | Moderna vs Janssen | 0/6 ; 1/10 | 0.625 | small cohorts and small gap (gap=0.10, n=6/10) |
+| 9 | Fatigue, Pain, Pain in extremity | Moderna vs Janssen | 1/7 ; 2/11 | 0.674 | small cohorts and small gap (gap=0.04, n=7/11) |
+| 10 | Dizziness, Fatigue, Headache | Moderna vs Janssen | 0/5 ; 1/16 | 0.762 | small cohorts and small gap (gap=0.06, n=5/16) |
 
 ### S-M3 — 90 processed, 90 failed (90/90 (100.0%)); median n 6, median p 0.5823
 *Tested against — H0: Moderna and Janssen have the same ordering distribution (homogeneity)*
@@ -1405,20 +1405,20 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 9 | Chills, Fatigue, Headache | Pfizer | 6/44 | 0.710 | distribution too close to uniform / n small (n=44) |
 | 10 | Headache, Nausea, Pyrexia | Janssen | 12/71 | 0.913 | distribution too close to uniform / n small (n=71) |
 
-### F-V3 — 82 processed, 41 failed (41/82 (50.0%)); median n 38, median p 0.2493
+### F-V3 — 82 processed, 31 failed (31/82 (37.8%)); median n 36, median p 0.198
 *Tested against — H0: P(Headache is first) = 1/3 (chance rate among the 3 candidates)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Fatigue, Headache, Pain | Pfizer | 8/42 | 0.050 | effect too weak (rate 0.19 vs null 0.33, n=42) |
-| 2 | Chills, Dizziness, Headache | Janssen | 8/43 | 0.051 | effect too weak (rate 0.19 vs null 0.33, n=43) |
-| 3 | Chills, Headache, Injection site pain | Janssen | 17/35 | 0.072 | effect too weak (rate 0.49 vs null 0.33, n=35) |
-| 4 | Dizziness, Fatigue, Pyrexia | Janssen | 6/31 | 0.127 | effect too weak (rate 0.19 vs null 0.33, n=31) |
-| 5 | Fatigue, Headache, Nausea | Pfizer | 8/35 | 0.213 | effect too weak (rate 0.23 vs null 0.33, n=35) |
-| 6 | Chills, Headache, Nausea | Janssen | 17/64 | 0.290 | effect too weak (rate 0.27 vs null 0.33, n=64) |
-| 7 | Chills, Headache, Hyperhidrosis | Janssen | 9/35 | 0.376 | effect too weak (rate 0.26 vs null 0.33, n=35) |
-| 8 | Chills, Headache, Pain in extremity | Janssen | 12/43 | 0.520 | effect too weak (rate 0.28 vs null 0.33, n=43) |
-| 9 | Fatigue, Headache, Pain in extremity | Janssen | 14/46 | 0.756 | effect too weak (rate 0.30 vs null 0.33, n=46) |
+| 1 | Chills, Fatigue, Pain | Pfizer | 7/36 | 0.051 | effect too weak (rate 0.19 vs null 0.33, n=36) |
+| 2 | Dizziness, Fatigue, Nausea | Janssen | 8/38 | 0.072 | effect too weak (rate 0.21 vs null 0.33, n=38) |
+| 3 | Fatigue, Pain, Pyrexia | Moderna | 9/39 | 0.115 | effect too weak (rate 0.23 vs null 0.33, n=39) |
+| 4 | Dizziness, Nausea, Pyrexia | Janssen | 7/31 | 0.139 | effect too weak (rate 0.23 vs null 0.33, n=31) |
+| 5 | Chills, Pain in extremity, Pyrexia | Janssen | 10/40 | 0.171 | effect too weak (rate 0.25 vs null 0.33, n=40) |
+| 6 | Chills, Headache, Hyperhidrosis | Janssen | 9/35 | 0.221 | effect too weak (rate 0.26 vs null 0.33, n=35) |
+| 7 | Pain, Pain in extremity, Pyrexia | Janssen | 8/31 | 0.246 | effect too weak (rate 0.26 vs null 0.33, n=31) |
+| 8 | Fatigue, Headache, Myalgia | Janssen | 9/32 | 0.338 | effect too weak (rate 0.28 vs null 0.33, n=32) |
+| 9 | Chills, Dizziness, Nausea | Janssen | 12/39 | 0.440 | effect too weak (rate 0.31 vs null 0.33, n=39) |
 | 10 | Headache, Hyperhidrosis, Pyrexia | Janssen | 11/33 | 1.000 | effect too weak (rate 0.33 vs null 0.33, n=33) |
 
 ### F-M1 — 46 processed, 44 failed (44/46 (95.7%)); median n 42, median p 0.5575
@@ -1453,19 +1453,19 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 9 | Chills, Fatigue, Headache | Moderna vs Janssen | 8/56 ; None/88 | 0.968 | distribution too close to uniform / n small (n=56) |
 | 10 | Fatigue, Headache, Nausea | Pfizer vs Janssen | 8/35 ; None/68 | 1.000 | distribution too close to uniform / n small (n=35) |
 
-### F-M3 — 45 processed, 45 failed (45/45 (100.0%)); median n 42, median p 0.5551
+### F-M3 — 45 processed, 45 failed (45/45 (100.0%)); median n 42, median p 0.3321
 *Tested against — H0: the first-event rate is equal for Pfizer and Moderna (p1 = p2)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Fatigue, Pain, Pyrexia | Moderna vs Janssen | 9/39 ; 7/65 | 0.102 | difference too small (gap=0.12, n=39/65) |
-| 2 | Chills, Nausea, Pyrexia | Moderna vs Janssen | 4/39 ; 13/64 | 0.274 | difference too small (gap=0.10, n=39/64) |
-| 3 | Chills, Headache, Nausea | Moderna vs Janssen | 7/39 ; 17/64 | 0.348 | difference too small (gap=0.09, n=39/64) |
-| 4 | Fatigue, Headache, Pain | Pfizer vs Janssen | 8/42 ; 10/81 | 0.420 | difference too small (gap=0.07, n=42/81) |
-| 5 | Headache, Nausea, Pyrexia | Moderna vs Janssen | 6/35 ; 8/71 | 0.543 | difference too small (gap=0.06, n=35/71) |
-| 6 | Fatigue, Headache, Pain | Moderna vs Janssen | 8/48 ; 10/81 | 0.601 | difference too small (gap=0.04, n=48/81) |
-| 7 | Chills, Fatigue, Headache | Pfizer vs Moderna | 7/44 ; 7/56 | 0.773 | difference too small (gap=0.03, n=44/56) |
-| 8 | Chills, Pain, Pyrexia | Moderna vs Janssen | 7/52 ; 14/88 | 0.809 | difference too small (gap=0.02, n=52/88) |
-| 9 | Fatigue, Pain, Pyrexia | Pfizer vs Janssen | 4/31 ; 8/65 | 1.000 | difference too small (gap=0.01, n=31/65) |
-| 10 | Chills, Pain, Pyrexia | Pfizer vs Janssen | 7/57 ; 10/88 | 1.000 | difference too small (gap=0.01, n=57/88) |
+| 1 | Chills, Fatigue, Pain | Moderna vs Janssen | 6/43 ; 17/62 | 0.079 | difference too small (gap=0.13, n=43/62) |
+| 2 | Chills, Nausea, Pyrexia | Moderna vs Janssen | 4/39 ; 13/64 | 0.144 | difference too small (gap=0.10, n=39/64) |
+| 3 | Chills, Pain in extremity, Pyrexia | Moderna vs Janssen | 11/30 ; 10/40 | 0.214 | difference too small (gap=0.12, n=30/40) |
+| 4 | Fatigue, Headache, Pyrexia | Pfizer vs Janssen | 7/47 ; 19/90 | 0.261 | difference too small (gap=0.06, n=47/90) |
+| 5 | Chills, Fatigue, Pyrexia | Pfizer vs Moderna | 8/49 ; 6/55 | 0.301 | difference too small (gap=0.05, n=49/55) |
+| 6 | Chills, Nausea, Pyrexia | Pfizer vs Moderna | 5/31 ; 4/39 | 0.353 | difference too small (gap=0.06, n=31/39) |
+| 7 | Chills, Fatigue, Headache | Pfizer vs Moderna | 7/44 ; 7/56 | 0.419 | difference too small (gap=0.03, n=44/56) |
+| 8 | Chills, Fatigue, Pyrexia | Pfizer vs Janssen | 8/49 ; 15/81 | 0.473 | difference too small (gap=0.02, n=49/81) |
+| 9 | Chills, Headache, Pain | Pfizer vs Janssen | 11/55 ; 19/88 | 0.497 | difference too small (gap=0.02, n=55/88) |
+| 10 | Fatigue, Pain, Pyrexia | Pfizer vs Janssen | 4/31 ; 8/65 | 0.586 | difference too small (gap=0.01, n=31/65) |
 

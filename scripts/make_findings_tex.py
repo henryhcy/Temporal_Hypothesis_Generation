@@ -184,56 +184,60 @@ recalibrate sampling before scaling to the target benchmark of 10{,}000--15{,}00
     # ---- Findings ----
     doc.append(r"\section{Current Findings (Pilot)}")
     doc.append(
-        r"""The pilot enumerates every viable factual core in MedTempo across all %d template
-groups and computes the deterministic gold label for each, before any verdict balancing.
-The full-enumeration run produced \textbf{289{,}216} candidate instances over the 30 groups.
-Key observations:""" % total_groups)
-    doc.append(r"""\begin{itemize}
-  \item \textbf{Coverage is healthy.} No group is starved: every group clears the
-  provisional 50-viable-core target. Report-level groups draw on all 3{,}166 reports;
-  vaccine-level groups on 575--959 cohorts; multi-vaccine groups on 322--579 cohorts.
-  \item \textbf{Cohorts are small.} Median cohort size is $n=16$ (pairwise) and $n=14$
-  (sequence, first/last), with a long thin tail---roughly 11--15\% of cohorts sit at or
-  below the $n=10$ inclusion threshold.
-  \item \textbf{Natural verdicts are skewed and group-dependent} (Table~\ref{tab:verdicts}),
-  which is exactly why a balancing pass is required. Sequence claims are mostly
-  \emph{refuted} under strict ordering (67\%), first/last claims are heavily
-  \emph{insufficient} (47\%, driven by ties and missing candidates), and pairwise sits
-  closest to balanced.
-  \item \textbf{Estimates are wide.} Across single-proportion cores the median Wilson
-  95\% CI width is 0.37, and \textbf{70\%} of cores are ``low-confidence'' (CI width
-  $>0.30$)---a direct consequence of small cohorts, and the main input to recalibrating
-  the low-band floor.
-  \item \textbf{Multi-vaccine overlap is sufficient.} All three vaccine pairs yield enough
-  jointly-computable cores (insufficiency 11--12\%); no Johnson fallback is triggered.
-  \item \textbf{Representation integrity holds.} First/last tie rate is substantial
-  (median 0.50) and 62\% of reports have a co-occurrence at the earliest level; only 7
-  duplicate-term-across-levels anomalies were found. Cycles/disconnected components are
-  not recoverable by construction (annotations are stored as acyclic leveled orders).
-\end{itemize}""")
+        r"""The pilot enumerates every viable factual core in MedTempo across all """
+        + str(total_groups) + r""" template groups and computes the deterministic gold
+label for each; the full-enumeration run yields \textbf{289{,}216} candidate instances.
+The central finding concerns statistical power under \emph{significance-as-verdict}: the
+gold verdict is the significance-test result --- significant in the asserted direction
+$\Rightarrow$ supported, the opposite $\Rightarrow$ refuted, otherwise insufficient.""")
+    doc.append(r"""\paragraph{Supported $\neq$ significant.} Over the \textbf{2{,}998}
+cores that carry a definite verdict and an applicable categorical test (PROP and
+report-level excluded), most are \emph{not} significant at $\alpha=0.05$. Running the
+directional tests \textbf{one-sided} in the observed direction (2026-07-13) halves the
+tail for effects already on the supported side and lowers the fail rate
+(Table~\ref{tab:failrate}); the \texttt{multi\_differ} and GOF/homogeneity omnibus tests
+stay two-sided.""")
 
     doc.append(r"""\begin{table}[h]
 \centering
-\caption{Natural verdict distribution per family (no balancing), from the pilot
-distribution report.}
-\label{tab:verdicts}
-\begin{tabular}{@{}lccc@{}}
+\caption{Gold-vs-significance fail rate: definite-verdict categorical cores the test does
+not corroborate at $\alpha=0.05$. One-sided directional tests lower it.}
+\label{tab:failrate}
+\begin{tabular}{@{}lcc@{}}
 \toprule
-\textbf{Family} & \textbf{Supported} & \textbf{Refuted} & \textbf{Insufficient} \\
+\textbf{Family} & \textbf{Two-sided} & \textbf{One-sided} \\
 \midrule
-pairwise   & 0.443 & 0.342 & 0.215 \\
-sequence   & 0.264 & 0.674 & 0.062 \\
-first/last & 0.435 & 0.097 & 0.468 \\
+pairwise-precedes & 65.5\% & 61.2\% \\
+co-occurs         & 73.9\% & 67.0\% \\
+sequence          & 95.3\% & 95.2\% \\
+first/last        & 70.2\% & 67.4\% \\
+\midrule
+\textbf{overall}  & \textbf{78.5\%} & \textbf{74.7\%} \\
 \bottomrule
 \end{tabular}
 \end{table}""")
 
-    doc.append(r"""\noindent\textbf{Implication.} The pilot confirms the design is generative
-across all 30 groups but that (i) small cohorts make many single-proportion estimates
-imprecise, and (ii) natural verdict skew varies sharply by group, so the target
-45/45/10 supported/refuted/insufficient balance must be enforced per group rather than
-assumed. These numbers are the inputs to the second-pass sampling recalibration; the
-benchmark is not scaled until the distribution report is reviewed.""")
+    doc.append(r"""\paragraph{The ceiling is the corpus, not the budget.} Scarcity is in
+the viable cores, not the reports (all 3{,}166 are used). Slicing the corpus into ``this
+exact triple, this exact vaccine pair, strictly ordered'' leaves a median effective
+sample of $n\approx30$ (pairwise), $\approx6$ (sequence), and $\approx7$--$8$ per cohort
+(multi-vaccine) --- and that gradient is the significance gradient
+(46\%$\to$8\%$\to$0\%). Four groups (S-M1, S-M2, S-M3, F-M3) have \textbf{zero}
+significant cores. A larger per-group budget cannot help: it caps how many enumerated
+cores are kept, not how many reports stand behind a question.""")
+
+    doc.append(r"""\paragraph{Design response.} (i) Significance-as-verdict makes the
+supported/refuted verdict and the significance test coincide. (ii) Every claim must rest
+on a principled chance null: S-V1/F-V3 are reworded from ``typically'' to ``most common''
+(a modal-vs-runner-up test), and the PROP groups (P-V2, C-V2, S-V2) are removed --- an
+absolute percentage has no non-arbitrary null. (iii) Cohorts stay small (median $n$
+14--16; 70\% of single-proportion cores are low-confidence, CI width $>0.30$), so verdict
+balance is enforced per group and the starved sequence/multi groups are addressed by
+rank-based tests and category coarsening, not a larger budget.""")
+
+    doc.append(r"""\noindent\textbf{Status.} The benchmark is not scaled past the pilot
+until the per-group supported/refuted/insufficient distribution is prototyped under the
+final design (one-sided tests, reworded groups, PROP removed).""")
 
     # ---- Templates: how composed ----
     doc.append(r"\section{Template Catalogue}")
@@ -299,6 +303,11 @@ variants of both the question and the claim. Slot placeholders are shown in brac
     examples = ROOT / "data" / "pilot" / "examples.tex"
     if examples.exists():
         doc.append(examples.read_text(encoding="utf-8"))
+
+    # ---- Replacement-template inventory (optional; replacement_inventory.py) ----
+    inventory = ROOT / "data" / "pilot" / "replacement_inventory.tex"
+    if inventory.exists():
+        doc.append(inventory.read_text(encoding="utf-8"))
 
     doc.append(r"\end{document}")
 
