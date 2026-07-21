@@ -87,13 +87,6 @@ def test_pv3_dir_choice_answer_key(idx):
     assert r.gold_answer == "Headache"          # the earlier event, the correct pick
 
 
-def test_prop_shares_binomial_significance(idx):
-    bool_r = compute_answer(idx, "P-V1", ("Headache", "Fatigue"), vaccines=("Pfizer",))
-    prop_r = compute_answer(idx, "P-V2", ("Headache", "Fatigue"), vaccines=("Pfizer",))
-    # same underlying proportion -> same test result
-    assert prop_r.p_value == bool_r.p_value
-
-
 # ---- two-proportion (Fisher) ---------------------------------------------
 
 def test_multi_dir_choice_picks_higher_vaccine(idx):

@@ -73,28 +73,6 @@ groups:
     clinical:
       question: In {v} recipients, does {A} usually come before {B}?
       claim: In {v} recipients, {A} usually comes before {B}.
-- id: P-V2
-  primitive: precedes
-  level: vaccine
-  answer_type: PROP
-  slots:
-  - A
-  - B
-  - v
-  - p
-  variants:
-    original:
-      question: In what fraction of {v} reports does {A} precede {B}?
-      claim: In about {p}% of {v} reports, {A} precedes {B}.
-    research:
-      question: Among {v} reports with both {A} and {B}, what proportion show {A} preceding {B}?
-      claim: Among {v} reports with both events, {A} precedes {B} in {p}% of cases.
-    media:
-      question: What share of {v} cases show {A} before {B}?
-      claim: About {p}% of {v} cases show {A} before {B}.
-    clinical:
-      question: How often does {A} precede {B} in {v} recipients?
-      claim: '{A} precedes {B} in roughly {p}% of {v} recipients.'
 - id: P-V3
   primitive: precedes
   level: vaccine
@@ -202,28 +180,6 @@ groups:
     clinical:
       question: In {v} recipients, do {A} and {B} typically present together?
       claim: In {v} recipients, {A} and {B} typically present together.
-- id: C-V2
-  primitive: co_occurs
-  level: vaccine
-  answer_type: PROP
-  slots:
-  - A
-  - B
-  - v
-  - p
-  variants:
-    original:
-      question: What fraction of {v} reports show {A} and {B} together?
-      claim: In about {p}% of {v} reports, {A} and {B} occur together.
-    research:
-      question: Among {v} reports with both events, what proportion show {A} and {B} concurrently?
-      claim: Among {v} reports with both events, {A} and {B} are concurrent in {p}% of cases.
-    media:
-      question: What share of {v} cases have {A} and {B} together?
-      claim: About {p}% of {v} cases have {A} and {B} together.
-    clinical:
-      question: How often do {A} and {B} present together in {v} patients?
-      claim: '{A} and {B} present together in roughly {p}% of {v} patients.'
 - id: C-V3
   primitive: co_occurs
   level: vaccine

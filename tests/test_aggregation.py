@@ -14,7 +14,6 @@ from temporal_hypo.core.aggregation import (
     last_among_fractions,
     ordering_distribution,
     precedes_fraction,
-    prop_verdict,
     sequence_fraction,
 )
 
@@ -254,14 +253,6 @@ def test_bool_verdict():
     assert bool_verdict(0.6) == "supported"
     assert bool_verdict(0.4) == "refuted"
     assert bool_verdict(0.5) == "insufficient"
-
-
-def test_prop_verdict():
-    assert prop_verdict(0.60, 0.63) == "supported"   # within 5pp
-    assert prop_verdict(0.60, 0.66) == "refuted"     # just over 5pp
-    # Avoid testing exact floating-point boundary (0.65-0.60 is not exactly 0.05)
-    assert prop_verdict(0.60, 0.645) == "supported"  # 4.5pp — clearly inside
-    assert prop_verdict(0.60, 0.656) == "refuted"    # 5.6pp — clearly outside
 
 
 def test_differ_verdict():

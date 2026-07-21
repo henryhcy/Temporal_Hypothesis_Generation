@@ -13,7 +13,7 @@ statistical denominator). This is a deliberate, documented pilot deviation.
 
 from __future__ import annotations
 
-from temporal_hypo.core.answers import answer_key, claimed_p_for, core_significance
+from temporal_hypo.core.answers import answer_key, core_significance
 from temporal_hypo.generation.cores import InstanceFacts
 from temporal_hypo.generation.templates import FORMATS, REGISTERS, Group, render
 
@@ -88,7 +88,5 @@ def build_records(
             rec["register"] = register
             rec["format"] = fmt
             rec["text"] = text
-            # claimed proportion is meaningful only for PROP claim-format text
-            rec["claimed_p"] = _round(claimed_p_for(facts, fmt))
             records.append(rec)
     return records

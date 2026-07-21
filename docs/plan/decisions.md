@@ -478,3 +478,46 @@ Recorded so they are not regenerated if more replacements are needed later.
 Still open: exact four-register YAML + gold-verdict rule for the kept
 R1/R3/R4/R5; which of P-V2 -> R3, C-V2 -> R5, plus R4/R1, to actually
 instantiate.
+
+---
+
+## Implemented: PROP retired + S-V1/F-V3 modal-vs-runner-up (2026-07-14)
+
+Goal for this change: no template does rate/fraction checking any more (audited;
+none remains in `src/`).
+
+### PROP groups removed (P-V2, C-V2, S-V2)
+- Deleted from the YAML, `MODE_BY_GROUP`, the `_build_vaccine_core` / feasibility
+  / realize branches, `_BINOM_NULL`, and `prop_verdict` (+ its tests). An
+  absolute-% claim graded by a +/-5pp tolerance is point-estimate fact-checking
+  with no principled null, so it is retired, not reworded. Roster: 30 -> 27
+  groups. The freed slots are to be backfilled from the R1/R3/R4/R5 menu.
+
+### S-V1 (seq_bool) and F-V3 (first_bool) -> "most common" + modal-vs-runner-up
+- Wording: "typically / usually / in the majority" -> "is the most common
+  ordering" (S-V1) / "the most common first event" (F-V3). Verdict is now an
+  argmax (like S-V3 modal_choice / F-V1 first_choice): supported iff a UNIQUE
+  modal ordering / first event exists; a tie is `insufficient`; naming a
+  non-modal refutes. No >0.5 rate threshold any more.
+- Test: **modal-vs-runner-up** -- one-sided exact binomial of the top cell's
+  count vs (top + runner-up), null 0.5, min-n 5. Verifies the NAMED item is the
+  mode (which the old binomial-vs-1/6 and plain GOF-vs-uniform cannot). This is
+  strictly harder than beats-chance, so their fail rate rises.
+
+### New fail rate (post-redesign, 27 groups): 76.0% (2234/2939)
+Progression two-sided -> one-sided -> post-redesign:
+- overall 78.5% -> 74.7% -> **76.0%**
+- pairwise-precedes 65.5% -> 61.2% -> 61.2% (unchanged by redesign)
+- co-occurs 73.9% -> 67.0% -> 67.0% (unchanged)
+- sequence 95.3% -> 95.2% -> **96.9%** (S-V1 stricter)
+- first/last 70.2% -> 67.4% -> **76.7%** (F-V3 stricter)
+Per-template counts are in `Findings_and_Templates.tex` / `Worked_Examples.md`.
+
+### Still deferred / open
+- **S-V4** (consistency_bool) rule/test mismatch NOT yet fixed (still
+  modal_share>0.5 gold vs GOF-vs-uniform test).
+- **S-V3 / F-V1 / F-V2** (modal_choice / first_choice / last_choice, CHOICE)
+  still use GOF-vs-uniform; the same "GOF does not verify the named mode"
+  critique applies -- candidates to also move to modal-vs-runner-up for
+  consistency with their S-V1 / F-V3 twins.
+- not-significant -> `insufficient` vs `refuted` mapping (deliberately deferred).

@@ -40,6 +40,7 @@ _REPO = Path(__file__).resolve().parent.parent
 
 _TEST_LABEL = {
     "binom_exact": "binomial exact",
+    "modal_runner": "modal-vs-runner-up binomial",
     "fisher_exact": "Fisher exact (2x2)",
     "multinomial_gof_exact": "multinomial GOF (exact)",
     "multinomial_gof_asymptotic": "multinomial GOF (chi-square)",
@@ -49,10 +50,13 @@ _TEST_LABEL = {
 
 # How each p-value is computed (shown per example and in the methods appendix).
 _HOW = {
-    "binom_exact": "exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 "
-                   "sequence, 1/3 first-among-3), ONE-SIDED in the observed direction "
-                   "(greater if the rate is above p0, less if below) so it corroborates the "
-                   "observed verdict, not the reverse",
+    "binom_exact": "exact binomial vs the 1/2 chance null (pairwise precedes, co-occurs), "
+                   "ONE-SIDED in the observed direction (greater if the rate is above 0.5, "
+                   "less if below) so it corroborates the observed verdict, not the reverse",
+    "modal_runner": "modal-vs-runner-up -- one-sided exact binomial of the modal cell's "
+                    "count vs the runner-up's (null 0.5): is the named most-common ordering/"
+                    "event significantly ahead of its nearest competitor? (verifies the mode, "
+                    "which GOF-vs-uniform cannot)",
     "fisher_exact": "Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for "
                     "the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "
                     "\"do they differ\" claims",
@@ -267,18 +271,20 @@ def _null_hypothesis(mode, events, vaccines) -> str:
     seq = " -> ".join(ev) if len(ev) >= 2 else a
     v1 = vaccines[0] if len(vaccines) > 0 else "v1"
     v2 = vaccines[1] if len(vaccines) > 1 else "v2"
-    if mode in ("dir_bool", "dir_choice", "prop_precedes"):
+    if mode in ("dir_bool", "dir_choice"):
         return f"H0: P({a} precedes {b}) = 0.5 (no directional preference among ordered reports)"
-    if mode in ("sym_bool_cooccurs", "prop_cooccurs"):
+    if mode == "sym_bool_cooccurs":
         return f"H0: P({a} and {b} co-occur) = 0.5 (among reports containing both)"
-    if mode in ("seq_bool", "prop_sequence"):
-        return f"H0: P(ordering = {seq}) = 1/6 (chance rate among the 6 orderings)"
+    if mode == "seq_bool":
+        return (f"H0: the {seq} ordering and the runner-up ordering are equally "
+                "frequent (P = 0.5; no unique mode)")
     if mode == "modal_choice":
         return "H0: the 6 orderings are equally likely -- uniform (no modal ordering)"
     if mode == "consistency_bool":
         return "H0: the 6 orderings are equally likely -- uniform (no consistent ordering)"
     if mode == "first_bool":
-        return f"H0: P({a} is first) = 1/3 (chance rate among the 3 candidates)"
+        return (f"H0: {a} and the runner-up event are equally often the first "
+                "(P = 0.5; no unique most-common first event)")
     if mode in ("first_choice", "last_choice"):
         which = "last" if mode == "last_choice" else "first"
         return f"H0: the 3 candidates are equally likely to be {which} -- uniform"
@@ -462,7 +468,8 @@ def _counts_str(e) -> str:
 
 
 _METHOD_NAME = {
-    "binom_exact": "Binomial exact", "fisher_exact": "Fisher exact",
+    "binom_exact": "Binomial exact",
+    "modal_runner": "Modal-vs-runner-up binomial", "fisher_exact": "Fisher exact",
     "multinomial_gof_exact": "Multinomial GOF (exact)",
     "multinomial_gof_asymptotic": "Multinomial GOF (chi-square)",
     "homogeneity_exact": "Fisher-Freeman-Halton",

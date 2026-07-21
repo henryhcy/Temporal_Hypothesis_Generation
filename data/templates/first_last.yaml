@@ -130,17 +130,17 @@ groups:
   - v
   variants:
     original:
-      question: After {v}, is {A} usually the first of {A}, {B}, {C}?
-      claim: After {v}, {A} is usually the first of {A}, {B}, {C}.
+      question: After {v}, is {A} the most common first event among {A}, {B}, {C}?
+      claim: After {v}, {A} is the most common first event among {A}, {B}, {C}.
     research:
-      question: In {v} reports with all three, is {A} the earliest in the majority of cases?
-      claim: In {v} reports with all three, {A} is the earliest in the majority of cases.
+      question: In {v} reports with all three, is {A} the single most frequent earliest event?
+      claim: In {v} reports with all three, {A} is the single most frequent earliest event.
     media:
-      question: After {v}, does {A} usually come first among {A}, {B}, {C}?
-      claim: After {v}, {A} usually comes first among {A}, {B}, {C}.
+      question: After {v}, is {A} most often the first among {A}, {B}, {C}?
+      claim: After {v}, {A} is most often the first among {A}, {B}, {C}.
     clinical:
-      question: In {v} patients, is {A} usually the earliest of {A}, {B}, {C}?
-      claim: In {v} patients, {A} is usually the earliest of {A}, {B}, {C}.
+      question: In {v} patients, is {A} the most frequent earliest of {A}, {B}, {C}?
+      claim: In {v} patients, {A} is the most frequent earliest of {A}, {B}, {C}.
 - id: F-M1
   primitive: first_last
   level: multi

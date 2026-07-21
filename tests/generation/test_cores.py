@@ -55,17 +55,6 @@ def test_dir_bool_tie_is_insufficient_only():
 
 # -- realize: PROP value flip ----------------------------------------------
 
-def test_prop_value_flip():
-    core = _core("prop_precedes", "PROP", proportion=0.70, n=30, k=21)
-    sup = realize(core, "supported")
-    assert sup.gold_verdict == "supported"
-    assert sup.p_value == 70
-    ref = realize(core, "refuted")
-    assert ref.gold_verdict == "refuted"
-    assert abs(ref.p_value / 100 - 0.70) > 0.05    # off by > 5pp
-    assert ref.flip_kind == "value"
-
-
 # -- realize: symmetric BOOL polarity fixed by data ------------------------
 
 def test_symmetric_bool_polarity_by_data():

@@ -16,15 +16,6 @@ def _core():
     )
 
 
-def _prop_core():
-    return ViableCore(
-        group_id="P-V2", family="pairwise", primitive="precedes", level="vaccine",
-        answer_type="PROP", mode="prop_precedes", events=("Headache", "Fever"),
-        vaccines=("Pfizer",), cohort_ids=[1], report_id=None,
-        computable=True, natural_verdict="supported", proportion=0.7, n=20, k=14,
-    )
-
-
 def _choice_core():
     return ViableCore(
         group_id="F-V1", family="first_last", primitive="first_last", level="vaccine",
@@ -73,16 +64,8 @@ def test_bool_record_has_significance_no_choice_key():
         assert "p_value" in r and "significant" in r and "sig_test" in r
         assert r["sig_test"] == "binom_exact"
         assert r["options"] is None and r["gold_answer"] is None
-        assert r["claimed_p"] is None          # not a PROP claim
 
 
-def test_prop_claimed_p_only_on_claim_format():
-    groups = load_groups()
-    recs = build_records(realize(_prop_core(), "supported"), groups["P-V2"], seq=0)
-    claim = [r for r in recs if r["format"] == "claim"]
-    question = [r for r in recs if r["format"] == "question"]
-    assert all(r["claimed_p"] == 0.7 for r in claim)        # 70% asserted -> 0.70
-    assert all(r["claimed_p"] is None for r in question)
 
 
 def test_choice_record_carries_options_and_gold_answer():

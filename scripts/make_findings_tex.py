@@ -190,29 +190,32 @@ label for each; the full-enumeration run yields \textbf{289{,}216} candidate ins
 The central finding concerns statistical power under \emph{significance-as-verdict}: the
 gold verdict is the significance-test result --- significant in the asserted direction
 $\Rightarrow$ supported, the opposite $\Rightarrow$ refuted, otherwise insufficient.""")
-    doc.append(r"""\paragraph{Supported $\neq$ significant.} Over the \textbf{2{,}998}
-cores that carry a definite verdict and an applicable categorical test (PROP and
-report-level excluded), most are \emph{not} significant at $\alpha=0.05$. Running the
+    doc.append(r"""\paragraph{Supported $\neq$ significant.} Over the \textbf{2{,}939}
+cores that carry a definite verdict and an applicable categorical test (report-level and
+the retired PROP groups excluded), most are \emph{not} significant at $\alpha=0.05$.
+Table~\ref{tab:failrate} tracks the fail rate as the tests were corrected: making the
 directional tests \textbf{one-sided} in the observed direction (2026-07-13) halves the
-tail for effects already on the supported side and lowers the fail rate
-(Table~\ref{tab:failrate}); the \texttt{multi\_differ} and GOF/homogeneity omnibus tests
-stay two-sided.""")
+tail for supported-side effects; the \textbf{post-redesign} column then retires PROP and
+switches S-V1/F-V3 to the \emph{modal-vs-runner-up} test (a stricter, correct ``most
+common'' check that raises the sequence/first-last fail rate). \texttt{multi\_differ} and
+the GOF/homogeneity omnibus tests stay two-sided throughout.""")
 
     doc.append(r"""\begin{table}[h]
 \centering
-\caption{Gold-vs-significance fail rate: definite-verdict categorical cores the test does
-not corroborate at $\alpha=0.05$. One-sided directional tests lower it.}
+\caption{Gold-vs-significance fail rate (definite-verdict categorical cores the test does
+not corroborate at $\alpha=0.05$), across the test corrections. Post-redesign = one-sided
++ PROP retired + S-V1/F-V3 modal-vs-runner-up (27 groups).}
 \label{tab:failrate}
-\begin{tabular}{@{}lcc@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-\textbf{Family} & \textbf{Two-sided} & \textbf{One-sided} \\
+\textbf{Family} & \textbf{Two-sided} & \textbf{One-sided} & \textbf{Post-redesign} \\
 \midrule
-pairwise-precedes & 65.5\% & 61.2\% \\
-co-occurs         & 73.9\% & 67.0\% \\
-sequence          & 95.3\% & 95.2\% \\
-first/last        & 70.2\% & 67.4\% \\
+pairwise-precedes & 65.5\% & 61.2\% & 61.2\% \\
+co-occurs         & 73.9\% & 67.0\% & 67.0\% \\
+sequence          & 95.3\% & 95.2\% & 96.9\% \\
+first/last        & 70.2\% & 67.4\% & 76.7\% \\
 \midrule
-\textbf{overall}  & \textbf{78.5\%} & \textbf{74.7\%} \\
+\textbf{overall}  & \textbf{78.5\%} & \textbf{74.7\%} & \textbf{76.0\%} \\
 \bottomrule
 \end{tabular}
 \end{table}""")

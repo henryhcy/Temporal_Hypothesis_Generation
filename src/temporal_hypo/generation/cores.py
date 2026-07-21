@@ -27,7 +27,6 @@ from temporal_hypo.core.aggregation import (
     bool_verdict,
     differ_verdict,
     direction_verdict,
-    prop_verdict,
 )
 from temporal_hypo.generation import corpus
 from temporal_hypo.generation.confidence import (
@@ -52,7 +51,7 @@ _MIN_N = 10
 
 # Modes whose cores are event TRIPLES rather than pairs.
 _VACCINE_TRIPLE_MODES = {
-    "seq_bool", "prop_sequence", "modal_choice", "consistency_bool",
+    "seq_bool", "modal_choice", "consistency_bool",
     "first_choice", "last_choice", "first_bool",
 }
 _MULTI_TRIPLE_MODES = {
@@ -67,21 +66,18 @@ MODE_BY_GROUP: dict[str, str] = {
     "P-R1": "rep_dir_bool",
     "P-R2": "rep_dir_choice",
     "P-V1": "dir_bool",
-    "P-V2": "prop_precedes",
     "P-V3": "dir_choice",
     "P-M1": "multi_differ_precedes",
     "P-M2": "multi_dir_precedes",
     # pairwise -- co_occurs
     "C-R1": "rep_sym_bool",
     "C-V1": "sym_bool_cooccurs",
-    "C-V2": "prop_cooccurs",
     "C-V3": "sym_bool_cooccurs",
     "C-M1": "multi_differ_cooccurs",
     "C-M2": "multi_dir_cooccurs",
     # sequence
     "S-R1": "rep_seq_bool",
     "S-V1": "seq_bool",
-    "S-V2": "prop_sequence",
     "S-V3": "modal_choice",
     "S-V4": "consistency_bool",
     "S-M1": "multi_differ_sequence",
@@ -147,16 +143,6 @@ class InstanceFacts:
 def _ci_fields(k: int, n: int) -> tuple[tuple[float, float], str]:
     ci = wilson_ci(k, n)
     return ci, confidence_tag(ci_width(ci))
-
-
-def _refuted_prop_pct(actual_frac: float) -> int:
-    """A percentage value at least 5pp away from the true proportion."""
-    actual_pct = actual_frac * 100
-    for delta in (20, -20, 30, -30, 40, -40, 50, -50):
-        cand = round(actual_pct + delta)
-        if 0 <= cand <= 100 and abs(cand / 100 - actual_frac) > 0.05:
-            return cand
-    return 0 if actual_frac > 0.5 else 100
 
 
 def _other_permutation(modal: tuple[str, ...], counts: dict) -> tuple[str, ...]:
@@ -237,7 +223,7 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
     base = dict(events=tuple(combo), vaccines=(vax,), cohort_ids=cohort,
                report_id=None)
 
-    if mode in ("dir_bool", "dir_choice", "prop_precedes"):
+    if mode in ("dir_bool", "dir_choice"):
         a, b = combo
         r = corpus.precedes_fraction(index, a, b, cohort)
         if r is None:
@@ -245,11 +231,10 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
                              natural_verdict="insufficient", **base)
         frac, n = r
         k = round(frac * n)
-        nv = bool_verdict(frac) if group.answer_type != "PROP" else "supported"
-        return _new_core(group, mode, computable=True, natural_verdict=nv,
+        return _new_core(group, mode, computable=True, natural_verdict=bool_verdict(frac),
                          proportion=frac, n=n, k=k, **base)
 
-    if mode in ("sym_bool_cooccurs", "prop_cooccurs"):
+    if mode == "sym_bool_cooccurs":
         a, b = combo
         r = corpus.co_occurs_fraction(index, a, b, cohort)
         if r is None:
@@ -257,13 +242,12 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
                              natural_verdict="insufficient", **base)
         frac, n = r
         k = round(frac * n)
-        nv = bool_verdict(frac) if group.answer_type != "PROP" else "supported"
-        return _new_core(group, mode, computable=True, natural_verdict=nv,
+        return _new_core(group, mode, computable=True, natural_verdict=bool_verdict(frac),
                          proportion=frac, n=n, k=k, **base)
 
-    if mode in ("seq_bool", "prop_sequence", "modal_choice", "consistency_bool"):
+    if mode in ("seq_bool", "modal_choice", "consistency_bool"):
         # STRICT ordering over the ORDERABLE denominator (ordering_distribution
-        # now excludes co-occurrence and floors at SEQ_MIN_N).
+        # excludes co-occurrence and floors at SEQ_MIN_N).
         a, b, c = combo
         dist = corpus.ordering_distribution(index, [a, b, c], cohort)
         if dist is None:
@@ -276,21 +260,14 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
                              natural_verdict=bool_verdict(share),
                              proportion=share, n=n, k=dist["modal_count"],
                              extra=dist, **base)
-        if mode == "modal_choice":
-            nv = "supported" if (dist["modal"] is not None and not dist["modal_tie"]) \
-                else "insufficient"
-            return _new_core(group, mode, computable=True, natural_verdict=nv,
-                             proportion=dist["modal_share"], n=n,
-                             k=dist["modal_count"], extra=dist, **base)
-        # seq_bool / prop_sequence: focus on the MODAL (actually-occurring)
-        # ordering. A canonical order that never appears in the data is not a
-        # usable claim -- the modal is the real, supportable ordering; other
-        # orderings serve as refuted instances.
-        modal_count = dist["modal_count"]
-        frac = dist["modal_share"]
-        nv = bool_verdict(frac) if mode == "seq_bool" else "supported"
+        # seq_bool ("most common" BOOL) + modal_choice (CHOICE): supported iff a
+        # UNIQUE modal ordering exists (an argmax claim). seq_bool is tested
+        # modal-vs-runner-up (see core_significance); modal_choice keeps GOF.
+        nv = "supported" if (dist["modal"] is not None and not dist["modal_tie"]) \
+            else "insufficient"
         return _new_core(group, mode, computable=True, natural_verdict=nv,
-                         proportion=frac, n=n, k=modal_count, extra=dist, **base)
+                         proportion=dist["modal_share"], n=n,
+                         k=dist["modal_count"], extra=dist, **base)
 
     if mode in ("first_choice", "last_choice", "first_bool"):
         terms = list(combo)
@@ -304,13 +281,10 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
         fracs = {t: res[t] for t in terms}
         winner = max(terms, key=lambda t: (fracs[t], t))
         wfrac = fracs[winner]
-        # unique argmax?
+        # unique argmax? "most common first/last event" is supported iff so.
         max_terms = [t for t in terms if abs(fracs[t] - wfrac) < 1e-12]
         unique = len(max_terms) == 1
-        if mode == "first_bool":
-            nv = "supported" if wfrac > 0.5 else "refuted"
-        else:
-            nv = "supported" if unique else "insufficient"
+        nv = "supported" if unique else "insufficient"
         extra = {"fracs": fracs, "winner": winner, "unique": unique,
                  "tie_rate": res["tie_rate"], "counts": res["counts"]}
         return _new_core(group, mode, computable=True, natural_verdict=nv,
@@ -619,8 +593,6 @@ def feasible_polarities(core: ViableCore) -> set[str]:
             out |= {"supported", "refuted"}
         else:
             out |= {"insufficient"}
-    elif m in ("prop_precedes", "prop_cooccurs", "prop_sequence"):
-        out |= {"supported", "refuted"}
     elif m in ("sym_bool_cooccurs", "consistency_bool"):
         p = core.proportion
         if p is None or abs(p - 0.5) <= _HALF:
@@ -629,32 +601,18 @@ def feasible_polarities(core: ViableCore) -> set[str]:
             out |= {"supported"}
         else:
             out |= {"refuted"}
-    elif m == "seq_bool":
-        d = core.extra
-        if d.get("modal_share", 0) > 0.5:
-            out |= {"supported", "refuted"}
-        elif d.get("modal_share", 1) < 0.5:
-            out |= {"refuted"}
-        else:
-            out |= {"insufficient"}
-    elif m == "modal_choice":
+    elif m in ("seq_bool", "modal_choice"):
+        # "most common" argmax claim: a UNIQUE modal ordering can be supported;
+        # naming another ordering refutes it.
         d = core.extra
         if d.get("modal") is not None and not d.get("modal_tie", False):
             out |= {"supported", "refuted"}
         else:
             out |= {"insufficient"}
-    elif m in ("first_choice", "last_choice"):
+    elif m in ("first_choice", "last_choice", "first_bool"):
         out |= {"refuted"}  # can always name a non-winner
         if core.extra.get("unique"):
             out |= {"supported"}
-    elif m == "first_bool":
-        fr = core.extra["fracs"]
-        if max(fr.values()) > 0.5:
-            out |= {"supported"}
-        if min(fr.values()) < 0.5:
-            out |= {"refuted"}
-        if not out:
-            out |= {"insufficient"}
     elif m in ("multi_differ_precedes", "multi_differ_cooccurs",
                "multi_differ_sequence"):
         out |= {core.natural_verdict}
@@ -705,18 +663,12 @@ def realize(core: ViableCore, polarity: str) -> InstanceFacts:
     m = core.mode
     if m in ("dir_bool", "dir_choice"):
         return _realize_directional(core, polarity)
-    if m in ("prop_precedes", "prop_cooccurs", "prop_sequence"):
-        return _realize_prop(core, polarity)
     if m in ("sym_bool_cooccurs", "consistency_bool"):
         return _realize_symmetric_bool(core, polarity)
-    if m == "seq_bool":
-        return _realize_seq_bool(core, polarity)
-    if m == "modal_choice":
+    if m in ("seq_bool", "modal_choice"):
         return _realize_modal_choice(core, polarity)
-    if m in ("first_choice", "last_choice"):
+    if m in ("first_choice", "last_choice", "first_bool"):
         return _realize_extreme_choice(core, polarity)
-    if m == "first_bool":
-        return _realize_first_bool(core, polarity)
     if m in ("multi_differ_precedes", "multi_differ_cooccurs",
              "multi_differ_sequence"):
         return _realize_multi_differ(core, polarity)
@@ -771,46 +723,10 @@ def _realize_directional(core, polarity):
                proportion=p, n=n, k=kk)
 
 
-def _realize_prop(core, polarity):
-    frac, n, k = core.proportion, core.n, core.k
-    # prop_sequence states the % for the MODAL ordering (the one that occurs),
-    # not the canonical order which may never appear.
-    events = core.events
-    if core.mode == "prop_sequence" and core.extra.get("modal"):
-        events = core.extra["modal"]
-    if polarity == "supported":
-        pct = round(frac * 100)
-    else:
-        pct = _refuted_prop_pct(frac)
-    verdict = prop_verdict(pct / 100, frac)
-    fk = None if polarity == "supported" else "value"
-    return _mk(core, polarity, fk, events, verdict=verdict,
-               proportion=frac, n=n, k=k, p_value=pct)
-
-
 def _realize_symmetric_bool(core, polarity):
     p, n, k = core.proportion, core.n, core.k
     return _mk(core, polarity, None, core.events, verdict=bool_verdict(p),
                proportion=p, n=n, k=k)
-
-
-def _realize_seq_bool(core, polarity):
-    # STRICT: supported names the modal ordering; refuted names another observed
-    # ordering (or a swap). Gold recomputed from that ordering's rate.
-    d = core.extra
-    n = core.n
-    if polarity == "supported":
-        order = d["modal"]
-        cnt = d["modal_count"]
-    elif d["modal"] is None:
-        order, cnt = core.events, 0
-    else:
-        order = _other_permutation(d["modal"], d["counts"])
-        cnt = d["counts"].get(order, 0)
-    p = cnt / n
-    fk = None if polarity == "supported" else "order"
-    return _mk(core, polarity, fk, order, verdict=bool_verdict(p),
-               proportion=p, n=n, k=cnt)
 
 
 def _realize_modal_choice(core, polarity):
@@ -844,23 +760,6 @@ def _realize_extreme_choice(core, polarity):
     p = fr[named]
     return _mk(core, polarity, fk, ev, verdict=verdict,
                proportion=p, n=n, k=round(p * n), null_ref=1 / 3)
-
-
-def _realize_first_bool(core, polarity):
-    fr = core.extra["fracs"]
-    terms = list(core.events)
-    n = core.n
-    if polarity == "supported":
-        named = max(terms, key=lambda t: (fr[t], t))
-        fk = None
-    else:
-        named = min(terms, key=lambda t: (fr[t], t))
-        fk = "option"
-    others = [t for t in terms if t != named]
-    ev = (named, others[0], others[1])
-    p = fr[named]
-    return _mk(core, polarity, fk, ev, verdict=bool_verdict(p),
-               proportion=p, n=n, k=round(p * n))
 
 
 def _diff_ci(core):
@@ -1004,10 +903,6 @@ def _realize_report(core, polarity):
 
 def _realize_insufficient(core: ViableCore) -> InstanceFacts:
     """Assert the canonical positive claim; gold verdict is insufficient."""
-    ev = core.events
-    p_value = None
-    if core.answer_type == "PROP":
-        p_value = round((core.proportion or 0.5) * 100)
-    return _mk(core, "insufficient", None, ev, verdict="insufficient",
+    return _mk(core, "insufficient", None, core.events, verdict="insufficient",
                proportion=core.proportion, n=core.n,
-               k=core.k if core.n else None, p_value=p_value, effect=None)
+               k=core.k if core.n else None, effect=None)

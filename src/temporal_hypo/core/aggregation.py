@@ -272,13 +272,6 @@ def bool_verdict(
     return "insufficient"
 
 
-def prop_verdict(
-    claimed: float, actual: float
-) -> Literal["supported", "refuted"]:
-    """Within 5 percentage points → supported (decisions.md rule 7)."""
-    return "supported" if abs(claimed - actual) <= 0.05 else "refuted"
-
-
 def differ_verdict(
     p1: float, p2: float
 ) -> Literal["supported", "refuted"]:

@@ -42,40 +42,17 @@ groups:
   - v
   variants:
     original:
-      question: After {v}, do {A}, {B}, {C} typically occur as {A} → {B} → {C}?
-      claim: After {v}, {A}, {B}, {C} typically occur as {A} → {B} → {C}.
+      question: After {v}, is {A} → {B} → {C} the most common ordering of {A}, {B}, {C}?
+      claim: After {v}, {A} → {B} → {C} is the most common ordering of {A}, {B}, {C}.
     research:
-      question: In {v} reports with all three events, does the observed ordering match {A} → {B} → {C} in the majority?
-      claim: In {v} reports with all three, the ordering matches {A} → {B} → {C} in the majority.
+      question: In {v} reports with all three events, is {A} → {B} → {C} the single most frequent ordering?
+      claim: In {v} reports with all three, {A} → {B} → {C} is the single most frequent ordering.
     media:
-      question: After {v}, do people usually go {A}, then {B}, then {C}?
-      claim: After {v}, people usually go {A}, then {B}, then {C}.
+      question: After {v}, is {A}, then {B}, then {C} the most common order?
+      claim: After {v}, {A}, then {B}, then {C} is the most common order.
     clinical:
-      question: In {v} recipients with all three, is the typical progression {A} → {B} → {C}?
-      claim: In {v} recipients with all three, the typical progression is {A} → {B} → {C}.
-- id: S-V2
-  primitive: sequence
-  level: vaccine
-  answer_type: PROP
-  slots:
-  - A
-  - B
-  - C
-  - v
-  - p
-  variants:
-    original:
-      question: What fraction of {v} reports show the sequence {A} → {B} → {C}?
-      claim: In about {p}% of {v} reports, the sequence is {A} → {B} → {C}.
-    research:
-      question: Among {v} reports with all three events, what proportion show the ordering {A} → {B} → {C}?
-      claim: Among {v} reports with all three events, {p}% show {A} → {B} → {C}.
-    media:
-      question: What share of {v} cases show {A} → {B} → {C}?
-      claim: About {p}% of {v} cases show {A} → {B} → {C}.
-    clinical:
-      question: How often do {v} patients show {A} → {B} → {C}?
-      claim: '{v} patients show {A} → {B} → {C} in roughly {p}% of cases.'
+      question: In {v} recipients with all three, is {A} → {B} → {C} the most frequent progression?
+      claim: In {v} recipients with all three, {A} → {B} → {C} is the most frequent progression.
 - id: S-V3
   primitive: sequence
   level: vaccine

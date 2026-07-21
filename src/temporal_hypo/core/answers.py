@@ -45,14 +45,17 @@ _ARROW = " → "  # " -> " rendered as the templates render orderings
 # significance dispatch -- which test each group's gold value gets
 # ---------------------------------------------------------------------------
 
-# Single-proportion modes -> one-sided exact binomial vs a chance null
+# Single-proportion modes -> one-sided exact binomial vs a 0.5 chance null
 # (direction chosen from the observed proportion in core_significance).
 _BINOM_NULL = {
-    "dir_bool": 0.5, "dir_choice": 0.5, "prop_precedes": 0.5,
-    "sym_bool_cooccurs": 0.5, "prop_cooccurs": 0.5,
-    "seq_bool": 1 / 6, "prop_sequence": 1 / 6,
-    "first_bool": 1 / 3,
+    "dir_bool": 0.5, "dir_choice": 0.5,
+    "sym_bool_cooccurs": 0.5,
 }
+# "Most common" argmax BOOL modes -> modal-vs-runner-up: one-sided exact
+# binomial of the top cell's count vs the runner-up's (null 0.5). Verifies the
+# NAMED ordering/event is the mode (which GOF-vs-uniform cannot).
+_MODAL_RUNNER = {"seq_bool", "first_bool"}
+_MODAL_RUNNER_MIN_N = 5   # top+runner floor; exact binomial is valid at small n
 # Two-proportion modes -> Fisher exact on the 2x2.
 _FISHER = {
     "multi_differ_precedes", "multi_dir_precedes",
@@ -124,6 +127,21 @@ def core_significance(core) -> Significance:
         p = sig.binom_exact_p(core.k, core.n, p0, alternative=alt)
         return Significance(p, sig.significance_verdict(p, core.n) == "significant",
                             "binom_exact", {"null": p0, "alternative": alt})
+
+    if m in _MODAL_RUNNER:
+        # modal-vs-runner-up: is the top ordering/event significantly ahead of
+        # its nearest competitor? One-sided exact binomial of top vs top+runner.
+        counts = sorted(core.extra.get("counts", {}).values(), reverse=True)
+        top = counts[0] if counts else 0
+        runner = counts[1] if len(counts) > 1 else 0
+        nn = top + runner
+        if nn == 0:
+            return Significance(None, None, None)
+        p = sig.binom_exact_p(top, nn, 0.5, alternative="greater")
+        ok = sig.significance_verdict(p, nn, min_n=_MODAL_RUNNER_MIN_N) == "significant"
+        return Significance(p, ok, "modal_runner",
+                            {"null": 0.5, "alternative": "greater",
+                             "top": top, "runner": runner})
 
     if m in _FISHER:
         if core.n2 is None or core.k2 is None:
@@ -206,15 +224,6 @@ def answer_key(core) -> tuple[list[str] | None, str | None]:
     return None, None
 
 
-def claimed_p_for(facts, fmt: str) -> float | None:
-    """The asserted proportion (as a fraction) for a PROP *claim* instance."""
-    if facts.core.answer_type != "PROP" or fmt != "claim":
-        return None
-    if facts.p_value is None:
-        return None
-    return facts.p_value / 100.0
-
-
 # ---------------------------------------------------------------------------
 # public single-instance answer record
 # ---------------------------------------------------------------------------
@@ -249,7 +258,7 @@ class AnswerRecord:
 
 
 def _null_ref(mode: str) -> float:
-    if mode in ("seq_bool", "prop_sequence", "modal_choice", "consistency_bool"):
+    if mode in ("seq_bool", "modal_choice", "consistency_bool"):
         return 1 / 6
     if mode in ("first_bool", "first_choice", "last_choice"):
         return 1 / 3

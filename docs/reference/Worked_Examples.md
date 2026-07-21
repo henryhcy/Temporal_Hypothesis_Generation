@@ -14,19 +14,16 @@ SAME real, co-occurring events.
 | P-R1 | 3166 | 1196 | 3166 |
 | P-R2 | 3166 | 1196 | 1196 |
 | P-V1 | 173 | 168 | 168 |
-| P-V2 | 173 | 173 | 173 |
 | P-V3 | 173 | 168 | 168 |
 | P-M1 | 99 | 39 | 60 |
 | P-M2 | 99 | 99 | 99 |
 | C-R1 | 3166 | 1970 | 1196 |
 | C-V1 | 374 | 90 | 271 |
-| C-V2 | 374 | 374 | 374 |
 | C-V3 | 374 | 90 | 271 |
 | C-M1 | 232 | 89 | 143 |
 | C-M2 | 232 | 232 | 232 |
 | S-R1 | 3166 | 489 | 3166 |
-| S-V1 | 275 | 62 | 236 |
-| S-V2 | 275 | 275 | 275 |
+| S-V1 | 275 | 192 | 192 |
 | S-V3 | 275 | 192 | 192 |
 | S-V4 | 275 | 62 | 174 |
 | S-M1 | 90 | 44 | 46 |
@@ -37,7 +34,7 @@ SAME real, co-occurring events.
 | F-R3 | 3166 | 1196 | 1196 |
 | F-V1 | 82 | 67 | 82 |
 | F-V2 | 82 | 73 | 82 |
-| F-V3 | 82 | 2 | 82 |
+| F-V3 | 82 | 67 | 82 |
 | F-M1 | 46 | 23 | 23 |
 | F-M2 | 46 | 23 | 23 |
 | F-M3 | 46 | 45 | 45 |
@@ -46,14 +43,14 @@ SAME real, co-occurring events.
 
 For every viable core with a definite gold verdict (supported/refuted) and an applicable categorical test (PROP and report-level excluded), we check whether the test is significant at alpha=0.05. A **fail** is a definite gold label the test does NOT corroborate. This is the population rate over ALL such cores.
 
-- **Overall population**: 2239/2998 (74.7%) of definite-verdict categorical cores are not significant.
+- **Overall population**: 2234/2939 (76.0%) of definite-verdict categorical cores are not significant.
 
 | family | definite cores | failed | fail rate |
 |---|--:|--:|--:|
 | pairwise-precedes | 534 | 327 | 327/534 (61.2%) |
 | co-occurs | 1186 | 795 | 795/1186 (67.0%) |
-| sequence | 919 | 875 | 875/919 (95.2%) |
-| first/last | 359 | 242 | 242/359 (67.4%) |
+| sequence | 875 | 848 | 848/875 (96.9%) |
+| first/last | 344 | 264 | 264/344 (76.7%) |
 
 For the worked examples below we search each template's cores for a **successful** example (definite gold + significant test) to showcase; only when none exists do we present a failed one.
 
@@ -64,19 +61,16 @@ For the worked examples below we search each template's cores for a **successful
 | P-R1 | 0 | 0 | n/a | n/a |
 | P-R2 | 0 | 0 | n/a | n/a |
 | P-V1 | 168 | 81 | 81/168 (48.2%) | successful |
-| P-V2 | 0 | 0 | n/a | n/a |
 | P-V3 | 168 | 81 | 81/168 (48.2%) | successful |
 | P-M1 | 99 | 84 | 84/99 (84.8%) | successful |
 | P-M2 | 99 | 81 | 81/99 (81.8%) | successful |
 | C-R1 | 0 | 0 | n/a | n/a |
 | C-V1 | 361 | 184 | 184/361 (51.0%) | successful |
-| C-V2 | 0 | 0 | n/a | n/a |
 | C-V3 | 361 | 184 | 184/361 (51.0%) | successful |
 | C-M1 | 232 | 218 | 218/232 (94.0%) | successful |
 | C-M2 | 232 | 209 | 209/232 (90.1%) | successful |
 | S-R1 | 0 | 0 | n/a | n/a |
-| S-V1 | 236 | 215 | 215/236 (91.1%) | successful |
-| S-V2 | 0 | 0 | n/a | n/a |
+| S-V1 | 192 | 188 | 188/192 (97.9%) | successful |
 | S-V3 | 192 | 180 | 180/192 (93.8%) | successful |
 | S-V4 | 236 | 225 | 225/236 (95.3%) | successful |
 | S-M1 | 90 | 90 | 90/90 (100.0%) | failed |
@@ -87,7 +81,7 @@ For the worked examples below we search each template's cores for a **successful
 | F-R3 | 0 | 0 | n/a | n/a |
 | F-V1 | 67 | 42 | 42/67 (62.7%) | successful |
 | F-V2 | 73 | 36 | 36/73 (49.3%) | successful |
-| F-V3 | 82 | 31 | 31/82 (37.8%) | successful |
+| F-V3 | 67 | 53 | 53/67 (79.1%) | successful |
 | F-M1 | 46 | 44 | 44/46 (95.7%) | successful |
 | F-M2 | 46 | 44 | 44/46 (95.7%) | successful |
 | F-M3 | 45 | 45 | 45/45 (100.0%) | failed |
@@ -179,7 +173,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Conditioned counts**: k=44 / n=119  (rate 0.3697)
 - **Categorical test**: binomial exact (one-sided, less), p = 0.002863 (significant)
     - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
+    - *how p is computed*: exact binomial vs the 1/2 chance null (pairwise precedes, co-occurs), ONE-SIDED in the observed direction (greater if the rate is above 0.5, less if below) so it corroborates the observed verdict, not the reverse
 - **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
     - *H0: the Fatigue-vs-Headache rank-distances are symmetric about 0 (neither event tends to come earlier)*
     - *how p is computed*: Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction
@@ -211,45 +205,6 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Q: In Janssen recipients, does Fatigue usually come before Headache?
         - Claim: In Janssen recipients, Fatigue usually comes before Headache.
 
-## P-V2  (pairwise, vaccine, PROP)
-- **Presented example**: — (no significance test: PROP / report-level) (gold-vs-significance over this template's cores: n/a fail)
-- **Qualified cores**: 173 viable | 173 supported-capable (true cases) | 173 refuted-capable
-- **Core**: events ['Fatigue', 'Headache'], cohort Janssen
-- **Conditioned counts**: k=44 / n=119  (rate 0.3697)
-- **Categorical test**: binomial exact (one-sided, less), p = 0.002863 (significant)
-    - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
-- **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
-    - *H0: the Fatigue-vs-Headache rank-distances are symmetric about 0 (neither event tends to come earlier)*
-    - *how p is computed*: Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction
-- **95% CI**: [0.2884, 0.4593], effect size -0.2635
-- **SUPPORTED** example (filled, all registers):
-    - **Original**
-        - Q: In what fraction of Janssen reports does Fatigue precede Headache?
-        - Claim: In about 37% of Janssen reports, Fatigue precedes Headache.
-    - **Research**
-        - Q: Among Janssen reports with both Fatigue and Headache, what proportion show Fatigue preceding Headache?
-        - Claim: Among Janssen reports with both events, Fatigue precedes Headache in 37% of cases.
-    - **Media**
-        - Q: What share of Janssen cases show Fatigue before Headache?
-        - Claim: About 37% of Janssen cases show Fatigue before Headache.
-    - **Clinical**
-        - Q: How often does Fatigue precede Headache in Janssen recipients?
-        - Claim: Fatigue precedes Headache in roughly 37% of Janssen recipients.
-- **REFUTED** example (filled, all registers):
-    - **Original**
-        - Q: In what fraction of Janssen reports does Fatigue precede Headache?
-        - Claim: In about 57% of Janssen reports, Fatigue precedes Headache.
-    - **Research**
-        - Q: Among Janssen reports with both Fatigue and Headache, what proportion show Fatigue preceding Headache?
-        - Claim: Among Janssen reports with both events, Fatigue precedes Headache in 57% of cases.
-    - **Media**
-        - Q: What share of Janssen cases show Fatigue before Headache?
-        - Claim: About 57% of Janssen cases show Fatigue before Headache.
-    - **Clinical**
-        - Q: How often does Fatigue precede Headache in Janssen recipients?
-        - Claim: Fatigue precedes Headache in roughly 57% of Janssen recipients.
-
 ## P-V3  (pairwise, vaccine, CHOICE)
 - **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 81/168 (48.2%) fail)
 - **Qualified cores**: 173 viable | 168 supported-capable (true cases) | 168 refuted-capable
@@ -257,7 +212,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Conditioned counts**: k=44 / n=119  (rate 0.3697)
 - **Categorical test**: binomial exact (one-sided, less), p = 0.002863 (significant)
     - *H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
+    - *how p is computed*: exact binomial vs the 1/2 chance null (pairwise precedes, co-occurs), ONE-SIDED in the observed direction (greater if the rate is above 0.5, less if below) so it corroborates the observed verdict, not the reverse
 - **Position-based test**: Wilcoxon signed-rank (level(Fatigue)-level(Headache); n=119 (normal)), p = 0.002862
     - *H0: the Fatigue-vs-Headache rank-distances are symmetric about 0 (neither event tends to come earlier)*
     - *how p is computed*: Wilcoxon signed-rank -- rank |d| where d=level(A)-level(B) (co-exist d=0 dropped), sum the signed ranks; exact sign-flip null for small n, else normal approximation with tie/continuity correction
@@ -384,7 +339,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Conditioned counts**: k=150 / n=204  (rate 0.7353)
 - **Categorical test**: binomial exact (one-sided, greater), p = 6.043e-12 (significant)
     - *H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
+    - *how p is computed*: exact binomial vs the 1/2 chance null (pairwise precedes, co-occurs), ONE-SIDED in the observed direction (greater if the rate is above 0.5, less if below) so it corroborates the observed verdict, not the reverse
 - **95% CI**: [0.6708, 0.7911], effect size 0.49
 - **SUPPORTED** example (filled, all registers):
     - **Original**
@@ -400,42 +355,6 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Q: In Janssen recipients, do Chills and Pyrexia typically present together?
         - Claim: In Janssen recipients, Chills and Pyrexia typically present together.
 
-## C-V2  (pairwise, vaccine, PROP)
-- **Presented example**: — (no significance test: PROP / report-level) (gold-vs-significance over this template's cores: n/a fail)
-- **Qualified cores**: 374 viable | 374 supported-capable (true cases) | 374 refuted-capable
-- **Core**: events ['Headache', 'Pyrexia'], cohort Janssen
-- **Conditioned counts**: k=111 / n=213  (rate 0.5211)
-- **Categorical test**: binomial exact (one-sided, greater), p = 0.2918 (not significant)
-    - *H0: P(Headache and Pyrexia co-occur) = 0.5 (among reports containing both)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
-- **95% CI**: [0.4543, 0.5872], effect size 0.0423
-- **SUPPORTED** example (filled, all registers):
-    - **Original**
-        - Q: What fraction of Janssen reports show Headache and Pyrexia together?
-        - Claim: In about 52% of Janssen reports, Headache and Pyrexia occur together.
-    - **Research**
-        - Q: Among Janssen reports with both events, what proportion show Headache and Pyrexia concurrently?
-        - Claim: Among Janssen reports with both events, Headache and Pyrexia are concurrent in 52% of cases.
-    - **Media**
-        - Q: What share of Janssen cases have Headache and Pyrexia together?
-        - Claim: About 52% of Janssen cases have Headache and Pyrexia together.
-    - **Clinical**
-        - Q: How often do Headache and Pyrexia present together in Janssen patients?
-        - Claim: Headache and Pyrexia present together in roughly 52% of Janssen patients.
-- **REFUTED** example (filled, all registers):
-    - **Original**
-        - Q: What fraction of Janssen reports show Headache and Pyrexia together?
-        - Claim: In about 72% of Janssen reports, Headache and Pyrexia occur together.
-    - **Research**
-        - Q: Among Janssen reports with both events, what proportion show Headache and Pyrexia concurrently?
-        - Claim: Among Janssen reports with both events, Headache and Pyrexia are concurrent in 72% of cases.
-    - **Media**
-        - Q: What share of Janssen cases have Headache and Pyrexia together?
-        - Claim: About 72% of Janssen cases have Headache and Pyrexia together.
-    - **Clinical**
-        - Q: How often do Headache and Pyrexia present together in Janssen patients?
-        - Claim: Headache and Pyrexia present together in roughly 72% of Janssen patients.
-
 ## C-V3  (pairwise, vaccine, BOOL)
 - **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 184/361 (51.0%) fail)
 - **Qualified cores**: 374 viable | 90 supported-capable (true cases) | 271 refuted-capable
@@ -443,7 +362,7 @@ Templates whose worked example has a p-value that does not match the gold label 
 - **Conditioned counts**: k=150 / n=204  (rate 0.7353)
 - **Categorical test**: binomial exact (one-sided, greater), p = 6.043e-12 (significant)
     - *H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
+    - *how p is computed*: exact binomial vs the 1/2 chance null (pairwise precedes, co-occurs), ONE-SIDED in the observed direction (greater if the rate is above 0.5, less if below) so it corroborates the observed verdict, not the reverse
 - **95% CI**: [0.6708, 0.7911], effect size 0.49
 - **SUPPORTED** example (filled, all registers):
     - **Original**
@@ -560,82 +479,43 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: This patient progressed Asthenia → Injection site pain → Dizziness.
 
 ## S-V1  (sequence, vaccine, BOOL)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 215/236 (91.1%) fail)
-- **Qualified cores**: 275 viable | 62 supported-capable (true cases) | 236 refuted-capable
-- **Core**: events ['Headache', 'Hyperhidrosis', 'Pyrexia'], cohort Janssen
-- **Conditioned counts**: k=7 / n=13  (rate 0.5385)
-- **Categorical test**: binomial exact (one-sided, greater), p = 0.002398 (significant)
-    - *H0: P(ordering = Headache -> Hyperhidrosis -> Pyrexia) = 1/6 (chance rate among the 6 orderings)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
-- **Position-based test**: Friedman (Q=12.17 df=2; n=33 reports), p = 0.002276
-    - *H0: Headache, Hyperhidrosis, Pyrexia share one within-report rank distribution (no systematic ordering)*
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 188/192 (97.9%) fail)
+- **Qualified cores**: 275 viable | 192 supported-capable (true cases) | 192 refuted-capable
+- **Core**: events ['Fatigue', 'Nausea', 'Vomiting'], cohort Janssen
+- **Conditioned counts**: k=7 / n=8  (rate 0.875)
+- **Categorical test**: modal-vs-runner-up binomial (one-sided, greater), p = 0.03516 (significant)
+    - *H0: the Fatigue -> Nausea -> Vomiting ordering and the runner-up ordering are equally frequent (P = 0.5; no unique mode)*
+    - *how p is computed*: modal-vs-runner-up -- one-sided exact binomial of the modal cell's count vs the runner-up's (null 0.5): is the named most-common ordering/event significantly ahead of its nearest competitor? (verifies the mode, which GOF-vs-uniform cannot)
+- **Position-based test**: Friedman (Q=8.78 df=2; n=22 reports), p = 0.0124
+    - *H0: Fatigue, Nausea, Vomiting share one within-report rank distribution (no systematic ordering)*
     - *how p is computed*: Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums
-- **95% CI**: [0.2914, 0.7679], effect size 0.8067
+- **95% CI**: [0.5291, 0.9776], effect size 1.5778
 - **SUPPORTED** example (filled, all registers):
     - **Original**
-        - Q: After Janssen, do Headache, Pyrexia, Hyperhidrosis typically occur as Headache → Pyrexia → Hyperhidrosis?
-        - Claim: After Janssen, Headache, Pyrexia, Hyperhidrosis typically occur as Headache → Pyrexia → Hyperhidrosis.
+        - Q: After Janssen, is Nausea → Vomiting → Fatigue the most common ordering of Nausea, Vomiting, Fatigue?
+        - Claim: After Janssen, Nausea → Vomiting → Fatigue is the most common ordering of Nausea, Vomiting, Fatigue.
     - **Research**
-        - Q: In Janssen reports with all three events, does the observed ordering match Headache → Pyrexia → Hyperhidrosis in the majority?
-        - Claim: In Janssen reports with all three, the ordering matches Headache → Pyrexia → Hyperhidrosis in the majority.
+        - Q: In Janssen reports with all three events, is Nausea → Vomiting → Fatigue the single most frequent ordering?
+        - Claim: In Janssen reports with all three, Nausea → Vomiting → Fatigue is the single most frequent ordering.
     - **Media**
-        - Q: After Janssen, do people usually go Headache, then Pyrexia, then Hyperhidrosis?
-        - Claim: After Janssen, people usually go Headache, then Pyrexia, then Hyperhidrosis.
+        - Q: After Janssen, is Nausea, then Vomiting, then Fatigue the most common order?
+        - Claim: After Janssen, Nausea, then Vomiting, then Fatigue is the most common order.
     - **Clinical**
-        - Q: In Janssen recipients with all three, is the typical progression Headache → Pyrexia → Hyperhidrosis?
-        - Claim: In Janssen recipients with all three, the typical progression is Headache → Pyrexia → Hyperhidrosis.
+        - Q: In Janssen recipients with all three, is Nausea → Vomiting → Fatigue the most frequent progression?
+        - Claim: In Janssen recipients with all three, Nausea → Vomiting → Fatigue is the most frequent progression.
 - **REFUTED** example (filled, all registers):
     - **Original**
-        - Q: After Janssen, do Pyrexia, Headache, Hyperhidrosis typically occur as Pyrexia → Headache → Hyperhidrosis?
-        - Claim: After Janssen, Pyrexia, Headache, Hyperhidrosis typically occur as Pyrexia → Headache → Hyperhidrosis.
+        - Q: After Janssen, is Fatigue → Nausea → Vomiting the most common ordering of Fatigue, Nausea, Vomiting?
+        - Claim: After Janssen, Fatigue → Nausea → Vomiting is the most common ordering of Fatigue, Nausea, Vomiting.
     - **Research**
-        - Q: In Janssen reports with all three events, does the observed ordering match Pyrexia → Headache → Hyperhidrosis in the majority?
-        - Claim: In Janssen reports with all three, the ordering matches Pyrexia → Headache → Hyperhidrosis in the majority.
+        - Q: In Janssen reports with all three events, is Fatigue → Nausea → Vomiting the single most frequent ordering?
+        - Claim: In Janssen reports with all three, Fatigue → Nausea → Vomiting is the single most frequent ordering.
     - **Media**
-        - Q: After Janssen, do people usually go Pyrexia, then Headache, then Hyperhidrosis?
-        - Claim: After Janssen, people usually go Pyrexia, then Headache, then Hyperhidrosis.
+        - Q: After Janssen, is Fatigue, then Nausea, then Vomiting the most common order?
+        - Claim: After Janssen, Fatigue, then Nausea, then Vomiting is the most common order.
     - **Clinical**
-        - Q: In Janssen recipients with all three, is the typical progression Pyrexia → Headache → Hyperhidrosis?
-        - Claim: In Janssen recipients with all three, the typical progression is Pyrexia → Headache → Hyperhidrosis.
-
-## S-V2  (sequence, vaccine, PROP)
-- **Presented example**: — (no significance test: PROP / report-level) (gold-vs-significance over this template's cores: n/a fail)
-- **Qualified cores**: 275 viable | 275 supported-capable (true cases) | 275 refuted-capable
-- **Core**: events ['Chills', 'Fatigue', 'Headache'], cohort Janssen
-- **Conditioned counts**: k=8 / n=28  (rate 0.2857)
-- **Categorical test**: binomial exact (one-sided, greater), p = 0.08153 (not significant)
-    - *H0: P(ordering = Chills -> Fatigue -> Headache) = 1/6 (chance rate among the 6 orderings)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
-- **Position-based test**: Friedman (Q=7.71 df=2; n=88 reports), p = 0.02115
-    - *H0: Chills, Fatigue, Headache share one within-report rank distribution (no systematic ordering)*
-    - *how p is computed*: Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums
-- **95% CI**: [0.1525, 0.4706], effect size 0.2868
-- **SUPPORTED** example (filled, all registers):
-    - **Original**
-        - Q: What fraction of Janssen reports show the sequence Headache → Chills → Fatigue?
-        - Claim: In about 29% of Janssen reports, the sequence is Headache → Chills → Fatigue.
-    - **Research**
-        - Q: Among Janssen reports with all three events, what proportion show the ordering Headache → Chills → Fatigue?
-        - Claim: Among Janssen reports with all three events, 29% show Headache → Chills → Fatigue.
-    - **Media**
-        - Q: What share of Janssen cases show Headache → Chills → Fatigue?
-        - Claim: About 29% of Janssen cases show Headache → Chills → Fatigue.
-    - **Clinical**
-        - Q: How often do Janssen patients show Headache → Chills → Fatigue?
-        - Claim: Janssen patients show Headache → Chills → Fatigue in roughly 29% of cases.
-- **REFUTED** example (filled, all registers):
-    - **Original**
-        - Q: What fraction of Janssen reports show the sequence Headache → Chills → Fatigue?
-        - Claim: In about 49% of Janssen reports, the sequence is Headache → Chills → Fatigue.
-    - **Research**
-        - Q: Among Janssen reports with all three events, what proportion show the ordering Headache → Chills → Fatigue?
-        - Claim: Among Janssen reports with all three events, 49% show Headache → Chills → Fatigue.
-    - **Media**
-        - Q: What share of Janssen cases show Headache → Chills → Fatigue?
-        - Claim: About 49% of Janssen cases show Headache → Chills → Fatigue.
-    - **Clinical**
-        - Q: How often do Janssen patients show Headache → Chills → Fatigue?
-        - Claim: Janssen patients show Headache → Chills → Fatigue in roughly 49% of cases.
+        - Q: In Janssen recipients with all three, is Fatigue → Nausea → Vomiting the most frequent progression?
+        - Claim: In Janssen recipients with all three, Fatigue → Nausea → Vomiting is the most frequent progression.
 
 ## S-V3  (sequence, vaccine, CHOICE)
 - **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 180/192 (93.8%) fail)
@@ -982,43 +862,43 @@ Templates whose worked example has a p-value that does not match the gold label 
         - Claim: In Janssen patients, Pyrexia typically appears last.
 
 ## F-V3  (first_last, vaccine, BOOL)
-- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 31/82 (37.8%) fail)
-- **Qualified cores**: 82 viable | 2 supported-capable (true cases) | 82 refuted-capable
-- **Core**: events ['Headache', 'Injection site pain', 'Pyrexia'], cohort Janssen
-- **Conditioned counts**: k=20 / n=39  (rate 0.5128)
-- **Categorical test**: binomial exact (one-sided, greater), p = 0.0155 (significant)
-    - *H0: P(Headache is first) = 1/3 (chance rate among the 3 candidates)*
-    - *how p is computed*: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
-- **Position-based test**: Friedman (Q=10.36 df=2; n=39 reports), p = 0.005622
-    - *H0: Headache, Injection site pain, Pyrexia share one within-report rank distribution (no systematic ordering)*
+- **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 53/67 (79.1%) fail)
+- **Qualified cores**: 82 viable | 67 supported-capable (true cases) | 82 refuted-capable
+- **Core**: events ['Chills', 'Headache', 'Nausea'], cohort Janssen
+- **Conditioned counts**: k=17 / n=64  (rate 0.2656)
+- **Categorical test**: modal-vs-runner-up binomial (one-sided, greater), p = 0.03196 (significant)
+    - *H0: Chills and the runner-up event are equally often the first (P = 0.5; no unique most-common first event)*
+    - *how p is computed*: modal-vs-runner-up -- one-sided exact binomial of the modal cell's count vs the runner-up's (null 0.5): is the named most-common ordering/event significantly ahead of its nearest competitor? (verifies the mode, which GOF-vs-uniform cannot)
+- **Position-based test**: Friedman (Q=7.40 df=2; n=64 reports), p = 0.02477
+    - *H0: Chills, Headache, Nausea share one within-report rank distribution (no systematic ordering)*
     - *how p is computed*: Friedman -- rank the three events within each report (ties averaged), chi-square (df=2) on the rank sums
-- **95% CI**: [0.362, 0.6613], effect size 0.3655
+- **95% CI**: [0.173, 0.3848], effect size -0.148
 - **SUPPORTED** example (filled, all registers):
     - **Original**
-        - Q: After Janssen, is Injection site pain usually the first of Injection site pain, Headache, Pyrexia?
-        - Claim: After Janssen, Injection site pain is usually the first of Injection site pain, Headache, Pyrexia.
+        - Q: After Janssen, is Chills the most common first event among Chills, Headache, Nausea?
+        - Claim: After Janssen, Chills is the most common first event among Chills, Headache, Nausea.
     - **Research**
-        - Q: In Janssen reports with all three, is Injection site pain the earliest in the majority of cases?
-        - Claim: In Janssen reports with all three, Injection site pain is the earliest in the majority of cases.
+        - Q: In Janssen reports with all three, is Chills the single most frequent earliest event?
+        - Claim: In Janssen reports with all three, Chills is the single most frequent earliest event.
     - **Media**
-        - Q: After Janssen, does Injection site pain usually come first among Injection site pain, Headache, Pyrexia?
-        - Claim: After Janssen, Injection site pain usually comes first among Injection site pain, Headache, Pyrexia.
+        - Q: After Janssen, is Chills most often the first among Chills, Headache, Nausea?
+        - Claim: After Janssen, Chills is most often the first among Chills, Headache, Nausea.
     - **Clinical**
-        - Q: In Janssen patients, is Injection site pain usually the earliest of Injection site pain, Headache, Pyrexia?
-        - Claim: In Janssen patients, Injection site pain is usually the earliest of Injection site pain, Headache, Pyrexia.
+        - Q: In Janssen patients, is Chills the most frequent earliest of Chills, Headache, Nausea?
+        - Claim: In Janssen patients, Chills is the most frequent earliest of Chills, Headache, Nausea.
 - **REFUTED** example (filled, all registers):
     - **Original**
-        - Q: After Janssen, is Pyrexia usually the first of Pyrexia, Headache, Injection site pain?
-        - Claim: After Janssen, Pyrexia is usually the first of Pyrexia, Headache, Injection site pain.
+        - Q: After Janssen, is Headache the most common first event among Headache, Chills, Nausea?
+        - Claim: After Janssen, Headache is the most common first event among Headache, Chills, Nausea.
     - **Research**
-        - Q: In Janssen reports with all three, is Pyrexia the earliest in the majority of cases?
-        - Claim: In Janssen reports with all three, Pyrexia is the earliest in the majority of cases.
+        - Q: In Janssen reports with all three, is Headache the single most frequent earliest event?
+        - Claim: In Janssen reports with all three, Headache is the single most frequent earliest event.
     - **Media**
-        - Q: After Janssen, does Pyrexia usually come first among Pyrexia, Headache, Injection site pain?
-        - Claim: After Janssen, Pyrexia usually comes first among Pyrexia, Headache, Injection site pain.
+        - Q: After Janssen, is Headache most often the first among Headache, Chills, Nausea?
+        - Claim: After Janssen, Headache is most often the first among Headache, Chills, Nausea.
     - **Clinical**
-        - Q: In Janssen patients, is Pyrexia usually the earliest of Pyrexia, Headache, Injection site pain?
-        - Claim: In Janssen patients, Pyrexia is usually the earliest of Pyrexia, Headache, Injection site pain.
+        - Q: In Janssen patients, is Headache the most frequent earliest of Headache, Chills, Nausea?
+        - Claim: In Janssen patients, Headache is the most frequent earliest of Headache, Chills, Nausea.
 
 ## F-M1  (first_last, multi, BOOL)
 - **Presented example**: ✓ SUCCESSFUL (gold-vs-significance over this template's cores: 44/46 (95.7%) fail)
@@ -1113,7 +993,8 @@ Templates whose worked example has a p-value that does not match the gold label 
 
 ## Statistical methods (how each p-value is computed)
 
-- **Binomial exact**: exact binomial vs the chance null p0 (1/2 pairwise/co-occurs, 1/6 sequence, 1/3 first-among-3), ONE-SIDED in the observed direction (greater if the rate is above p0, less if below) so it corroborates the observed verdict, not the reverse
+- **Binomial exact**: exact binomial vs the 1/2 chance null (pairwise precedes, co-occurs), ONE-SIDED in the observed direction (greater if the rate is above 0.5, less if below) so it corroborates the observed verdict, not the reverse
+- **Modal-vs-runner-up binomial**: modal-vs-runner-up -- one-sided exact binomial of the modal cell's count vs the runner-up's (null 0.5): is the named most-common ordering/event significantly ahead of its nearest competitor? (verifies the mode, which GOF-vs-uniform cannot)
 - **Fisher exact**: Fisher exact on the 2x2 -- ONE-SIDED toward the higher-rate cohort for the directional multi_dir_* claims, TWO-SIDED for the multi_differ_* "do they differ" claims
 - **Multinomial GOF (exact)**: exact multinomial goodness-of-fit -- sum the multinomial probabilities of every table (same n) whose chi-square statistic vs uniform is >= the observed
 - **Multinomial GOF (chi-square)**: chi-square goodness-of-fit vs uniform (large-n approximation, used only when every expected cell >= 5)
@@ -1148,8 +1029,6 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 8 | Pain, Pyrexia | Pfizer | 16/35 | 0.368 | effect too weak (rate 0.46 vs null 0.50, n=35) |
 | 9 | Headache, Pain in extremity | Janssen | 39/80 | 0.456 | effect too weak (rate 0.49 vs null 0.50, n=80) |
 | 10 | Fatigue, Pyrexia | Moderna | 26/53 | 0.500 | effect too weak (rate 0.49 vs null 0.50, n=53) |
-
-### P-V2 — 0 processed (no categorical test: PROP/vaccine)
 
 ### P-V3 — 168 processed, 81 failed (81/168 (48.2%)); median n 29, median p 0.2307
 *Tested against — H0: P(Fatigue precedes Headache) = 0.5 (no directional preference among ordered reports)*
@@ -1217,8 +1096,6 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 9 | Chills, Fatigue | Pfizer | 37/76 | 0.454 | effect too weak (rate 0.49 vs null 0.50, n=76) |
 | 10 | Chills, Nausea | Pfizer | 27/53 | 0.500 | effect too weak (rate 0.51 vs null 0.50, n=53) |
 
-### C-V2 — 0 processed (no categorical test: PROP/vaccine)
-
 ### C-V3 — 361 processed, 184 failed (184/361 (51.0%)); median n 30, median p 0.2595
 *Tested against — H0: P(Chills and Pyrexia co-occur) = 0.5 (among reports containing both)*
 
@@ -1269,23 +1146,21 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 
 ### S-R1 — 0 processed (no categorical test: BOOL/report)
 
-### S-V1 — 236 processed, 215 failed (215/236 (91.1%)); median n 6, median p 0.1348
-*Tested against — H0: P(ordering = Headache -> Hyperhidrosis -> Pyrexia) = 1/6 (chance rate among the 6 orderings)*
+### S-V1 — 192 processed, 188 failed (188/192 (97.9%)); median n 7, median p 0.377
+*Tested against — H0: the Fatigue -> Nausea -> Vomiting ordering and the runner-up ordering are equally frequent (P = 0.5; no unique mode)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Fatigue, Nausea, Vomiting | Janssen | 7/8 | 0.000 | p=0.000 < 0.05 but n=8 below the significance min-n gate (10): verdict forced to insufficient |
-| 2 | Decreased appetite, Headache, Nausea | Janssen | 4/6 | 0.009 | p=0.009 < 0.05 but n=6 below the significance min-n gate (10): verdict forced to insufficient |
-| 3 | Chills, Diarrhoea, Fatigue | Janssen | 3/5 | 0.035 | p=0.035 < 0.05 but n=5 below the significance min-n gate (10): verdict forced to insufficient |
-| 4 | Dizziness, Headache, Pain in extremity | Janssen | 4/10 | 0.070 | n too small (n=10) to reject at a=0.05 |
-| 5 | Dyspnoea, Headache, Pain in extremity | Janssen | 3/7 | 0.096 | n too small (n=7) to reject at a=0.05 |
-| 6 | Chills, Headache, Myalgia | Janssen | 3/9 | 0.178 | small n and weak effect (rate 0.33 vs null 0.17, n=9) |
-| 7 | Nausea, Pain, Pain in extremity | Moderna | 2/5 | 0.196 | n too small (n=5) to reject at a=0.05 |
-| 8 | Feeling abnormal, Pain, Pyrexia | Janssen | 2/5 | 0.196 | n too small (n=5) to reject at a=0.05 |
-| 9 | Dyspnoea, Headache, Pyrexia | Janssen | 2/6 | 0.263 | small n and weak effect (rate 0.33 vs null 0.17, n=6) |
-| 10 | Chills, Injection site pain, Myalgia | Janssen | 1/5 | 0.598 | small n and weak effect (rate 0.20 vs null 0.17, n=5) |
-
-### S-V2 — 0 processed (no categorical test: PROP/vaccine)
+| 1 | Headache, Nausea, Pain in extremity | Pfizer | 6/7 | 0.063 | distribution too close to uniform / n small (n=7) |
+| 2 | Chills, Dizziness, Hyperhidrosis | Janssen | 4/5 | 0.188 | distribution too close to uniform / n small (n=5) |
+| 3 | Fatigue, Headache, Injection site pain | Janssen | 7/14 | 0.274 | distribution too close to uniform / n small (n=14) |
+| 4 | Dizziness, Nausea, Pyrexia | Janssen | 3/6 | 0.312 | distribution too close to uniform / n small (n=6) |
+| 5 | Injection site pain, Pain in extremity, Pyrexia | Janssen | 4/6 | 0.344 | distribution too close to uniform / n small (n=6) |
+| 6 | Arthralgia, Fatigue, Pain | Moderna | 2/5 | 0.500 | distribution too close to uniform / n small (n=5) |
+| 7 | Feeling abnormal, Headache, Pain | Janssen | 2/6 | 0.500 | distribution too close to uniform / n small (n=6) |
+| 8 | Arthralgia, Fatigue, Pyrexia | Pfizer | 3/6 | 0.500 | distribution too close to uniform / n small (n=6) |
+| 9 | Chills, Dizziness, Pain | Janssen | 3/5 | 0.500 | distribution too close to uniform / n small (n=5) |
+| 10 | Nausea, Pain, Pyrexia | Janssen | 3/9 | 0.500 | distribution too close to uniform / n small (n=9) |
 
 ### S-V3 — 192 processed, 180 failed (180/192 (93.8%)); median n 6, median p 0.213
 *Tested against — H0: the 6 orderings are equally likely -- uniform (no modal ordering)*
@@ -1405,21 +1280,21 @@ For each testable group, up to 10 failing cores -- a **definite** gold verdict (
 | 9 | Chills, Fatigue, Headache | Pfizer | 6/44 | 0.710 | distribution too close to uniform / n small (n=44) |
 | 10 | Headache, Nausea, Pyrexia | Janssen | 12/71 | 0.913 | distribution too close to uniform / n small (n=71) |
 
-### F-V3 — 82 processed, 31 failed (31/82 (37.8%)); median n 36, median p 0.198
-*Tested against — H0: P(Headache is first) = 1/3 (chance rate among the 3 candidates)*
+### F-V3 — 67 processed, 53 failed (53/67 (79.1%)); median n 42, median p 0.3036
+*Tested against — H0: Chills and the runner-up event are equally often the first (P = 0.5; no unique most-common first event)*
 
 | # | events | cohort | counts (k/n) | p | why it failed |
 |--:|---|---|---|--:|---|
-| 1 | Chills, Fatigue, Pain | Pfizer | 7/36 | 0.051 | effect too weak (rate 0.19 vs null 0.33, n=36) |
-| 2 | Dizziness, Fatigue, Nausea | Janssen | 8/38 | 0.072 | effect too weak (rate 0.21 vs null 0.33, n=38) |
-| 3 | Fatigue, Pain, Pyrexia | Moderna | 9/39 | 0.115 | effect too weak (rate 0.23 vs null 0.33, n=39) |
-| 4 | Dizziness, Nausea, Pyrexia | Janssen | 7/31 | 0.139 | effect too weak (rate 0.23 vs null 0.33, n=31) |
-| 5 | Chills, Pain in extremity, Pyrexia | Janssen | 10/40 | 0.171 | effect too weak (rate 0.25 vs null 0.33, n=40) |
-| 6 | Chills, Headache, Hyperhidrosis | Janssen | 9/35 | 0.221 | effect too weak (rate 0.26 vs null 0.33, n=35) |
-| 7 | Pain, Pain in extremity, Pyrexia | Janssen | 8/31 | 0.246 | effect too weak (rate 0.26 vs null 0.33, n=31) |
-| 8 | Fatigue, Headache, Myalgia | Janssen | 9/32 | 0.338 | effect too weak (rate 0.28 vs null 0.33, n=32) |
-| 9 | Chills, Dizziness, Nausea | Janssen | 12/39 | 0.440 | effect too weak (rate 0.31 vs null 0.33, n=39) |
-| 10 | Headache, Hyperhidrosis, Pyrexia | Janssen | 11/33 | 1.000 | effect too weak (rate 0.33 vs null 0.33, n=33) |
+| 1 | Fatigue, Headache, Pain in extremity | Moderna | 11/33 | 0.059 | distribution too close to uniform / n small (n=33) |
+| 2 | Fatigue, Headache, Myalgia | Janssen | 9/32 | 0.133 | distribution too close to uniform / n small (n=32) |
+| 3 | Chills, Nausea, Pain | Janssen | 12/46 | 0.180 | distribution too close to uniform / n small (n=46) |
+| 4 | Chills, Headache, Pain | Pfizer | 11/55 | 0.240 | distribution too close to uniform / n small (n=55) |
+| 5 | Headache, Myalgia, Pyrexia | Janssen | 7/38 | 0.274 | distribution too close to uniform / n small (n=38) |
+| 6 | Chills, Myalgia, Pyrexia | Janssen | 5/37 | 0.363 | distribution too close to uniform / n small (n=37) |
+| 7 | Headache, Nausea, Pain | Janssen | 8/63 | 0.395 | distribution too close to uniform / n small (n=63) |
+| 8 | Dizziness, Headache, Pyrexia | Janssen | 11/46 | 0.412 | distribution too close to uniform / n small (n=46) |
+| 9 | Chills, Fatigue, Headache | Moderna | 8/56 | 0.500 | distribution too close to uniform / n small (n=56) |
+| 10 | Chills, Headache, Pyrexia | Janssen | 22/116 | 0.500 | distribution too close to uniform / n small (n=116) |
 
 ### F-M1 — 46 processed, 44 failed (44/46 (95.7%)); median n 42, median p 0.5575
 *Tested against — H0: Pfizer and Moderna have the same first-event distribution (homogeneity)*
