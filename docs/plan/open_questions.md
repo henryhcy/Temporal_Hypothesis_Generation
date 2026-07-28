@@ -29,8 +29,10 @@ generating multi-vaccine instances. Currently uses the general n ≥ 10
 threshold, but may need tightening for "differ" verdicts.
 
 ### Verdict balance targets
-Currently aiming for roughly balanced supported/refuted, with a 10-20%
-insufficient slice. Exact targets per group not locked.
+RESOLVED (see `decisions.md` 2026-07-28): equal thirds (~1/3 supported,
+1/3 refuted, 1/3 insufficient), capped per group by S (~1.5*S budget), with the
+insufficient third spanning all sub-types (underpowered / sparse / not-locatable).
+Supersedes the provisional 45/45/10.
 
 ### Disconnected components in MedTempo
 Need to measure the rate. If common, the leveled-order representation
@@ -38,14 +40,13 @@ needs to handle multiple components per report. If rare (under 5%), can
 mark such reports as `insufficient` for cross-component hypotheses and
 proceed. Pending corpus survey.
 
-### Template replacement selection (PROP retirement + redundant backfill)
-Remove PROP (P-V2, C-V2, S-V2); S-V1/F-V3 reworded to "most common" (become
-twins of S-V3/F-V1) -- see `decisions.md` 2026-07-13. The corpus inventory is
-now DONE (2026-07-14): narrowed to **R1, R3, R4, R5** (R2/R6/R7/R8 removed --
-too thin / degenerate / a restated S-V4; see `decisions.md`). Still open before
-locking: which of P-V2 -> R3, C-V2 -> R5, plus R4/R1 to instantiate; the exact
-four-register YAML strings and gold-verdict rule per chosen group; and whether R6
-folds into the S-V4 fix.
+### New group definitions for R1/R3/R5 (selection now locked)
+Selection RESOLVED (see `decisions.md` 2026-07-28): adopt **R1, R3, R5** (drop
+R4); remove the 6 misaligned multi groups; roster -> 24. Still open before
+coding: confirm the three new groups' **IDs** (proposed P-V2=R3, C-V2=R5,
+P-V4=R1), **answer types** (BOOL vs CHOICE), and the exact **four-register
+wording**. R1's 4-event (A,B,C,D) slot is a new enumeration shape. R5 needs a new
+corpus helper (2x2 presence x presence with marginals).
 
 ## Framework
 

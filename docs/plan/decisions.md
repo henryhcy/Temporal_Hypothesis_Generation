@@ -521,3 +521,130 @@ Per-template counts are in `Findings_and_Templates.tex` / `Worked_Examples.md`.
   critique applies -- candidates to also move to modal-vs-runner-up for
   consistency with their S-V1 / F-V3 twins.
 - not-significant -> `insufficient` vs `refuted` mapping (deliberately deferred).
+
+---
+
+## Multi tier -> directional-only; adopt R1/R3/R5 (2026-07-28)
+
+### Remove the "differ" and "same" multi groups (6)
+Rationale: NHST can only REJECT the no-effect null, never ACCEPT it, so the
+existence/equivalence claim shapes do not map onto supported/refuted/insufficient.
+- "differ" (H1 = differ): significant -> supported, but not-significant can only
+  be `insufficient`, NEVER a clean `refuted` (failing to reject != proving equal).
+- "same" (the claim IS H0): can never be `supported` -- no evidence accrues FOR a
+  null. This is why S-M3 / F-M1 were already degenerate (0 significant cores).
+- Equivalence testing (TOST) could rescue "same" but needs an arbitrary margin
+  delta -- the same unmotivated-number defect that retired PROP.
+REMOVED: **P-M1, C-M1, S-M1** (rate/fraction differ), **S-M3, F-M1** (same),
+**F-M2** (differ-first). The multi tier is now DIRECTIONAL-ONLY, which is the
+fully hypothesis-aligned form: "higher after v1 than v2" makes both directions
+one-sided alternatives -> supported / refuted / insufficient all well-defined.
+KEPT (directional): P-M2, C-M2, S-M2, F-M3. No directional multi versions of the
+new R-groups are added (removal only).
+
+### Adopt R1, R3, R5 (single-cohort, principled null); drop R4
+Fills the retired PROP slots + the S-V1/S-V3, F-V3/F-V1 redundancy. R4 (gap
+magnitude) NOT adopted this round despite good inventory (kept simple). IDs and
+answer types CONFIRMED (2026-07-28) -- all three are **BOOL**:
+
+- **R3 conditional antecedent** = **P-V2** (freed), precedes family, vaccine
+  level, BOOL, events A,B,C. Claim: "In {v}, {A} precedes {B} more often than
+  {C} precedes {B}" (B's antecedent: A vs C). Gold: two independent proportions
+  p1=P(A<B), p2=P(C<B) via `precedes_fraction`; verdict directional (supported
+  p1>p2, refuted p1<p2, insufficient no sig gap); test = Fisher 2x2 one-sided
+  (reuses `_FISHER` dir path). 372 sig cores in inventory.
+- **R5 association vs independence** = **C-V2** (freed), co_occurs family,
+  vaccine level, BOOL, events A,B. Claim: "In {v}, {A} and {B} occur together
+  more than if independent." Gold: 2x2 presence x presence over the FULL cohort;
+  null = independence; test = chi-square/Fisher; supported = significant POSITIVE
+  association, refuted = significant negative, insufficient = n.s. Needs a new
+  corpus helper (co-presence + marginals). 144 sig cores.
+- **R1 pair-vs-pair precedence** = **P-V4** (new), precedes family, vaccine
+  level, BOOL, events A,B,C,D (NEW 4-event slot). Claim: "In {v}, {A} precedes
+  {B} more often than {C} precedes {D}." Gold: two independent proportions
+  p1=P(A<B), p2=P(C<D); directional verdict; Fisher 2x2 one-sided. 415 sig. The
+  two pairs need only each be viable in the cohort, not co-occur together.
+
+### Resulting roster: 24 groups
+27 (post-PROP) - 6 (multi removals) + 3 (R1/R3/R5) = 24. Every group is a
+well-posed hypothesis test: chance-baseline single-cohort, or directional
+two-cohort.
+
+### Still open before coding
+- IDs (P-V2=R3, C-V2=R5, P-V4=R1) and answer types (all BOOL) CONFIRMED
+  2026-07-28. Remaining: exact four-register wording per group (to draft during
+  implementation), and R5's new corpus helper + R1's 4-event enumeration shape.
+
+---
+
+## Verdict framework, alpha, and benchmark balance locked (2026-07-28)
+
+### Verdict = a three-decision directional test
+The gold verdict for a cohort-level claim is a three-decision (directional) test,
+not the textbook two-outcome NHST. The null is nondirectional (no effect:
+p = 0.5, or p1 = p2); the CLAIM asserts a direction, and the decision is:
+- p (claim's direction) < alpha            -> **supported**
+- else, p (opposite direction) < alpha     -> **refuted**
+- else (neither direction significant)     -> **insufficient**
+So supported/refuted both require significance (in opposite directions); a single
+claim-direction p-value cannot separate refuted from insufficient -- the opposite
+tail must be checked. `refuted` NEVER means "non-significant, therefore false"
+(that would be accepting H0); it means positive counter-evidence.
+
+Backing (for the write-up; verify exact cites): three-decision / directional
+testing -- Kaiser (1960, Psychological Review), Jones & Tukey (2000,
+Psychological Methods). Verification-label precedent -- FEVER
+(Supported/Refuted/NotEnoughInfo), NLI (entailment/contradiction/neutral).
+This supersedes the long-open "not-significant -> insufficient vs refuted"
+question: it is **insufficient** (refuted requires a significant opposite effect).
+
+### Alpha = 0.05 per side (one-sided directional), chosen for yield
+Directional tests run one-sided in the observed direction at alpha = 0.05.
+Rationale: it is a standard directional test AND maximizes usable cases (0.05 per
+side == a two-sided test at 0.10). Known property to document: choosing the
+direction after seeing the data makes the probability of declaring SOME direction
+under a true null ~0.10 (2*alpha), not 0.05; the wrong-SIGN error stays <= alpha/2.
+Tightening to 0.025 per side would pin the false-decision rate at 0.05 but shrink
+the decisive-case supply -- rejected in favor of more cases. Alpha = 0.05 per side
+fixed.
+
+### Benchmark verdict balance = equal thirds (supersedes 45/45/10)
+Target ~1/3 supported, 1/3 refuted, 1/3 insufficient per group. Rationale: the
+three-decision test has three equally-legitimate outcomes with no cost asymmetry,
+so equal mass caps every trivial policy ("always supported" = the yes-man,
+"always insufficient" = the cop-out) at 33% = chance. Weighting any class inflates
+that class's shortcut baseline (50/25/25 hands the yes-man 50%). Supersedes the
+provisional 45/45/10.
+
+- **Supply:** supported and refuted are both sourced from the S *decisive*
+  (significant) cases -- one claim per case, orientation chosen (with the effect
+  -> supported; against -> refuted). So supported + refuted <= S. Balanced thirds
+  => per-group budget ~= **1.5 * S** (S/2 each of supported/refuted, S/2
+  insufficient). Insufficient supply is effectively unlimited (downsample).
+- Draw supported and refuted from **different event combinations**, never the
+  exact A->B / B->A mirror of one case (that is a near-duplicate the model could
+  exploit).
+- **Availability cap** (existing principle): groups with tiny S (sequence:
+  S-V1=4, S-M2=0) cannot fill the target -- take what is available and flag as
+  starved; pairwise/co-occurs have S in the hundreds.
+
+### Insufficient must span ALL of its sub-types (required)
+The insufficient third is NOT one failure mode. It must include, and be labeled
+by, all three:
+1. **underpowered** -- events co-occur enough (n >= floor) but no significant
+   effect either way;
+2. **sparse** -- events co-occur but n < the min-n floor;
+3. **not-locatable** -- one or both events absent, or the events never co-occur,
+   so the conditioned n = 0.
+Note: enumeration currently builds cores only from co-occurring events, so
+(3) is NOT generated automatically -- not-locatable cases must be added
+DELIBERATELY (they test whether the framework returns insufficient instead of
+hallucinating a relationship). Caveat: under the unconditional association group
+C-V2, a strong dissociation (both events common, never together) is a significant
+NEGATIVE association -> **refuted**, not insufficient; the conditional groups give
+insufficient there.
+
+### Metrics
+Grade with per-class precision/recall and macro-F1 (not bare accuracy), so the
+result is robust to small deviations from exact thirds and the yes-man failure
+(refuted-recall -> 0) is always visible.
