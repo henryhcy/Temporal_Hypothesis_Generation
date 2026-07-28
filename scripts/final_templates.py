@@ -4,9 +4,9 @@ This is the single, self-contained statement of the FINAL benchmark template
 design after the significance redesign (see `docs/plan/decisions.md`,
 2026-07-13/14/28). It encodes the locked 24-group roster and its design rules,
 runs every testable group over the whole MedTempo corpus, and writes a short,
-readable Markdown report:
+readable standalone LaTeX report:
 
-    python scripts/final_templates.py   # -> docs/reference/Final_Template_Design.{md,tex}
+    python scripts/final_templates.py   # -> docs/reference/Final_Template_Design.tex
 
 Design rules encoded here (the "why" behind the roster):
 
@@ -148,156 +148,6 @@ def _rate(sig, cores):
     if sig is None or not cores:
         return "-"
     return f"{100 * sig / cores:.0f}%"
-
-
-def render(rows):
-    testable = [r for r in rows if r["kind"] != "report"]
-    n_report = sum(1 for r in rows if r["kind"] == "report")
-    live = [r for r in rows if r["kind"] == "pipeline"]
-    live_cores = sum(r["cores"] for r in live)
-    live_sig = sum(r["sig"] for r in live)
-    overall = 100 * live_sig / live_cores if live_cores else 0.0
-
-    out = []
-    out += [
-        "# Temporal Hypothesis Benchmark — Final Template Design", "",
-        "A benchmark for **temporal hypothesis verification** over clinical "
-        "narratives (VAERS reports in the MedTempo corpus). Each item gives a "
-        "framework a set of raw narratives plus one natural-language hypothesis "
-        "about a temporal pattern; the framework must locate the evidence and "
-        "return **supported / refuted / insufficient**. Gold labels are computed "
-        "deterministically from expert timelines.", "",
-        f"The design is **{len(rows)} template groups**: **{len(testable)} "
-        f"hypothesis-test groups** (scored below over the whole corpus) and "
-        f"**{n_report} report-level groups** (single-narrative facts, "
-        "deterministic — no test).", "",
-        "---", "",
-        "## Design principles", "",
-        "1. **Every cohort-level claim is a hypothesis test with a principled "
-        "null** — a chance baseline (a coin-flip 0.5, a uniform distribution, or "
-        "\"this ordering beats its nearest rival\"), or a comparison to another "
-        "group. No claim is graded by simply matching an observed number.",
-        "2. **Significance *is* the verdict (a three-decision test).** For a "
-        "claim that names a direction: significant in that direction → "
-        "*supported*; significant in the *opposite* direction → *refuted*; not "
-        "significant either way → *insufficient*. Refuted always means "
-        "significant counter-evidence, never merely \"unproven.\"",
-        "3. **Directional tests are one-sided at α = 0.05 per side**, in the "
-        "observed direction — chosen to maximize usable cases (under a true null "
-        "the chance of declaring *some* direction is ≈ 2α).",
-        "4. **No absolute-percentage claims.** \"In ~40% of reports…\" is a "
-        "fact-check with no null, so those groups were retired.",
-        "5. **Two-cohort comparisons are directional only** (\"higher after v1 "
-        "than v2\"). \"Do they differ / are they the same\" was removed: a "
-        "significance test can reject the no-difference null but never confirm "
-        "it, so those shapes have no clean supported/refuted.",
-        "6. **Report-level claims are exact facts** about one narrative — "
-        "deterministic, no statistics.", "",
-        "---", "",
-        "## The 24 templates", "",
-        "Scope: **report** = one narrative · **vaccine** = one cohort · "
-        "**multi** = two-cohort comparison.", "",
-    ]
-
-    by_fam: dict[str, list] = {}
-    for r in rows:
-        by_fam.setdefault(r["family"], []).append(r)
-    for fam in ["precedes", "co-occurs", "sequence", "first/last"]:
-        out += [f"### {fam}", "",
-                "| ID | Scope | Type | Hypothesis | Null / reference | Test |",
-                "|---|---|---|---|---|---|"]
-        for r in by_fam[fam]:
-            tag = " *(new)*" if r["kind"] in ("r1", "r3", "r5") else ""
-            out.append(f"| {r['id']}{tag} | {r['scope']} | {r['type']} | "
-                       f"{r['claim']} | {r['null']} | {r['test']} |")
-        out.append("")
-
-    new_sig = sum(r["sig"] for r in rows if r["kind"] in ("r1", "r3", "r5"))
-    total_dec = live_sig + new_sig
-    balanced = round(1.5 * total_dec)
-    half = round(total_dec / 2)
-    out += [
-        "---", "",
-        "## Whole-corpus results", "",
-        "For every **case** — one distinct event-combination asked about in a "
-        "cohort — we run its three-decision test over all 3,166 reports. A case "
-        "is **decisive** when the test is significant: it can then be posed as a "
-        "*supported* claim (oriented with the effect) or a *refuted* one "
-        "(oriented against it). An **indecisive** case (not significant either "
-        "way) can only be *insufficient*. So the number that matters per "
-        "template is **S = decisive cases** — the shared resource behind both "
-        "supported and refuted. **Median n** = median reports behind one case.",
-        "",
-        f"**Headline:** the cohort-level groups supply **{total_dec:,} decisive "
-        f"cases**. Sampled to an equal ⅓ / ⅓ / ⅓ verdict mix (one claim per "
-        f"decisive case), that is a balanced benchmark of **≈ {balanced:,} "
-        f"items** — about {half:,} supported + {half:,} refuted from the "
-        f"decisive cases, plus an equal insufficient slice. Supply is dominated "
-        "by the pairwise/co-occurs groups; sequence and multi groups are thin "
-        "(gradient below). New-group counts *(new)* are candidate-inventory "
-        "ceilings.", "",
-        "| ID | Scope | Test | Decisive cases (S) | Balanced items (≈1.5·S) | Median n |",
-        "|---|---|---|--:|--:|--:|",
-    ]
-    for r in testable:
-        star = " *(new)*" if r["kind"] in ("r1", "r3", "r5") else ""
-        ss = r["sig"]
-        out.append(f"| {r['id']}{star} | {r['scope']} | {r['test']} | "
-                   f"{ss:,} | {round(1.5*ss):,} | {r['medn']} |")
-    out.append("")
-
-    out += ["### Decisive-case supply by family (live groups)", "",
-            "| Family | Cases | Decisive (S) | Decisive rate |",
-            "|---|--:|--:|--:|"]
-    for fam in ["precedes", "co-occurs", "sequence", "first/last"]:
-        fl = [r for r in by_fam[fam] if r["kind"] == "pipeline"]
-        cc = sum(r["cores"] for r in fl)
-        ss = sum(r["sig"] for r in fl)
-        if cc:
-            out.append(f"| {fam} | {cc:,} | {ss:,} | {100*ss/cc:.0f}% |")
-    out += ["",
-            "> **Reading the gradient.** Pairwise/co-occurs questions rest on "
-            "~30 reports each, so most cases are decisive; sequence and "
-            "two-cohort questions slice the corpus down to ~6–8 reports, so most "
-            "cases are indecisive. This is a property of the corpus, not the "
-            "tests — it is exactly what makes the verdicts non-trivial.", "",
-            "### Benchmark composition (target)", "",
-            "- **Verdict mix:** ~1/3 supported, 1/3 refuted, 1/3 insufficient "
-            "per group — equal thirds, so every trivial policy (always-supported "
-            "\"yes-man,\" always-insufficient) scores only ~33%.",
-            "- **Sourcing:** supported and refuted are drawn from the decisive "
-            "cases, one claim per case and from *different* event combinations "
-            "(never the A→B / B→A mirror of a single case). Budget per group "
-            "≈ 1.5·S; groups with tiny S (sequence) are taken in full and "
-            "flagged as starved.",
-            "- **Insufficient spans three kinds:** *underpowered* (co-occur "
-            "enough, no significant effect), *sparse* (co-occur but below the "
-            "sample-size floor), and *not-locatable* (events absent or never "
-            "co-occurring, n = 0). The last is added deliberately — it tests "
-            "that the framework answers \"insufficient\" instead of inventing a "
-            "relationship.",
-            "- **Grading:** per-class precision/recall and macro-F1, not bare "
-            "accuracy.", ""]
-
-    out += ["---", "", "## What changed in the redesign", "",
-            "The roster went from 30 → **24** groups. Retired:", "",
-            "| Groups | Shape | Why removed |", "|---|---|---|"]
-    for grp, shape, why in RETIRED:
-        out.append(f"| {grp} | {shape} | {why} |")
-    out += ["",
-            "Added three single-cohort groups with principled nulls: **P-V2** "
-            "(does A precede B more than C does?), **P-V4** (does one pair's "
-            "ordering beat another's?), **C-V2** (are A and B associated beyond "
-            "chance?). The freed **P-V2 / C-V2** IDs are reassigned to these new "
-            "groups (the retired PROP claims no longer exist); **P-V4** is a new "
-            "ID. Reworded **S-V1 / F-V3** from vague \"typically\" to a testable "
-            "\"most common\" (verified against the nearest rival).", "",
-            "> New-group counts (P-V2, P-V4, C-V2) come from the candidate "
-            "inventory (full corpus, most-frequent-events enumeration) and are "
-            "ceilings pending pipeline integration; their **decidable rates** "
-            "are the comparable figure. C-V2's association test spans the entire "
-            "cohort (~1,000 reports), hence its large median n.", ""]
-    return "\n".join(out) + "\n"
 
 
 # --------------------------------------------------------------------------
@@ -534,8 +384,8 @@ def main():
     conn.close()
 
     ref = _REPO / "docs" / "reference"
-    (ref / "Final_Template_Design.md").write_text(render(rows), encoding="utf-8")
-    (ref / "Final_Template_Design.tex").write_text(render_tex(rows), encoding="utf-8")
+    out_tex = ref / "Final_Template_Design.tex"
+    out_tex.write_text(render_tex(rows), encoding="utf-8")
 
     print(f"{'ID':6}{'scope':8}{'cases':>8}{'sig':>7}{'rate':>7}{'medn':>6}")
     for r in rows:
@@ -543,8 +393,7 @@ def main():
         medn = "-" if r["medn"] is None else r["medn"]
         print(f"{r['id']:6}{r['scope']:8}{r['cores']:8,}"
               f"{(r['sig'] if r['sig'] is not None else 0):7,}{rate:>7}{medn:>6}")
-    print(f"\nWrote {ref / 'Final_Template_Design.md'}")
-    print(f"Wrote {ref / 'Final_Template_Design.tex'}")
+    print(f"\nWrote {out_tex}")
 
 
 if __name__ == "__main__":
