@@ -38,10 +38,11 @@ FILES = ["Findings_and_Templates.tex", "Final_Template_Design.tex"]
 
 
 def _git(clone: Path, *args: str) -> str:
-    return subprocess.run(
-        ["git", "-C", str(clone), *args],
-        check=True, capture_output=True, text=True,
-    ).stdout.strip()
+    r = subprocess.run(["git", "-C", str(clone), *args],
+                       capture_output=True, text=True)
+    if r.returncode != 0:
+        sys.exit(f"git {' '.join(args)} failed:\n{r.stderr.strip()}")
+    return r.stdout.strip()
 
 
 def main() -> int:
@@ -79,10 +80,14 @@ def main() -> int:
     _git(clone, "commit", "-m", args.message)
     print("committed to the Overleaf clone.")
     if args.push:
-        print(_git(clone, "push") or "pushed to Overleaf.")
+        # rebase on any Overleaf-side edits first so the push can't be rejected;
+        # the generated files are one-way, so there is nothing to conflict with.
+        _git(clone, "pull", "--rebase", "--autostash")
+        _git(clone, "push")
+        print("pushed to Overleaf.")
     else:
-        print("not pushed. review, then: git -C "
-              f"{clone} push   (or re-run with --push)")
+        print(f"not pushed. review, then re-run with --push (or: git -C {clone} "
+              "pull --rebase && git -C ... push)")
     return 0
 
 
