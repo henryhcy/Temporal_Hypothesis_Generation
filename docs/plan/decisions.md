@@ -648,3 +648,98 @@ insufficient there.
 Grade with per-class precision/recall and macro-F1 (not bare accuracy), so the
 result is robust to small deviations from exact thirds and the yes-man failure
 (refuted-recall -> 0) is always visible.
+
+---
+
+## Implemented: three-decision labeler + shared min-n gate (2026-08-04)
+
+Implements the 2026-07-28 verdict framework in code. New module
+`core/verdict.py`; `core/answers.py` rewired; `scripts/run_verdict_labels.py`
+emits the per-group label distribution (`data/pilot/verdict_labels.{md,json}`).
+
+### Both tails are now computed, always
+`core_significance` used to run one one-sided test in the OBSERVED direction.
+That cannot express the three-decision rule: one p-value cannot tell `refuted`
+(significant counter-evidence) from `insufficient` (nothing significant either
+way). Every directional mode now returns `p_claim` (the claim's direction) and
+`p_opposite`, and `verdict.three_decision` maps the pair to the label. The two
+tails are provably mutually exclusive at any alpha < 0.5, so the check order is
+cosmetic. The claim direction defaults to the core's canonical orientation;
+`named=` labels an argmax claim naming any other cell, which is how a refuted
+instance is built from a real core.
+
+### Insufficient sub-types are labeled at the source
+`three_decision` returns the sub-type the 07-28 decision requires:
+`underpowered` (clears the floor, nothing significant), `sparse` (below the
+family floor), `not_locatable` (n = 0). KNOWN GAP: the corpus fraction helpers
+return None below the enumeration viability floor, DROPPING n, so a sparse core
+and a not-locatable one are indistinguishable downstream -- 3,616 cores land in
+an unlabeled bucket. Generating the deliberate `not_locatable` third needs those
+helpers to report n even below the floor. Sub-type is left None rather than
+guessed.
+
+### Non-directional shapes are flagged, not forced
+The omnibus GOF / homogeneity modes and the "differ"/"same" multi shapes have no
+directional alternative, so no three-decision verdict exists for them. They are
+labeled `insufficient` + `non_directional` rather than pushed into a verdict.
+This is the same defect the 07-28 roster decision retires the multi groups for;
+it now also lands on S-V3, S-V4, F-V1, F-V2 (all GOF-vs-uniform), which is the
+deferred 2026-07-14 "move the CHOICE groups to modal-vs-runner-up" call, now
+forced. See `open_questions.md`.
+
+### Gate = the shared family floor (was a blanket n >= 10)
+`significance.MIN_N = 10` no longer gates any label; `core.min_n.min_n_gate`
+(20 pairwise/co-occurs, 5 sequence, 30 first/last) does, on the CORE's
+conditioned denominator, per the 05 "one helper, applied in one place" rule. The
+private `_MODAL_RUNNER_MIN_N = 5` floor on (top + runner-up) is gone with it.
+`significance_verdict` survives as a raw two-outcome helper, documented as not
+the label.
+
+**This is a net LOSS of decisive cores, not the free gain sec.5 of
+07_significance_findings anticipated** -- measured over the full corpus:
+1,199 cores were decisive before and are not now (1,075 to the tightened floor,
+124 to non-directional shapes); **0 gained**. The sec.5 "114 sequence cores
+blocked by the n-gate" recovery is MOOT: the 2026-07-14 modal-vs-runner-up
+redesign already replaced that test with a 2-cell one floored at 5.
+The floor choice, not alpha or the test, is now the binding constraint on
+supply. NOT LOCKED -- see `open_questions.md`.
+
+---
+
+## LOCKED + implemented: S-M2 removed as power-dead (2026-08-04)
+
+**S-M2** (`multi_dir_sequence`, "A -> B -> C is more common after {v1} than
+{v2}") is REMOVED. Evidence (`07_significance_findings.md` sec.10, measured over
+all 90 computable cores):
+
+- **the best directional p across every core is 0.0580** -- not one clears
+  alpha; 3 cores reach p < 0.10, 6 reach p < 0.20;
+- S = 0 at **every** floor from 5 to 40, so this is not the min-n question;
+- 0/90 cores are combinatorially incapable (perfect separation would give
+  p ~ 0.0002) -- the corpus simply never separates that cleanly at n ~ 6;
+- cause: conditioning on *this triple* x *strict order* x *this vaccine* leaves
+  a median of 6 orderable reports per cohort, and Fisher on 6-vs-9 resolves
+  nothing.
+
+Rejected alternative: reworking it as the position test (Mann-Whitney on the
+focal event's within-triple rank over all co-present reports, median n = 21)
+yields 6/90 decisive -- live but still starved, and it silently changes the
+claim from an ordering-frequency claim to a rank claim. Not worth a group slot.
+
+Distinguish this from **F-M3**, the other kept-but-S=0 multi group: F-M3 has 19
+decisive cores at floor 10 and 5 at floor 20, dying only at the first/last floor
+of 30. F-M3 is a FLOOR casualty and the open floor decision can revive it; S-M2
+cannot be revived by any floor. Do not remove them for the same reason.
+
+Removed from `data/templates/sequence.yaml`, `MODE_BY_GROUP`, the
+`_MULTI_TRIPLE_MODES` / `_build_multi_core` / `feasible_polarities` / `realize`
+branches, `_FISHER` (`core/answers.py`), and the pilot group list. The
+`multi_dir_sequence` mode no longer exists. Roster: 27 -> **26** as coded
+(the 2026-07-28 removals of P-M1/C-M1/S-M1/S-M3/F-M1/F-M2 and the R1/R3/R5
+additions are still pending, which will take it to 23).
+
+**Consequence to face during the roster migration:** with S-M1/S-M2/S-M3 gone the
+sequence family has NO multi tier, and its entire cohort-level supply is S-V1's
+4 decisive cores (S-V3/S-V4 being non-directional). Whether the sequence family
+survives as more than a report-level group is now an open question, not a
+detail -- see `open_questions.md`.

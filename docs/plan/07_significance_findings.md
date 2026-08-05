@@ -164,6 +164,16 @@ p. But the **sequence family viability floor is 5**. So sequence cores with
 This is a `decisions.md`-level reconciliation (family floor vs significance
 MIN_N) — not yet applied.
 
+> **Update (2026-08-04): this recovery is MOOT, and the reconciliation is a net
+> loss.** The 2026-07-14 redesign already replaced the sequence test with
+> modal-vs-runner-up on a 2-cell table floored at 5, so the 114 cores were
+> recovered by that change, not by a gate move. Applying the shared family
+> floors (20 / 5 / 30) in place of the blanket 10 measures **0 cores gained and
+> 1,075 lost** — pairwise −721 (floor 10→20) and first/last −354 (floor 10→30);
+> sequence loses none. Numbers and a floor sweep: `data/pilot/verdict_labels.md`
+> (`scripts/run_verdict_labels.py`). The floor is now the binding constraint on
+> supply; the choice is open in `open_questions.md`.
+
 ---
 
 ## 6. Levers to improve the undersized (starved) groups
@@ -264,12 +274,66 @@ into `docs/reference/Worked_Examples.md` and `Findings_and_Templates.tex`:
 
 ## 9. Open decisions & next step
 
+> **Update (2026-08-04):** the labeler is built (`core/verdict.py`), and the
+> go/no-go artifact below now exists as `data/pilot/verdict_labels.md`. Headline:
+> **587 decisive cores across all 27 groups**, and **12 groups at S = 0** — six
+> of them the multi groups the 2026-07-28 roster decision already retires, plus
+> S-V3/S-V4/F-V1/F-V2 (non-directional) and S-M2/F-M3 (genuinely underpowered).
+> Live groups and their ~1.5·S budgets: C-V1/C-V3 266 each, P-V1/P-V3 130 each,
+> C-M2 34, P-M2 27, F-V3 21, S-V1 6.
+
 **Open:**
 - not-significant → `insufficient` (recommended) or `refuted`.
+  *(RESOLVED 2026-07-28: `insufficient`. Implemented 2026-08-04.)*
 - Exact reworded claim strings per register for the sequence/first BOOL groups.
 - Lower the sequence significance n-gate 10 → 5? (recovers 114 cores).
 - Fate of the zero-supported groups (S-M1/2/3, F-M3): position-test driver +
   categories, or drop/merge.
+
+---
+
+## 10. S-M2 is not gate-starved, it is power-dead (2026-08-04)
+
+S-M2 (`multi_dir_sequence`: "A→B→C is more common after {v1} than after {v2}")
+returns S = 0 at **every** floor from 5 to 40. Measured over all 90 computable
+cores:
+
+| | value |
+|---|---|
+| cores, computable / enumerated | 90 / 387 |
+| n per cohort (min/median/max) | v1 5 / **6** / 13 · v2 5 / **9.5** / 28 |
+| **best directional p across all 90 cores** | **0.0580** |
+| cores with p < 0.10 | 3 |
+| cores with p < 0.20 | 6 |
+| cores where perfect separation could not reach 0.05 | 0 / 90 |
+
+The last row matters: this is **not** a combinatorial impossibility (a
+hypothetical 6/6-vs-0/8 split would give p ≈ 0.0002). The corpus simply never
+produces separation that clean at n ≈ 6. Nor is it the min-n gate — the sequence
+floor is 5 and these cores sit at n = 5–13. Nor is it alpha: the single best core
+misses at 0.058, and moving alpha to catch one core is not a design.
+
+The cause is the §2 funnel at its narrowest: conditioning on *this exact triple*
+× *strict order* × *this vaccine* leaves ~6 reports per cohort, and a two-cohort
+Fisher test on 6-vs-9 cannot resolve anything short of near-perfect separation.
+
+**Position-test alternative (the §6 lever 2):** Mann-Whitney on the focal event's
+within-triple rank runs on all co-present reports (median n = **21**, not 6) and
+yields **6 / 90 decisive** — live, but still starved, and it changes the claim
+from an ordering-frequency claim to a rank claim ("A tends to occur earlier
+after {v1} than after {v2}").
+
+**Contrast with F-M3**, the other kept-but-S=0 multi group: F-M3 has 19 decisive
+cores at floor 10 and 5 at floor 20 — it dies at the first/last floor of 30, so
+it is a *floor* casualty and the floor decision can revive it. S-M2 cannot be
+revived by any floor.
+
+**Consequence if S-M2 goes:** the sequence family loses its entire multi tier
+(S-M1/S-M2/S-M3 all gone) and the whole cohort-level sequence supply reduces to
+S-V1's 4 decisive cores, with S-V3/S-V4 non-directional. The sequence tier as a
+whole is the finding here, not just S-M2.
+
+---
 
 **Recommended next step:** lock the not-significant mapping, then **prototype the
 full significance-as-verdict labeling** (folding in the reworded chance-nulls,
