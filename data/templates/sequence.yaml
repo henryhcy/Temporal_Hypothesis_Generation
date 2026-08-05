@@ -120,29 +120,6 @@ groups:
     clinical:
       question: Do {v1} and {v2} patients differ in how often they follow {A} → {B} → {C}?
       claim: '{v1} and {v2} recipients differ in the {A} → {B} → {C} rate.'
-- id: S-M2
-  primitive: sequence
-  level: multi
-  answer_type: CHOICE
-  slots:
-  - A
-  - B
-  - C
-  - v1
-  - v2
-  variants:
-    original:
-      question: Is the sequence {A} → {B} → {C} more common after {v1} or {v2}?
-      claim: The sequence {A} → {B} → {C} is more common after {v1} than {v2}.
-    research:
-      question: Between {v1} and {v2}, which cohort shows a higher proportion of {A} → {B} → {C}?
-      claim: '{v1} shows a higher proportion of {A} → {B} → {C} than {v2}.'
-    media:
-      question: Is {A} → {B} → {C} more common after {v1} or {v2}?
-      claim: '{A} → {B} → {C} is more common after {v1} than {v2}.'
-    clinical:
-      question: In which group is {A} → {B} → {C} more common, {v1} or {v2} recipients?
-      claim: '{A} → {B} → {C} is more common in {v1} recipients.'
 - id: S-M3
   primitive: sequence
   level: multi

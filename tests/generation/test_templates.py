@@ -9,10 +9,11 @@ from temporal_hypo.generation.templates import FORMATS, REGISTERS, load_groups, 
 
 def test_load_all_groups():
     groups = load_groups()
-    assert len(groups) == 27  # 30 minus the retired PROP groups P-V2, C-V2, S-V2
+    # 30 - the retired PROP groups (P-V2, C-V2, S-V2) - S-M2 (power-dead)
+    assert len(groups) == 26
     for gid in ("P-V1", "C-V3", "S-V3", "F-M3", "P-R1"):
         assert gid in groups
-    for gid in ("P-V2", "C-V2", "S-V2"):
+    for gid in ("P-V2", "C-V2", "S-V2", "S-M2"):
         assert gid not in groups
 
 

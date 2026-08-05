@@ -78,7 +78,6 @@ ROSTER = [
     ("S-V1", "sequence", "vaccine", "BOOL", "A -> B -> C is the most common ordering", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
     ("S-V3", "sequence", "vaccine", "CHOICE", "the most common ordering of A, B, C", "uniform (6 orderings)", "multinomial GOF", "pipeline"),
     ("S-V4", "sequence", "vaccine", "BOOL", "the ordering of A, B, C is consistent across reports", "uniform (6 orderings)", "multinomial GOF", "pipeline"),
-    ("S-M2", "sequence", "multi", "CHOICE", "A -> B -> C more common after v1 than v2", "p1 = p2", "Fisher 2x2 (1-sided)", "pipeline"),
     # --- first / last ---
     ("F-R1", "first/last", "report", "CHOICE", "which occurs first in this report", "-", "exact", "report"),
     ("F-R2", "first/last", "report", "CHOICE", "which occurs last in this report", "-", "exact", "report"),

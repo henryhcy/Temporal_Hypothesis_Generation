@@ -225,9 +225,12 @@ the viable cores, not the reports (all 3{,}166 are used). Slicing the corpus int
 exact triple, this exact vaccine pair, strictly ordered'' leaves a median effective
 sample of $n\approx30$ (pairwise), $\approx6$ (sequence), and $\approx7$--$8$ per cohort
 (multi-vaccine) --- and that gradient is the significance gradient
-(46\%$\to$8\%$\to$0\%). Four groups (S-M1, S-M2, S-M3, F-M3) have \textbf{zero}
+(46\%$\to$8\%$\to$0\%). Four groups (S-M1, S-M2, S-M3, F-M3) had \textbf{zero}
 significant cores. A larger per-group budget cannot help: it caps how many enumerated
-cores are kept, not how many reports stand behind a question.""")
+cores are kept, not how many reports stand behind a question. S-M2 was
+\textbf{removed} on 2026-08-04: across all 90 of its computable cores the best
+directional $p$ was $0.058$, so no min-n floor and no admissible $\alpha$ could
+make it produce a supported or refuted item.""")
 
     doc.append(r"""\paragraph{Design response.} (i) Significance-as-verdict makes the
 supported/refuted verdict and the significance test coincide. (ii) Every claim must rest

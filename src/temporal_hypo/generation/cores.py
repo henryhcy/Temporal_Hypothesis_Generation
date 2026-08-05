@@ -55,7 +55,7 @@ _VACCINE_TRIPLE_MODES = {
     "first_choice", "last_choice", "first_bool",
 }
 _MULTI_TRIPLE_MODES = {
-    "multi_differ_sequence", "multi_dir_sequence", "multi_same_modal_order",
+    "multi_differ_sequence", "multi_same_modal_order",
     "multi_same_first", "multi_differ_first", "multi_dir_first",
 }
 
@@ -81,7 +81,6 @@ MODE_BY_GROUP: dict[str, str] = {
     "S-V3": "modal_choice",
     "S-V4": "consistency_bool",
     "S-M1": "multi_differ_sequence",
-    "S-M2": "multi_dir_sequence",
     "S-M3": "multi_same_modal_order",
     # first / last
     "F-R1": "rep_first_choice",
@@ -326,7 +325,7 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
 
     if mode in ("multi_differ_precedes", "multi_dir_precedes",
                 "multi_differ_cooccurs", "multi_dir_cooccurs",
-                "multi_differ_sequence", "multi_dir_sequence"):
+                "multi_differ_sequence"):
         r1 = _single_fraction(index, mode, combo, c1)
         r2 = _single_fraction(index, mode, combo, c2)
         if r1 is None or r2 is None:
@@ -616,8 +615,7 @@ def feasible_polarities(core: ViableCore) -> set[str]:
     elif m in ("multi_differ_precedes", "multi_differ_cooccurs",
                "multi_differ_sequence"):
         out |= {core.natural_verdict}
-    elif m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_sequence",
-               "multi_dir_first"):
+    elif m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first"):
         if core.proportion is not None and core.proportion2 is not None \
                 and abs(core.proportion - core.proportion2) > _HALF:
             out |= {"supported", "refuted"}
@@ -672,8 +670,7 @@ def realize(core: ViableCore, polarity: str) -> InstanceFacts:
     if m in ("multi_differ_precedes", "multi_differ_cooccurs",
              "multi_differ_sequence"):
         return _realize_multi_differ(core, polarity)
-    if m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_sequence",
-             "multi_dir_first"):
+    if m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first"):
         return _realize_multi_dir(core, polarity)
     if m in ("multi_same_first", "multi_differ_first", "multi_same_modal_order"):
         return _realize_multi_categorical(core, polarity)
