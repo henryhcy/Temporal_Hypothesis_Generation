@@ -22,11 +22,10 @@ Test families (exact tests preferred over normal approximations):
   Guard: expected cell counts >= 5; when violated, a seeded Monte-Carlo p-value
   is used instead of the asymptotic chi-square.
 
-The significance *verdict* is ``"significant"`` if ``p < 0.05`` AND the minimum-n
-threshold is met, else ``"insufficient"``. Alpha = 0.05 throughout.
-
-These are annotations on the gold value; the benchmark label stays the
-``gold_verdict`` computed by the locked verdict rules in ``core.aggregation``.
+This module supplies p-values only. The benchmark LABEL is produced by
+``core.verdict.three_decision``, which takes both one-sided tails and applies the
+shared family min-n gate (``core.min_n``) to return
+supported / refuted / insufficient. Alpha = 0.05 per side throughout.
 """
 
 from __future__ import annotations
@@ -34,7 +33,11 @@ from __future__ import annotations
 import math
 from typing import Sequence
 
-ALPHA = 0.05
+ALPHA = 0.05           # per SIDE: the directional tests are one-sided
+# Legacy blanket floor. Superseded for labeling by the shared family floors in
+# `core.min_n` (pairwise/co-occurs 20, sequence 5, first/last 30), which
+# `core.verdict.three_decision` applies. Kept only for the raw
+# `significance_verdict` helper below and its callers outside the label path.
 MIN_N = 10
 MIN_EXPECTED = 5.0  # asymptotic chi-square guard; below this, Monte-Carlo
 _REL_TOL = 1e-7     # tolerance when comparing pmf tails for exact tests
@@ -379,7 +382,13 @@ def contingency_test(table: Sequence[Sequence[int]],
 
 def significance_verdict(p: float | None, n: int | None,
                          *, min_n: int = MIN_N, alpha: float = ALPHA) -> str:
-    """'significant' if p < alpha AND n >= min_n, else 'insufficient'."""
+    """'significant' if p < alpha AND n >= min_n, else 'insufficient'.
+
+    Raw two-outcome check on a single p-value. This is NOT the benchmark label:
+    one p-value cannot separate ``refuted`` (significant counter-evidence) from
+    ``insufficient`` (no significant effect either way). Use
+    ``core.verdict.three_decision`` for anything that labels an instance.
+    """
     if p is None or n is None or n < min_n:
         return "insufficient"
     return "significant" if p < alpha else "insufficient"

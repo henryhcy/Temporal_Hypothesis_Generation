@@ -18,6 +18,11 @@ carries the same fields:
 
 - ``core_significance(core)`` -- the p-value + significant flag for a core.
 - ``answer_key(core)`` -- the CHOICE option set and correct option.
+
+Since the 2026-07-28 three-decision decision every directional mode reports BOTH
+one-sided tails (``p_claim`` / ``p_opposite``), because the claim direction alone
+cannot separate ``refuted`` from ``insufficient``; ``core_decision`` turns the
+pair into the labeled verdict via ``core.verdict.three_decision``.
 """
 
 from __future__ import annotations
@@ -27,6 +32,7 @@ from itertools import permutations
 from typing import Sequence
 
 from temporal_hypo.core import significance as sig
+from temporal_hypo.core import verdict as vd
 from temporal_hypo.generation import cores as _cores
 from temporal_hypo.generation.confidence import (
     ci_width,
@@ -55,12 +61,16 @@ _BINOM_NULL = {
 # binomial of the top cell's count vs the runner-up's (null 0.5). Verifies the
 # NAMED ordering/event is the mode (which GOF-vs-uniform cannot).
 _MODAL_RUNNER = {"seq_bool", "first_bool"}
-_MODAL_RUNNER_MIN_N = 5   # top+runner floor; exact binomial is valid at small n
+# NOTE: the old private `_MODAL_RUNNER_MIN_N = 5` floor on (top + runner-up) is
+# gone. Since 2026-07-28 every mode is gated by the SHARED family floor
+# (core.min_n) on the CORE's conditioned denominator, which is what "is there
+# enough data behind this question" actually means; the exact binomial itself
+# needs no minimum.
 # Two-proportion modes -> Fisher exact on the 2x2.
 _FISHER = {
     "multi_differ_precedes", "multi_dir_precedes",
     "multi_differ_cooccurs", "multi_dir_cooccurs",
-    "multi_differ_sequence", "multi_dir_sequence",
+    "multi_differ_sequence",
     "multi_dir_first",
 }
 # Distribution modes -> chi-square goodness-of-fit vs uniform.
@@ -72,12 +82,39 @@ _MULTI_CATEGORICAL = {"multi_same_first", "multi_differ_first",
                       "multi_same_modal_order"}
 
 
+# Modes with no directional alternative: the omnibus goodness-of-fit /
+# homogeneity tests and the "differ"/"same" multi shapes. A three-decision
+# verdict is undefined for these (decisions.md 2026-07-28) -- they are reported
+# as `non_directional`, not forced into supported/refuted.
+_NON_DIRECTIONAL = _GOF | _HOMO | {
+    "multi_differ_precedes", "multi_differ_cooccurs", "multi_differ_sequence",
+}
+# Argmax CHOICE modes whose omnibus GOF could be replaced by the modal-vs-
+# runner-up test already locked for their BOOL twins (S-V1/F-V3). decisions.md
+# 2026-07-14 lists this as a candidate, deliberately deferred -- so the tail is
+# COMPUTED and reported under `p_claim_modal_runner` for the decision, but it
+# does not drive the label until that call is made.
+_MODAL_RUNNER_CANDIDATE = {"modal_choice", "first_choice", "last_choice"}
+
+
 @dataclass
 class Significance:
-    p_value: float | None
-    significant: bool | None
+    """A core's test result.
+
+    ``p_value`` is the headline p for reporting: the claim-direction tail for a
+    directional mode, the omnibus p for a non-directional one. ``p_claim`` and
+    ``p_opposite`` are the LABELING inputs -- ``p_claim`` is None exactly when
+    the mode has no directional alternative, which is what makes the labeler tag
+    it ``non_directional`` instead of inventing a verdict.
+    """
+
+    p_value: float | None          # headline p (claim tail, or omnibus)
+    significant: bool | None       # decisive either way, gate included
     test: str | None
     details: dict = field(default_factory=dict)
+    p_claim: float | None = None       # one-sided tail in the claim's direction
+    p_opposite: float | None = None    # one-sided tail in the reverse direction
+    decision: "vd.Decision | None" = None
 
 
 def _perms(events: Sequence[str]) -> list[tuple[str, ...]]:
@@ -108,8 +145,40 @@ def _homo_table(core) -> list[list[int]] | None:
             [c2.get(t, 0) for t in core.events]]
 
 
-def core_significance(core) -> Significance:
-    """The significance test result for a viable core (None for report-level)."""
+def _named_counts(core, named) -> tuple[int, int, object] | None:
+    """(named cell count, best competitor count, the named cell) for argmax modes.
+
+    ``named`` is the ordering/event the CLAIM asserts is the mode; it defaults to
+    the observed argmax (the core's canonical orientation). A refuted instance
+    names a non-modal cell, and then the best competitor is the true mode.
+    """
+    counts = core.extra.get("counts") or {}
+    if not counts:
+        return None
+    if named is None:
+        named = core.extra.get("modal") or core.extra.get("winner")
+    if named is None:
+        return None
+    named_count = counts.get(named, 0)
+    others = [c for cell, c in counts.items() if cell != named]
+    best_other = max(others) if others else 0
+    return named_count, best_other, named
+
+
+def core_tails(core, *, named=None) -> Significance:
+    """Both one-sided p-values for a core's claim, in the CLAIM's direction.
+
+    ``p_claim`` is the tail for the direction the claim asserts and
+    ``p_opposite`` the reverse tail; ``core_decision`` turns the pair into a
+    three-decision verdict. For non-directional modes both are None -- the
+    omnibus p is still reported as ``p_value`` / ``details["p_omnibus"]``, it
+    just cannot label a direction.
+
+    The claim direction defaults to the core's CANONICAL orientation ("A precedes
+    B", "the modal ordering is the mode", "cohort 1's rate exceeds cohort 2's").
+    Pass ``named=`` to label an argmax claim that names some other cell -- how a
+    refuted instance is built.
+    """
     # Report-level groups are a single deterministic observation -> no test.
     if core.report_id is not None:
         return Significance(None, None, None)
@@ -119,64 +188,121 @@ def core_significance(core) -> Significance:
 
     if m in _BINOM_NULL:
         p0 = _BINOM_NULL[m]
-        # One-sided in the observed direction: an effect on the supported side
-        # tests "greater", one on the refuted side tests "less". This corroborates
-        # whichever gold verdict the core carries and does not reward the reverse.
-        phat = core.k / core.n if core.n else p0
-        alt = "greater" if phat > p0 else ("less" if phat < p0 else "two-sided")
-        p = sig.binom_exact_p(core.k, core.n, p0, alternative=alt)
-        return Significance(p, sig.significance_verdict(p, core.n) == "significant",
-                            "binom_exact", {"null": p0, "alternative": alt})
+        # The canonical claim asserts the rate is ABOVE the chance null, so its
+        # tail is "greater" and the reverse claim's is "less". Both are computed:
+        # the claim tail alone cannot tell refuted from insufficient.
+        p_claim = sig.binom_exact_p(core.k, core.n, p0, alternative="greater")
+        p_opp = sig.binom_exact_p(core.k, core.n, p0, alternative="less")
+        return Significance(p_claim, None, "binom_exact",
+                            {"null": p0, "alternative": "greater"},
+                            p_claim=p_claim, p_opposite=p_opp)
 
     if m in _MODAL_RUNNER:
-        # modal-vs-runner-up: is the top ordering/event significantly ahead of
-        # its nearest competitor? One-sided exact binomial of top vs top+runner.
-        counts = sorted(core.extra.get("counts", {}).values(), reverse=True)
-        top = counts[0] if counts else 0
-        runner = counts[1] if len(counts) > 1 else 0
-        nn = top + runner
+        # modal-vs-runner-up: is the NAMED ordering/event significantly ahead of
+        # its nearest competitor? One-sided exact binomial on the 2-cell table.
+        nc = _named_counts(core, named)
+        if nc is None:
+            return Significance(None, None, None)
+        named_count, best_other, cell = nc
+        nn = named_count + best_other
         if nn == 0:
             return Significance(None, None, None)
-        p = sig.binom_exact_p(top, nn, 0.5, alternative="greater")
-        ok = sig.significance_verdict(p, nn, min_n=_MODAL_RUNNER_MIN_N) == "significant"
-        return Significance(p, ok, "modal_runner",
+        p_claim = sig.binom_exact_p(named_count, nn, 0.5, alternative="greater")
+        p_opp = sig.binom_exact_p(named_count, nn, 0.5, alternative="less")
+        return Significance(p_claim, None, "modal_runner",
                             {"null": 0.5, "alternative": "greater",
-                             "top": top, "runner": runner})
+                             "named": cell, "top": named_count,
+                             "runner": best_other, "n_cells": nn},
+                            p_claim=p_claim, p_opposite=p_opp)
 
     if m in _FISHER:
         if core.n2 is None or core.k2 is None:
             return Significance(None, None, None)
-        # "differ" claims are inherently two-sided; directional multi_dir_* claims
-        # are one-sided toward the cohort with the higher rate.
-        if "differ" in m:
-            alt = "two-sided"
-        else:
-            p1 = core.k / core.n if core.n else 0.0
-            p2 = core.k2 / core.n2 if core.n2 else 0.0
-            alt = "greater" if p1 > p2 else ("less" if p1 < p2 else "two-sided")
-        p = sig.fisher_exact_2x2(core.k, core.n, core.k2, core.n2, alternative=alt)
-        n = min(core.n, core.n2)
-        return Significance(p, sig.significance_verdict(p, n) == "significant",
-                            "fisher_exact", {"alternative": alt})
+        if m in _NON_DIRECTIONAL:
+            # "do they differ" -- H1 is existence, not direction. Significant can
+            # only mean supported; not-significant can never mean refuted (that
+            # would accept H0). No three-decision mapping exists; report the
+            # omnibus p and let the labeler tag it non_directional.
+            p = sig.fisher_exact_2x2(core.k, core.n, core.k2, core.n2,
+                                     alternative="two-sided")
+            return Significance(p, None, "fisher_exact_two_sided",
+                                {"alternative": "two-sided", "p_omnibus": p})
+        # directional multi_dir_*: the canonical claim is "cohort 1's rate is
+        # higher than cohort 2's".
+        p_claim = sig.fisher_exact_2x2(core.k, core.n, core.k2, core.n2,
+                                       alternative="greater")
+        p_opp = sig.fisher_exact_2x2(core.k, core.n, core.k2, core.n2,
+                                     alternative="less")
+        return Significance(p_claim, None, "fisher_exact",
+                            {"alternative": "greater"},
+                            p_claim=p_claim, p_opposite=p_opp)
 
     if m in _GOF:
         observed = _gof_observed(core)
         if observed is None:
             return Significance(None, None, None)
         r = sig.multinomial_gof(observed)   # exact when sparse, else chi-square
-        return Significance(r["p"], sig.significance_verdict(r["p"], core.n) == "significant",
-                            f"multinomial_gof_{r['method']}", r)
+        details = dict(r)
+        details["p_omnibus"] = r["p"]
+        # Deferred candidate (decisions.md 2026-07-14): the modal-vs-runner-up
+        # tail that WOULD make these argmax CHOICE modes directional. Computed
+        # for the pending decision; it does not drive the label.
+        if m in _MODAL_RUNNER_CANDIDATE:
+            nc = _named_counts(core, named)
+            if nc is not None and nc[0] + nc[1] > 0:
+                nn = nc[0] + nc[1]
+                details["p_claim_modal_runner"] = sig.binom_exact_p(
+                    nc[0], nn, 0.5, alternative="greater")
+                details["p_opposite_modal_runner"] = sig.binom_exact_p(
+                    nc[0], nn, 0.5, alternative="less")
+        return Significance(r["p"], None, f"multinomial_gof_{r['method']}",
+                            details)
 
     if m in _HOMO:
         table = _homo_table(core)
         if table is None:
             return Significance(None, None, None)
         r = sig.contingency_test(table)     # Fisher-Freeman-Halton when sparse
-        n = min(core.n or 0, core.n2 or 0)
-        return Significance(r["p"], sig.significance_verdict(r["p"], n) == "significant",
-                            f"homogeneity_{r['method']}", r)
+        details = dict(r)
+        details["p_omnibus"] = r["p"]
+        return Significance(r["p"], None, f"homogeneity_{r['method']}", details)
 
     return Significance(None, None, None)
+
+
+def core_decision(core, *, named=None, alpha: float = sig.ALPHA) -> vd.Decision:
+    """The three-decision verdict for a core's claim (decisions.md 2026-07-28).
+
+    Report-level claims are exact single observations, so they keep their
+    deterministic verdict. Every cohort-level claim is labeled from its two
+    one-sided tails against the SHARED family min-n floor.
+    """
+    if core.report_id is not None:
+        return vd.deterministic(core.natural_verdict)
+    return core_significance(core, named=named, alpha=alpha).decision
+
+
+def core_significance(core, *, named=None,
+                      alpha: float = sig.ALPHA) -> Significance:
+    """The significance test result for a viable core (None for report-level).
+
+    ``core_tails`` plus the three-decision label; ``significant`` means "the data
+    settled the claim either way", i.e. the verdict is supported or refuted
+    rather than insufficient.
+    """
+    s = core_tails(core, named=named)
+    if core.report_id is not None:
+        # exact single observation: the deterministic verdict stands, no test
+        s.decision = vd.deterministic(core.natural_verdict)
+        return s
+    # A core with no test still gets a LABEL: an unrunnable test is exactly the
+    # insufficient class, and the sub-type (sparse / not-locatable) is part of
+    # the required benchmark composition.
+    s.decision = vd.three_decision(s.p_claim, s.p_opposite, core.n, core.family,
+                                   n2=core.n2, alpha=alpha)
+    if s.test is not None:
+        s.significant = s.decision.decisive
+    return s
 
 
 # ---------------------------------------------------------------------------
@@ -213,8 +339,7 @@ def answer_key(core) -> tuple[list[str] | None, str | None]:
         modal = core.extra.get("modal")
         return options, (_ARROW.join(modal) if modal else None)
 
-    if m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_sequence",
-             "multi_dir_first"):
+    if m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first"):
         v1, v2 = core.vaccines
         if core.proportion is None or core.proportion2 is None \
                 or abs(core.proportion - core.proportion2) < 1e-12:
@@ -255,6 +380,13 @@ class AnswerRecord:
     sig_test: str | None
     options: list[str] | None
     gold_answer: str | None
+    # three-decision labeling (decisions.md 2026-07-28). `verdict` above is still
+    # the legacy point-estimate rule from `generation.cores`; `test_verdict` is
+    # the label the benchmark ships once the roster migration lands.
+    p_claim: float | None = None
+    p_opposite: float | None = None
+    test_verdict: str | None = None
+    insufficient_subtype: str | None = None
 
 
 def _null_ref(mode: str) -> float:
@@ -344,4 +476,7 @@ def compute_answer(corpus: CorpusIndex, group_id: str, events,
         ci=ci, ci_width=width, confidence_tag=tag, effect_size=effect,
         p_value=s.p_value, significant=s.significant, sig_test=s.test,
         options=options, gold_answer=gold,
+        p_claim=s.p_claim, p_opposite=s.p_opposite,
+        test_verdict=s.decision.verdict if s.decision else None,
+        insufficient_subtype=s.decision.subtype if s.decision else None,
     )

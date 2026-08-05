@@ -6,7 +6,13 @@ import sqlite3
 
 import pytest
 
-from temporal_hypo.core.answers import answer_key, compute_answer
+from temporal_hypo.core import verdict as V
+from temporal_hypo.core.answers import (
+    answer_key,
+    compute_answer,
+    core_decision,
+    core_significance,
+)
 from temporal_hypo.generation import cores
 from temporal_hypo.generation.corpus import CorpusIndex
 from temporal_hypo.generation.instances import build_records
@@ -140,6 +146,78 @@ def test_insufficient_below_min_n():
     assert r.computable is False
     assert r.verdict == "insufficient"
     assert r.p_value is None and r.significant is None
+
+
+# ---- three-decision labeling (decisions.md 2026-07-28) -------------------
+
+def test_claim_direction_drives_the_label_not_the_observed_direction(idx):
+    # Headache precedes Fatigue in 16/20 -> the claim in that direction is
+    # supported; the SAME data refutes the reversed claim (4/20). Both verdicts
+    # come from significance, in opposite tails.
+    fwd = compute_answer(idx, "P-V1", ("Headache", "Fatigue"), vaccines=("Pfizer",))
+    rev = compute_answer(idx, "P-V1", ("Fatigue", "Headache"), vaccines=("Pfizer",))
+    assert fwd.test_verdict == "supported" and fwd.p_claim < 0.05
+    assert rev.test_verdict == "refuted" and rev.p_opposite < 0.05
+    assert rev.p_claim > 0.05          # the claim's own tail is nowhere near
+    assert fwd.insufficient_subtype is None and rev.insufficient_subtype is None
+
+
+def test_weak_effect_is_insufficient_not_refuted(idx):
+    # Moderna: 11/20 Headache-first -- above 0.5 but nowhere near significant.
+    r = compute_answer(idx, "P-V1", ("Headache", "Fatigue"), vaccines=("Moderna",))
+    assert r.verdict == "supported"          # legacy point-estimate rule
+    assert r.test_verdict == "insufficient"  # three-decision rule
+    assert r.insufficient_subtype == V.UNDERPOWERED
+
+
+def test_sparse_core_is_labeled_below_the_family_floor():
+    # 15 reports: computable (viability floor 10) but under the pairwise test
+    # floor of 20, and unanimous -- so the sub-type must be sparse, not
+    # underpowered.
+    idx = _make_index([(i, "Pfizer", [["A"], ["B"]]) for i in range(15)])
+    r = compute_answer(idx, "P-V1", ("A", "B"), vaccines=("Pfizer",))
+    assert r.n == 15
+    assert r.test_verdict == "insufficient"
+    assert r.insufficient_subtype == V.SPARSE
+
+
+def test_omnibus_choice_groups_are_non_directional_but_keep_their_p_value():
+    # F-V1 (first_choice) is tested GOF-vs-uniform, which has no direction, so
+    # the three-decision rule does not apply -- flagged, not forced. The omnibus
+    # p is still reported, and the deferred modal-vs-runner-up tail is computed
+    # for the pending decisions.md call.
+    reports = ([(i, "Pfizer", [["H"], ["F"], ["P"]]) for i in range(30)]
+               + [(100 + i, "Pfizer", [["F"], ["H"], ["P"]]) for i in range(10)])
+    idx = _make_index(reports)
+    r = compute_answer(idx, "F-V1", ("H", "F", "P"), vaccines=("Pfizer",))
+    assert r.n == 40                                  # clears the 30 floor
+    assert r.p_value is not None and r.p_claim is None
+    assert r.test_verdict == "insufficient"
+    assert r.insufficient_subtype == V.NON_DIRECTIONAL
+
+
+def test_argmax_bool_refutes_when_the_claim_names_a_non_modal_event():
+    # F-V3 (first_bool) is modal-vs-runner-up. Naming the true mode is
+    # supported; naming its beaten competitor is refuted -- that is how a
+    # refuted instance is built from a real core.
+    reports = ([(i, "Pfizer", [["H"], ["F"], ["P"]]) for i in range(30)]
+               + [(100 + i, "Pfizer", [["F"], ["H"], ["P"]]) for i in range(10)])
+    idx = _make_index(reports)
+    groups = load_groups()
+    core = cores._build_vaccine_core(idx, groups["F-V3"], "first_bool", "Pfizer",
+                                     idx.cohort("Pfizer"), ("H", "F", "P"))
+    assert core.n == 40 and core.extra["winner"] == "H"
+    assert core_decision(core).verdict == "supported"           # names the mode
+    assert core_decision(core, named="F").verdict == "refuted"  # names the loser
+    s = core_significance(core, named="F")
+    assert s.details["top"] == 10 and s.details["runner"] == 30
+
+
+def test_report_level_claims_stay_deterministic(idx):
+    r = compute_answer(idx, "P-R1", ("Headache", "Fatigue"), report_id=1)
+    assert r.p_value is None and r.p_claim is None
+    assert r.test_verdict == r.verdict          # exact, no test involved
+    assert r.insufficient_subtype == V.DETERMINISTIC
 
 
 # ---- generalization: same code path, brand-new corpus --------------------

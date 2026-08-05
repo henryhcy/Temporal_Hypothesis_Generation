@@ -61,6 +61,15 @@ def build_records(
         "p_value": _round(sig.p_value, 6),
         "significant": sig.significant,
         "sig_test": sig.test,
+        # three-decision labeling (decisions.md 2026-07-28), computed on the
+        # core's CANONICAL claim -- both tails, plus the verdict they imply and
+        # the insufficient sub-type. The per-instance ORIENTED label (which
+        # differs for a refuted realization, because it names a different cell /
+        # direction) lands with the equal-thirds sampler rewrite.
+        "p_claim": _round(sig.p_claim, 6),
+        "p_opposite": _round(sig.p_opposite, 6),
+        "core_test_verdict": sig.decision.verdict if sig.decision else None,
+        "insufficient_subtype": sig.decision.subtype if sig.decision else None,
         # explicit CHOICE answer key (None for BOOL/PROP)
         "options": options,
         "gold_answer": gold_answer,
