@@ -171,15 +171,23 @@ groups:
     original:
       question: Do {A} and {B} typically co-occur after {v}?
       claim: After {v}, {A} and {B} typically co-occur.
+      question_negated: Is it the case that {A} and {B} do NOT typically co-occur after {v}?
+      claim_negated: After {v}, {A} and {B} do not typically co-occur.
     research:
       question: In {v} reports, are {A} and {B} concurrent in the majority of cases?
       claim: In {v} reports, {A} and {B} are concurrent in the majority of cases.
+      question_negated: In {v} reports, are {A} and {B} concurrent in a minority of cases?
+      claim_negated: In {v} reports, {A} and {B} are NOT concurrent in the majority of cases.
     media:
       question: After {v}, do {A} and {B} usually show up together?
       claim: After {v}, {A} and {B} usually show up together.
+      question_negated: After {v}, is it true that {A} and {B} usually do NOT show up together?
+      claim_negated: After {v}, {A} and {B} usually do not show up together.
     clinical:
       question: In {v} recipients, do {A} and {B} typically present together?
       claim: In {v} recipients, {A} and {B} typically present together.
+      question_negated: In {v} recipients, is it the case that {A} and {B} do NOT typically present together?
+      claim_negated: In {v} recipients, {A} and {B} do not typically present together.
 - id: C-V3
   primitive: co_occurs
   level: vaccine
@@ -192,15 +200,23 @@ groups:
     original:
       question: After {v}, is co-occurrence the dominant relation for {A} and {B}?
       claim: After {v}, co-occurrence is the dominant relation for {A} and {B}.
+      question_negated: After {v}, is co-occurrence NOT the dominant relation for {A} and {B}?
+      claim_negated: After {v}, co-occurrence is not the dominant relation for {A} and {B}.
     research:
       question: Among {v} reports with both events, is concurrent presentation more common than ordered?
       claim: Among {v} reports with both events, concurrent presentation is more common than ordered.
+      question_negated: Among {v} reports with both events, is ordered presentation more common than concurrent?
+      claim_negated: Among {v} reports with both events, concurrent presentation is NOT more common than ordered.
     media:
       question: After {v}, are {A} and {B} more often together than in order?
       claim: After {v}, {A} and {B} are more often together than in order.
+      question_negated: After {v}, are {A} and {B} more often in order than together?
+      claim_negated: After {v}, {A} and {B} are NOT more often together than in order.
     clinical:
       question: In {v} recipients with both, is concurrence more common than sequential onset?
       claim: In {v} recipients with both, concurrence is more common than sequential onset.
+      question_negated: In {v} recipients with both, is sequential onset more common than concurrence?
+      claim_negated: In {v} recipients with both, concurrence is NOT more common than sequential onset.
 - id: C-M1
   primitive: co_occurs
   level: multi

@@ -1023,3 +1023,74 @@ equal-thirds insufficient class would want. The deliberate `not_locatable`
 generation the 2026-07-28 decision calls for is still required for those families;
 the pilot's enumeration path (all combinations of the top-K terms, unfiltered by
 co-occurrence) is the natural source. See `open_questions.md`.
+
+---
+
+## CLARIFIED: "directional" and "orientable" are different properties (2026-08-11)
+
+Not a change of behaviour -- a conceptual distinction that the code implemented
+correctly but the prose conflated. It has to be right before the sampler (step D)
+encodes it.
+
+### The criterion for whether `refuted` exists at all
+
+**Is the negation of the claim a REGION of parameter space, or a POINT?** A region
+can be confirmed by evidence; a point null can only fail to be rejected.
+
+| claim | its negation | `refuted` available? |
+|---|---|---|
+| C-V1: co-existence rate **> 0.5** | rate **< 0.5** -- a region | **yes** |
+| P-V1: P(A before B) **> 0.5** | **< 0.5** -- a region | **yes** |
+| argmax: count(named) **>** runner-up | **<** runner-up -- a region | **yes** |
+| "the two cohorts **differ**" | p1 **=** p2 -- a **point** | no |
+| GOF: "**not** uniform" | **exactly** uniform -- a **point** | no |
+
+This is what the 2026-07-13 "reword to the chance null" decision bought: every
+claim's boundary now sits at a chance baseline with two testable sides.
+
+### The two properties
+
+- **DIRECTIONAL** -- a reversed hypothesis exists and can be significant. This
+  licenses `refuted`. `refuted` NEVER means "not significant, therefore false".
+- **SLOT-ORIENTABLE** -- the claim can be re-worded from a single core to assert
+  either side, by reassigning slots. This makes a group's supply BALANCED.
+
+They are independent. **C-V1/C-V3 are directional but not slot-orientable.**
+
+Worked example, C-V1 *Abdominal pain upper / Headache* in Pfizer, co-existence
+0/10: `p_claim` (rate > 0.5) = 1.000, `p_opposite` (rate < 0.5) = **0.00098**, so
+the verdict is `refuted` on significant counter-evidence. "A and B do not
+typically co-occur" is a substantive claim about the world -- they are usually
+recorded at *different* timeline stages -- and the data confirms it. That is
+categorically unlike "differ", whose negation is the point null p1 = p2.
+
+But swapping A and B changes nothing, since co-occurrence is symmetric. So which
+class a core supplies is fixed by the data, and C-V1/C-V3 arrive **40 supported /
+338 refuted**. That is a WORDING limitation, not a statistical one.
+
+### Consequence: negation is the orientation operator for symmetric claims
+
+For P-V1 we flip the event order, which swaps `p_claim` and `p_opposite`. For a
+symmetric claim there is no event flip -- but negating the sentence does the same
+job: "A and B do **not** typically co-occur" makes the asserted direction the
+lower tail, so the old `p_opposite` becomes the new `p_claim`. Negation does not
+manufacture a verdict; it re-words the instance so the assertion matches the
+direction the evidence already supports.
+
+| core | plain wording | negated wording |
+|---|---|---|
+| rate significantly > 0.5 (40 cores) | supported | refuted |
+| rate significantly < 0.5 (338 cores) | refuted | supported |
+
+Choosing per core turns 378 decisive cores into a balanced **189 / 189**, instead
+of capping the group at 120 and discarding 298 cores.
+
+Caveat to track: a negated claim also tests negation handling, so a group mixing
+both measures slightly more than pure temporal reasoning. The negated fraction is
+reported per instance rather than left implicit.
+
+### Code
+
+`generation.cores._ORIENTABLE` is renamed **`_SLOT_ORIENTABLE`**, because the old
+name reads as "has no reverse" for the modes it excludes -- which is exactly the
+confusion this entry exists to prevent.

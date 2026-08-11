@@ -53,23 +53,21 @@ RESOLVED (see `decisions.md` 2026-08-11): floors are **10 / 5 / 10** (pairwise,
 sequence, first/last), aligning pairwise and first/last with the enumeration
 viability floor. S goes 587 -> 1362 and F-M3 revives (0 -> 19).
 
-### Can every group actually reach equal thirds? (2026-08-11)
-Surfaced by the gold-label flip (step C). Equal thirds is locked **per group**
-(decisions.md 2026-07-28), but two groups cannot balance by orientation:
+### Per-group vs benchmark-level verdict balance (2026-08-11)
+Equal thirds is locked **per group** (decisions.md 2026-07-28). The C-V1/C-V3 skew
+that put this in doubt is RESOLVED by negation (decisions.md 2026-08-11): both
+groups now reach 189/189 from all 378 decisive cores, ~52% negated.
 
-- **C-V1 / C-V3** are `sym_bool_cooccurs`, which is NOT orientable -- "A and B
-  typically co-occur" is symmetric, so there is nothing to flip. Their decisive
-  cores split **40 supported / 338 refuted** as the data falls, and no orientation
-  trick rebalances them. Equal thirds within these groups caps the group at
-  ~3 x 40 = 120 items and throws away ~298 refuted cores, or the group ships
-  skewed.
-- **S-V1 / S-V3** have S = 4 each; 1.5*S = 6 items. They are starved regardless.
+Argument for keeping it per-group rather than benchmark-level: template wording is
+mechanical and fixed per group, so the group is trivially identifiable from the
+question text. A group shipped at 40/338 would let a model learn "text shaped like
+this -> answer refuted" and score ~89% on it with no temporal reasoning.
+Benchmark-level balance only closes that shortcut if group identity is hidden,
+which it cannot be.
 
-Open: keep equal thirds per group (accept the cap and the waste), or define
-balance at the BENCHMARK level with documented per-group skew? The 07-28 argument
-for equal thirds -- that it pins every trivial policy at ~33% -- is satisfied by
-benchmark-level balance too, as long as no single group is degenerate enough for a
-per-group shortcut to pay off.
+Still open, but narrower: **S-V1 and S-V3 have S = 4 each**, so 1.5*S = 6 items and
+they are starved whatever the balance rule. Take them in full and flag, or drop
+the sequence cohort tier (see the sequence-family question)?
 
 ### Sourcing `not_locatable` for the non-sequence families (2026-08-11)
 Step B RESOLVED `sparse` (0 -> 2,722) and partly resolved `not_locatable`

@@ -51,6 +51,11 @@ def build_records(
         "level": c.level,
         "answer_type": c.answer_type,
         "gold_verdict": facts.gold_verdict,
+        # True when the text asserts the claim's NEGATION. Negation is the
+        # orientation operator for symmetric claims (decisions.md 2026-08-11), so
+        # a negated instance's gold verdict is the flip of the plain one. Reported
+        # per instance so the negated fraction is measurable, not implicit.
+        "negated": facts.negated,
         "gold_proportion": _round(facts.gold_proportion),
         "gold_n": c.n,
         "ci": [_round(ci[0]), _round(ci[1])] if ci else None,
@@ -89,7 +94,8 @@ def build_records(
     records: list[dict] = []
     for register in REGISTERS:
         for fmt in FORMATS:
-            text = render(group, register, fmt, facts.slot_values)
+            text = render(group, register, fmt, facts.slot_values,
+                          negated=facts.negated)
             rec = dict(common)
             rec["hypothesis_id"] = (
                 f"{c.group_id}-{seq:04d}-{register}-{fmt}"

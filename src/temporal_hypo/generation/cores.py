@@ -52,7 +52,7 @@ from temporal_hypo.generation.confidence import (
     wilson_newcombe_diff_ci,
 )
 from temporal_hypo.generation.corpus import CorpusIndex
-from temporal_hypo.generation.templates import Group
+from temporal_hypo.generation.templates import Group, supports_negation
 from temporal_hypo.generation.vaccines import VACCINES, VACCINE_PAIRS
 
 # Provisional enumeration breadth (logged pilot knobs; see 04_corpus_survey).
@@ -146,6 +146,7 @@ class InstanceFacts:
     confidence_tag: str | None
     effect_size: float | None
     p_value: int | None
+    negated: bool = False        # the instance asserts the claim's NEGATION
 
 
 # ---------------------------------------------------------------------------
@@ -599,21 +600,38 @@ def _enum_report_full(index, group, mode) -> list[ViableCore]:
 _HALF = 1e-12
 
 
-# Cohort modes whose claim can be ORIENTED: the same decisive core yields
-# `supported` posed one way and `refuted` posed the other -- by flipping the event
-# order (dir_*), naming a non-modal cell (the argmax modes), or swapping the two
-# cohorts (multi_dir_*).
+# Modes reorientable BY SLOT REASSIGNMENT: the same decisive core yields
+# `supported` posed one way and `refuted` the other, by flipping the event order
+# (dir_*), naming a non-modal cell (the argmax modes), or swapping the two cohorts
+# (multi_dir_*).
 #
-# `sym_bool_cooccurs` is deliberately NOT here: "A and B typically co-occur" is
-# symmetric, so there is nothing to flip. Its polarity is fixed by which tail
-# fired -- co-occurring significantly often is `supported`, significantly rarely
-# is `refuted` -- and a decisive core supplies exactly ONE of the two classes.
-_ORIENTABLE = {
+# This is about WORDING, not about whether a reversed hypothesis exists. Keep the
+# two apart (decisions.md 2026-08-11):
+#
+#   DIRECTIONAL  -- the negation of the claim is a REGION of parameter space, so it
+#                   can be confirmed by evidence. This is what licenses `refuted`.
+#   SLOT-ORIENTABLE -- the claim can be re-worded from one core to assert either
+#                   side. This is what makes a group's supply BALANCED.
+#
+# `sym_bool_cooccurs` is directional but NOT slot-orientable: "A and B typically
+# co-occur" has a real opposite (they are usually recorded at different stages,
+# rate < 0.5, which 0/10 confirms), so refuted is sound -- but swapping A and B
+# changes nothing, since the relation is symmetric. So which class a core supplies
+# is fixed by the data, which is why C-V1/C-V3 come out 40 supported / 338
+# refuted. The fix is NEGATION, the orientation operator for symmetric claims.
+#
+# Contrast the genuinely non-directional shapes (multi_differ_*, multi_same_*, and
+# the retired GOF modes): their negation is a POINT null (p1 = p2, "exactly
+# uniform"), which no evidence can establish, so they can never be refuted.
+_SLOT_ORIENTABLE = {
     "dir_bool", "dir_choice",
     "seq_bool", "modal_choice",
     "first_choice", "last_choice", "first_bool",
     "multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first",
 }
+
+
+_FLIP = {"supported": "refuted", "refuted": "supported"}
 
 
 def cohort_decision(core: ViableCore):
@@ -627,7 +645,7 @@ def cohort_decision(core: ViableCore):
     return core_decision(core)
 
 
-def feasible_polarities(core: ViableCore) -> set[str]:
+def feasible_polarities(core: ViableCore, group: Group | None = None) -> set[str]:
     """Which instance polarities this core can produce.
 
     Cohort-level (2026-08-11): the answer is decided by SIGNIFICANCE, not by the
@@ -652,10 +670,15 @@ def feasible_polarities(core: ViableCore) -> set[str]:
         dec = cohort_decision(core)
         if not dec.decisive:
             return {"insufficient"}
-        # orientable -> either class from the same core; otherwise the data fixes
-        # which single class this core can supply.
-        return ({"supported", "refuted"} if m in _ORIENTABLE
-                else {dec.verdict})
+        if m in _SLOT_ORIENTABLE:
+            return {"supported", "refuted"}
+        # Not slot-orientable: the data fixes which class the PLAIN wording gives.
+        # NEGATION is the orientation operator for these claims -- asserting the
+        # negation makes the other tail the claim tail -- so when the group has
+        # negated wording, one core can still supply either class.
+        if group is not None and supports_negation(group):
+            return {"supported", "refuted"}
+        return {dec.verdict}
 
     if m == "rep_dir_bool":
         rel = core.extra["rel"]
@@ -683,7 +706,8 @@ def feasible_polarities(core: ViableCore) -> set[str]:
     return out
 
 
-def realize(core: ViableCore, polarity: str) -> InstanceFacts:
+def realize(core: ViableCore, polarity: str, *,
+            negated: bool | None = None) -> InstanceFacts:
     """Build a concrete instance of the requested polarity from the core.
 
     The gold verdict is recomputed by the locked verdict functions on the
@@ -706,10 +730,19 @@ def realize(core: ViableCore, polarity: str) -> InstanceFacts:
         dec = cohort_decision(core)
         if not dec.decisive:
             facts.gold_verdict = "insufficient"
-        elif core.mode in _ORIENTABLE:
+        elif core.mode in _SLOT_ORIENTABLE:
             facts.gold_verdict = polarity
         else:
-            facts.gold_verdict = dec.verdict
+            # Not slot-orientable: the data fixes the PLAIN verdict, and negating
+            # the claim swaps it because the asserted direction becomes the other
+            # tail. So negation is DERIVED from the requested polarity rather than
+            # left to the caller -- passing the two independently would let them
+            # disagree, and `feasible_polarities` promises both classes whenever
+            # the group has negated wording.
+            if negated is None:
+                negated = polarity != dec.verdict
+            facts.gold_verdict = _FLIP[dec.verdict] if negated else dec.verdict
+        facts.negated = bool(negated)
     return facts
 
 

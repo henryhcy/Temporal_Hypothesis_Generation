@@ -23,6 +23,10 @@ DEFAULT_TEMPLATES_DIR = (
 _TEMPLATE_FILES = ("pairwise.yaml", "sequence.yaml", "first_last.yaml")
 REGISTERS = ("original", "research", "media", "clinical")
 FORMATS = ("question", "claim")
+# Negated surface forms, used when an instance asserts the claim's NEGATION.
+# Authored in the YAML rather than derived, per the mechanical-generation rule:
+# no programmatic rewriting of claim text.
+NEGATED_FORMATS = {"question": "question_negated", "claim": "claim_negated"}
 
 _PLACEHOLDER_RE = re.compile(r"\{(\w+)\}")
 
@@ -65,22 +69,44 @@ def load_groups(templates_dir: Path | None = None) -> dict[str, Group]:
     return groups
 
 
-def template_string(group: Group, register: str, fmt: str) -> str:
+def template_string(group: Group, register: str, fmt: str, *,
+                    negated: bool = False) -> str:
     """Return the raw template string for a register/format, validating keys."""
     if register not in REGISTERS:
         raise ValueError(f"unknown register: {register}")
     if fmt not in FORMATS:
         raise ValueError(f"unknown format: {fmt}")
-    return group.variants[register][fmt]
+    if not negated:
+        return group.variants[register][fmt]
+    key = NEGATED_FORMATS[fmt]
+    try:
+        return group.variants[register][key]
+    except KeyError:
+        raise ValueError(
+            f"group {group.id} has no negated {fmt} for register {register!r}; "
+            "negation must be authored in the template YAML"
+        ) from None
 
 
-def render(group: Group, register: str, fmt: str, values: Mapping[str, str]) -> str:
+def supports_negation(group: Group) -> bool:
+    """True when every register carries both negated surface forms.
+
+    Negation is the orientation operator for symmetric claims (decisions.md
+    2026-08-11), so a group can only supply the class its data does not naturally
+    fall on if its negated wording exists.
+    """
+    return all(k in group.variants[r]
+               for r in REGISTERS for k in NEGATED_FORMATS.values())
+
+
+def render(group: Group, register: str, fmt: str, values: Mapping[str, str],
+           *, negated: bool = False) -> str:
     """Fill a template's placeholders from ``values``.
 
     Every ``{slot}`` in the template must have a value, and no stray braces may
     remain afterwards -- both conditions raise, catching template drift.
     """
-    template = template_string(group, register, fmt)
+    template = template_string(group, register, fmt, negated=negated)
     needed = set(_PLACEHOLDER_RE.findall(template))
     missing = needed - set(values)
     if missing:
