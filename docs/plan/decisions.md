@@ -1094,3 +1094,49 @@ reported per instance rather than left implicit.
 `generation.cores._ORIENTABLE` is renamed **`_SLOT_ORIENTABLE`**, because the old
 name reads as "has no reverse" for the modes it excludes -- which is exactly the
 confusion this entry exists to prevent.
+
+---
+
+## LOCKED: negation is OPTIONAL and minimised (2026-08-11)
+
+Refinement of the negation entry above. Negation is a supply mechanism for the two
+symmetric groups, not a structural part of the design.
+
+- **Only C-V1 and C-V3 need it** -- 2 of 25 groups. Every other cohort group is
+  slot-orientable, so its equal-thirds budget is already 1.5*S and negation adds
+  nothing.
+- **It never displaces the original wording.** Minimum negated for C-V1 is 149 of
+  378 decisive cores (**39%**), so **61% keep the plain claim**.
+- **`feasible_polarities(..., allow_negation=False)`** switches it off entirely.
+  The two groups still work, capped at 3 * min(supported, refuted) = 120 items
+  each instead of 567.
+- **Samplers must PREFER PLAIN WORDING**: take the class the data already falls
+  on, and negate only to fill the remaining deficit. A naive alternating
+  assignment produces 197 negated instead of 149 -- ~48 needless negations. This
+  is a requirement on step D.
+
+### Why S is unchanged at 1526
+
+S counts decisive **cores** -- whether the test settles the claim, which is a
+property of the data and the test, not of the wording. Negation changes which
+CLASS a core can be posed as, never whether it is decisive, so S is invariant
+under negation by construction.
+
+What negation changes is the **usable** fraction of that supply under equal
+thirds:
+
+| | items |
+|---|--:|
+| without negation | 1,394 |
+| with negation | **2,288** (+894, +64%) |
+
+All of the gain is C-V1/C-V3: without negation the group is capped by its scarcer
+class (3 x min(40, 338) = 120 items, using 80 of 378 decisive cores and discarding
+298); with negation all 378 are usable either way (1.5 x 378 = 567).
+
+### Roster arithmetic (for the record)
+
+25 groups = **7 report-level** (deterministic, no test) + **18 cohort-level**
+carrying a test. Of the 18, **12 have S > 0** and ship today; the **6 at S = 0**
+are the non-directional multi groups pending removal. So 19 of 25 groups can
+produce instances.

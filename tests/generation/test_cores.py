@@ -189,3 +189,14 @@ def test_negation_is_unavailable_where_the_yaml_has_no_negated_wording():
     groups = load_groups()
     assert supports_negation(groups["C-V1"]) and supports_negation(groups["C-V3"])
     assert not supports_negation(groups["P-V1"])
+
+
+def test_negation_can_be_switched_off_entirely():
+    # Negation is optional, not structural: with it disabled a symmetric core
+    # falls back to supplying only the class its data lands on.
+    from temporal_hypo.generation.templates import load_groups
+    g = load_groups()["C-V1"]
+    core = _core("sym_bool_cooccurs", "BOOL", family="co_occurs",
+                 group_id="C-V1", proportion=0.2, n=20, k=4)
+    assert feasible_polarities(core, g) == {"supported", "refuted"}
+    assert feasible_polarities(core, g, allow_negation=False) == {"refuted"}
