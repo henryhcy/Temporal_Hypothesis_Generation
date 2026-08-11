@@ -56,6 +56,9 @@ class GroupSelection:
     # how many chosen instances will need re-orientation (negation / slot flip)
     reoriented: int = 0
     S: int = 0
+    # decisive cores posed BOTH ways; the two share a derived_from_core_id and must
+    # stay on the same side of any train/test split
+    mirror_pairs: int = 0
 
 
 def _band_cutoffs(values: list[int]) -> tuple[float, float]:
@@ -145,13 +148,25 @@ def balance_group(
     *,
     t: int | None = None,
     seed: int = 0,
+    per_core: int = 2,
 ) -> GroupSelection:
     """Select (core, polarity) pairs for an EQUAL-THIRDS group (decisions.md).
 
     ``group`` is the template Group; passing it lets ``feasible_polarities`` see
     whether the group has negated wording, which is what allows a non-slot-
     orientable group (C-V1/C-V3) to supply both classes. ``t`` optionally caps the
-    per-class target; by default the target is the group's own ``S // 2``.
+    per-class target.
+
+    ``per_core`` (default 2) is how many instances one decisive core contributes:
+
+    - **2** -- every decisive core is posed BOTH ways, so supported = refuted = S
+      and the budget is ~3*S. The two instances form a MIRROR PAIR: same evidence,
+      same computation, opposite labels. They share a ``derived_from_core_id``, so
+      any train/test split must keep a pair together, and their value is as a
+      direction-sensitivity probe -- a model answering `supported` to both is caught
+      immediately. Supersedes the 2026-07-28 "one claim per decisive case" rule.
+    - **1** -- one claim per core, so supported = refuted = S // 2 and the budget is
+      ~1.5*S. No mirror pairs, half the items.
     """
     rng = random.Random(seed)
     band = assign_bands(cores)
@@ -169,13 +184,14 @@ def balance_group(
         natural[id(c)] = nat if nat in ("supported", "refuted") else "supported"
 
     S = len(decisive)
-    per_class = S // 2
+    per_class = S if per_core == 2 else S // 2
     if t is not None:
         per_class = min(per_class, t // len(CLASSES))
     targets = {k: per_class for k in CLASSES}
 
     chosen: list[tuple[ViableCore, str, str]] = []
     used: set[int] = set()
+    used_by_class: set[tuple[int, str]] = set()
     reoriented = 0
 
     def take(want: str, count: int) -> int:
@@ -185,14 +201,18 @@ def balance_group(
         for stage in ("natural", "reorient"):
             if got >= count:
                 break
+            # with per_core=2 a core may serve BOTH classes, so `used` only blocks
+            # re-use within the SAME class
             pool = [c for c in decisive
-                    if id(c) not in used
+                    if (id(c), want) not in used_by_class
+                    and (per_core == 2 or id(c) not in used)
                     and want in feas[id(c)]
                     and ((natural[id(c)] == want) if stage == "natural"
                          else (natural[id(c)] != want))]
             picked = _stratified_draw(pool, count - got, band, rng)
             for c in picked:
                 used.add(id(c))
+                used_by_class.add((id(c), want))
                 chosen.append((c, want, band[id(c)]))
                 if stage == "reorient":
                     reoriented += 1
@@ -228,4 +248,5 @@ def balance_group(
         subtype_pools={k: len(v) for k, v in by_sub.items()},
         reoriented=reoriented,
         S=S,
+        mirror_pairs=(min(n_sup, n_ref) if per_core == 2 else 0),
     )

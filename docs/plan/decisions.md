@@ -1430,3 +1430,66 @@ Two open questions, both design calls rather than implementation:
    own name(s) -- the natural analogues are "order unknown" (events co-exist) and
    "not present" (an event is absent from the report), and they test different
    framework behaviours, exactly as `sparse` and `not_locatable` do at cohort level.
+
+---
+
+## SUPERSEDES 2026-07-28: each decisive core is posed BOTH ways (2026-08-11)
+
+The 2026-07-28 decision said supported and refuted are drawn from *different* event
+combinations -- "one claim per case, never the A->B / B->A mirror of a single case".
+That is now reversed: **every decisive core contributes both a supported and a
+refuted instance**, so supported = refuted = S and the per-group budget is ~3*S
+instead of ~1.5*S. Rationale: clinical corpora are scarce, and the corpus caps S at
+1,526 with no parameter that lifts it.
+
+| | one claim per core | **both ways** |
+|---|--:|--:|
+| cohort instances (whole population) | 2,286 | **4,578** |
+| released records (x8 register/format) | 18,288 | **36,624** |
+
+Every group has enough insufficient supply to match S, so the third stays exactly
+equal (checked per group: smallest headroom is F-M3 at 368 available for 19 needed).
+
+### The cost, and why it is worth paying
+
+The two instances from one core are a **MIRROR PAIR**: identical evidence, identical
+computation, opposite labels. They are NOT independent items, so any metric treating
+them as such overstates confidence, and a pair split across train/test is direct
+leakage.
+
+Accepted because a mirror pair is a **direction-sensitivity probe**, which is the
+capability this benchmark exists to measure. A model answering `supported` to both
+"A typically precedes B" and "B typically precedes A" is caught immediately, where
+two unrelated items would let it hide. This is the contrast-set argument: paired
+minimal edits are more informative per item than independent ones.
+
+Two safeguards, both already in place:
+
+1. **Pairs are identifiable.** `instances.core_id` keys off the CORE's canonical
+   events, not the realized orientation, so both members share
+   `derived_from_core_id`. Any train/test split MUST keep a pair together. Pinned by
+   a test.
+2. **`mirror_pairs` is reported per group**, so the correlated fraction is explicit
+   rather than implicit. Evaluation should report a pair-consistency metric
+   alongside accuracy -- of the mirror pairs, how often does the model flip its
+   verdict with the claim.
+
+`balance_group(..., per_core=1)` restores the old one-claim-per-core behaviour if
+the mirror pairs ever prove undesirable.
+
+### Side effect on negation
+
+Posing every core both ways means exactly one instance of each pair is re-oriented,
+so for C-V1/C-V3 the negated share is pinned at **50%** (252 of 504 decisive
+instances each) rather than the one-way minimum of 39%. The minimisation rule still
+holds within each class; it is the both-ways requirement that forces the rest. This
+is arguably the ideal negation probe -- a claim and its negation over identical
+evidence -- but it does mean half of those two groups' decisive instances are
+negated, which the benchmark documentation must state.
+
+### Measured (pilot enumeration)
+
+Cohort level: **3,246 instances**, 1,082 supported / 1,082 refuted / 1,082
+insufficient, 1,082 mirror pairs. Every live group is exactly S/S/S; the six
+non-directional groups still ship nothing. Report-level groups are unchanged and
+still deferred.

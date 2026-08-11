@@ -169,6 +169,7 @@ def run_pilot(
                 "insufficient_subtypes": sel.subtype_counts,
                 "insufficient_subtype_pools": sel.subtype_pools,
                 "reoriented": sel.reoriented,
+                "mirror_pairs": sel.mirror_pairs,
             }
         for seq, (core, polarity, band) in enumerate(chosen):
             facts = realize(core, polarity)

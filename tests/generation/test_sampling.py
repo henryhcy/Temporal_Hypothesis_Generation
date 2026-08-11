@@ -32,36 +32,59 @@ def test_bands_partition_by_n():
 
 # ---- equal thirds ---------------------------------------------------------
 
-def test_supported_and_refuted_are_equal_and_sized_from_S():
-    # 100 decisive cores (16/20 or 4/20, both significant) -> S = 100, so each
-    # class targets S // 2 = 50. No insufficient cores exist here, so that third
-    # is flagged under-target rather than silently shrinking the other two.
+def test_both_ways_doubles_the_decisive_half():
+    # per_core=2 (the default): every decisive core is posed BOTH ways, so
+    # supported = refuted = S rather than S // 2.
     cores = [_core(i, 0.8 if i % 2 else 0.2, 20) for i in range(100)]
     sel = balance_group(cores, "G", seed=1)
     assert sel.S == 100
-    assert sel.targets == {"supported": 50, "refuted": 50, "insufficient": 50}
-    assert sel.counts["supported"] == sel.counts["refuted"] == 50
+    assert sel.targets == {"supported": 100, "refuted": 100, "insufficient": 100}
+    assert sel.counts["supported"] == sel.counts["refuted"] == 100
+    assert sel.mirror_pairs == 100
+    # no insufficient cores exist here, so that third is flagged rather than
+    # silently shrinking the other two
     assert sel.counts["insufficient"] == 0
     assert sel.under_target["insufficient"] is True
 
 
-def test_no_core_is_used_as_both_supported_and_refuted():
-    """The 07-28 rule: never ship the A->B / B->A mirror of one case both ways."""
+def test_one_way_halves_it_and_makes_no_mirror_pairs():
+    cores = [_core(i, 0.8 if i % 2 else 0.2, 20) for i in range(100)]
+    sel = balance_group(cores, "G", seed=1, per_core=1)
+    assert sel.targets["supported"] == 50
+    assert sel.counts["supported"] == sel.counts["refuted"] == 50
+    assert sel.mirror_pairs == 0
+    ids = [id(c) for c, _, _ in sel.chosen]
+    assert len(ids) == len(set(ids))       # each core used at most once
+
+
+def test_a_core_is_never_reused_within_one_class():
+    # both-ways allows a core in supported AND refuted, never twice in the same one
     cores = [_core(i, 0.8 if i % 2 else 0.2, 20) for i in range(60)]
     sel = balance_group(cores, "G", seed=3)
-    ids = [id(c) for c, _, _ in sel.chosen]
-    assert len(ids) == len(set(ids))
+    seen = [(id(c), pol) for c, pol, _ in sel.chosen]
+    assert len(seen) == len(set(seen))
 
 
-def test_reorientation_is_minimised():
-    # 40 cores whose data says supported, 60 whose data says refuted. Targets are
-    # 50/50, so 10 of the supported class must be borrowed from the refuted side
-    # and nothing else needs re-orienting.
+def test_reorientation_is_minimised_when_one_way():
+    # 40 cores whose data says supported, 60 whose data says refuted. One-way
+    # targets are 50/50, so exactly 10 supported must be borrowed from the
+    # refuted side and nothing else needs re-orienting.
+    cores = ([_core(i, 0.8, 20) for i in range(40)]
+             + [_core(100 + i, 0.2, 20) for i in range(60)])
+    sel = balance_group(cores, "G", seed=5, per_core=1)
+    assert sel.counts["supported"] == 50 and sel.counts["refuted"] == 50
+    assert sel.reoriented == 10
+
+
+def test_both_ways_forces_exactly_one_reorientation_per_pair():
+    # posing every core both ways means exactly one of the two instances is
+    # re-oriented, so `reoriented` == S. For C-V1/C-V3 that is what pins the
+    # negated share at 50% rather than the one-way minimum of 39%.
     cores = ([_core(i, 0.8, 20) for i in range(40)]
              + [_core(100 + i, 0.2, 20) for i in range(60)])
     sel = balance_group(cores, "G", seed=5)
-    assert sel.counts["supported"] == 50 and sel.counts["refuted"] == 50
-    assert sel.reoriented == 10
+    assert sel.counts["supported"] == sel.counts["refuted"] == 100
+    assert sel.reoriented == 100
 
 
 def test_insufficient_third_spreads_over_subtypes():
@@ -70,7 +93,7 @@ def test_insufficient_third_spreads_over_subtypes():
     decisive = [_core(i, 0.8 if i % 2 else 0.2, 20) for i in range(30)]
     underpowered = [_core(500 + i, 0.55, 20) for i in range(40)]     # not decisive
     sparse = [_core(700 + i, 1.0, 6) for i in range(3)]              # below floor
-    sel = balance_group(decisive + underpowered + sparse, "G", seed=7)
+    sel = balance_group(decisive + underpowered + sparse, "G", seed=7, per_core=1)
 
     assert sel.targets["insufficient"] == 15
     assert sel.counts["insufficient"] == 15
@@ -91,3 +114,12 @@ def test_optional_hard_cap_still_applies():
     cores = [_core(i, 0.8 if i % 2 else 0.2, 20) for i in range(500)]
     sel = balance_group(cores, "G", t=60, seed=2)
     assert sel.targets == {"supported": 20, "refuted": 20, "insufficient": 20}
+
+
+def test_mirror_pairs_share_a_core_so_a_split_can_keep_them_together():
+    from temporal_hypo.generation.instances import core_id
+    from temporal_hypo.generation.cores import realize
+    cores = [_core(0, 0.8, 20)]
+    sel = balance_group(cores, "G", seed=0)
+    ids = {core_id(realize(c, pol)) for c, pol, _ in sel.chosen}
+    assert len(sel.chosen) == 2 and len(ids) == 1
