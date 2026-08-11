@@ -156,13 +156,19 @@ def run_pilot(
                       for c in cores_by_group[gid] if c.computable]
             b_summary[gid] = _natural_verdict_counts(chosen)
         else:
-            sel = balance_group(cores_by_group[gid], gid, t=t, seed=seed)
+            # `group` is passed so feasible_polarities can see negated wording;
+            # `t=None` lets the group's own S set the budget (equal thirds).
+            sel = balance_group(cores_by_group[gid], gid, group, t=None, seed=seed)
             chosen = sel.chosen
             b_summary[gid] = {
+                "S": sel.S,
                 "counts": sel.counts,
                 "targets": sel.targets,
                 "under_target": sel.under_target,
                 "pool_sizes": sel.pool_sizes,
+                "insufficient_subtypes": sel.subtype_counts,
+                "insufficient_subtype_pools": sel.subtype_pools,
+                "reoriented": sel.reoriented,
             }
         for seq, (core, polarity, band) in enumerate(chosen):
             facts = realize(core, polarity)

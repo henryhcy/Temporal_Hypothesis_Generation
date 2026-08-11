@@ -1360,3 +1360,73 @@ Note one of the first checks I wrote was itself wrong: it flagged refuted record
 for having a large `p_claim`, but `refuted` requires the OPPOSITE tail to be
 significant, so a large claim tail is correct there. The corrected checks test each
 verdict against the tail its own definition uses. All five are now regression tests.
+
+---
+
+## IMPLEMENTED: equal-thirds sampler, per group (2026-08-11) -- step D, cohort level
+
+`generation/sampling.balance_group` replaces the provisional 45/45/10 and the
+T = 100 per-group target. Per group: **S // 2 supported, the same refuted, the same
+insufficient**, so the budget is ~1.5*S and the group is internally balanced. The
+budget comes from the group's own decisive supply because S is a corpus property
+ranging 4..378.
+
+Three rules it now enforces that the old sampler did not:
+
+1. **One claim per decisive core.** The retired sampler, when short on refuted,
+   re-used cores it had already emitted as supported -- shipping the A->B / B->A
+   mirror of one case with both labels, which the 2026-07-28 decision forbids.
+2. **Minimum re-orientation.** Each class is drawn from the cores whose data
+   already falls on that side before borrowing from the other. For C-V1/C-V3 this
+   is the negation minimisation (plain wording wherever the data allows); elsewhere
+   it minimises slot flips. Reported per group as `reoriented`.
+3. **The insufficient third spreads across sub-types**, allocated round-robin one
+   unit at a time (`_water_fill`), so a short sub-type takes all it has and the
+   remainder spills to the others -- "spread evenly; if a type runs short, use it
+   all and make up the difference from the rest".
+
+### Measured (pilot enumeration; S is smaller here than whole-population because
+the pilot draws from top-K terms)
+
+| group | S | target | sup/ref/insuf | reoriented | insufficient sub-types |
+|---|--:|--:|---|--:|---|
+| P-V1 / P-V3 | 165 | 82 | 82/82/82 | 43 | 27 not_loc / 28 sparse / 27 underpow |
+| C-V1 / C-V3 | 252 | 126 | 126/126/126 | 102 | 23 not_loc / 52 sparse / 51 underpow |
+| P-M2 | 29 | 14 | 14/14/14 | 8 | 5 / 5 / 4 |
+| C-M2 | 28 | 14 | 14/14/14 | 5 | 5 / 5 / 4 |
+| F-V1 / F-V3 | 56 | 28 | 28/28/28 | 28 | 10 / 9 / 9 |
+| F-V2 | 58 | 29 | 29/29/29 | 29 | 10 / 10 / 9 |
+| F-M3 | 17 | 8 | 8/8/8 | 4 | 3 / 3 / 2 |
+| S-V1 / S-V3 | 2 | 1 | 1/1/1 | 1 | starved, as expected |
+| the six non-directional | 0 | 0 | 0/0/0 | 0 | correctly ship nothing |
+
+C-V1/C-V3 show the spread rule working: `not_locatable` has only 23 cores, so it is
+taken in full and the shortfall spills evenly to `sparse` (52) and `underpowered`
+(51) rather than capping the third at 3 x 23.
+
+### NOT done: the 7 report-level groups
+
+Equal thirds does not hold for them and they need their own decision, because
+"insufficient" means something different for a single-report claim:
+
+| group | sup/ref/insuf | problem |
+|---|---|---|
+| P-R1 | 119/150/0 | no insufficient supply; classes skewed |
+| C-R1 | 150/119/0 | same |
+| S-R1 | 42/150/0 | same, badly skewed |
+| F-R1 / F-R2 | 119/150/0, 112/150/0 | same |
+| P-R2 / F-R3 | 59/59/59 | balanced, but the sub-type is `unknown` |
+
+Two open questions, both design calls rather than implementation:
+
+1. **What is `insufficient` for a report-level claim?** The CHOICE variants produce
+   some (a `co_exist` pair cannot answer "which came first"), which is why P-R2 and
+   F-R3 balance. The BOOL variants map `co_exist` to `refuted` instead, so they
+   produce none. Since the seed decision defines co-exist as collapsing true
+   simultaneity WITH order-unknown, "A occurred before B" on a co-exist pair is
+   arguably `insufficient` rather than `refuted` -- the annotation cannot tell us
+   which. That choice is worth making explicitly.
+2. **The report-level insufficient sub-type is unlabeled** (`unknown`). It needs its
+   own name(s) -- the natural analogues are "order unknown" (events co-exist) and
+   "not present" (an event is absent from the report), and they test different
+   framework behaviours, exactly as `sparse` and `not_locatable` do at cohort level.

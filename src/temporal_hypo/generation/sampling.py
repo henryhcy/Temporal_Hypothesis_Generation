@@ -1,10 +1,23 @@
 """Verdict balancing, frequency banding, and per-group selection (Part B).
 
-Implements the provisional pilot sampling numbers (decisions.md):
-- target-with-availability-cap: target T per group; take all if under-target.
-- verdict balance 45/45/10 supported/refuted/insufficient, insufficient CAPPED.
-- refuted instances are produced by realizing a flippable core in its refuted
-  orientation (decisions.md "flip a supported core").
+EQUAL THIRDS per group (decisions.md 2026-07-28, per-group confirmed 08-11),
+replacing the provisional 45/45/10:
+
+- Each group targets ``S // 2`` supported, the same number refuted, and the same
+  number insufficient -- so the budget is ~1.5*S and the group is internally
+  balanced. Per-group rather than benchmark-wide because template wording is fixed
+  per group, which makes a skewed group a directly exploitable shortcut.
+- **One claim per decisive core.** A core is never used as both supported and
+  refuted; that would ship the A->B / B->A mirror of a single case with opposite
+  labels.
+- **Minimum re-orientation.** Each class is drawn from the cores whose data already
+  falls on that side before borrowing from the other side. For C-V1/C-V3 that
+  minimises negation (149 of 378 rather than ~197); elsewhere it minimises slot
+  flips.
+- **The insufficient third spreads across its sub-types** (underpowered / sparse /
+  not_locatable) as evenly as supply allows: allocation is round-robin one at a
+  time, so a sub-type that runs out simply stops receiving and the remainder spills
+  to the others.
 - quantile frequency bands (by gold_n) with light stratified draw.
 
 All randomness is seeded for reproducibility.
@@ -16,13 +29,17 @@ import random
 from collections import defaultdict, deque
 from dataclasses import dataclass, field
 
-from temporal_hypo.generation.cores import ViableCore, feasible_polarities
+from temporal_hypo.generation.cores import (
+    ViableCore,
+    cohort_decision,
+    feasible_polarities,
+)
 
-# Provisional targets (decisions.md "Pilot phase").
-T_DEFAULT = 100
-SUPPORTED_FRAC = 0.45
-REFUTED_FRAC = 0.45
-INSUFFICIENT_FRAC = 0.10
+# Retired 2026-08-11: the provisional 45/45/10 balance and the T=100 per-group
+# target. The budget is now derived from the group's own decisive supply (~1.5*S),
+# because S is a property of the corpus and ranges from 4 to 378 across groups.
+T_DEFAULT = 100          # retained only as an optional hard cap
+CLASSES = ("supported", "refuted", "insufficient")
 
 
 @dataclass
@@ -33,6 +50,12 @@ class GroupSelection:
     counts: dict[str, int]
     under_target: dict[str, bool]
     pool_sizes: dict[str, int]
+    # insufficient composition: how the third split across its sub-types
+    subtype_counts: dict[str, int] = field(default_factory=dict)
+    subtype_pools: dict[str, int] = field(default_factory=dict)
+    # how many chosen instances will need re-orientation (negation / slot flip)
+    reoriented: int = 0
+    S: int = 0
 
 
 def _band_cutoffs(values: list[int]) -> tuple[float, float]:
@@ -93,60 +116,116 @@ def _stratified_draw(
     return result
 
 
+def _water_fill(capacities: dict[str, int], total: int) -> dict[str, int]:
+    """Spread ``total`` as evenly as possible over pools with the given capacities.
+
+    One unit at a time in a fixed rotation: every pool gets an equal share until it
+    is exhausted, and whatever it cannot take spills to the others. That is exactly
+    "spread evenly across sub-types; if a type runs short, use it all and make up
+    the difference from the rest".
+    """
+    alloc = {k: 0 for k in capacities}
+    remaining = total
+    while remaining > 0:
+        active = [k for k in sorted(capacities) if alloc[k] < capacities[k]]
+        if not active:
+            break
+        for k in active:
+            if remaining == 0:
+                break
+            alloc[k] += 1
+            remaining -= 1
+    return alloc
+
+
 def balance_group(
     cores: list[ViableCore],
     group_id: str,
+    group=None,
     *,
-    t: int = T_DEFAULT,
+    t: int | None = None,
     seed: int = 0,
 ) -> GroupSelection:
-    """Select (core, polarity) pairs to approximate the 45/45/10 balance."""
+    """Select (core, polarity) pairs for an EQUAL-THIRDS group (decisions.md).
+
+    ``group`` is the template Group; passing it lets ``feasible_polarities`` see
+    whether the group has negated wording, which is what allows a non-slot-
+    orientable group (C-V1/C-V3) to supply both classes. ``t`` optionally caps the
+    per-class target; by default the target is the group's own ``S // 2``.
+    """
     rng = random.Random(seed)
     band = assign_bands(cores)
 
-    feas = {id(c): feasible_polarities(c) for c in cores}
-    supported_pool = [c for c in cores if "supported" in feas[id(c)]]
-    refuted_pool = [c for c in cores if "refuted" in feas[id(c)]]
+    feas = {id(c): feasible_polarities(c, group) for c in cores}
+    decisive = [c for c in cores if feas[id(c)] != {"insufficient"}]
     insufficient_pool = [c for c in cores if feas[id(c)] == {"insufficient"}]
 
-    n_sup = round(t * SUPPORTED_FRAC)
-    n_ref = round(t * REFUTED_FRAC)
-    n_insuf = t - n_sup - n_ref  # ~10; the CAP on insufficient
+    # Which class does each decisive core fall on WITHOUT re-orientation? Drawing
+    # from these first is what keeps negation and slot flips to a minimum.
+    natural: dict[int, str] = {}
+    for c in decisive:
+        d = cohort_decision(c) if c.report_id is None else None
+        nat = d.verdict if d is not None else c.natural_verdict
+        natural[id(c)] = nat if nat in ("supported", "refuted") else "supported"
+
+    S = len(decisive)
+    per_class = S // 2
+    if t is not None:
+        per_class = min(per_class, t // len(CLASSES))
+    targets = {k: per_class for k in CLASSES}
 
     chosen: list[tuple[ViableCore, str, str]] = []
+    used: set[int] = set()
+    reoriented = 0
 
-    sup_sel = _stratified_draw(supported_pool, n_sup, band, rng)
-    used = {id(c) for c in sup_sel}
-    for c in sup_sel:
-        chosen.append((c, "supported", band[id(c)]))
+    def take(want: str, count: int) -> int:
+        """Fill `count` instances of class `want`, natural-first. Returns the count."""
+        nonlocal reoriented
+        got = 0
+        for stage in ("natural", "reorient"):
+            if got >= count:
+                break
+            pool = [c for c in decisive
+                    if id(c) not in used
+                    and want in feas[id(c)]
+                    and ((natural[id(c)] == want) if stage == "natural"
+                         else (natural[id(c)] != want))]
+            picked = _stratified_draw(pool, count - got, band, rng)
+            for c in picked:
+                used.add(id(c))
+                chosen.append((c, want, band[id(c)]))
+                if stage == "reorient":
+                    reoriented += 1
+            got += len(picked)
+        return got
 
-    # refuted: prefer cores not already used as supported, then flip used ones
-    ref_fresh = [c for c in refuted_pool if id(c) not in used]
-    ref_sel = _stratified_draw(ref_fresh, n_ref, band, rng)
-    if len(ref_sel) < n_ref:
-        remaining = n_ref - len(ref_sel)
-        flippable_used = [c for c in sup_sel if "refuted" in feas[id(c)]]
-        ref_sel += _stratified_draw(flippable_used, remaining, band, rng)
-    for c in ref_sel:
-        chosen.append((c, "refuted", band[id(c)]))
+    n_sup = take("supported", per_class)
+    n_ref = take("refuted", per_class)
 
-    insuf_sel = _stratified_draw(insufficient_pool, n_insuf, band, rng)
-    for c in insuf_sel:
-        chosen.append((c, "insufficient", band[id(c)]))
+    # the insufficient third, spread over its sub-types
+    by_sub: dict[str, list[ViableCore]] = defaultdict(list)
+    for c in insufficient_pool:
+        d = cohort_decision(c) if c.report_id is None else None
+        by_sub[(d.subtype if d and d.subtype else "unknown")].append(c)
+    sub_alloc = _water_fill({k: len(v) for k, v in by_sub.items()}, per_class)
+    n_insuf = 0
+    sub_counts: dict[str, int] = {}
+    for sub, want in sorted(sub_alloc.items()):
+        picked = _stratified_draw(by_sub[sub], want, band, rng)
+        sub_counts[sub] = len(picked)
+        n_insuf += len(picked)
+        for c in picked:
+            chosen.append((c, "insufficient", band[id(c)]))
 
-    counts = {
-        "supported": len(sup_sel),
-        "refuted": len(ref_sel),
-        "insufficient": len(insuf_sel),
-    }
-    targets = {"supported": n_sup, "refuted": n_ref, "insufficient": n_insuf}
-    under = {k: counts[k] < targets[k] for k in targets}
-    pool_sizes = {
-        "supported": len(supported_pool),
-        "refuted": len(refuted_pool),
-        "insufficient": len(insufficient_pool),
-    }
+    counts = {"supported": n_sup, "refuted": n_ref, "insufficient": n_insuf}
     return GroupSelection(
         group_id=group_id, chosen=chosen, targets=targets, counts=counts,
-        under_target=under, pool_sizes=pool_sizes,
+        under_target={k: counts[k] < targets[k] for k in CLASSES},
+        pool_sizes={"supported": sum(1 for c in decisive if "supported" in feas[id(c)]),
+                    "refuted": sum(1 for c in decisive if "refuted" in feas[id(c)]),
+                    "insufficient": len(insufficient_pool)},
+        subtype_counts=sub_counts,
+        subtype_pools={k: len(v) for k, v in by_sub.items()},
+        reoriented=reoriented,
+        S=S,
     )
