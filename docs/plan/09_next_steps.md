@@ -93,13 +93,22 @@ since F-M3 has never been permutation-validated and its nearest analog (M-B
 first-overall) is pure noise at 0.453.
 
 **G. Overleaf draft.** Both generated `.tex` files predate the 08-04 and 08-11
-decisions. Before regenerating: `final_templates.py` counts the legacy
-`s.significant` rather than the three-decision verdict, so it reports 334
-non-directional cases as shippable supply and inflates the headline to 2,627
-decisive / ~3,940 items (defensible today: 1,362 / ~2,043). Also, the
-"What changed in the redesign" section was deleted by hand on Overleaf, and the
-generator would resurrect it. The draft has no methods text on the permutation
-null, the min-n floor, or the rank-test invalidation — the strongest
+decisions. The *published* draft overstates supply by 334 cases — it credits
+F-V1 130, F-V2 176, S-V3 14, S-V4 14 as decisive, which the three-decision rule
+does not — for a headline of 2,627 decisive / ~3,940 items.
+
+**The generator is NOT the problem** (verified 08-11 by regenerating): it counts
+`s.significant`, which became falsy for non-directional modes when the
+three-decision labeler landed, so a fresh run already reports 0 for all four and
+a headline of 2,293. The stale numbers exist only in the Jul-28 file on Overleaf.
+Of that 2,293, the 931 new-group ceilings (P-V2 372, P-V4 415, C-V2 144) are not
+yet implemented, so the defensible implemented figure is **1,362**.
+
+Two real blockers before regenerating: the "What changed in the redesign" section
+was deleted by hand on Overleaf and the generator resurrects it (confirmed), and
+`ROSTER` still lists S-V3/S-V4/F-V1/F-V2 with `multinomial GOF` in the Test
+column, which decision 1 changes. The draft also has no methods text on the
+permutation null, the min-n floor, or the rank-test invalidation — the strongest
 methodological material the project has.
 
 ## Standing caveats
