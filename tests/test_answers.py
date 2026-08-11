@@ -294,3 +294,24 @@ def test_emitted_gold_verdict_matches_the_three_decision_labeler(idx):
     assert weak.natural_verdict == "supported"        # the retired rule
     assert cores.feasible_polarities(weak) == {"insufficient"}
     assert cores.realize(weak, "supported").gold_verdict == "insufficient"
+
+
+def test_effect_size_is_measured_on_the_tested_quantity(idx):
+    """2026-08-11: the argmax modes test named-vs-runner-up against 0.5, so the
+    effect size uses that 2-cell proportion -- not the retired GOF-vs-uniform
+    references (1/6 over orderings, 1/3 over candidates)."""
+    from temporal_hypo.core.answers import _two_cell_proportion, _null_ref
+    from temporal_hypo.generation.confidence import cohens_h
+    groups = load_groups()
+    core = cores._build_vaccine_core(
+        idx, groups["F-V1"], "first_choice", "Pfizer",
+        idx.cohort("Pfizer"), ("Headache", "Fatigue", "Pyrexia"))
+    r = compute_answer(idx, "F-V1", ("Headache", "Fatigue", "Pyrexia"),
+                       vaccines=("Pfizer",))
+    two_cell = _two_cell_proportion(core)
+    assert two_cell is not None
+    # the reported proportion is the share of the WHOLE denominator...
+    assert abs(r.proportion - 16 / 20) < 1e-9
+    # ...while the effect size is on named-vs-runner-up against 0.5
+    assert abs(r.effect_size - cohens_h(two_cell, 0.5)) < 1e-9
+    assert _null_ref("first_choice") == 0.5

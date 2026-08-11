@@ -158,6 +158,21 @@ def _ci_fields(k: int, n: int) -> tuple[tuple[float, float], str]:
     return ci, confidence_tag(ci_width(ci))
 
 
+def _two_cell(counts: dict, named) -> float | None:
+    """named / (named + runner-up): the proportion the argmax test compares.
+
+    The reported `proportion` is the named cell's share of the whole denominator,
+    which is the better descriptive number; this is the tested one, so it is what
+    the effect size is measured on (decisions.md 2026-08-11).
+    """
+    if not counts:
+        return None
+    top = counts.get(named, 0)
+    others = [c for cell, c in counts.items() if cell != named]
+    best = max(others) if others else 0
+    return top / (top + best) if (top + best) else None
+
+
 def _other_permutation(modal: tuple[str, ...], counts: dict) -> tuple[str, ...]:
     """Pick a non-modal strict ordering: the 2nd-most-common, else any swap."""
     alts = sorted(
@@ -837,8 +852,10 @@ def _realize_modal_choice(core, polarity):
         order = _other_permutation(modal, d["counts"])
         cnt, fk, verdict = d["counts"].get(order, 0), "modal", "refuted"
     p = cnt / n
+    # effect size on the TESTED quantity: named vs runner-up, null 0.5 (2026-08-11)
     return _mk(core, polarity, fk, order, verdict=verdict,
-               proportion=p, n=n, k=cnt, null_ref=1 / 6)
+               proportion=p, n=n, k=cnt, null_ref=0.5,
+               effect=cohens_h(_two_cell(d["counts"], order), 0.5))
 
 
 def _realize_extreme_choice(core, polarity):

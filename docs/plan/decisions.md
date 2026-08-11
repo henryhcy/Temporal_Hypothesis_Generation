@@ -1199,3 +1199,97 @@ The ceiling is not reachable by tuning -- closing it would need either more
 corpus or coarser events (the MedDRA option in `open_questions.md`). The three
 unbuilt groups are the only near-term additions; the draft's estimates for them
 (P-V2 372, P-V4 415, C-V2 144) predate the floor change and need re-measuring.
+
+---
+
+## LOCKED: effect size measured on the tested quantity (2026-08-11)
+
+The five argmax modes (`seq_bool`, `modal_choice`, `first_bool`, `first_choice`,
+`last_choice`) test named-vs-runner-up on a 2-cell table against 0.5, but their
+effect size was still measured against the retired GOF-vs-uniform references
+(1/6 over orderings, 1/3 over candidates). So the p-value answered "does the named
+cell beat its rival?" while `effect_size` answered "how far above chance-uniform is
+this share?" -- the same claim/test mismatch the morning's test swap fixed for the
+p-value, left behind in a released field.
+
+Now: `_null_ref` returns **0.5 for every mode**, and the effect size for the argmax
+modes is computed on **named / (named + runner-up)**. The reported `proportion` and
+the CI stay on the share of the whole denominator, which is the better descriptive
+number -- only the effect size moves onto the tested quantity.
+
+Worked case, F-V1 (Chills, Headache, Pyrexia) in Janssen -- Headache 22, Chills 21,
+Pyrexia 2:
+
+| | before | after |
+|---|--:|--:|
+| effect_size | **-0.670** | **+0.023** |
+| p_claim | 0.500 | 0.500 |
+
+A large negative effect reported beside p = 0.50 was incoherent. F-V2 on the same
+triple (Headache 28 vs Pyrexia 16) now reads effect +0.276 with p = 0.048 -- both
+statistics agreeing there is a real effect.
+
+---
+
+## LOCKED: verdict balance is enforced PER GROUP (2026-08-11)
+
+Confirms the 2026-07-28 equal-thirds decision at the per-group level rather than
+benchmark-wide. Two independent reasons:
+
+1. **We cannot control per-group viable-case counts.** S ranges from 4 (S-V1,
+   S-V3) to 378 (C-V1, C-V3) and is a property of the corpus. Benchmark-level
+   balance would let the big groups set the overall mix while individual groups
+   drifted arbitrarily far from thirds.
+2. **Group identity is inferable from the text.** Template wording is mechanical
+   and fixed per group, so "After {v}, do {A} and {B} typically co-occur?" is a
+   C-V1 fingerprint. A group shipped at 40/338 would let a model learn "text
+   shaped like this -> answer refuted" and score ~89% on it with no temporal
+   reasoning. Benchmark-level balance only closes that shortcut if group identity
+   is hidden, which it cannot be.
+
+Cost, accepted: groups with tiny S are taken in full and flagged as starved
+(S-V1/S-V3 at 6 items each). Negation removes the cost for C-V1/C-V3.
+
+---
+
+## REJECTED: equivalence margins to revive the "differ"/"same" multi groups (2026-08-11)
+
+**The idea is conceptually right and empirically not worth it.** Recorded so it is
+not re-proposed.
+
+The reasoning is sound and follows directly from the region-vs-point criterion:
+`p1 = p2` is a POINT null, so it can never be confirmed -- but
+`|p1 - p2| < delta` is a REGION, so with an equivalence margin BOTH framings
+become testable and `refuted` becomes reachable. That would revive up to six
+groups currently at S = 0.
+
+Measured (TOST convention, 90% Newcombe CI on the difference; `equivalent` when the
+CI sits inside the margin, `different` when it lies wholly outside):
+
+| delta | equivalent | different | decisive |
+|--:|--:|--:|--:|
+| 0.05 | 0 | 81 | 81 |
+| **0.10** | **1** | **52** | **53** |
+| 0.15 | 36 | 21 | 57 |
+| 0.20 | 119 | 10 | 129 |
+| 0.30 | 521 | 1 | 522 |
+
+Why it fails at a defensible margin:
+
+- **0.10 is the project's own margin** -- the initial-seed rule 8 already sets
+  |p1 - p2| > 10pp as the "differ" threshold. At delta = 0.10, exactly **1 core out
+  of 1,378** can be declared equivalent. The "same" claims the reframing was meant
+  to rescue essentially do not exist.
+- **It is worse than the directional framing already in place.** At delta = 0.10,
+  P-M1 yields 15 "different" cores from the same 322 cores that P-M2 already turns
+  into 30 decisive. Requiring the CI to clear a 10pp margin is strictly stricter
+  than requiring significance against 0.
+- **The large yields need an indefensible margin.** delta = 0.20-0.30 means calling
+  a 20-30 percentage-point gap in adverse-event timing "practically the same",
+  which is not a claim this benchmark should assert.
+- **Equivalence is structurally underpowered here.** Fitting a difference CI inside
+  +/-10pp needs roughly n ~ 100-200 per cohort; the multi tier conditions down to
+  n ~ 6-20. This is a corpus-size limit, not a test choice.
+
+Conclusion: keep the multi tier directional. The six non-directional groups stay
+slated for removal, now with a measured reason rather than only a conceptual one.

@@ -378,11 +378,33 @@ class AnswerRecord:
 
 
 def _null_ref(mode: str) -> float:
-    if mode in ("seq_bool", "modal_choice"):
-        return 1 / 6
-    if mode in ("first_bool", "first_choice", "last_choice"):
-        return 1 / 3
+    """The reference the EFFECT SIZE is measured against -- the tested null.
+
+    2026-08-11: the argmax modes are tested modal-vs-runner-up on a 2-cell table
+    with a 0.5 null, so their effect size is measured against 0.5 as well. It used
+    to use the retired GOF-vs-uniform references (1/6 over orderings, 1/3 over
+    candidates), which meant the p-value answered "does the named cell beat its
+    rival?" while the effect size answered "how far above chance-uniform is this
+    share?" -- the same claim/test mismatch the test swap fixed for the p-value.
+    """
     return 0.5
+
+
+def _two_cell_proportion(core) -> float | None:
+    """named / (named + runner-up) -- the quantity the argmax test actually uses.
+
+    The core's ``proportion`` is the named cell's share of the WHOLE denominator
+    (modal share over all orderings, or first-rate over all reports), which is the
+    right descriptive number to report but not what the test compares.
+    """
+    counts = core.extra.get("counts") or {}
+    named = core.extra.get("modal") or core.extra.get("winner")
+    if not counts or named is None:
+        return None
+    top = counts.get(named, 0)
+    others = [c for cell, c in counts.items() if cell != named]
+    best = max(others) if others else 0
+    return top / (top + best) if (top + best) else None
 
 
 def _ci_effect(core):
@@ -400,8 +422,14 @@ def _ci_effect(core):
     if core.k is None or core.n is None:
         return None, None, None, None
     ci = wilson_ci(core.k, core.n)
+    # The CI stays on the REPORTED proportion (the descriptive share of the whole
+    # denominator); the EFFECT SIZE is measured on the quantity the test actually
+    # compares, which for the argmax modes is named-vs-runner-up (2026-08-11).
+    basis = core.proportion
+    if core.mode in _MODAL_RUNNER:
+        basis = _two_cell_proportion(core) or core.proportion
     return ci, ci_width(ci), confidence_tag(ci_width(ci)), \
-        cohens_h(core.proportion, _null_ref(core.mode))
+        cohens_h(basis, _null_ref(core.mode))
 
 
 _GROUPS: dict[str, Group] | None = None
