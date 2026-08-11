@@ -8,14 +8,14 @@ evidence, now partly stale — see its banner).
 
 | | |
 |---|---|
-| Roster as coded | **26 groups** (30 − PROP ×3 − S-M2) |
+| Roster as coded | **25 groups** (30 − PROP ×3 − S-M2 − S-V4) |
 | Roster after the pending 07-28 migration | **23** (−6 multi, +R1/R3/R5) |
 | Verdict labeler | `core/verdict.py`, three-decision, implemented |
 | Min-n gate | **10 everywhere, sequence 5** (`core/min_n.py`, 08-11) |
 | Tests | **exact only** — chi-square removed from the codebase (08-11) |
-| Gold label shipped | still the legacy point-estimate `verdict`; `test_verdict` rides alongside |
-| Decisive cores (S) across all 26 groups | **1362** |
-| Groups at S = 0 | **10** — six pending removal, plus S-V3/S-V4/F-V1/F-V2 (non-directional) |
+| Gold label shipped | **the three-decision verdict** (step C, 08-11) |
+| Decisive cores (S) across all 25 groups | **1526** |
+| Groups at S = 0 | **6** — exactly the six pending removal |
 
 Live groups and their equal-thirds budgets (~1.5·S): C-V1/C-V3 567 each,
 P-V1/P-V3 327 each, F-V3 111, C-M2 64, P-M2 45, F-M3 28, S-V1 6.

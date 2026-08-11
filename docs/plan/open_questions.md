@@ -89,28 +89,10 @@ path (`min_n.uses_exact`); (c) accept a two-sub-type insufficient class and
 amend the 2026-07-28 decision. (a) preserves the decision's intent; (b) changes
 what the sub-type means; (c) narrows the benchmark's coverage of failure modes.
 
-### Non-directional groups: adopt modal-vs-runner-up for the CHOICE groups?
-Deferred on 2026-07-14, now forced by the three-decision labeler: S-V3, S-V4,
-F-V1, F-V2 are tested GOF-vs-uniform, which has no direction, so they can carry
-no supported/refuted verdict and all sit at S = 0. Measured rescue if the
-modal-vs-runner-up test (already locked for their BOOL twins S-V1/F-V3) replaced
-GOF -- the floor decision changed these numbers a lot:
-
-| group | rescue @ floor 20/30 | **rescue @ floor 10** |
-|---|--:|--:|
-| F-V2 | +21 | **+86** |
-| F-V1 | +14 | **+74** |
-| S-V3 | +4 | **+4** |
-
-S-V4 (`consistency_bool`) is NOT rescued -- "the ordering is consistent" has no
-opposite direction to be significant in, the same defect that retires the "same"
-multi groups. Open: adopt for S-V3/F-V1/F-V2, and retire or reshape S-V4.
-
-This is now **the last remaining S = 0 blocker**: after the roster migration
-removes the other six S = 0 groups, S-V3/S-V4/F-V1/F-V2 are the only groups that
-cannot ship a verdict. At floor 10 the rescue is no longer marginal -- F-V1+F-V2
-alone would add 160 decisive cores, more than the entire first/last family had
-under the old floor (93).
+### Non-directional CHOICE groups
+RESOLVED (see `decisions.md` 2026-08-11): S-V3, F-V1 and F-V2 now use the
+modal-vs-runner-up test (S +4 / +74 / +86); **S-V4 removed** outright as
+unrescuable. Groups at S = 0 are now exactly the six pending roster removal.
 
 ### Does the sequence family survive at cohort level? (2026-08-04)
 S-M2 is REMOVED (see `decisions.md`, power-dead: best directional p = 0.058 over
@@ -120,11 +102,11 @@ sequence family has no multi tier at all, and its entire cohort-level supply is:
 | group | mode | S |
 |---|---|--:|
 | S-V1 | seq_bool (modal-vs-runner-up) | **4** |
-| S-V3 | modal_choice | 0 — non-directional |
-| S-V4 | consistency_bool | 0 — non-directional, and unrescuable |
+| S-V3 | modal_choice (modal-vs-runner-up since 08-11) | **4** |
 | S-R1 | report-level | n/a — deterministic, unaffected |
 
-Four decisive cores cannot carry a family. Options: (a) accept sequence as a
+(S-V4 was removed on 2026-08-11.) Eight decisive cores across two groups, and
+they are largely the SAME four triples asked two ways, so this is not a family. Options: (a) accept sequence as a
 report-level-only family; (b) apply the §6 lever 4 (vaccine-agnostic scope,
 pooling all 3,166 reports, ~46% of triples become significant) at the cost of
 changing the claim scope to "across all vaccines"; (c) apply §6 lever 5 (coarsen
