@@ -71,23 +71,38 @@ for equal thirds -- that it pins every trivial policy at ~33% -- is satisfied by
 benchmark-level balance too, as long as no single group is degenerate enough for a
 per-group shortcut to pay off.
 
-### How do we source the `sparse` insufficient sub-type now? (2026-08-11)
-Consequence of the floor decision: `sparse` was the band between the enumeration
-viability floor (10) and the test floor (20/30). With the test floor now AT 10
-that band is empty, and the measured `sparse` count is **0**. But the 2026-07-28
-decision requires the insufficient class to span all three sub-types, so this
-needs a source, not an acceptance.
+### Sourcing `sparse` and `not_locatable` (2026-08-11, corrected same day)
+`sparse` measured 0 after the floor decision, and I first recorded that it was
+unreachable because "enumeration stops at n >= 10". **That was wrong, and the
+correction matters for step B.**
 
-Next-steps item B (corpus helpers report n below the viability floor) is a
-prerequisite but is **not sufficient on its own**: enumeration itself stops at
-n >= 10, so no sub-viability core is ever offered to the labeler. Options:
-(a) enumerate below the viability floor *only* for the insufficient class, so
-sparse cores are generated deliberately (parallels how `not_locatable` must be
-generated deliberately per the same decision); (b) define `sparse` by a different
-axis than n -- e.g. cores that clear the floor but whose test is on the exact
-path (`min_n.uses_exact`); (c) accept a two-sub-type insufficient class and
-amend the 2026-07-28 decision. (a) preserves the decision's intent; (b) changes
-what the sub-type means; (c) narrows the benchmark's coverage of failure modes.
+The two floors measure DIFFERENT quantities. `enumerate_group_full` filters pairs
+to those **co-occurring** in >= 10 reports, but the precedes test's denominator is
+the reports where the pair is **strictly ordered**, which is strictly smaller. The
+gap between the two IS the sparse band. Measured directly on P-V1:
+
+| P-V1 cores (959 total) | count |
+|---|--:|
+| ordered n >= 10 (labeled today) | 575 |
+| ordered n in 1..9 -> **sparse** once n is reported | **384** |
+| ordered n = 0 -> not_locatable | **0** |
+
+So **B alone unlocks `sparse`** — 384 cores in P-V1 and another 384 in P-V3, out
+of the 2,838 currently in the unlabeled `unknown` bucket. Example: Abdominal pain
+upper / Fatigue in Pfizer co-occurs often enough to be enumerated but is strictly
+ordered in only 9 reports.
+
+`not_locatable` (n = 0) is a different problem and B does **not** supply it: the
+co-occurrence pre-filter means a full-enumeration pair is essentially never
+ordered zero times. It has to come from cores built out of events that do not
+co-occur — which is what the 2026-07-28 decision already requires ("the
+not-locatable third generated deliberately"). The pilot path (`enumerate_group`,
+all combinations of the top-K terms) does enumerate non-co-occurring pairs, so
+that is the place to source it.
+
+Open: only the `not_locatable` generation strategy. Reuse the pilot path's
+unfiltered combinations, or add an explicit generator that picks event pairs known
+not to co-occur in the cohort?
 
 ### Non-directional CHOICE groups
 RESOLVED (see `decisions.md` 2026-08-11): S-V3, F-V1 and F-V2 now use the
