@@ -174,9 +174,12 @@ def run_pilot(
         for seq, (core, polarity, band) in enumerate(chosen):
             facts = realize(core, polarity)
             all_records.extend(
-                inst_mod.build_records(facts, group, seq=seq, band=band)
+                inst_mod.build_records(facts, group, seq=seq, band=band,
+                                       index=index)
             )
     writers.write_jsonl(all_records, out_dir / out_name)
+    # also emit the input/gold split so the leakage boundary is enforced
+    release = writers.split_release(all_records, out_dir, stem=out_name.split(".")[0])
 
     # --- Part C ----------------------------------------------------------
     samples = []

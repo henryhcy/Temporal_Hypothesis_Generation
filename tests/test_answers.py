@@ -359,3 +359,51 @@ def test_insufficient_argmax_instance_names_the_modal_cell(idx):
     assert facts.events_assigned[0] == core.extra["winner"]
     # so the asserted claim's verdict agrees with the shipped label
     assert oriented_significance(facts).decision.verdict == facts.gold_verdict ==         "insufficient"
+
+
+# ---- evidence report ids (2026-08-11) --------------------------------------
+
+def test_evidence_ids_reconstruct_the_counts_they_came_from(idx):
+    """The benchmark ships report ids, not narratives, so the ids must be exactly
+    the reports the statistic ran over -- otherwise a scorer cannot audit a label."""
+    from temporal_hypo.generation.evidence import evidence_ids
+    groups = load_groups()
+    core = cores._build_vaccine_core(
+        idx, groups["P-V1"], "dir_bool", "Pfizer",
+        idx.cohort("Pfizer"), ("Headache", "Fatigue"))
+
+    for polarity in ("supported", "refuted"):
+        facts = cores.realize(core, polarity)
+        ev = evidence_ids(idx, facts)
+        assert len(ev["denominator"]) == facts.gold_n
+        assert len(ev["numerator"]) == facts.gold_k
+        # the ids are oriented: a refuted instance's numerator is the complement
+        assert set(ev["numerator"]) <= set(ev["denominator"])
+
+
+def test_excluded_ids_are_present_but_unusable(idx):
+    """`excluded` is the report-level witness for "the events are there but this
+    report cannot speak to the claim" -- a co-exist pair for a precedes claim."""
+    from temporal_hypo.generation.evidence import evidence_ids
+    groups = load_groups()
+    # every report has Headache and Fatigue at DISTINCT levels, so nothing excluded
+    core = cores._build_vaccine_core(
+        idx, groups["P-V1"], "dir_bool", "Pfizer",
+        idx.cohort("Pfizer"), ("Headache", "Fatigue"))
+    ev = evidence_ids(idx, cores.realize(core, "supported"))
+    assert ev["excluded"] == []
+
+    # now a cohort where they always co-occur: denominator empty, all excluded
+    tied = _make_index([(i, "Pfizer", [["A", "B"]]) for i in range(12)])
+    tcore = cores._build_vaccine_core(
+        tied, groups["P-V1"], "dir_bool", "Pfizer",
+        tied.cohort("Pfizer"), ("A", "B"))
+    tev = evidence_ids(tied, cores.realize(tcore, "insufficient"))
+    assert tev["denominator"] == [] and len(tev["excluded"]) == 12
+
+
+def test_questions_file_carries_no_gold_fields():
+    from temporal_hypo.generation.instances import INPUT_FIELDS
+    for leaked in ("gold_verdict", "gold_n", "gold_k", "evidence_ids",
+                   "p_claim", "p_opposite", "gold_answer", "test_verdict"):
+        assert leaked not in INPUT_FIELDS

@@ -147,6 +147,7 @@ class InstanceFacts:
     effect_size: float | None
     p_value: int | None
     negated: bool = False        # the instance asserts the claim's NEGATION
+    gold_k: int | None = None    # the asserted claim's numerator count
 
 
 # ---------------------------------------------------------------------------
@@ -812,7 +813,7 @@ def _mk(core, polarity, flip_kind, events_assigned, *, verdict,
     return InstanceFacts(
         core=core, polarity=polarity, flip_kind=flip_kind, slot_values=slot,
         events_assigned=events_assigned, vaccines_assigned=vacc,
-        gold_verdict=verdict, gold_proportion=proportion, gold_n=n, ci=ci,
+        gold_verdict=verdict, gold_proportion=proportion, gold_n=n, gold_k=k, ci=ci,
         confidence_tag=tag, effect_size=effect, p_value=p_value,
     )
 

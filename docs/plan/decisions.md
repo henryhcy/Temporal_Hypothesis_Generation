@@ -1493,3 +1493,69 @@ Cohort level: **3,246 instances**, 1,082 supported / 1,082 refuted / 1,082
 insufficient, 1,082 mirror pairs. Every live group is exactly S/S/S; the six
 non-directional groups still ship nothing. Report-level groups are unchanged and
 still deferred.
+
+---
+
+## LOCKED: the release ships REPORT IDS, not narratives (2026-08-11)
+
+Answers the cohort-evidence question. The framework reads the corpus itself, so an
+instance references its evidence by report id instead of duplicating ~240K tokens of
+narrative per cohort-level question.
+
+**Scope of "the model uses MedTempo": the VAERS NARRATIVES, never the annotations.**
+The leveled-order timelines are what the gold label is computed FROM, so a framework
+given them would just recompute the label. The seed decision ("MedTempo is private
+scaffolding; the framework never sees its annotations at inference") is unchanged
+and is now the load-bearing boundary for this design.
+
+### New gold-side fields
+
+`generation/evidence.py` recovers, per instance and **in the orientation the
+instance asserts**:
+
+| field | meaning |
+|---|---|
+| `denominator` | reports satisfying the claim's conditioning -- this is `n` |
+| `numerator` | the subset supporting the asserted direction -- this is `k` |
+| `excluded` | reports where the events are all PRESENT but cannot speak to the claim: a co-exist pair for precedes, a tie for first/last, a non-orderable triple for sequence |
+
+Two-cohort modes return `cohort_1` / `cohort_2` blocks. `excluded` is the new
+one and the most diagnostic: it is the report-level witness separating "present but
+unusable" from "absent entirely", i.e. the evidence behind `not_locatable`.
+
+Also added so a label can be recomputed from the corpus without re-deriving the
+conditioning: `gold_k`, `gold_n2`, `gold_k2`, `family`, `mode`, `min_n_floor`,
+`alpha`. Verified self-consistent: `len(denominator) == gold_n` and
+`len(numerator) == gold_k`, pinned by tests.
+
+Note `ViableCore.cohort_ids` is misleadingly named -- it holds the WHOLE ~1,000-report
+cohort, not the conditioned denominator. The conditioned ids only exist via
+`evidence.evidence_ids`.
+
+### The input/gold boundary is now MECHANICAL
+
+The denominator ids are the answer to the localization step -- finding ~19 relevant
+reports inside a ~1,000-report cohort, a **55x** search, which is the benchmark's
+central difficulty. Shipping them in a record the framework reads would remove it.
+
+So `writers.split_release` emits two files and `instances.INPUT_FIELDS` defines the
+boundary:
+
+- `*_questions.jsonl` -- `hypothesis_id, group_id, level, answer_type, register,
+  format, text, options, cohort`. Nothing else.
+- `*_answers.jsonl` -- everything, keyed by `hypothesis_id`.
+
+The splitter raises if any non-input field reaches the questions file, and a test
+asserts the gold fields are absent from `INPUT_FIELDS`. Previously the whole record
+was one flat object, so the boundary was a convention.
+
+Measured on the pilot: 16.2 MB questions vs 68.0 MB answers.
+
+### Still open
+
+What the framework is GIVEN to search is now the live question: the full cohort
+(faithful but ~240K tokens/question), an exhaustive term-search tool (unbiased, and
+matches the "agentic" framing), or the pre-filtered evidence set (cheap, but hands
+over localization). Note that semantic top-k retrieval is not a neutral option here:
+for a cohort-level claim the evidence is a DISTRIBUTION, not a passage, so
+relevance-ranked retrieval biases the proportion rather than merely losing recall.

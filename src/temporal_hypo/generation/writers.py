@@ -122,3 +122,30 @@ def write_validation_sample(samples: list[dict], path: Path) -> None:
                 out.append(f"    - {vid}: {lv}")
         out.append("")
     path.write_text("\n".join(out), encoding="utf-8")
+
+def split_release(records: list[dict], out_dir: Path, *, stem: str = "benchmark") -> dict:
+    """Write the release as TWO files, enforcing the input/gold boundary.
+
+    ``<stem>_questions.jsonl`` carries only ``instances.INPUT_FIELDS`` -- what a
+    framework may see. ``<stem>_answers.jsonl`` carries everything, keyed by
+    ``hypothesis_id``.
+
+    This exists because the gold side now includes ``evidence_ids``, the report ids
+    the statistic was computed over. Those ids ARE the answer to the localization
+    step (finding ~19 relevant reports in a ~1,000-report cohort), so handing them
+    to the framework would remove the hardest part of the task. A single flat file
+    made that boundary a convention; this makes it mechanical.
+    """
+    from temporal_hypo.generation.instances import INPUT_FIELDS
+
+    questions = [{k: r[k] for k in INPUT_FIELDS if k in r} for r in records]
+    q_path = out_dir / f"{stem}_questions.jsonl"
+    a_path = out_dir / f"{stem}_answers.jsonl"
+    write_jsonl(questions, q_path)
+    write_jsonl(records, a_path)
+
+    leaked = sorted({k for q in questions for k in q} - set(INPUT_FIELDS))
+    if leaked:
+        raise ValueError(f"non-input fields leaked into the questions file: {leaked}")
+    return {"questions": str(q_path), "answers": str(a_path),
+            "n_questions": len(questions), "input_fields": list(INPUT_FIELDS)}

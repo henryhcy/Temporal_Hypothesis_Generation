@@ -18,7 +18,10 @@ from temporal_hypo.core.answers import (
     core_decision,
     oriented_significance,
 )
+from temporal_hypo.core.min_n import family_floor
+from temporal_hypo.core.significance import ALPHA
 from temporal_hypo.generation.cores import InstanceFacts
+from temporal_hypo.generation.evidence import evidence_ids
 from temporal_hypo.generation.templates import FORMATS, REGISTERS, Group, render
 
 
@@ -34,8 +37,20 @@ def _round(x, nd=4):
     return None if x is None else round(x, nd)
 
 
+# The ONLY fields a framework may see at inference. Everything else in a record is
+# gold or provenance -- in particular the evidence report ids, which are the answer
+# to the localization step (finding ~19 relevant reports inside a ~1,000-report
+# cohort). `writers.split_release` enforces this mechanically rather than by
+# convention.
+INPUT_FIELDS = (
+    "hypothesis_id", "group_id", "level", "answer_type", "register", "format",
+    "text", "options", "cohort",
+)
+
+
 def build_records(
-    facts: InstanceFacts, group: Group, *, seq: int, band: str | None = None
+    facts: InstanceFacts, group: Group, *, seq: int, band: str | None = None,
+    index=None,
 ) -> list[dict]:
     """Expand one realized instance into register x format JSONL records."""
     c = facts.core
@@ -54,6 +69,7 @@ def build_records(
     if c.report_id is not None:
         factual_core["report_id"] = c.report_id
 
+    evidence = evidence_ids(index, facts) if index is not None else None
     common = {
         "group_id": c.group_id,
         "level": c.level,
@@ -65,7 +81,18 @@ def build_records(
         # per instance so the negated fraction is measurable, not implicit.
         "negated": facts.negated,
         "gold_proportion": _round(facts.gold_proportion),
-        "gold_n": c.n,
+        "gold_n": facts.gold_n,
+        # enough to RECOMPUTE the label from the corpus without re-deriving the
+        # conditioning: the counts, the family floor that gated it, and the null
+        "gold_k": facts.gold_k,
+        "gold_n2": c.n2,
+        "gold_k2": c.k2,
+        "family": c.family,
+        "mode": c.mode,
+        "min_n_floor": (family_floor(c.family) if c.report_id is None else None),
+        "alpha": ALPHA,
+        # GOLD-SIDE: the report ids the statistic was computed over. Never input.
+        "evidence_ids": evidence,
         "ci": [_round(ci[0]), _round(ci[1])] if ci else None,
         "ci_width": _round(ci[1] - ci[0]) if ci else None,
         "effect_size": _round(facts.effect_size),
