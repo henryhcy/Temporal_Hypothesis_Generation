@@ -645,8 +645,7 @@ def cohort_decision(core: ViableCore):
     return core_decision(core)
 
 
-def feasible_polarities(core: ViableCore, group: Group | None = None, *,
-                        allow_negation: bool = True) -> set[str]:
+def feasible_polarities(core: ViableCore, group: Group | None = None) -> set[str]:
     """Which instance polarities this core can produce.
 
     Cohort-level (2026-08-11): the answer is decided by SIGNIFICANCE, not by the
@@ -662,14 +661,16 @@ def feasible_polarities(core: ViableCore, group: Group | None = None, *,
     Report-level cores keep their own rules below: they are single exact
     observations with no test, so significance does not apply.
 
-    ``allow_negation`` (default True) may be switched off to build a benchmark
-    with no negated wording at all. Negation is OPTIONAL, not structural: only
-    C-V1/C-V3 need it, and turning it off costs those two groups supply (a cap of
-    3 x min(supported, refuted) = 120 items each instead of 567) without breaking
-    them. Callers that do use it should PREFER PLAIN WORDING -- take the class the
-    data already falls on, and negate only to fill the remaining deficit. For
-    C-V1 that is 149 negated of 378 cores (39%), so 61% keep their original
-    wording; a naive alternating assignment wastes ~48 needless negations.
+    Negation is ALWAYS available where the template YAML provides it, which today
+    is C-V1/C-V3 -- the only two groups that need it, since every other cohort
+    group is slot-orientable. It is not a configurable option: without it those two
+    groups cap at 3 x min(supported, refuted) = 120 items instead of 567, which is
+    a 894-item hole in the benchmark for no benefit.
+
+    Callers must still PREFER PLAIN WORDING -- take the class the data already
+    falls on and negate only to fill the remaining deficit. For C-V1 that is 149
+    negated of 378 cores (39%), so 61% keep their original wording; a naive
+    alternating assignment wastes ~48 needless negations.
     """
     if not core.computable and core.report_id is None:
         return {"insufficient"}
@@ -686,7 +687,7 @@ def feasible_polarities(core: ViableCore, group: Group | None = None, *,
         # NEGATION is the orientation operator for these claims -- asserting the
         # negation makes the other tail the claim tail -- so when the group has
         # negated wording, one core can still supply either class.
-        if allow_negation and group is not None and supports_negation(group):
+        if group is not None and supports_negation(group):
             return {"supported", "refuted"}
         return {dec.verdict}
 

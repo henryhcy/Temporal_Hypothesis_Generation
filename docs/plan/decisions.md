@@ -1107,9 +1107,11 @@ symmetric groups, not a structural part of the design.
   nothing.
 - **It never displaces the original wording.** Minimum negated for C-V1 is 149 of
   378 decisive cores (**39%**), so **61% keep the plain claim**.
-- **`feasible_polarities(..., allow_negation=False)`** switches it off entirely.
-  The two groups still work, capped at 3 * min(supported, refuted) = 120 items
-  each instead of 567.
+- **It is NOT configurable.** An `allow_negation` opt-out was added and then
+  removed the same day: switching negation off costs C-V1/C-V3 894 items (120 each
+  instead of 567) and buys nothing, since only 2 of 25 groups are affected and 61%
+  of their instances keep the plain claim anyway. Negation applies wherever the
+  template YAML provides it.
 - **Samplers must PREFER PLAIN WORDING**: take the class the data already falls
   on, and negate only to fill the remaining deficit. A naive alternating
   assignment produces 197 negated instead of 149 -- ~48 needless negations. This
@@ -1140,3 +1142,60 @@ class (3 x min(40, 338) = 120 items, using 80 of 378 decisive cores and discardi
 carrying a test. Of the 18, **12 have S > 0** and ship today; the **6 at S = 0**
 are the non-directional multi groups pending removal. So 19 of 25 groups can
 produce instances.
+
+
+---
+
+## Template count: what changed since the Overleaf draft (2026-08-11)
+
+Recorded because the draft's "17 hypothesis-test groups" and the code's counts
+look inconsistent and are not. **min-n changed neither number.**
+
+The published draft lists exactly 17 testable groups: P-V1, P-V2*, P-V3, P-V4*,
+P-M2, C-V1, C-V2*, C-V3, C-M2, S-V1, S-V3, S-V4, S-M2, F-V1, F-V2, F-V3, F-M3
+(plus 7 report-level = 24). Three of those (*) are DESIGNED BUT NOT BUILT --
+R3/R5/R1, still pending in the roster migration.
+
+| step | testable |
+|---|--:|
+| Overleaf draft (Jul 28) | **17** |
+| − S-M2, power-dead (08-04) | 16 |
+| − S-V4, non-directional and unrescuable (08-11) | **15** |
+| − P-V2 / P-V4 / C-V2, designed but not implemented | **12** |
+
+So 12 groups ship a verdict today, and the gap from 15 is entirely the three
+unbuilt groups -- not the floor. Separately, `load_groups()` reports **18**
+testable, because the code still contains the six non-directional multi groups
+(P-M1, C-M1, S-M1, S-M3, F-M1, F-M2) that the draft already retired on paper;
+roster migration A deletes them. All six sit at S = 0, so they cost nothing but
+count.
+
+What min-n DID change is S, not the roster: 587 (floors 20/5/30) -> 1362
+(floors 10/5/10) -> 1526 (after the argmax test swap).
+
+### Ceiling on S
+
+S is capped by the cores that clear the gate, so the hard ceiling with the current
+roster is **9,029** against an actual **1,526** -- a 17% decisive rate, headroom
+7,503. The rate is the interesting part, and it is very uneven:
+
+| group | clears gate | S | decisive rate |
+|---|--:|--:|--:|
+| C-V1 / C-V3 | 959 | 378 | **39%** |
+| P-V1 / P-V3 | 575 | 218 | **38%** |
+| F-V2 | 756 | 86 | 11% |
+| F-V1 / F-V3 | 756 | 74 | 10% |
+| P-M2 | 322 | 30 | 9% |
+| C-M2 | 579 | 43 | 7% |
+| F-M3 | 387 | 19 | 5% |
+| S-V1 / S-V3 | 275 | 4 | **1%** |
+
+Reading it: single-cohort pairwise questions rest on ~30 reports each and settle
+~4 times in 10. Two-cohort and sequence questions slice the corpus to ~6-8 reports
+and settle ~1 in 20, or 1 in 100 for sequence. That gradient is a property of the
+corpus, not of the tests, and it is what makes the verdicts non-trivial.
+
+The ceiling is not reachable by tuning -- closing it would need either more
+corpus or coarser events (the MedDRA option in `open_questions.md`). The three
+unbuilt groups are the only near-term additions; the draft's estimates for them
+(P-V2 372, P-V4 415, C-V2 144) predate the floor change and need re-measuring.
