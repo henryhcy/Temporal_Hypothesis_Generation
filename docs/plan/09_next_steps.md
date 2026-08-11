@@ -1,8 +1,8 @@
-# Next Steps — as of 2026-08-05
+# Next Steps — as of 2026-08-11
 
-Consolidated state and sequencing after the three-decision labeler landed.
-Companion to `decisions.md` (locked), `open_questions.md` (open), and
-`08_multi_tier_inventory.md` (the multi-tier evidence).
+Consolidated state and sequencing. Companion to `decisions.md` (locked),
+`open_questions.md` (open), and `08_multi_tier_inventory.md` (multi-tier
+evidence, now partly stale — see its banner).
 
 ## Where the code now stands
 
@@ -11,51 +11,72 @@ Companion to `decisions.md` (locked), `open_questions.md` (open), and
 | Roster as coded | **26 groups** (30 − PROP ×3 − S-M2) |
 | Roster after the pending 07-28 migration | **23** (−6 multi, +R1/R3/R5) |
 | Verdict labeler | `core/verdict.py`, three-decision, implemented |
-| Min-n gate | shared family floors (20 / 5 / 30) via `core/min_n.py` |
+| Min-n gate | **10 everywhere, sequence 5** (`core/min_n.py`, 08-11) |
+| Tests | **exact only** — chi-square removed from the codebase (08-11) |
 | Gold label shipped | still the legacy point-estimate `verdict`; `test_verdict` rides alongside |
-| Decisive cores (S) across all 26 groups | **587** |
-| Groups at S = 0 | **11** — six pending removal, plus S-V3/S-V4/F-V1/F-V2 (non-directional) and F-M3 (floor) |
+| Decisive cores (S) across all 26 groups | **1362** |
+| Groups at S = 0 | **10** — six pending removal, plus S-V3/S-V4/F-V1/F-V2 (non-directional) |
 
-Live groups and their equal-thirds budgets (~1.5·S): C-V1/C-V3 266 each,
-P-V1/P-V3 130 each, C-M2 34, P-M2 27, F-V3 21, S-V1 6.
+Live groups and their equal-thirds budgets (~1.5·S): C-V1/C-V3 567 each,
+P-V1/P-V3 327 each, F-V3 111, C-M2 64, P-M2 45, F-M3 28, S-V1 6.
+
+**After the roster migration, the four non-directional groups are the only
+remaining S = 0 groups.** That makes decision 1 below the last supply blocker.
 
 ## Decisions blocking further code
 
-These five gate the roster migration; **1 gates everything**, since the floor
-sets every group's supply and decides whether F-M3 lives.
+The min-n floor — previously the item that gated everything — is now LOCKED at
+10 (sequence 5). What remains:
 
-1. **Min-n floor.** Family floors cost 1,075 decisive cores vs the retired
-   blanket 10 (pairwise −55%, first/last −85%). Exact tests are valid at small
-   n, so this is a quality call, not a validity one. Floor sweep in
-   `open_questions.md`.
-2. **Non-directional CHOICE groups** (S-V3, F-V1, F-V2). Adopt the
-   modal-vs-runner-up test already locked for their BOOL twins (rescue: +4, +14,
-   +21 decisive) or retire them. **S-V4 is not rescuable** — "the ordering is
-   consistent" has no opposite direction, the same defect that retires the
-   "same" multi groups.
-3. **C-M2.** Fails its permutation null (p_perm 0.129); its supported/refuted
-   labels would be largely noise. Drop, or keep with the caveat documented?
-4. **Sequence family.** With S-M1/S-M2/S-M3 gone, cohort-level supply is S-V1's
-   4 cores. Report-level-only, vaccine-agnostic pooling, or MedDRA coarsening?
-5. **§6 lever 2 (position test as verdict driver).** The rank tests are
+1. **Non-directional CHOICE groups** (S-V3, F-V1, F-V2). Adopt the
+   modal-vs-runner-up test already locked for their BOOL twins? At floor 10 the
+   rescue is no longer marginal: **F-V2 +86, F-V1 +74, S-V3 +4** decisive cores
+   (it was +21/+14/+4 at the old floors). **S-V4 is not rescuable** — "the
+   ordering is consistent" has no opposite direction, the same defect that
+   retires the "same" multi groups.
+2. **C-M2.** Fails its own permutation null at **both** floors — p_perm 0.129 at
+   floor 20, **0.151** at floor 10 with 2000 rounds — so this is not a supply
+   problem and no floor rescues it. Its supported/refuted labels would be largely
+   noise. Drop, or keep with the caveat documented?
+3. **Sequence family.** The floor of 5 keeps S-V1's **4** decisive cores alive,
+   but 4 cores is not a family. Report-level-only, vaccine-agnostic pooling, or
+   MedDRA coarsening? Note this is coupled to the floor: a universal 10 would
+   have forced report-level-only by fiat.
+4. **§6 lever 2 (position test as verdict driver).** The rank tests are
    anti-conservative on tie-heavy data (~11% decisive under shuffled labels vs a
-   nominal 5%). Retire the lever, or re-run it with an exact Mann-Whitney?
+   nominal 5%). Retiring is FREE: `core/positions.py` is imported only by
+   `make_examples.py` and `replacement_inventory.py`, never by `core/answers.py`,
+   so no gold label reads those p-values.
+5. **How to source the `sparse` insufficient sub-type.** New, and created by the
+   floor decision: `sparse` was the band between the viability floor and the test
+   floor, and those are now equal, so its measured count is **0** while the
+   07-28 decision requires insufficient to span all three sub-types.
+6. **Is a one-family multi tier worth the shape?** Of the multi candidates only
+   P-M2 (p_perm 0.025) and M-F (0.033) clear their null, and they are the same
+   claim family, so only one ships. Both single-event candidates now fail
+   (M-H 0.120, M-C 0.073). C-M2 fails. F-M3 is untested.
 
 ## Implementation order
 
 **A. Roster migration.** Remove P-M1, C-M1, S-M1, S-M3, F-M1, F-M2 (locked
 07-28). Add R3 = P-V2, R5 = C-V2, R1 = P-V4 — each needs four-register wording;
 R5 needs a corpus helper (2×2 presence × presence with marginals) and R1 a
-4-event (A,B,C,D) enumeration shape. Fold in decisions 2–4.
+4-event (A,B,C,D) enumeration shape. Fold in decisions 1–3.
+
+Note: the Overleaf draft has already published the new groups' IDs
+(P-V2 = R3, C-V2 = R5, P-V4 = R1) and their answer types (all BOOL), while
+`open_questions.md` still lists both as open. Reconcile before or during A.
 
 **B. Corpus helpers must report n below the viability floor.** They currently
 return None and drop n, so `sparse` and `not_locatable` are indistinguishable
-downstream — 3,616 cores sit in an unlabeled bucket. This is a **prerequisite
-for D**: the deliberate not-locatable third cannot be generated without it.
+downstream — 3,319 cores sit in the unlabeled bucket. This is now a prerequisite
+for **two** insufficient sub-types, not one. It is also **not sufficient on its
+own** for `sparse`: enumeration itself stops at n ≥ 10, so no sub-viability core
+ever reaches the labeler (see open question 5).
 
 **C. Flip the gold label** from the legacy point-estimate `verdict` to
 `test_verdict`. Deliberately deferred until A lands, because flipping now would
-mislabel the six non-directional groups that A deletes.
+mislabel the non-directional groups that A deletes or reshapes.
 
 **D. Equal-thirds sampler.** Replace the 45/45/10 balance: ~1.5·S budget per
 group, supported and refuted drawn from *different* event combinations (never
@@ -65,9 +86,21 @@ not-locatable third generated deliberately.
 **E. Regenerate the go/no-go table** on the final roster
 (`scripts/run_verdict_labels.py`) and review before scaling past the pilot.
 
-**F. Gate any new group on a permutation null.** The analytic
-"cores × alpha" baseline endorsed the two worst candidates in the multi-tier
-sweep and failed to flag C-M2. `scripts/run_multi_inventory.py` is the pattern.
+**F. Gate any new group on a permutation null**, at **≥ 2000 rounds**. 200 is
+triage only: M-C crossed the alpha line between 200 and 2000 rounds (0.035 →
+0.073). `scripts/run_multi_inventory.py` is the pattern; it needs an F-M3 entry,
+since F-M3 has never been permutation-validated and its nearest analog (M-B
+first-overall) is pure noise at 0.453.
+
+**G. Overleaf draft.** Both generated `.tex` files predate the 08-04 and 08-11
+decisions. Before regenerating: `final_templates.py` counts the legacy
+`s.significant` rather than the three-decision verdict, so it reports 334
+non-directional cases as shippable supply and inflates the headline to 2,627
+decisive / ~3,940 items (defensible today: 1,362 / ~2,043). Also, the
+"What changed in the redesign" section was deleted by hand on Overleaf, and the
+generator would resurrect it. The draft has no methods text on the permutation
+null, the min-n floor, or the rank-test invalidation — the strongest
+methodological material the project has.
 
 ## Standing caveats
 
@@ -77,5 +110,8 @@ sweep and failed to flag C-M2. `scripts/run_multi_inventory.py` is the pattern.
 - `p_perm` is a **design-time** diagnostic. decisions.md still excludes
   permutation from gold-label computation, because the model must be able to run
   whatever test produces the label.
+- Exactness costs enumeration, not accuracy: the k-category tests grow as
+  `C(n+k-1, k-1)`, so a large-k table can exceed `EXACT_MAX_TABLES` and raise
+  rather than approximate. Nothing in the current corpus does.
 - The `.venv` lost its editable install; tests need `PYTHONPATH=src` until
   `pip install -e .` is re-run.
