@@ -189,6 +189,16 @@ and whether a one- or two-group multi tier justifies the shape at all.
 
 ## Framework
 
+### Can MedTempo annotations be released? (2026-08-11) -- BLOCKING
+The 2026-08-11 decision gives the framework the annotated leveled-order sequences at
+inference time, which makes them part of the released benchmark. The seed decision
+had them as private scaffolding, never released. Open: are the CRAFT/MedTempo
+annotations publishable (licence, publication status, any patient-privacy review
+beyond what the narratives already required)? If not, the input design reverts to
+narratives and the ~240K-token-per-question localization problem returns.
+
+
+
 ### Architecture detail
 The framework reads narrative + hypothesis and returns a verdict. The
 internal pipeline (decomposition, evidence localization, relation

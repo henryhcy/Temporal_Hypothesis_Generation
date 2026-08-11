@@ -1559,3 +1559,83 @@ matches the "agentic" framing), or the pre-filtered evidence set (cheap, but han
 over localization). Note that semantic top-k retrieval is not a neutral option here:
 for a cohort-level claim the evidence is a DISTRIBUTION, not a passage, so
 relevance-ranked retrieval biases the proportion rather than merely losing recall.
+
+---
+
+## SUPERSEDES the seed decision: the framework reads ANNOTATIONS, not narratives (2026-08-11)
+
+The seed decision said MedTempo is private scaffolding, "never released as part of
+the benchmark; the framework never sees its annotations at inference time", and that
+framework input is "narrative + hypothesis only. No relations, no event lists".
+**That is reversed: the framework is given the annotated leveled-order sequences and
+never sees narrative text.**
+
+### This resolves a contradiction that was already in the docs
+
+`01_overview` / CLAUDE.md position the project as "CRAFT extracts; this framework
+**verifies hypotheses against extracted information**". Verifying against extracted
+information means the extracted timelines ARE the input. The "narrative only, no
+relations" rule said the opposite. The two statements never agreed; this picks the
+positioning, which is also the only reading under which the CRAFT -> verification
+chain makes sense as two papers.
+
+### Why it is the better design, measured
+
+| | annotations | narratives |
+|---|--:|--:|
+| whole corpus | **96K tokens** | 727K |
+| one cohort | **29-36K** | 213-274K |
+| median report | **26 tokens** | 230 |
+
+- **The localization problem dissolves.** A full cohort fits in context at ~30K
+  tokens, so there is no need to retrieve, and therefore no retrieval bias. That
+  matters because for a cohort-level claim the evidence is a DISTRIBUTION, not a
+  passage -- relevance-ranked retrieval would have biased the proportion rather than
+  merely losing recall.
+- **It is cacheable.** The cohort annotation block is byte-identical across every
+  question about that cohort, so it is a fixed prefix. Full-context evaluation costs
+  one cached prefix plus a short hypothesis per item, instead of 780M narrative
+  tokens per model.
+- **It isolates the capability under test** from extraction noise, which is CRAFT's
+  problem, not this benchmark's.
+
+### What remains hard -- the benchmark is not trivialised
+
+Gold timelines remove extraction, not reasoning. A framework must still:
+
+1. parse the hypothesis into a formal query (which events, cohort, relation,
+   asserted direction);
+2. apply the right **conditioning**, which is where the subtlety lives -- precedes
+   EXCLUDES co-exist from its denominator while co-occurs treats co-exist as the
+   numerator event; sequence requires all three events at DISTINCT levels; first/last
+   requires every candidate present and excludes tie reports;
+3. aggregate exhaustively rather than sampling;
+4. pick the right null -- 0.5 for pairwise/co-occurs, named-vs-runner-up for the
+   argmax modes;
+5. run it one-sided in the claim's direction and apply the three-decision rule,
+   where `refuted` needs the OPPOSITE tail significant;
+6. respect the min-n floor (10, sequence 5).
+
+Every one of those is a distinct, diagnosable failure. The `excluded` id set added
+earlier measures failure 2 directly: a framework that counts co-exist reports inside
+a precedes denominator gets the wrong proportion, and the ids say so.
+
+### Two consequences to accept explicitly
+
+1. **The paper's claim changes.** This is no longer "locate temporal evidence in
+   clinical text". It is "translate a natural-language temporal hypothesis into the
+   correct statistical procedure over structured timelines, and execute it". Sharper
+   and cleanly separable from CRAFT -- but it must be stated that way, and the
+   deterministic upper bound becomes a true 100% rather than an estimate.
+2. **MedTempo annotations are now effectively part of the release.** That is the one
+   thing the seed decision protected. Whether that is acceptable -- licensing, and
+   whether CRAFT's annotations are published -- is an OPEN question, not something
+   this entry settles. If they cannot be released, the whole design reverts to
+   narratives.
+
+### Target framework shape (the intended agentic loop)
+
+hypothesis -> decide which test applies -> query the annotation store for the
+conditioned reports -> aggregate -> run the exact test -> three-decision verdict.
+Retrieval is a mechanical query over structured data, so the interesting work is
+steps 1, 2 and 5.
