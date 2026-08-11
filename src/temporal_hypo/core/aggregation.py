@@ -132,6 +132,7 @@ def first_among_fractions(
     Return format: {term: fraction, ..., 'tie_rate': float, 'n': int}
     """
     denom = 0
+    present = 0
     ties = 0
     term_counts: dict[str, int] = {t: 0 for t in terms}
 
@@ -140,18 +141,23 @@ def first_among_fractions(
         result = first_among(levels, terms)
         if result == "missing":
             continue
-        denom += 1
+        present += 1
         if len(result) > 1:
-            ties += 1
+            ties += 1          # unresolvable: leaves the denominator (2026-08-11)
         else:
+            denom += 1
             term_counts[result[0]] += 1
 
     if denom == 0:
-        return {"n": 0.0, "tie_rate": None, **{t: None for t in terms}}
+        return {"n": 0.0, "n_present": float(present), "ties": float(ties),
+                "tie_rate": (ties / present if present else None),
+                **{t: None for t in terms}}
 
     fracs: dict[str, float] = {t: term_counts[t] / denom for t in terms}
-    fracs["tie_rate"] = ties / denom
+    fracs["tie_rate"] = ties / present if present else None
     fracs["n"] = float(denom)
+    fracs["n_present"] = float(present)
+    fracs["ties"] = float(ties)
     return fracs
 
 
@@ -169,6 +175,7 @@ def last_among_fractions(
     Return format: {term: fraction, ..., 'tie_rate': float, 'n': int}
     """
     denom = 0
+    present = 0
     ties = 0
     term_counts: dict[str, int] = {t: 0 for t in terms}
 
@@ -177,18 +184,23 @@ def last_among_fractions(
         result = last_among(levels, terms)
         if result == "missing":
             continue
-        denom += 1
+        present += 1
         if len(result) > 1:
-            ties += 1
+            ties += 1          # unresolvable: leaves the denominator (2026-08-11)
         else:
+            denom += 1
             term_counts[result[0]] += 1
 
     if denom == 0:
-        return {"n": 0.0, "tie_rate": None, **{t: None for t in terms}}
+        return {"n": 0.0, "n_present": float(present), "ties": float(ties),
+                "tie_rate": (ties / present if present else None),
+                **{t: None for t in terms}}
 
     fracs: dict[str, float] = {t: term_counts[t] / denom for t in terms}
-    fracs["tie_rate"] = ties / denom
+    fracs["tie_rate"] = ties / present if present else None
     fracs["n"] = float(denom)
+    fracs["n_present"] = float(present)
+    fracs["ties"] = float(ties)
     return fracs
 
 

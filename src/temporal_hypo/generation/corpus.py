@@ -206,7 +206,8 @@ def triple_positions(
 def _extreme_among_fractions(
     index: CorpusIndex, terms: list[str], cohort: list[int], *, last: bool
 ) -> dict:
-    denom = 0
+    denom = 0      # reports with a UNIQUE first/last event
+    present = 0    # reports containing all candidates (denom + ties)
     ties = 0
     counts: dict[str, int] = {t: 0 for t in terms}
     for vid in cohort:
@@ -214,19 +215,26 @@ def _extreme_among_fractions(
         idxs = [tmap.get(t) for t in terms]
         if any(i is None for i in idxs):
             continue
-        denom += 1
+        present += 1
         target = max(idxs) if last else min(idxs)
         winners = [t for t, i in zip(terms, idxs) if i == target]
         if len(winners) > 1:
-            ties += 1
+            ties += 1          # unresolvable: leaves the denominator (2026-08-11)
         else:
+            denom += 1
             counts[winners[0]] += 1
     if denom == 0:
-        return {"n": 0, "counts": counts, "tie_rate": None,
+        return {"n": 0, "n_present": present, "ties": ties, "counts": counts,
+                "tie_rate": (ties / present if present else None),
                 **{t: None for t in terms}}
     fracs: dict = {t: counts[t] / denom for t in terms}
-    fracs["tie_rate"] = ties / denom
+    # tie_rate is over reports where all candidates were PRESENT, since ties are
+    # no longer part of n -- otherwise the rate would be relative to a denominator
+    # that excludes them and could exceed 1.
+    fracs["tie_rate"] = ties / present if present else None
     fracs["n"] = denom
+    fracs["n_present"] = present
+    fracs["ties"] = ties
     fracs["counts"] = counts
     return fracs
 

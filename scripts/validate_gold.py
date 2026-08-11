@@ -118,16 +118,17 @@ def check_instance(index, facts, fails: Counter, examples: dict) -> None:
                     f"report {vid} {lv}")
     elif m in _EXTREME:
         last = (m == "last_choice")
-        if exc:
-            bad("C: first/last excludes nothing from the denominator "
-                "(ties stay in n)", f"{len(exc)} excluded")
-        for vid in ids.get("ties", []):
+        for vid in exc:
             lv = _lv(index, vid, ev)
             target = max(lv) if last else min(lv)
             if sum(1 for x in lv if x == target) < 2:
-                bad("C: a first/last 'tie' report is not tied", f"report {vid} {lv}")
-            if vid not in set(den):
-                bad("C: a first/last tie left the denominator", f"report {vid}")
+                bad("C: first/last excluded report is not a tie", f"report {vid} {lv}")
+        for vid in den:
+            lv = _lv(index, vid, ev)
+            target = max(lv) if last else min(lv)
+            if sum(1 for x in lv if x == target) > 1:
+                bad("C: a tie survived into the first/last denominator",
+                    f"report {vid} {lv}")
         for vid in num:
             lv = _lv(index, vid, ev)
             target = max(lv) if last else min(lv)

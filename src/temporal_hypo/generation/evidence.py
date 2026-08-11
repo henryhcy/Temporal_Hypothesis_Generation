@@ -15,10 +15,10 @@ Three sets per cohort, and the third is the interesting one:
   co-exist pair for a precedes claim, a non-orderable triple for a sequence claim.
   These separate "present but unusable" from "absent entirely" and are the
   report-level witness for `not_locatable`.
-- ``ties`` -- first/last only, and deliberately NOT the same thing: locked rule 4
-  keeps tie reports IN the denominator (they dilute the proportion) while they
-  support no candidate. Conflating the two is a real hazard -- Part C caught exactly
-  that on 2026-08-11.
+- ``ties`` -- first/last only, and the same reports as ``excluded`` there: kept as a
+  separate key because the tie RATE is a reported diagnostic. Ties left the
+  denominator on 2026-08-11; before that they were inside it, which made the gate
+  pass on reports the test never sees.
 
 **These are GOLD-SIDE fields.** The denominator ids are the answer to the hardest
 part of the task -- locating ~19 relevant reports inside a ~1,000-report cohort, a
@@ -81,11 +81,9 @@ def _extreme_sets(index, terms: tuple[str, ...], cohort: list[int], *,
                   named: str, last: bool) -> dict:
     """First/last conditioning: every report containing all candidates.
 
-    Ties are IN the denominator but in no candidate's numerator -- locked rule 4,
-    "reports containing all named candidates; tie-reports excluded from per-candidate
-    counts". So they are reported as ``ties``, NOT as ``excluded``: they dilute the
-    proportion rather than leaving the denominator. Contrast the sequence modes,
-    where a tied triple leaves the denominator altogether.
+    A tie leaves the denominator (2026-08-11, superseding seed rule 4), exactly as a
+    co-exist pair does for precedes and a non-orderable triple does for sequence:
+    all four families now treat an unresolvable report the same way.
     """
     denom, num, ties = [], [], []
     for vid in cohort:
@@ -93,14 +91,16 @@ def _extreme_sets(index, terms: tuple[str, ...], cohort: list[int], *,
         idxs = [t.get(x) for x in terms]
         if any(i is None for i in idxs):
             continue
-        denom.append(vid)
         target = max(idxs) if last else min(idxs)
         winners = [x for x, i in zip(terms, idxs) if i == target]
         if len(winners) > 1:
-            ties.append(vid)          # in n, but supports no candidate
-        elif winners[0] == named:
+            ties.append(vid)          # unresolvable -> out of the denominator
+            continue
+        denom.append(vid)
+        if winners[0] == named:
             num.append(vid)
-    return {"denominator": denom, "numerator": num, "excluded": [], "ties": ties}
+    return {"denominator": denom, "numerator": num, "excluded": ties,
+            "ties": ties}
 
 
 def evidence_ids(index, facts) -> dict:

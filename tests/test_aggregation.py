@@ -234,8 +234,10 @@ def test_first_among_fractions_basic():
     conn.close()
 
 
-def test_first_among_fractions_ties_excluded():
-    """Tie-reports are excluded from per-term counts (locked rule 4)."""
+def test_first_among_fractions_ties_leave_the_denominator():
+    """2026-08-11: a tie is UNRESOLVABLE, so it leaves n -- exactly as a co-exist
+    pair does for precedes and a non-orderable triple does for sequence. It used to
+    stay in n, which let the min-n gate pass on reports the test never sees."""
     reports = [
         (1, "Pfizer", [["A", "B"], ["C"]]),   # tie between A and B
     ] + [
@@ -243,11 +245,13 @@ def test_first_among_fractions_ties_excluded():
     ]
     conn, ids = _make_db(reports)
     result = first_among_fractions(conn, ["A", "B", "C"], ids)
-    assert result is not None
-    assert int(result["n"]) == 12
+    assert int(result["n"]) == 11            # the tie is OUT (was 12)
+    assert int(result["n_present"]) == 12    # all-candidates-present, for the rate
+    assert int(result["ties"]) == 1
+    # the tie rate is over PRESENT reports, so it cannot exceed 1
     assert abs(result["tie_rate"] - 1 / 12) < 1e-9
-    # 11 non-tie reports, A is first in all 11
-    assert abs(result["A"] - 11 / 12) < 1e-9
+    # A is first in all 11 resolving reports
+    assert abs(result["A"] - 1.0) < 1e-9
     conn.close()
 
 
@@ -299,7 +303,7 @@ def test_last_among_fractions_basic():
     conn.close()
 
 
-def test_last_among_fractions_ties_excluded():
+def test_last_among_fractions_ties_leave_the_denominator():
     reports = [
         (1, "Pfizer", [["A"], ["B", "C"]]),   # tie between B and C for last
     ] + [
@@ -307,10 +311,11 @@ def test_last_among_fractions_ties_excluded():
     ]
     conn, ids = _make_db(reports)
     result = last_among_fractions(conn, ["A", "B", "C"], ids)
-    assert result is not None
-    assert int(result["n"]) == 12
+    assert int(result["n"]) == 11            # the B/C tie is OUT of n (was 12)
+    assert int(result["n_present"]) == 12
+    assert int(result["ties"]) == 1
     assert abs(result["tie_rate"] - 1 / 12) < 1e-9
-    assert abs(result["C"] - 11 / 12) < 1e-9   # C last in the 11 strict reports
+    assert abs(result["C"] - 1.0) < 1e-9     # C last in all 11 resolving reports
     conn.close()
 
 

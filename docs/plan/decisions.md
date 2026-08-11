@@ -1718,3 +1718,69 @@ CI.
 human hand-check of `validation_sample.md` remains worth doing on top -- the
 mechanised checks verify internal consistency and cross-implementation agreement,
 but only a person can confirm the leveled orders match what the narratives say.
+
+---
+
+## SUPERSEDES seed rule 4: first/last ties LEAVE the denominator (2026-08-11)
+
+Seed rule 4 put tie reports in the first/last denominator ("reports containing all
+named candidates; tie-reports excluded from per-candidate counts"). **Ties now leave
+n**, exactly as a co-exist pair does for precedes and a non-orderable triple does for
+sequence. All four families treat an unresolvable report the same way.
+
+### Why the old rule was the odd one out
+
+Precedes drops co-exist because the relation cannot be resolved. Sequence drops
+non-orderable triples for the same reason. First/last was the only family that kept
+its unresolvable case inside n -- and the tie share is large: **median n was 14 with a
+median of 8 ties, ~55% of the denominator**.
+
+A tie contributes to NEITHER cell of the modal-vs-runner-up test, so the gate was
+passing on a number more than half composed of reports the test never sees. Example:
+n = 47 while the test ran on 9 vs 8 = 17 observations.
+
+This was a loose end created by the same-day test swap: the 2026-08-04 decision chose
+to gate on "the CORE's conditioned denominator" and retired a private floor on
+(top + runner-up), but that was decided when first/last was tested GOF-vs-uniform.
+The test changed to modal-vs-runner-up on 08-11 and the gate rationale was never
+revisited.
+
+### The p-values do not move -- only the gate
+
+Verified: every affected core's `p_claim` is byte-identical before and after, because
+ties were never in the 2-cell table. S falls purely because cores that cleared the
+floor on a tie-inflated n no longer clear it, so they are gated to
+`insufficient / sparse` BEFORE the test is consulted.
+
+Worked case (F-V1, Arthralgia/Fatigue/Pain in extremity, Pfizer): counts are Pain in
+extremity 5, Arthralgia 0, Fatigue 0, with n = 11 and 6 ties. Top-vs-runner is 5 vs 0,
+p = 0.0312, unchanged. But n - ties = 5, below the floor of 10, so the core is gated
+out. Asking "is Pain in extremity most commonly first?" on 5 resolving reports out of
+11 -- with no unique first event in 6 of them -- is exactly the thinness the floor
+exists to refuse.
+
+### Cost
+
+| | before | after |
+|---|--:|--:|
+| F-V1 / F-V3 | 74 each | **36 each** |
+| F-V2 | 86 | **59** |
+| F-M3 | 19 | **8** |
+| **total S** | 1529 | **1415** |
+
+Accepted: uniform treatment of unresolvable evidence is one sentence to defend,
+where the old position needed a special case for one family. `tie_rate` is still
+reported and is now computed over reports where all candidates were PRESENT
+(`n_present`), so it cannot exceed 1 now that ties are outside n.
+
+### Rejected alternative: credit every tied candidate
+
+Considered giving each tied candidate a count. Integer shared credit makes counts sum
+to more than n and lets "A is most commonly first" be satisfied by reports where A
+merely tied -- in the worked case it would push Pain in extremity from 5 toward 11 on
+the strength of non-wins. Fractional credit (0.5 each) breaks the exact binomial,
+which requires integer counts, and every test in the project is exact on integers.
+
+Note this is separate from the still-open REPORT-level tie question (F-R1/F-R2: one
+report where two events tie for first, set-valued gold vs `insufficient`). Shared
+credit is defensible there, because there is no aggregation to distort.
