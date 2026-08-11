@@ -1639,3 +1639,82 @@ hypothesis -> decide which test applies -> query the annotation store for the
 conditioned reports -> aggregate -> run the exact test -> three-decision verdict.
 Retrieval is a mechanical query over structured data, so the interesting work is
 steps 1, 2 and 5.
+
+---
+
+## Part C validation: run, and it found two real bugs (2026-08-11)
+
+Part C existed as a 20-entry hand-check that had never been acted on. Doing it
+properly found three defects -- one in the validation artifact itself, two in the
+gold-label path.
+
+### 0. The hand-check artifact was misleading
+
+`validation_sample.md` listed "sample reports entering the denominator" by testing
+only that both events were PRESENT. For a precedes claim that wrongly included
+co-exist pairs -- reports the locked rule EXCLUDES. A human following it would either
+reject correct code or validate against the wrong evidence, so the guard could not
+do the one job the spec gives it ("guards against ... a wrong co-exist exclusion").
+
+Rewritten to use `evidence.evidence_ids`, and each entry now lists **supports /
+against / excluded** with the levels, plus the test, both tails, the min-n floor and
+an automatic `counts match` line. The evidence is now self-evidently checkable: for
+a precedes claim, supports have A's level < B's, against have it >, and excluded are
+exactly the equal-level pairs.
+
+### 1. BUG: the first-mention rule was not implemented in the index
+
+`CorpusIndex.load` assigned `terms[term] = level_index` unconditionally, so when a
+term appeared at more than one level the LAST row won -- and the query had no
+`ORDER BY`, so **which** row won depended on SQLite's plan. That violated the seed
+decision ("when a term appears multiple times, only the first mention is recorded")
+and made gold labels non-reproducible across machines.
+
+Found by cross-checking against `core.aggregation`, the DB-backed mirror, which
+reads the levels list and is first-mention by construction. It disagreed on 5 of
+1,685 instances. Example: report 1709458 has Nausea at levels 1 AND 2 and
+Hypoaesthesia at level 1 -- first-mention makes them **co-exist**, the index called it
+**after**.
+
+Scope: 7 of 22,674 (report, term) pairs sit at multiple levels, across 6 of 3,166
+reports. Small, but it moved labels: **S 1526 -> 1529**.
+
+### 2. BUG: sub-floor cores had no numerator, and named the wrong cell
+
+Insufficient realizations of below-floor cores carried `gold_k = None`, so their
+labels were not recomputable, and the first/last branch stored no `extra` -- so the
+claim named the alphabetically-first candidate while `k` described the top one. The
+two disagreed on 66 instances. Both gate-fail branches now carry `k` and `extra`, and
+`_realize_insufficient` treats an empty denominator as `k = 0` rather than unknown.
+
+### 3. Mislabelled tie semantics in the new evidence module
+
+`evidence.py` put first/last tie reports in `excluded`. Locked rule 4 keeps them IN
+the denominator (they dilute the proportion) while they support no candidate. Now
+reported as a separate `ties` set, with `excluded` reserved for reports the
+conditioning removes from the denominator entirely -- which is what happens to a
+non-orderable triple in the sequence modes. The two are genuinely different and
+conflating them would have misstated n for every first/last group.
+
+### The mechanised guard
+
+`scripts/validate_gold.py` replaces trust-by-sample with **22,242 instances checked,
+all passing**, over six invariant families:
+
+| | check |
+|---|---|
+| A | the denominator/numerator id sets reproduce `n` and `k` |
+| B | numerator subset of denominator; denominator and excluded disjoint |
+| C | conditioning per locked rule, verified against the leveled orders |
+| D | every numerator report actually satisfies the claim as asserted |
+| E | `supported` needs p_claim < alpha, `refuted` needs p_opposite < alpha, and the min-n gate agrees with the sub-type |
+| F | independent recomputation through the DB-backed `core.aggregation` mirror |
+
+F is the one that earned its keep: two implementations of the same locked rule
+disagreeing is exactly the failure a single-path check cannot see. Worth keeping in
+CI.
+
+**Part A distributions are now trustworthy** in the sense CLAUDE.md requires. The
+human hand-check of `validation_sample.md` remains worth doing on top -- the
+mechanised checks verify internal consistency and cross-implementation agreement,
+but only a person can confirm the leveled orders match what the narratives say.

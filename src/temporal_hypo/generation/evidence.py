@@ -11,11 +11,14 @@ Three sets per cohort, and the third is the interesting one:
 - ``denominator`` -- reports that satisfy the claim's conditioning. This is ``n``,
   the denominator the test ran on.
 - ``numerator`` -- the subset that supports the asserted direction. This is ``k``.
-- ``excluded`` -- reports where the events are all PRESENT but the report cannot
-  speak to the claim: a co-exist pair for a precedes claim, a tie for a first/last
-  claim, a non-orderable triple for a sequence claim. These are what separate
-  "present but unusable" from "absent entirely", and they are the report-level
-  witness for the `not_locatable` sub-type.
+- ``excluded`` -- reports the conditioning removes from the denominator entirely: a
+  co-exist pair for a precedes claim, a non-orderable triple for a sequence claim.
+  These separate "present but unusable" from "absent entirely" and are the
+  report-level witness for `not_locatable`.
+- ``ties`` -- first/last only, and deliberately NOT the same thing: locked rule 4
+  keeps tie reports IN the denominator (they dilute the proportion) while they
+  support no candidate. Conflating the two is a real hazard -- Part C caught exactly
+  that on 2026-08-11.
 
 **These are GOLD-SIDE fields.** The denominator ids are the answer to the hardest
 part of the task -- locating ~19 relevant reports inside a ~1,000-report cohort, a
@@ -76,8 +79,15 @@ def _ordering_sets(index, terms: tuple[str, ...], cohort: list[int]) -> dict:
 
 def _extreme_sets(index, terms: tuple[str, ...], cohort: list[int], *,
                   named: str, last: bool) -> dict:
-    """First/last conditioning: all candidates present; ties are excluded."""
-    denom, num, excl = [], [], []
+    """First/last conditioning: every report containing all candidates.
+
+    Ties are IN the denominator but in no candidate's numerator -- locked rule 4,
+    "reports containing all named candidates; tie-reports excluded from per-candidate
+    counts". So they are reported as ``ties``, NOT as ``excluded``: they dilute the
+    proportion rather than leaving the denominator. Contrast the sequence modes,
+    where a tied triple leaves the denominator altogether.
+    """
+    denom, num, ties = [], [], []
     for vid in cohort:
         t = index.report_terms[vid]
         idxs = [t.get(x) for x in terms]
@@ -87,10 +97,10 @@ def _extreme_sets(index, terms: tuple[str, ...], cohort: list[int], *,
         target = max(idxs) if last else min(idxs)
         winners = [x for x, i in zip(terms, idxs) if i == target]
         if len(winners) > 1:
-            excl.append(vid)          # tie: no single first/last event
+            ties.append(vid)          # in n, but supports no candidate
         elif winners[0] == named:
             num.append(vid)
-    return {"denominator": denom, "numerator": num, "excluded": excl}
+    return {"denominator": denom, "numerator": num, "excluded": [], "ties": ties}
 
 
 def evidence_ids(index, facts) -> dict:

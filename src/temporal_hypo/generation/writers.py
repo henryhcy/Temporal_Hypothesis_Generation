@@ -93,35 +93,81 @@ def _render_report_md(r: dict) -> str:
 
 
 def write_validation_sample(samples: list[dict], path: Path) -> None:
-    """Part C: 20-30 hand-checkable cores with full reconstruction detail."""
+    """Part C: hand-checkable entries with the evidence and the arithmetic.
+
+    Each entry lists the reports that SUPPORT the claim, the ones that are in the
+    denominator but do NOT, and the ones EXCLUDED with the reason -- so the counts
+    can be recomputed by eye and the conditioning rule verified, which is the one
+    thing this guard exists to catch.
+    """
     path.parent.mkdir(parents=True, exist_ok=True)
     out = ["# Part C: Validation Sample (gold-label correctness guard)", "",
-           "Each entry records the cohort, the per-report leveled orders entering "
-           "the denominator, the numerator/denominator under the locked rule, and "
-           "the computed gold. Recompute by hand to confirm before trusting Part A.",
-           ""]
-    for i, s in enumerate(samples, 1):
-        out.append(f"## {i}. {s['group_id']} ({s['mode']}) -- {s['answer_type']}")
-        out.append(f"- claim: \"{s['claim']}\"")
-        out.append(f"- events: {s['events']}  vaccines: {s['vaccines']}")
-        out.append(f"- locked rule: {s['rule']}")
-        out.append(f"- denominator (n): {s['n']}   numerator (k): {s['k']}")
-        out.append(f"- gold proportion: {s['proportion']}   gold verdict: "
-                   f"**{s['verdict']}**")
-        if s.get("cohort2"):
-            c2 = s["cohort2"]
-            out.append(f"- cohort 2: proportion={c2['proportion2']} "
-                       f"n={c2['n2']} k={c2['k2']}")
-        if s.get("ci"):
-            out.append(f"- 95% CI: {s['ci']}  (width {s['ci_width']}, "
-                       f"tag {s['confidence_tag']})")
-        if s.get("sample_reports"):
-            out.append(f"- sample reports entering the denominator "
-                       f"(vaers_id -> relevant levels):")
-            for vid, lv in s["sample_reports"]:
-                out.append(f"    - {vid}: {lv}")
+           "For each entry: the claim as the instance asserts it, the reports behind "
+           "it split into supports / against / excluded, and the test that produced "
+           "the verdict. **Recompute the counts by eye before trusting Part A.**", "",
+           "`levels` are the leveled-order positions of the claim's events in that "
+           "report -- lower index = earlier. Equal indices mean co-exist.", "",
+           "What to check, in order of what has actually gone wrong before:", "",
+           "1. **The exclusion rule.** Every report under `excluded` must genuinely "
+           "fail the conditioning for the stated reason, and none of them may appear "
+           "under supports/against. A precedes claim must NOT count co-exist pairs.",
+           "2. **The counts.** `len(supports) + len(against) = n`, and "
+           "`len(supports) = k`. Flagged automatically as `counts match`.",
+           "3. **The direction.** Each report under `supports` must actually satisfy "
+           "the claim as worded (including negation, if `negated` is true).",
+           "4. **The verdict.** `supported` needs p_claim < alpha; `refuted` needs "
+           "p_opposite < alpha; otherwise `insufficient` with a sub-type.", ""]
+
+    def _rows(label, rows):
+        if not rows:
+            return []
+        block = [f"  - {label}:"]
+        for vid, lv in rows:
+            block.append(f"      - {vid}  levels={lv}")
+        return block
+
+    for i, s_ in enumerate(samples, 1):
+        neg = "  [NEGATED wording]" if s_.get("negated") else ""
+        out.append(f"## {i}. {s_['group_id']} ({s_['mode']}, {s_['answer_type']}) "
+                   f"-- realized as {s_['polarity']}{neg}")
+        out.append(f"- claim: \"{s_['claim']}\"")
+        out.append(f"- events: {s_['events']}   cohort: {s_['vaccines'] or 'report-level'}")
+        out.append(f"- conditioning rule: {s_['rule']}")
+        if s_.get("exclusion_reason"):
+            out.append(f"- excluded when: {s_['exclusion_reason']}")
+        out.append(f"- **n = {s_['n']}, k = {s_['k']}, proportion = {s_['proportion']}**")
+        cc = s_.get("counts_check")
+        if cc:
+            ok = "OK" if (cc["matches_gold_n"] and cc["matches_gold_k"]) else "MISMATCH"
+            out.append(f"- counts match: **{ok}** "
+                       f"(denominator ids {cc['denominator_ids']} vs n {s_['n']}; "
+                       f"numerator ids {cc['numerator_ids']} vs k {s_['k']}; "
+                       f"{cc['excluded_ids']} excluded)")
+        if s_.get("min_n_floor") is not None:
+            out.append(f"- min-n floor for this family: {s_['min_n_floor']}")
+        out.append(f"- test: {s_['test']}   p_claim = {s_['p_claim']}   "
+                   f"p_opposite = {s_['p_opposite']}   alpha = {s_['alpha']}")
+        sub = f" ({s_['subtype']})" if s_.get("subtype") else ""
+        out.append(f"- **gold verdict: {s_['verdict']}{sub}**")
+        if s_.get("ci"):
+            out.append(f"- 95% CI: {s_['ci']} (width {s_['ci_width']}, "
+                       f"{s_['confidence_tag']})")
+        if s_.get("cohort2"):
+            c2 = s_["cohort2"]
+            out.append(f"- cohort 2: proportion={c2['proportion2']} n={c2['n2']} "
+                       f"k={c2['k2']}")
+        out += _rows("supports the claim (numerator)", s_.get("supports"))
+        out += _rows("in denominator but does NOT support", s_.get("against"))
+        out += _rows("EXCLUDED from the denominator", s_.get("excluded"))
+        for key in ("cohort_1", "cohort_2"):
+            if s_.get(key):
+                b = s_[key]
+                out.append(f"  - {key}: n={b['denominator']} k={b['numerator']} "
+                           f"excluded={b['excluded']}")
+                out += _rows(f"{key} sample", b["sample"])
         out.append("")
     path.write_text("\n".join(out), encoding="utf-8")
+
 
 def split_release(records: list[dict], out_dir: Path, *, stem: str = "benchmark") -> dict:
     """Write the release as TWO files, enforcing the input/gold boundary.

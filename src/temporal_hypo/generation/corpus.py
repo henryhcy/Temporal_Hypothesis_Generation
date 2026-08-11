@@ -42,11 +42,21 @@ class CorpusIndex:
             SELECT r.vaers_id, r.vaccine, lt.level_index, lt.term
             FROM reports r
             JOIN level_terms lt USING (report_id)
+            ORDER BY r.vaers_id, lt.level_index
             """
         ).fetchall()
         for vaers_id, vaccine, level_index, term in rows:
             report_vaccine[vaers_id] = vaccine
-            report_terms.setdefault(vaers_id, {})[term] = level_index
+            terms = report_terms.setdefault(vaers_id, {})
+            # FIRST-MENTION RULE (decisions.md seed): when a term appears at more
+            # than one level, only the earliest is recorded. This used to assign
+            # unconditionally, so the LAST row won -- and with no ORDER BY, which row
+            # that was depended on SQLite's plan, making gold labels
+            # non-reproducible. Caught by the Part C cross-check on 2026-08-11,
+            # where the DB-backed mirror (which reads the levels list and is
+            # first-mention by construction) disagreed with this index.
+            if term not in terms or level_index < terms[term]:
+                terms[term] = level_index
         # reports with no level_terms still need a vaccine entry
         for (vaers_id, vaccine) in conn.execute(
             "SELECT vaers_id, vaccine FROM reports"

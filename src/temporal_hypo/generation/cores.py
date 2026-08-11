@@ -288,9 +288,11 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
         dist = corpus.ordering_distribution(index, [a, b, c], cohort)
         n = dist["n"]
         if not _is_testable(n, group.family):
+            # carry k as well: a sub-floor core still has a numerator, and the
+            # release promises every label is recomputable from the corpus
             return _new_core(group, mode, computable=False,
                              natural_verdict="insufficient", n=n,
-                             extra=dist, **base)
+                             k=dist["modal_count"], extra=dist, **base)
         # seq_bool ("most common" BOOL) + modal_choice (CHOICE): supported iff a
         # UNIQUE modal ordering exists (an argmax claim). seq_bool is tested
         # modal-vs-runner-up (see core_significance); modal_choice keeps GOF.
@@ -307,8 +309,21 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
         res = fn(index, terms, cohort)
         n = int(res["n"])
         if not _is_testable(n, group.family):
+            # store `extra` even below the floor, so the insufficient realization
+            # can NAME THE WINNER like the testable branch does. Without it the
+            # claim named the alphabetically-first candidate while k described the
+            # top one, and the two disagreed.
+            fr0 = {t: res[t] for t in terms}
+            top = max(terms, key=lambda t: ((fr0[t] or 0), t))
+            maxes = [t for t in terms if (fr0[t] or 0) == (fr0[top] or 0)]
             return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient", n=n, **base)
+                             natural_verdict="insufficient", n=n,
+                             k=round((fr0[top] or 0) * n),
+                             extra={"fracs": fr0, "winner": top,
+                                    "unique": len(maxes) == 1,
+                                    "tie_rate": res.get("tie_rate"),
+                                    "counts": res.get("counts", {})},
+                             **base)
         fracs = {t: res[t] for t in terms}
         winner = max(terms, key=lambda t: (fracs[t], t))
         wfrac = fracs[winner]
@@ -1039,4 +1054,5 @@ def _realize_insufficient(core: ViableCore) -> InstanceFacts:
             events = (winner, *others)
     return _mk(core, "insufficient", None, events, verdict="insufficient",
                proportion=core.proportion, n=core.n,
-               k=core.k if core.n else None, effect=None)
+               # k is 0 for an empty denominator, not unknown
+               k=(core.k if core.k is not None else 0), effect=None)
