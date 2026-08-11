@@ -1016,7 +1016,26 @@ def _realize_report(core, polarity):
 
 
 def _realize_insufficient(core: ViableCore) -> InstanceFacts:
-    """Assert the canonical positive claim; gold verdict is insufficient."""
-    return _mk(core, "insufficient", None, core.events, verdict="insufficient",
+    """Assert the canonical positive claim; gold verdict is insufficient.
+
+    For the argmax modes the canonical claim NAMES THE MODAL CELL, so the slots
+    must be oriented the same way the supported branch orients them. Using
+    ``core.events`` verbatim would assert "the alphabetically first candidate is
+    the most common one", a different claim the data can decisively refute -- which
+    is exactly how 24 records ended up labelled `insufficient` while their own
+    statistics said `refuted`.
+    """
+    events = core.events
+    m = core.mode
+    if m in ("seq_bool", "modal_choice"):
+        modal = core.extra.get("modal")
+        if modal is not None:
+            events = modal
+    elif m in ("first_choice", "last_choice", "first_bool"):
+        winner = core.extra.get("winner")
+        if winner is not None:
+            others = [t for t in core.events if t != winner]
+            events = (winner, *others)
+    return _mk(core, "insufficient", None, events, verdict="insufficient",
                proportion=core.proportion, n=core.n,
                k=core.k if core.n else None, effect=None)

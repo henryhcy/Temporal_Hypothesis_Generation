@@ -13,7 +13,11 @@ statistical denominator). This is a deliberate, documented pilot deviation.
 
 from __future__ import annotations
 
-from temporal_hypo.core.answers import answer_key, core_significance
+from temporal_hypo.core.answers import (
+    answer_key,
+    core_decision,
+    oriented_significance,
+)
 from temporal_hypo.generation.cores import InstanceFacts
 from temporal_hypo.generation.templates import FORMATS, REGISTERS, Group, render
 
@@ -36,7 +40,11 @@ def build_records(
     """Expand one realized instance into register x format JSONL records."""
     c = facts.core
     ci = facts.ci
-    sig = core_significance(c)
+    # The statistics describe the claim THIS INSTANCE asserts, not the core's
+    # canonical claim -- see oriented_significance. Emitting canonical tails
+    # beside an oriented verdict made 20% of cohort records contradict
+    # themselves.
+    sig = oriented_significance(facts)
     options, gold_answer = answer_key(c)
     factual_core = {
         "primitive": c.primitive,
@@ -66,15 +74,20 @@ def build_records(
         "p_value": _round(sig.p_value, 6),
         "significant": sig.significant,
         "sig_test": sig.test,
-        # three-decision labeling (decisions.md 2026-07-28), computed on the
-        # core's CANONICAL claim -- both tails, plus the verdict they imply and
-        # the insufficient sub-type. The per-instance ORIENTED label (which
-        # differs for a refuted realization, because it names a different cell /
-        # direction) lands with the equal-thirds sampler rewrite.
+        # three-decision labeling (decisions.md 2026-07-28) for THIS instance's
+        # asserted claim. `core_test_verdict` below is the core's canonical-
+        # orientation verdict, kept as provenance -- it is deliberately allowed to
+        # differ, because a refuted instance asserts the mirror of the canonical
+        # claim.
         "p_claim": _round(sig.p_claim, 6),
         "p_opposite": _round(sig.p_opposite, 6),
-        "core_test_verdict": sig.decision.verdict if sig.decision else None,
+        # the ASSERTED claim's verdict; must equal gold_verdict (asserted below)
+        "test_verdict": sig.decision.verdict if sig.decision else None,
         "insufficient_subtype": sig.decision.subtype if sig.decision else None,
+        # provenance: the CORE's canonical-orientation verdict, deliberately
+        # allowed to differ -- a refuted instance asserts the canonical claim's
+        # mirror, so its canonical verdict is the opposite one.
+        "core_test_verdict": core_decision(c).verdict,
         # explicit CHOICE answer key (None for BOOL/PROP)
         "options": options,
         "gold_answer": gold_answer,

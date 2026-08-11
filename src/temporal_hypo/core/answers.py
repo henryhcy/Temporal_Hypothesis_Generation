@@ -293,6 +293,63 @@ def core_significance(core, *, named=None,
     return s
 
 
+def oriented_significance(facts, *, alpha: float = sig.ALPHA) -> Significance:
+    """The statistics for the claim an INSTANCE actually asserts.
+
+    ``core_significance`` describes the core's CANONICAL claim. A realized
+    instance may assert the mirror of it -- reversed event order, a different named
+    cell, swapped cohorts, or a negated predicate -- and then the canonical tails
+    describe a different sentence than the one in the record. Emitting them side by
+    side made 20% of cohort records self-contradictory (a `supported` instance
+    whose own `p_claim` was 0.99), so the released fields are computed here on the
+    asserted claim instead.
+
+    Three cases, and the first two are exact rather than approximations:
+
+    - **Reversed direction / swapped cohorts** -> the two tails SWAP. Under the
+      0.5 null the assertion's count goes k -> n-k, and P(X >= n-k) = P(X <= k) by
+      the binomial's symmetry about 0.5; Fisher's one-sided tails mirror the same
+      way when the cohorts trade places.
+    - **Negated predicate** (the symmetric co-occurs claims) -> also a swap: the
+      negation asserts the other side of 0.5, so the other tail becomes the claim
+      tail. This is exactly why negation works as an orientation operator.
+    - **A different named cell** (the argmax modes) -> NOT a swap. Naming a
+      non-modal event changes which 2-cell table is tested, so the tails are
+      recomputed from scratch via ``named=``.
+    """
+    core = facts.core
+    if core.report_id is not None:
+        return core_significance(core, alpha=alpha)   # deterministic, no tails
+
+    m = core.mode
+    if m in _MODAL_RUNNER:
+        named = (tuple(facts.events_assigned)
+                 if m in ("seq_bool", "modal_choice")
+                 else facts.events_assigned[0])
+        return core_significance(core, named=named, alpha=alpha)
+
+    s = core_significance(core, alpha=alpha)
+    reversed_claim = (facts.flip_kind in ("direction", "option", "vaccine_swap")
+                      or facts.negated)
+    if not reversed_claim or s.p_claim is None:
+        return s
+
+    flipped = Significance(
+        p_value=s.p_opposite,          # the headline p is the CLAIM's tail
+        significant=None,
+        test=s.test,
+        details=dict(s.details, oriented="tails swapped for the asserted claim"),
+        p_claim=s.p_opposite,
+        p_opposite=s.p_claim,
+    )
+    flipped.decision = vd.three_decision(
+        flipped.p_claim, flipped.p_opposite, core.n, core.family,
+        n2=core.n2, alpha=alpha)
+    if flipped.test is not None:
+        flipped.significant = flipped.decision.decisive
+    return flipped
+
+
 # ---------------------------------------------------------------------------
 # CHOICE answer key -- the option set and the correct option (gold answer)
 # ---------------------------------------------------------------------------

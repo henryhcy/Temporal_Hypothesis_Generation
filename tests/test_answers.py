@@ -315,3 +315,47 @@ def test_effect_size_is_measured_on_the_tested_quantity(idx):
     # ...while the effect size is on named-vs-runner-up against 0.5
     assert abs(r.effect_size - cohens_h(two_cell, 0.5)) < 1e-9
     assert _null_ref("first_choice") == 0.5
+
+
+# ---- released statistics describe the INSTANCE's claim, not the core's -----
+
+def test_oriented_statistics_follow_the_asserted_claim(idx):
+    """A refuted realization asserts the mirror of the canonical claim, so its
+    tails must be the mirror too. Emitting canonical tails beside an oriented
+    verdict made 20% of cohort records self-contradictory (decisions.md 08-11)."""
+    from temporal_hypo.core.answers import oriented_significance
+    groups = load_groups()
+    core = cores._build_vaccine_core(
+        idx, groups["P-V1"], "dir_bool", "Pfizer",
+        idx.cohort("Pfizer"), ("Headache", "Fatigue"))       # 16/20 -> decisive
+
+    sup = cores.realize(core, "supported")
+    ref = cores.realize(core, "refuted")
+    s_sup = oriented_significance(sup)
+    s_ref = oriented_significance(ref)
+
+    # the refuted instance flipped the event order, so the tails swap exactly
+    assert ref.flip_kind == "direction"
+    assert s_ref.p_claim == s_sup.p_opposite
+    assert s_ref.p_opposite == s_sup.p_claim
+    # and each instance's own verdict follows its own claim tail
+    assert s_sup.decision.verdict == "supported" and s_sup.p_claim < 0.05
+    assert s_ref.decision.verdict == "refuted" and s_ref.p_opposite < 0.05
+
+
+def test_insufficient_argmax_instance_names_the_modal_cell(idx):
+    """_realize_insufficient used core.events verbatim, which for an argmax mode
+    names whichever candidate sorts first alphabetically -- a different claim the
+    data can decisively refute. It must name the mode, like the supported branch."""
+    from temporal_hypo.core.answers import oriented_significance
+    groups = load_groups()
+    # Moderna is the weak cohort (11 Headache-first vs 9 Fatigue-first), so this
+    # core is NOT decisive and `insufficient` is the only feasible polarity.
+    core = cores._build_vaccine_core(
+        idx, groups["F-V1"], "first_choice", "Moderna",
+        idx.cohort("Moderna"), ("Headache", "Fatigue", "Pyrexia"))
+    assert cores.feasible_polarities(core) == {"insufficient"}
+    facts = cores.realize(core, "insufficient")
+    assert facts.events_assigned[0] == core.extra["winner"]
+    # so the asserted claim's verdict agrees with the shipped label
+    assert oriented_significance(facts).decision.verdict == facts.gold_verdict ==         "insufficient"

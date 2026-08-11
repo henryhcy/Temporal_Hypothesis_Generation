@@ -1293,3 +1293,70 @@ Why it fails at a defensible margin:
 
 Conclusion: keep the multi tier directional. The six non-directional groups stay
 slated for removal, now with a measured reason rather than only a conceptual one.
+
+---
+
+## FIXED: released statistics describe the instance's own claim (2026-08-11)
+
+**Diagnosis: an instruction conflict, not a calculation error.** Every number was
+computed correctly -- for a different claim than the one in the record.
+
+`core_significance(core)` describes the core's CANONICAL claim. `realize` produces
+an ORIENTED instance (reversed event order, a different named cell, swapped
+cohorts, or a negated predicate). `instances.py` emitted both in one record: the
+text, `gold_verdict` and `gold_proportion` oriented, the `p_claim` / `p_opposite` /
+`p_value` / `effect_size` canonical. A comment in `instances.py` explicitly
+INSTRUCTED that mixture as a deferral ("the per-instance ORIENTED label lands with
+the equal-thirds sampler rewrite"), so two definitions of "the claim" coexisted by
+design.
+
+Measured before the fix: **576 of 2,864 cohort records (20%)** carried a `p_claim`
+that contradicted their own asserted proportion. Worst reading:
+
+> "Does Chills typically occur before Pyrexia after Moderna?" -- asserted
+> proportion **0.675**, `gold_verdict` **supported**, `p_claim` **0.9917** (not
+> significant), `p_opposite` **0.019** (significant).
+
+### The fix
+
+The conflicting instruction is removed. `answers.oriented_significance(facts)`
+computes the tails for the ASSERTED claim, and `instances.py` uses it. Three cases,
+the first two exact rather than approximate:
+
+- **Reversed direction / swapped cohorts** -> the tails SWAP. Under the 0.5 null the
+  assertion's count goes k -> n-k and P(X >= n-k) = P(X <= k) by the binomial's
+  symmetry about 0.5; Fisher's one-sided tails mirror the same way.
+- **Negated predicate** -> also a swap, which is precisely why negation works as an
+  orientation operator.
+- **A different named cell** (argmax modes) -> NOT a swap; the 2-cell table changes,
+  so the tails are recomputed via `named=`.
+
+`core_test_verdict` is retained as PROVENANCE (the canonical verdict, deliberately
+allowed to differ) and a new `test_verdict` field carries the asserted claim's
+verdict, which must equal `gold_verdict`.
+
+### A second bug the verification exposed
+
+Checking the fix surfaced 24 records labelled `insufficient` whose own statistics
+said `refuted`. Cause: `_realize_insufficient` asserted `core.events` verbatim, so
+for an argmax mode it named whichever candidate sorts FIRST ALPHABETICALLY rather
+than the modal one -- a different claim, and one the data can decisively refute
+(naming a 2/116 candidate against a 22/116 mode). It now orients the slots the way
+the supported branch does. Also note: decisiveness is NOT orientation-invariant for
+argmax modes, since a core whose mode barely beats its runner-up can still
+decisively refute a far weaker candidate.
+
+### Verification (full pilot, 5,488 cohort records)
+
+| check | before | after |
+|---|--:|--:|
+| `p_claim` contradicts its own asserted proportion | 576 | **0** |
+| `test_verdict` != `gold_verdict` | 24 | **0** |
+| `supported` with p_claim >= 0.05 | — | **0** |
+| `refuted` with p_opposite >= 0.05 | — | **0** |
+| `insufficient` with a significant tail | — | **0** |
+
+Note one of the first checks I wrote was itself wrong: it flagged refuted records
+for having a large `p_claim`, but `refuted` requires the OPPOSITE tail to be
+significant, so a large claim tail is correct there. The corrected checks test each
+verdict against the tail its own definition uses. All five are now regression tests.
