@@ -116,16 +116,29 @@ def test_precedes_fraction_excludes_co_exist():
         (1, "Pfizer", [["A"], ["B"]]),   # A before B
         (2, "Pfizer", [["A", "B"]]),      # co-exist — excluded from denom
     ]
-    # Only 1 ordered report, below threshold → None
+    # 1 ordered report: reported, not discarded (2026-08-11). The FLOOR is the
+    # shared gate's job now, so the helper's contract is "measure and report n".
     conn, ids = _make_db(reports)
-    assert precedes_fraction(conn, "A", "B", ids) is None
+    assert precedes_fraction(conn, "A", "B", ids) == (1.0, 1)
     conn.close()
 
 
-def test_precedes_fraction_insufficient():
+def test_precedes_fraction_reports_sub_floor_n():
+    # 9 ordered reports is below the pairwise floor of 10, but n must survive:
+    # it is what lets the labeler say `sparse` rather than dropping the core into
+    # an unnamed bucket.
     reports = _pfizer_reports(9, A_before_B=5)
     conn, ids = _make_db(reports)
-    assert precedes_fraction(conn, "A", "B", ids) is None
+    frac, n = precedes_fraction(conn, "A", "B", ids)
+    assert n == 9 and abs(frac - 5 / 9) < 1e-9
+    conn.close()
+
+
+def test_fraction_is_none_only_when_the_denominator_is_empty():
+    # n = 0 is `not_locatable`, and a proportion over nothing does not exist.
+    reports = [(1, "Pfizer", [["A"], ["Z"]])]      # B never appears
+    conn, ids = _make_db(reports)
+    assert precedes_fraction(conn, "A", "B", ids) == (None, 0)
     conn.close()
 
 
@@ -148,10 +161,10 @@ def test_co_occurs_fraction_includes_co_exist():
     conn.close()
 
 
-def test_co_occurs_fraction_insufficient():
+def test_co_occurs_fraction_reports_sub_floor_n():
     reports = [(i + 1, "Pfizer", [["A", "B"]]) for i in range(9)]
     conn, ids = _make_db(reports)
-    assert co_occurs_fraction(conn, "A", "B", ids) is None
+    assert co_occurs_fraction(conn, "A", "B", ids) == (1.0, 9)
     conn.close()
 
 
@@ -238,11 +251,11 @@ def test_first_among_fractions_ties_excluded():
     conn.close()
 
 
-def test_first_among_fractions_insufficient():
+def test_first_among_fractions_reports_sub_floor_n():
     reports = [(i + 1, "Pfizer", [["A"], ["B"]]) for i in range(9)]
     conn, ids = _make_db(reports)
-    assert first_among_fractions(conn, ["A", "B"], ids) is None
-    conn.close()
+    r = first_among_fractions(conn, ["A", "B"], ids)
+    assert r["n"] == 9 and r["A"] == 1.0 and r["B"] == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -301,11 +314,11 @@ def test_last_among_fractions_ties_excluded():
     conn.close()
 
 
-def test_last_among_fractions_insufficient():
+def test_last_among_fractions_reports_sub_floor_n():
     reports = [(i + 1, "Pfizer", [["A"], ["B"]]) for i in range(9)]
     conn, ids = _make_db(reports)
-    assert last_among_fractions(conn, ["A", "B"], ids) is None
-    conn.close()
+    r = last_among_fractions(conn, ["A", "B"], ids)
+    assert r["n"] == 9 and r["B"] == 1.0 and r["A"] == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -361,9 +374,20 @@ def test_ordering_distribution_modal_tie_flag():
     conn.close()
 
 
-def test_ordering_distribution_insufficient():
-    # below the sequence floor (SEQ_MIN_N=5) of ORDERABLE reports -> None
+def test_ordering_distribution_reports_sub_floor_n():
+    # 4 orderable reports is below the sequence floor of 5, but n survives
     reports = [(i + 1, "Pfizer", [["A"], ["B"], ["C"]]) for i in range(4)]
     conn, ids = _make_db(reports)
-    assert ordering_distribution(conn, ["A", "B", "C"], ids) is None
+    d = ordering_distribution(conn, ["A", "B", "C"], ids)
+    assert d["n"] == 4 and d["modal"] == ("A", "B", "C")
+    conn.close()
+
+
+def test_ordering_distribution_with_no_orderable_reports():
+    # every report has all three at the SAME level -> orderable n = 0
+    reports = [(i + 1, "Pfizer", [["A", "B", "C"]]) for i in range(6)]
+    conn, ids = _make_db(reports)
+    d = ordering_distribution(conn, ["A", "B", "C"], ids)
+    assert d["n"] == 0 and d["modal"] is None and d["modal_share"] is None
+    assert d["tie"] == 6
     conn.close()

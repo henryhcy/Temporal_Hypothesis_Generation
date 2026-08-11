@@ -41,6 +41,7 @@ from temporal_hypo.core.aggregation import (
     differ_verdict,
     direction_verdict,
 )
+from temporal_hypo.core.min_n import min_n_gate
 from temporal_hypo.generation import corpus
 from temporal_hypo.generation.confidence import (
     Z_95,
@@ -230,41 +231,49 @@ def _enum_vaccine(index: CorpusIndex, group: Group, mode: str) -> list[ViableCor
     return cores
 
 
+def _is_testable(n, family, *, n2=None) -> bool:
+    """Does this conditioned denominator clear the SHARED family floor?
+
+    Since 2026-08-11 this -- not "the corpus helper returned something" -- is what
+    ``ViableCore.computable`` means. The helpers now always report n, so a core
+    below the floor still carries its denominator and the labeler can name the
+    insufficient sub-type: ``sparse`` when 0 < n < floor, ``not_locatable`` at 0.
+    """
+    return min_n_gate(n, family, n2=n2).testable
+
+
 def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | None:
     base = dict(events=tuple(combo), vaccines=(vax,), cohort_ids=cohort,
                report_id=None)
 
     if mode in ("dir_bool", "dir_choice"):
         a, b = combo
-        r = corpus.precedes_fraction(index, a, b, cohort)
-        if r is None:
-            return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient", **base)
-        frac, n = r
-        k = round(frac * n)
-        return _new_core(group, mode, computable=True, natural_verdict=bool_verdict(frac),
-                         proportion=frac, n=n, k=k, **base)
+        frac, n = corpus.precedes_fraction(index, a, b, cohort)
+        ok = _is_testable(n, group.family)
+        return _new_core(group, mode, computable=ok,
+                         natural_verdict=bool_verdict(frac) if ok else "insufficient",
+                         proportion=frac, n=n,
+                         k=round(frac * n) if frac is not None else 0, **base)
 
     if mode == "sym_bool_cooccurs":
         a, b = combo
-        r = corpus.co_occurs_fraction(index, a, b, cohort)
-        if r is None:
-            return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient", **base)
-        frac, n = r
-        k = round(frac * n)
-        return _new_core(group, mode, computable=True, natural_verdict=bool_verdict(frac),
-                         proportion=frac, n=n, k=k, **base)
+        frac, n = corpus.co_occurs_fraction(index, a, b, cohort)
+        ok = _is_testable(n, group.family)
+        return _new_core(group, mode, computable=ok,
+                         natural_verdict=bool_verdict(frac) if ok else "insufficient",
+                         proportion=frac, n=n,
+                         k=round(frac * n) if frac is not None else 0, **base)
 
     if mode in ("seq_bool", "modal_choice"):
         # STRICT ordering over the ORDERABLE denominator (ordering_distribution
-        # excludes co-occurrence and floors at SEQ_MIN_N).
+        # excludes co-occurrence).
         a, b, c = combo
         dist = corpus.ordering_distribution(index, [a, b, c], cohort)
-        if dist is None:
-            return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient", **base)
         n = dist["n"]
+        if not _is_testable(n, group.family):
+            return _new_core(group, mode, computable=False,
+                             natural_verdict="insufficient", n=n,
+                             extra=dist, **base)
         # seq_bool ("most common" BOOL) + modal_choice (CHOICE): supported iff a
         # UNIQUE modal ordering exists (an argmax claim). seq_bool is tested
         # modal-vs-runner-up (see core_significance); modal_choice keeps GOF.
@@ -279,10 +288,10 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
         fn = corpus.last_among_fractions if mode == "last_choice" \
             else corpus.first_among_fractions
         res = fn(index, terms, cohort)
-        if res is None:
-            return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient", **base)
         n = int(res["n"])
+        if not _is_testable(n, group.family):
+            return _new_core(group, mode, computable=False,
+                             natural_verdict="insufficient", n=n, **base)
         fracs = {t: res[t] for t in terms}
         winner = max(terms, key=lambda t: (fracs[t], t))
         wfrac = fracs[winner]
@@ -322,7 +331,7 @@ def _single_fraction(index, primitive_mode, combo, cohort):
         return corpus.co_occurs_fraction(index, combo[0], combo[1], cohort)
     if "sequence" in primitive_mode:
         return corpus.sequence_fraction(index, combo[0], combo[1], combo[2], cohort)
-    return None
+    return (None, 0)
 
 
 def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | None:
@@ -332,13 +341,14 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
     if mode in ("multi_differ_precedes", "multi_dir_precedes",
                 "multi_differ_cooccurs", "multi_dir_cooccurs",
                 "multi_differ_sequence"):
-        r1 = _single_fraction(index, mode, combo, c1)
-        r2 = _single_fraction(index, mode, combo, c2)
-        if r1 is None or r2 is None:
+        p1, n1 = _single_fraction(index, mode, combo, c1)
+        p2, n2 = _single_fraction(index, mode, combo, c2)
+        if not _is_testable(n1, group.family, n2=n2):
+            # n on BOTH cohorts is kept: a two-cohort core is `sparse` when one
+            # side is thin and `not_locatable` when a side is empty.
             return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient", **base)
-        p1, n1 = r1
-        p2, n2 = r2
+                             natural_verdict="insufficient",
+                             proportion=p1, n=n1, proportion2=p2, n2=n2, **base)
         k1, k2 = round(p1 * n1), round(p2 * n2)
         if "differ" in mode:
             nv = differ_verdict(p1, p2)
@@ -351,9 +361,11 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
     if mode in ("multi_same_modal_order",):
         d1 = corpus.ordering_distribution(index, list(combo), c1)
         d2 = corpus.ordering_distribution(index, list(combo), c2)
-        if d1 is None or d2 is None or d1["modal"] is None or d2["modal"] is None:
+        if (not _is_testable(d1["n"], group.family, n2=d2["n"])
+                or d1["modal"] is None or d2["modal"] is None):
             return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient", **base)
+                             natural_verdict="insufficient",
+                             n=d1["n"], n2=d2["n"], **base)
         same = d1["modal"] == d2["modal"]
         nv = "supported" if same else "refuted"
         return _new_core(group, mode, computable=True, natural_verdict=nv,
@@ -365,9 +377,10 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
     if mode in ("multi_same_first", "multi_differ_first", "multi_dir_first"):
         f1 = corpus.first_among_fractions(index, list(combo), c1)
         f2 = corpus.first_among_fractions(index, list(combo), c2)
-        if f1 is None or f2 is None:
+        if not _is_testable(int(f1["n"]), group.family, n2=int(f2["n"])):
             return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient", **base)
+                             natural_verdict="insufficient",
+                             n=int(f1["n"]), n2=int(f2["n"]), **base)
         terms = list(combo)
         w1 = max(terms, key=lambda t: (f1[t], t))
         w2 = max(terms, key=lambda t: (f2[t], t))

@@ -954,3 +954,72 @@ no orientation trick rebalances them.
 The pilot still targets the provisional 45/45/10 balance; equal thirds is step D.
 And with C-V1/C-V3 supplying 40/338, per-group equal thirds may not be reachable
 for every group -- see `open_questions.md`.
+
+---
+
+## LOCKED + implemented: helpers measure, the gate decides (2026-08-11)
+
+Step B of `09_next_steps.md`. The cohort fraction helpers in
+`generation/corpus.py` and their DB-backed mirrors in `core/aggregation.py` no
+longer apply a private floor. Each reports its conditioned denominator `n`
+whatever its size, including 0, and the floor is applied in exactly one place --
+the shared gate in `core/min_n.py`.
+
+Before this there were **two floors in two places**: `corpus._MIN_N = 10` /
+`SEQ_MIN_N = 5` inside the helpers, plus the family floors in the gate. The
+helpers returned `None` below their own floor, which threw n away, and that made
+`sparse` (0 < n < floor) indistinguishable from `not_locatable` (n = 0)
+downstream -- 2,838 cores sat in an unnamed bucket. It also violated the
+05_significance_tests rule that the threshold is defined and applied in one place.
+
+### Contract change
+
+- The tuple helpers return `tuple[float | None, int]`, never `None`. The fraction
+  is None **exactly when n = 0**, since a proportion over an empty denominator
+  does not exist.
+- The dict helpers (`first_among_fractions`, `last_among_fractions`,
+  `ordering_distribution`) always return a dict; at n = 0 the per-term fractions
+  and `modal_share` are None and `modal` is None.
+- **`ViableCore.computable` is redefined**: it now means "clears the shared family
+  floor" (`_is_testable`, which calls `min_n_gate`), not "the helper returned
+  something". Non-computable cores now CARRY their n and, for two-cohort modes,
+  both n and n2 -- that is the entire point.
+
+### Measured effect (11,867 cohort-level cores)
+
+| insufficient sub-type | before | after |
+|---|--:|--:|
+| underpowered | 5,646 | 5,646 |
+| **sparse** | **0** | **2,722** |
+| **not_locatable** | **0** | **116** |
+| unknown (n dropped, unnameable) | 2,838 | **0** |
+
+**The invariant held: S = 1526, 584 supported / 942 refuted, unchanged.** Correct
+by construction -- a sub-floor core cannot be decisive, because the gate rejects it
+before either tail is consulted -- and worth pinning, since it is what makes this a
+labeling improvement rather than a change to the corpus's evidence.
+
+### Where each sub-type actually comes from
+
+`sparse` is dominated by the **pairwise precedes** and **sequence** shapes:
+P-V1/P-V3 384 each, S-V1/S-V3 451 each, P-M1/P-M2 257 each. Cause: enumeration
+filters on **co-occurrence** count, while the test denominator is the strictly
+**ordered** (or orderable) subset, which is smaller. The gap between those two
+quantities is the sparse band. Example: Abdominal pain upper / Fatigue in Pfizer
+co-occurs often enough to enumerate but is strictly ordered in only 9 reports.
+
+`not_locatable` comes entirely from the **sequence** groups (S-V1/S-V3 30 each,
+S-M1/S-M3 28 each): triples that are present but always at the SAME level, so the
+orderable denominator is 0. There is genuinely no ordering to locate. Semantically
+exactly what the sub-type is for.
+
+### Still open for step D
+
+`not_locatable` has **zero supply in the pairwise, co-occurs and first/last
+families** -- the co-occurrence pre-filter guarantees a non-empty denominator
+there. So the insufficient third cannot span all three sub-types *within* those
+groups from enumeration alone, and 116 cores total is well under the ~254 an
+equal-thirds insufficient class would want. The deliberate `not_locatable`
+generation the 2026-07-28 decision calls for is still required for those families;
+the pilot's enumeration path (all combinations of the top-K terms, unfiltered by
+co-occurrence) is the natural source. See `open_questions.md`.

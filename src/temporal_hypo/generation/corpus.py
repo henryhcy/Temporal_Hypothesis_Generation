@@ -93,12 +93,20 @@ def relation(terms: dict[str, int], a: str, b: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Cohort fraction functions (mirror core.aggregation; None below _MIN_N)
+# Cohort fraction functions (mirror core.aggregation)
+#
+# These MEASURE; they do not gate (2026-08-11, decisions.md step B). Each returns
+# its conditioned denominator `n` whatever its size, including 0, and leaves the
+# floor to the single shared gate in `core.min_n`. They used to return None below
+# a private floor, which threw n away -- and that made `sparse` (0 < n < floor)
+# indistinguishable from `not_locatable` (n = 0) downstream, so the labeler could
+# not name either sub-type. The fraction is None exactly when n = 0, since a
+# proportion over an empty denominator does not exist.
 # ---------------------------------------------------------------------------
 
 def precedes_fraction(
     index: CorpusIndex, a: str, b: str, cohort: list[int]
-) -> tuple[float, int] | None:
+) -> tuple[float | None, int]:
     ordered = 0
     a_before_b = 0
     for vid in cohort:
@@ -107,14 +115,14 @@ def precedes_fraction(
             ordered += 1
             if rel == "before":
                 a_before_b += 1
-    if ordered < _MIN_N:
-        return None
+    if ordered == 0:
+        return (None, 0)
     return (a_before_b / ordered, ordered)
 
 
 def co_occurs_fraction(
     index: CorpusIndex, a: str, b: str, cohort: list[int]
-) -> tuple[float, int] | None:
+) -> tuple[float | None, int]:
     both = 0
     co = 0
     for vid in cohort:
@@ -123,20 +131,20 @@ def co_occurs_fraction(
             both += 1
             if rel == "co_exist":
                 co += 1
-    if both < _MIN_N:
-        return None
+    if both == 0:
+        return (None, 0)
     return (co / both, both)
 
 
 def sequence_fraction(
     index: CorpusIndex, a: str, b: str, c: str, cohort: list[int]
-) -> tuple[float, int] | None:
+) -> tuple[float | None, int]:
     """Strict A<B<C over the ORDERABLE denominator (distinct levels; gaps ok).
 
     Denominator counts only reports where all three occur at distinct levels, so
     co-occurrence is excluded (not counted as evidence for or against the order),
     mirroring how pairwise-precedes excludes co-exist. Gaps are fine: a<b<d<e<c
-    still counts as a<b<c. Returns None below SEQ_MIN_N.
+    still counts as a<b<c. Reports n always; the fraction is None when n = 0.
     """
     orderable = 0
     seq = 0
@@ -150,8 +158,8 @@ def sequence_fraction(
         orderable += 1
         if ia < ib < ic:
             seq += 1
-    if orderable < SEQ_MIN_N:
-        return None
+    if orderable == 0:
+        return (None, 0)
     return (seq / orderable, orderable)
 
 
@@ -187,7 +195,7 @@ def triple_positions(
 
 def _extreme_among_fractions(
     index: CorpusIndex, terms: list[str], cohort: list[int], *, last: bool
-) -> dict | None:
+) -> dict:
     denom = 0
     ties = 0
     counts: dict[str, int] = {t: 0 for t in terms}
@@ -203,8 +211,9 @@ def _extreme_among_fractions(
             ties += 1
         else:
             counts[winners[0]] += 1
-    if denom < _MIN_N:
-        return None
+    if denom == 0:
+        return {"n": 0, "counts": counts, "tie_rate": None,
+                **{t: None for t in terms}}
     fracs: dict = {t: counts[t] / denom for t in terms}
     fracs["tie_rate"] = ties / denom
     fracs["n"] = denom
@@ -214,19 +223,19 @@ def _extreme_among_fractions(
 
 def first_among_fractions(
     index: CorpusIndex, terms: list[str], cohort: list[int]
-) -> dict | None:
+) -> dict:
     return _extreme_among_fractions(index, terms, cohort, last=False)
 
 
 def last_among_fractions(
     index: CorpusIndex, terms: list[str], cohort: list[int]
-) -> dict | None:
+) -> dict:
     return _extreme_among_fractions(index, terms, cohort, last=True)
 
 
 def ordering_distribution(
     index: CorpusIndex, terms: list[str], cohort: list[int]
-) -> dict | None:
+) -> dict:
     # ORDERABLE denominator: n counts only reports where all terms are at
     # distinct levels; co-occurrence (tie) reports are excluded from n.
     n_orderable = 0
@@ -243,8 +252,9 @@ def ordering_distribution(
         n_orderable += 1
         order = tuple(t for t, _ in sorted(zip(terms, idxs), key=lambda kv: kv[1]))
         counts[order] = counts.get(order, 0) + 1
-    if n_orderable < SEQ_MIN_N:
-        return None
+    if n_orderable == 0:
+        return {"counts": {}, "tie": tie, "n": 0, "modal": None,
+                "modal_count": 0, "modal_share": None, "modal_tie": False}
     modal = None
     modal_count = 0
     modal_tie = False

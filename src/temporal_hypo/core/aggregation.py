@@ -41,11 +41,11 @@ def precedes_fraction(
     A: str,
     B: str,
     cohort: list[int],
-) -> tuple[float, int] | None:
+) -> tuple[float | None, int]:
     """Fraction of cohort reports where A precedes B (locked rule 1).
 
     Denominator: reports where both A and B appear AND the pair is ordered
-    (co-exist pairs are excluded). Returns None if denominator < 10.
+    (co-exist pairs are excluded). Reports n always (2026-08-11); the fraction is None when n = 0.
     """
     ordered = 0
     a_before_b = 0
@@ -56,8 +56,8 @@ def precedes_fraction(
             ordered += 1
             if rel == "before":
                 a_before_b += 1
-    if ordered < _MIN_N:
-        return None
+    if ordered == 0:
+        return (None, 0)
     return (a_before_b / ordered, ordered)
 
 
@@ -66,11 +66,11 @@ def co_occurs_fraction(
     A: str,
     B: str,
     cohort: list[int],
-) -> tuple[float, int] | None:
+) -> tuple[float | None, int]:
     """Fraction of cohort reports where A and B co-exist (locked rule 2).
 
     Denominator: reports where both A and B appear (co-exist pairs kept).
-    Returns None if denominator < 10.
+    Reports n always (2026-08-11); the fraction is None when n = 0.
     """
     both_present = 0
     co_exist_count = 0
@@ -81,8 +81,8 @@ def co_occurs_fraction(
             both_present += 1
             if rel == "co_exist":
                 co_exist_count += 1
-    if both_present < _MIN_N:
-        return None
+    if both_present == 0:
+        return (None, 0)
     return (co_exist_count / both_present, both_present)
 
 
@@ -92,7 +92,7 @@ def sequence_fraction(
     B: str,
     C: str,
     cohort: list[int],
-) -> tuple[float, int] | None:
+) -> tuple[float | None, int]:
     """Fraction of ORDERABLE cohort reports where A→B→C holds strictly.
 
     Denominator: reports where A, B, C occur at DISTINCT levels (co-occurrence
@@ -113,8 +113,8 @@ def sequence_fraction(
         orderable += 1
         if ia < ib < ic:
             seq_count += 1
-    if orderable < SEQ_MIN_N:
-        return None
+    if orderable == 0:
+        return (None, 0)
     return (seq_count / orderable, orderable)
 
 
@@ -127,7 +127,7 @@ def first_among_fractions(
 
     Denominator: reports containing all named candidates. Tie-reports are
     excluded from per-term counts but tracked separately as 'tie_rate'.
-    Returns None if denominator < 10.
+    Reports n always (2026-08-11); the fraction is None when n = 0.
 
     Return format: {term: fraction, ..., 'tie_rate': float, 'n': int}
     """
@@ -146,8 +146,8 @@ def first_among_fractions(
         else:
             term_counts[result[0]] += 1
 
-    if denom < _MIN_N:
-        return None
+    if denom == 0:
+        return {"n": 0.0, "tie_rate": None, **{t: None for t in terms}}
 
     fracs: dict[str, float] = {t: term_counts[t] / denom for t in terms}
     fracs["tie_rate"] = ties / denom
@@ -183,8 +183,8 @@ def last_among_fractions(
         else:
             term_counts[result[0]] += 1
 
-    if denom < _MIN_N:
-        return None
+    if denom == 0:
+        return {"n": 0.0, "tie_rate": None, **{t: None for t in terms}}
 
     fracs: dict[str, float] = {t: term_counts[t] / denom for t in terms}
     fracs["tie_rate"] = ties / denom
@@ -234,8 +234,9 @@ def ordering_distribution(
         )
         counts[order] = counts.get(order, 0) + 1
 
-    if n_orderable < SEQ_MIN_N:
-        return None
+    if n_orderable == 0:
+        return {"counts": {}, "tie": tie, "n": 0, "modal": None,
+                "modal_count": 0, "modal_share": None, "modal_tie": False}
 
     modal: tuple[str, ...] | None = None
     modal_count = 0

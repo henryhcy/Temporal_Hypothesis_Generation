@@ -71,38 +71,22 @@ for equal thirds -- that it pins every trivial policy at ~33% -- is satisfied by
 benchmark-level balance too, as long as no single group is degenerate enough for a
 per-group shortcut to pay off.
 
-### Sourcing `sparse` and `not_locatable` (2026-08-11, corrected same day)
-`sparse` measured 0 after the floor decision, and I first recorded that it was
-unreachable because "enumeration stops at n >= 10". **That was wrong, and the
-correction matters for step B.**
+### Sourcing `not_locatable` for the non-sequence families (2026-08-11)
+Step B RESOLVED `sparse` (0 -> 2,722) and partly resolved `not_locatable`
+(0 -> 116). See `decisions.md` 2026-08-11.
 
-The two floors measure DIFFERENT quantities. `enumerate_group_full` filters pairs
-to those **co-occurring** in >= 10 reports, but the precedes test's denominator is
-the reports where the pair is **strictly ordered**, which is strictly smaller. The
-gap between the two IS the sparse band. Measured directly on P-V1:
+What remains: all 116 `not_locatable` cores are in the SEQUENCE groups (triples
+present but always at the same level, so nothing is orderable). The pairwise,
+co-occurs and first/last families have **zero** -- their enumeration pre-filters
+pairs/triples to co-occurrence >= 10, which guarantees a non-empty denominator. So
+the insufficient third cannot span all three sub-types within those groups, and
+116 is well under the ~254 an equal-thirds insufficient class would want anyway.
 
-| P-V1 cores (959 total) | count |
-|---|--:|
-| ordered n >= 10 (labeled today) | 575 |
-| ordered n in 1..9 -> **sparse** once n is reported | **384** |
-| ordered n = 0 -> not_locatable | **0** |
-
-So **B alone unlocks `sparse`** — 384 cores in P-V1 and another 384 in P-V3, out
-of the 2,838 currently in the unlabeled `unknown` bucket. Example: Abdominal pain
-upper / Fatigue in Pfizer co-occurs often enough to be enumerated but is strictly
-ordered in only 9 reports.
-
-`not_locatable` (n = 0) is a different problem and B does **not** supply it: the
-co-occurrence pre-filter means a full-enumeration pair is essentially never
-ordered zero times. It has to come from cores built out of events that do not
-co-occur — which is what the 2026-07-28 decision already requires ("the
-not-locatable third generated deliberately"). The pilot path (`enumerate_group`,
-all combinations of the top-K terms) does enumerate non-co-occurring pairs, so
-that is the place to source it.
-
-Open: only the `not_locatable` generation strategy. Reuse the pilot path's
-unfiltered combinations, or add an explicit generator that picks event pairs known
-not to co-occur in the cohort?
+Open: source it from the pilot enumeration path, which already forms ALL
+combinations of the top-K terms and therefore includes pairs that never co-occur?
+Or add an explicit generator that picks known non-co-occurring event pairs per
+cohort? The 2026-07-28 decision requires this third to be generated deliberately
+either way; the question is which mechanism.
 
 ### Non-directional CHOICE groups
 RESOLVED (see `decisions.md` 2026-08-11): S-V3, F-V1 and F-V2 now use the

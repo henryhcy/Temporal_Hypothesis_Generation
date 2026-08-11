@@ -170,23 +170,32 @@ def test_weak_effect_is_insufficient_not_refuted(idx):
     assert r.insufficient_subtype == V.UNDERPOWERED
 
 
-def test_sparse_is_unreachable_now_that_the_floor_equals_the_viability_floor():
-    # 2026-08-11: the pairwise floor dropped 20 -> 10, which is exactly the
-    # enumeration viability floor. So 15 unanimous reports are now TESTABLE
-    # (they were sparse under the old floor of 20)...
+def test_sparse_is_reachable_once_the_helpers_report_sub_floor_n():
+    # 2026-08-11 step B: the corpus helpers no longer drop n below their old
+    # private floor, so a core that IS conditioned but thinly conditioned lands in
+    # `sparse` instead of an unnamed bucket. 15 clears the pairwise floor of 10...
     idx = _make_index([(i, "Pfizer", [["A"], ["B"]]) for i in range(15)])
     r = compute_answer(idx, "P-V1", ("A", "B"), vaccines=("Pfizer",))
     assert r.n == 15
     assert r.test_verdict == "supported"
 
-    # ...and anything below 10 loses its n in the corpus helper, so it lands in
-    # the unlabeled gap rather than in SPARSE. The sub-type is therefore dead
-    # through this path until next-steps B makes the helpers report sub-floor n.
+    # ...and 6 does not, so it is SPARSE and carries its denominator.
     thin = _make_index([(i, "Pfizer", [["A"], ["B"]]) for i in range(6)])
     r2 = compute_answer(thin, "P-V1", ("A", "B"), vaccines=("Pfizer",))
-    assert r2.n is None
+    assert r2.n == 6
     assert r2.test_verdict == "insufficient"
-    assert r2.insufficient_subtype is None      # not SPARSE -- the known gap
+    assert r2.insufficient_subtype == V.SPARSE
+
+
+def test_not_locatable_when_the_events_never_co_occur():
+    # n = 0: B is absent from every report, so there is nothing to condition on.
+    # This is the sub-type that tests whether a framework says "insufficient"
+    # instead of inventing a relationship.
+    idx = _make_index([(i, "Pfizer", [["A"], ["Z"]]) for i in range(20)])
+    r = compute_answer(idx, "P-V1", ("A", "B"), vaccines=("Pfizer",))
+    assert r.n == 0
+    assert r.test_verdict == "insufficient"
+    assert r.insufficient_subtype == V.NOT_LOCATABLE
 
 
 def test_argmax_choice_groups_are_directional_via_modal_vs_runner_up():
