@@ -20,38 +20,34 @@ evidence, now partly stale — see its banner).
 Live groups and their equal-thirds budgets (~1.5·S): C-V1/C-V3 567 each,
 P-V1/P-V3 327 each, F-V3 111, C-M2 64, P-M2 45, F-M3 28, S-V1 6.
 
-**After the roster migration, the four non-directional groups are the only
-remaining S = 0 groups.** That makes decision 1 below the last supply blocker.
+**Every group we intend to keep can now ship a verdict.** The remaining S = 0
+groups are exactly the six the roster migration deletes, so supply is no longer
+the blocker — the open items below are validity and composition questions.
 
 ## Decisions blocking further code
 
-The min-n floor — previously the item that gated everything — is now LOCKED at
-10 (sequence 5). What remains:
+Both items that previously gated everything are LOCKED: the min-n floor (10,
+sequence 5) and the non-directional CHOICE test swap (S-V3/F-V1/F-V2 to
+modal-vs-runner-up, S-V4 removed). What remains:
 
-1. **Non-directional CHOICE groups** (S-V3, F-V1, F-V2). Adopt the
-   modal-vs-runner-up test already locked for their BOOL twins? At floor 10 the
-   rescue is no longer marginal: **F-V2 +86, F-V1 +74, S-V3 +4** decisive cores
-   (it was +21/+14/+4 at the old floors). **S-V4 is not rescuable** — "the
-   ordering is consistent" has no opposite direction, the same defect that
-   retires the "same" multi groups.
-2. **C-M2.** Fails its own permutation null at **both** floors — p_perm 0.129 at
+1. **C-M2.** Fails its own permutation null at **both** floors — p_perm 0.129 at
    floor 20, **0.151** at floor 10 with 2000 rounds — so this is not a supply
    problem and no floor rescues it. Its supported/refuted labels would be largely
    noise. Drop, or keep with the caveat documented?
-3. **Sequence family.** The floor of 5 keeps S-V1's **4** decisive cores alive,
-   but 4 cores is not a family. Report-level-only, vaccine-agnostic pooling, or
+2. **Sequence family.** The floor of 5 keeps S-V1 and S-V3 at **4** decisive
+   cores each, but they are largely the same four triples asked two ways. Report-level-only, vaccine-agnostic pooling, or
    MedDRA coarsening? Note this is coupled to the floor: a universal 10 would
    have forced report-level-only by fiat.
-4. **§6 lever 2 (position test as verdict driver).** The rank tests are
+3. **§6 lever 2 (position test as verdict driver).** The rank tests are
    anti-conservative on tie-heavy data (~11% decisive under shuffled labels vs a
    nominal 5%). Retiring is FREE: `core/positions.py` is imported only by
    `make_examples.py` and `replacement_inventory.py`, never by `core/answers.py`,
    so no gold label reads those p-values.
-5. **How to source the `sparse` insufficient sub-type.** New, and created by the
+4. **How to source the `sparse` insufficient sub-type.** New, and created by the
    floor decision: `sparse` was the band between the viability floor and the test
    floor, and those are now equal, so its measured count is **0** while the
    07-28 decision requires insufficient to span all three sub-types.
-6. **Is a one-family multi tier worth the shape?** Of the multi candidates only
+5. **Is a one-family multi tier worth the shape?** Of the multi candidates only
    P-M2 (p_perm 0.025) and M-F (0.033) clear their null, and they are the same
    claim family, so only one ships. Both single-event candidates now fail
    (M-H 0.120, M-C 0.073). C-M2 fails. F-M3 is untested.
@@ -61,7 +57,7 @@ The min-n floor — previously the item that gated everything — is now LOCKED 
 **A. Roster migration.** Remove P-M1, C-M1, S-M1, S-M3, F-M1, F-M2 (locked
 07-28). Add R3 = P-V2, R5 = C-V2, R1 = P-V4 — each needs four-register wording;
 R5 needs a corpus helper (2×2 presence × presence with marginals) and R1 a
-4-event (A,B,C,D) enumeration shape. Fold in decisions 1–3.
+4-event (A,B,C,D) enumeration shape. Fold in decisions 1–2.
 
 Note: the Overleaf draft has already published the new groups' IDs
 (P-V2 = R3, C-V2 = R5, P-V4 = R1) and their answer types (all BOOL), while
@@ -74,14 +70,20 @@ for **two** insufficient sub-types, not one. It is also **not sufficient on its
 own** for `sparse`: enumeration itself stops at n ≥ 10, so no sub-viability core
 ever reaches the labeler (see open question 5).
 
-**C. Flip the gold label** from the legacy point-estimate `verdict` to
-`test_verdict`. Deliberately deferred until A lands, because flipping now would
-mislabel the non-directional groups that A deletes or reshapes.
+**C. Flip the gold label** — **DONE 2026-08-11** (decisions.md). The shipped
+`gold_verdict` is the three-decision verdict, and `feasible_polarities` gates on
+decisiveness so supported/refuted can only be drawn from decisive cores. 57.5% of
+cores changed label; nothing flipped supported ↔ refuted. Landed before A rather
+than after, because the test swap in the now-locked decision had already fixed
+the groups that would have been mislabeled.
 
-**D. Equal-thirds sampler.** Replace the 45/45/10 balance: ~1.5·S budget per
-group, supported and refuted drawn from *different* event combinations (never
-the A→B / B→A mirror), insufficient spanning all three sub-types with the
-not-locatable third generated deliberately.
+**D. Equal-thirds sampler.** Replace the 45/45/10 balance the pilot still
+targets: ~1.5·S budget per group, supported and refuted drawn from *different*
+event combinations (never the A→B / B→A mirror), insufficient spanning all three
+sub-types with the not-locatable third generated deliberately. Carries two
+constraints found on 08-11: `sparse` currently has zero supply (open question 4),
+and C-V1/C-V3 are not orientable so they arrive 40 supported / 338 refuted with
+no way to rebalance within the group.
 
 **E. Regenerate the go/no-go table** on the final roster
 (`scripts/run_verdict_labels.py`) and review before scaling past the pilot.
