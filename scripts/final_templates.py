@@ -76,14 +76,13 @@ ROSTER = [
     # --- sequence ---
     ("S-R1", "sequence", "report", "BOOL", "order is A -> B -> C in this report", "-", "exact", "report"),
     ("S-V1", "sequence", "vaccine", "BOOL", "A -> B -> C is the most common ordering", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
-    ("S-V3", "sequence", "vaccine", "CHOICE", "the most common ordering of A, B, C", "uniform (6 orderings)", "multinomial GOF", "pipeline"),
-    ("S-V4", "sequence", "vaccine", "BOOL", "the ordering of A, B, C is consistent across reports", "uniform (6 orderings)", "multinomial GOF", "pipeline"),
+    ("S-V3", "sequence", "vaccine", "CHOICE", "the most common ordering of A, B, C", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
     # --- first / last ---
     ("F-R1", "first/last", "report", "CHOICE", "which occurs first in this report", "-", "exact", "report"),
     ("F-R2", "first/last", "report", "CHOICE", "which occurs last in this report", "-", "exact", "report"),
     ("F-R3", "first/last", "report", "BOOL", "A is the first of A, B, C in this report", "-", "exact", "report"),
-    ("F-V1", "first/last", "vaccine", "CHOICE", "which typically occurs first", "uniform (3 candidates)", "multinomial GOF", "pipeline"),
-    ("F-V2", "first/last", "vaccine", "CHOICE", "which typically occurs last", "uniform (3 candidates)", "multinomial GOF", "pipeline"),
+    ("F-V1", "first/last", "vaccine", "CHOICE", "which is most commonly the first event", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
+    ("F-V2", "first/last", "vaccine", "CHOICE", "which is most commonly the last event", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
     ("F-V3", "first/last", "vaccine", "BOOL", "A is the most common first event", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
     ("F-M3", "first/last", "multi", "CHOICE", "A is first more often after v1 than v2", "p1 = p2", "Fisher 2x2 (1-sided)", "pipeline"),
 ]

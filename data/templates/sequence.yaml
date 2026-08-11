@@ -75,28 +75,6 @@ groups:
     clinical:
       question: What's the most common progression of {A}, {B}, {C} in {v} patients?
       claim: The most common progression in {v} patients is {A} → {B} → {C}.
-- id: S-V4
-  primitive: sequence
-  level: vaccine
-  answer_type: BOOL
-  slots:
-  - A
-  - B
-  - C
-  - v
-  variants:
-    original:
-      question: After {v}, is the ordering of {A}, {B}, {C} consistent across reports?
-      claim: After {v}, the ordering of {A}, {B}, {C} is consistent across reports.
-    research:
-      question: In {v} reports with all three, does a single ordering dominate across cases?
-      claim: In {v} reports with all three, a single ordering of {A}, {B}, {C} dominates.
-    media:
-      question: After {v}, do people usually experience {A}, {B}, {C} in the same order?
-      claim: After {v}, people usually experience {A}, {B}, {C} in the same order.
-    clinical:
-      question: In {v} patients, is the progression of {A}, {B}, {C} consistent across cases?
-      claim: In {v} patients, the progression of {A}, {B}, {C} is consistent.
 - id: S-M1
   primitive: sequence
   level: multi

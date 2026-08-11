@@ -223,13 +223,6 @@ def _position_test(index, group, core) -> dict | None:
                     "null": f"H0: the {ev[0]}-vs-{ev[1]} rank-distances are symmetric "
                             "about 0 (neither event tends to come earlier)"}
         blocks = corpus.triple_positions(index, list(ev), cohort)
-        if gid == "S-V4":                          # consistency -> Kendall's W
-            r = positions.kendalls_w(blocks)
-            return {"name": "Kendall's W",
-                    "detail": f"W={r['W']:.3f}; n={len(blocks)} reports",
-                    "p_value": r["p"], "how": _HOW["kendall"],
-                    "null": "H0: no agreement in the event rankings across reports "
-                            "(W = 0, orderings unrelated report-to-report)"}
         r = positions.friedman(blocks)             # triple ordering -> Friedman
         return {"name": "Friedman",
                 "detail": f"Q={r['Q']:.2f} df={r['df']}; n={len(blocks)} reports",
@@ -279,15 +272,15 @@ def _null_hypothesis(mode, events, vaccines) -> str:
         return (f"H0: the {seq} ordering and the runner-up ordering are equally "
                 "frequent (P = 0.5; no unique mode)")
     if mode == "modal_choice":
-        return "H0: the 6 orderings are equally likely -- uniform (no modal ordering)"
-    if mode == "consistency_bool":
-        return "H0: the 6 orderings are equally likely -- uniform (no consistent ordering)"
+        return ("H0: the named ordering and the runner-up ordering are equally "
+                "frequent (P = 0.5; no unique modal ordering)")
     if mode == "first_bool":
         return (f"H0: {a} and the runner-up event are equally often the first "
                 "(P = 0.5; no unique most-common first event)")
     if mode in ("first_choice", "last_choice"):
         which = "last" if mode == "last_choice" else "first"
-        return f"H0: the 3 candidates are equally likely to be {which} -- uniform"
+        return (f"H0: the named candidate and the runner-up are equally often "
+                f"the {which} (P = 0.5; no unique most-common {which} event)")
     if mode in ("multi_differ_precedes", "multi_dir_precedes"):
         return f"H0: P({a} precedes {b}) is equal for {v1} and {v2} (p1 = p2)"
     if mode in ("multi_differ_cooccurs", "multi_dir_cooccurs"):

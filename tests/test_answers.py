@@ -116,7 +116,7 @@ def test_multi_differ_verdict(idx):
 def test_first_choice_winner(idx):
     r = compute_answer(idx, "F-V1", ("Headache", "Fatigue", "Pyrexia"),
                        vaccines=("Pfizer",))
-    assert r.sig_test.startswith("multinomial_gof")   # exact or chi-square
+    assert r.sig_test == "modal_runner"   # was GOF-vs-uniform pre-08-11
     assert r.options == ["Headache", "Fatigue", "Pyrexia"]
     assert r.gold_answer == "Headache"          # first in 16/20
 
@@ -189,19 +189,36 @@ def test_sparse_is_unreachable_now_that_the_floor_equals_the_viability_floor():
     assert r2.insufficient_subtype is None      # not SPARSE -- the known gap
 
 
-def test_omnibus_choice_groups_are_non_directional_but_keep_their_p_value():
-    # F-V1 (first_choice) is tested GOF-vs-uniform, which has no direction, so
-    # the three-decision rule does not apply -- flagged, not forced. The omnibus
-    # p is still reported, and the deferred modal-vs-runner-up tail is computed
-    # for the pending decisions.md call.
+def test_argmax_choice_groups_are_directional_via_modal_vs_runner_up():
+    # 2026-08-11: F-V1 was tested GOF-vs-uniform, which has no direction, so it
+    # could only ever be tagged non_directional. It now runs modal-vs-runner-up
+    # on the named candidate against its nearest rival, which HAS a direction.
+    # H is first in 30/40 and F in 10/40 -> H beats its rival decisively.
     reports = ([(i, "Pfizer", [["H"], ["F"], ["P"]]) for i in range(30)]
                + [(100 + i, "Pfizer", [["F"], ["H"], ["P"]]) for i in range(10)])
     idx = _make_index(reports)
     r = compute_answer(idx, "F-V1", ("H", "F", "P"), vaccines=("Pfizer",))
     assert r.n == 40                                  # clears the first/last floor
-    assert r.p_value is not None and r.p_claim is None
-    assert r.test_verdict == "insufficient"
-    assert r.insufficient_subtype == V.NON_DIRECTIONAL
+    assert r.sig_test == "modal_runner"
+    assert r.p_claim is not None and r.p_opposite is not None
+    assert r.test_verdict == "supported"
+    assert r.insufficient_subtype is None
+
+
+def test_argmax_choice_is_insufficient_when_the_mode_barely_leads():
+    # the case that motivated the change: an omnibus GOF is significant because
+    # one candidate is RARE, while the gold answer leads its rival by a hair.
+    # 20 H-first, 19 F-first, 1 P-first -> not uniform at all, but H vs F is a
+    # coin flip, so the claim "H is most commonly first" must NOT be supported.
+    reports = ([(i, "Pfizer", [["H"], ["F"], ["P"]]) for i in range(20)]
+               + [(100 + i, "Pfizer", [["F"], ["H"], ["P"]]) for i in range(19)]
+               + [(200, "Pfizer", [["P"], ["H"], ["F"]])])
+    idx = _make_index(reports)
+    r = compute_answer(idx, "F-V1", ("H", "F", "P"), vaccines=("Pfizer",))
+    assert r.n == 40
+    assert r.gold_answer == "H"                  # still the modal candidate
+    assert r.test_verdict == "insufficient"      # but the data does not settle it
+    assert r.insufficient_subtype == V.UNDERPOWERED
 
 
 def test_argmax_bool_refutes_when_the_claim_names_a_non_modal_event():

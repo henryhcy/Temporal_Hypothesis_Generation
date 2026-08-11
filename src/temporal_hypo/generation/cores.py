@@ -51,7 +51,7 @@ _MIN_N = 10
 
 # Modes whose cores are event TRIPLES rather than pairs.
 _VACCINE_TRIPLE_MODES = {
-    "seq_bool", "modal_choice", "consistency_bool",
+    "seq_bool", "modal_choice",
     "first_choice", "last_choice", "first_bool",
 }
 _MULTI_TRIPLE_MODES = {
@@ -79,7 +79,6 @@ MODE_BY_GROUP: dict[str, str] = {
     "S-R1": "rep_seq_bool",
     "S-V1": "seq_bool",
     "S-V3": "modal_choice",
-    "S-V4": "consistency_bool",
     "S-M1": "multi_differ_sequence",
     "S-M3": "multi_same_modal_order",
     # first / last
@@ -244,7 +243,7 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
         return _new_core(group, mode, computable=True, natural_verdict=bool_verdict(frac),
                          proportion=frac, n=n, k=k, **base)
 
-    if mode in ("seq_bool", "modal_choice", "consistency_bool"):
+    if mode in ("seq_bool", "modal_choice"):
         # STRICT ordering over the ORDERABLE denominator (ordering_distribution
         # excludes co-occurrence and floors at SEQ_MIN_N).
         a, b, c = combo
@@ -253,12 +252,6 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
             return _new_core(group, mode, computable=False,
                              natural_verdict="insufficient", **base)
         n = dist["n"]
-        if mode == "consistency_bool":
-            share = dist["modal_share"]
-            return _new_core(group, mode, computable=True,
-                             natural_verdict=bool_verdict(share),
-                             proportion=share, n=n, k=dist["modal_count"],
-                             extra=dist, **base)
         # seq_bool ("most common" BOOL) + modal_choice (CHOICE): supported iff a
         # UNIQUE modal ordering exists (an argmax claim). seq_bool is tested
         # modal-vs-runner-up (see core_significance); modal_choice keeps GOF.
@@ -592,7 +585,7 @@ def feasible_polarities(core: ViableCore) -> set[str]:
             out |= {"supported", "refuted"}
         else:
             out |= {"insufficient"}
-    elif m in ("sym_bool_cooccurs", "consistency_bool"):
+    elif m == "sym_bool_cooccurs":
         p = core.proportion
         if p is None or abs(p - 0.5) <= _HALF:
             out |= {"insufficient"}
@@ -661,7 +654,7 @@ def realize(core: ViableCore, polarity: str) -> InstanceFacts:
     m = core.mode
     if m in ("dir_bool", "dir_choice"):
         return _realize_directional(core, polarity)
-    if m in ("sym_bool_cooccurs", "consistency_bool"):
+    if m == "sym_bool_cooccurs":
         return _realize_symmetric_bool(core, polarity)
     if m in ("seq_bool", "modal_choice"):
         return _realize_modal_choice(core, polarity)

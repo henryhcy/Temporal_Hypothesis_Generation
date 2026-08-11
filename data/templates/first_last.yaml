@@ -86,17 +86,17 @@ groups:
   - v
   variants:
     original:
-      question: After {v}, which of {A}, {B}, {C} typically occurs first?
-      claim: After {v}, {A} typically occurs first among {A}, {B}, {C}.
+      question: After {v}, which of {A}, {B}, {C} is most commonly the first event?
+      claim: After {v}, {A} is most commonly the first event among {A}, {B}, {C}.
     research:
-      question: In {v} reports with all three, which event is the typical earliest among {A}, {B}, {C}?
-      claim: In {v} reports with all three, {A} is typically the earliest.
+      question: In {v} reports with all three, which event is most frequently the earliest among {A}, {B}, {C}?
+      claim: In {v} reports with all three, {A} is most frequently the earliest.
     media:
-      question: After {v}, which usually comes first, {A}, {B}, or {C}?
-      claim: After {v}, {A} usually comes first.
+      question: After {v}, which comes first most often, {A}, {B}, or {C}?
+      claim: After {v}, {A} comes first most often.
     clinical:
-      question: In {v} patients, which of {A}, {B}, {C} typically appears first?
-      claim: In {v} patients, {A} typically appears first.
+      question: In {v} patients, which of {A}, {B}, {C} is most frequently the earliest?
+      claim: In {v} patients, {A} is most frequently the earliest.
 - id: F-V2
   primitive: first_last
   level: vaccine
@@ -108,17 +108,17 @@ groups:
   - v
   variants:
     original:
-      question: After {v}, which of {A}, {B}, {C} typically occurs last?
-      claim: After {v}, {C} typically occurs last among {A}, {B}, {C}.
+      question: After {v}, which of {A}, {B}, {C} is most commonly the last event?
+      claim: After {v}, {C} is most commonly the last event among {A}, {B}, {C}.
     research:
-      question: In {v} reports with all three, which is the typical latest among {A}, {B}, {C}?
-      claim: In {v} reports with all three, {C} is typically the latest.
+      question: In {v} reports with all three, which event is most frequently the latest among {A}, {B}, {C}?
+      claim: In {v} reports with all three, {C} is most frequently the latest.
     media:
-      question: After {v}, which usually comes last, {A}, {B}, or {C}?
-      claim: After {v}, {C} usually comes last.
+      question: After {v}, which comes last most often, {A}, {B}, or {C}?
+      claim: After {v}, {C} comes last most often.
     clinical:
-      question: In {v} patients, which of {A}, {B}, {C} typically appears last?
-      claim: In {v} patients, {C} typically appears last.
+      question: In {v} patients, which of {A}, {B}, {C} is most frequently the latest?
+      claim: In {v} patients, {C} is most frequently the latest.
 - id: F-V3
   primitive: first_last
   level: vaccine

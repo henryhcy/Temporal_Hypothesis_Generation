@@ -74,4 +74,4 @@ def test_choice_record_carries_options_and_gold_answer():
     for r in recs:
         assert r["options"] == ["A", "B", "C"]
         assert r["gold_answer"] == "A"
-        assert r["sig_test"].startswith("multinomial_gof")
+        assert r["sig_test"] == "modal_runner"   # was multinomial_gof pre-08-11

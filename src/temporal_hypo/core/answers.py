@@ -57,10 +57,18 @@ _BINOM_NULL = {
     "dir_bool": 0.5, "dir_choice": 0.5,
     "sym_bool_cooccurs": 0.5,
 }
-# "Most common" argmax BOOL modes -> modal-vs-runner-up: one-sided exact
-# binomial of the top cell's count vs the runner-up's (null 0.5). Verifies the
-# NAMED ordering/event is the mode (which GOF-vs-uniform cannot).
-_MODAL_RUNNER = {"seq_bool", "first_bool"}
+# "Most common" argmax modes -> modal-vs-runner-up: one-sided exact binomial of
+# the named cell's count vs the runner-up's (null 0.5). Verifies the NAMED
+# ordering/event is the mode, which GOF-vs-uniform cannot.
+#
+# The three CHOICE modes joined the BOOL twins on 2026-08-11 (decisions.md). They
+# were tested GOF-vs-uniform, which is significant for the WRONG REASON: e.g.
+# F-V1 on (Chills, Headache, Pyrexia) in Janssen, n=116, has omnibus p=0.0002
+# only because Pyrexia is almost never first (2/116), while the gold answer
+# Headache leads Chills 22 to 21 -- a coin flip. GOF tests "is the distribution
+# uniform"; the claim asks "does the named candidate beat its nearest rival".
+_MODAL_RUNNER = {"seq_bool", "first_bool",
+                 "modal_choice", "first_choice", "last_choice"}
 # NOTE: the old private `_MODAL_RUNNER_MIN_N = 5` floor on (top + runner-up) is
 # gone. Since 2026-07-28 every mode is gated by the SHARED family floor
 # (core.min_n) on the CORE's conditioned denominator, which is what "is there
@@ -73,9 +81,14 @@ _FISHER = {
     "multi_differ_sequence",
     "multi_dir_first",
 }
-# Distribution modes -> chi-square goodness-of-fit vs uniform.
-_GOF = {"modal_choice", "consistency_bool", "first_choice", "last_choice"}
-# Two-cohort distribution modes -> chi-square homogeneity.
+# Single-cohort omnibus GOF modes: NONE as of 2026-08-11. `modal_choice`,
+# `first_choice` and `last_choice` moved to `_MODAL_RUNNER` (their claim is an
+# argmax, not a distribution shape), and `consistency_bool` (S-V4) was removed
+# outright -- "the ordering is consistent" IS the omnibus alternative restated,
+# so its opposite is the null and it can never be refuted OR supported under the
+# three-decision rule. See decisions.md 2026-08-11.
+_GOF: set[str] = set()
+# Two-cohort distribution modes -> exact Fisher-Freeman-Halton homogeneity.
 _HOMO = {"multi_same_first", "multi_differ_first", "multi_same_modal_order"}
 # Categorical multi modes (no proportion CI).
 _MULTI_CATEGORICAL = {"multi_same_first", "multi_differ_first",
@@ -89,12 +102,11 @@ _MULTI_CATEGORICAL = {"multi_same_first", "multi_differ_first",
 _NON_DIRECTIONAL = _GOF | _HOMO | {
     "multi_differ_precedes", "multi_differ_cooccurs", "multi_differ_sequence",
 }
-# Argmax CHOICE modes whose omnibus GOF could be replaced by the modal-vs-
-# runner-up test already locked for their BOOL twins (S-V1/F-V3). decisions.md
-# 2026-07-14 lists this as a candidate, deliberately deferred -- so the tail is
-# COMPUTED and reported under `p_claim_modal_runner` for the decision, but it
-# does not drive the label until that call is made.
-_MODAL_RUNNER_CANDIDATE = {"modal_choice", "first_choice", "last_choice"}
+# ADOPTED 2026-08-11: the argmax CHOICE modes now USE modal-vs-runner-up as their
+# label-driving test (they are in `_MODAL_RUNNER` above), so there is no longer a
+# separate "candidate tail" reported alongside an omnibus label. The old
+# `_MODAL_RUNNER_CANDIDATE` set and its `p_claim_modal_runner` /
+# `p_opposite_modal_runner` detail keys are gone with the deferral.
 
 
 @dataclass
@@ -121,16 +133,8 @@ def _perms(events: Sequence[str]) -> list[tuple[str, ...]]:
     return list(permutations(events))
 
 
-def _gof_observed(core) -> list[int] | None:
-    m = core.mode
-    counts = core.extra.get("counts")
-    if not counts:
-        return None
-    if m in ("modal_choice", "consistency_bool"):
-        return [counts.get(p, 0) for p in _perms(core.events)]
-    if m in ("first_choice", "last_choice"):
-        return [counts.get(t, 0) for t in core.events]
-    return None
+# NOTE: `_gof_observed` was removed on 2026-08-11 with the single-cohort omnibus
+# branch it fed. The two-cohort tables are still built by `_homo_table` below.
 
 
 def _homo_table(core) -> list[list[int]] | None:
@@ -237,26 +241,10 @@ def core_tails(core, *, named=None) -> Significance:
                             {"alternative": "greater"},
                             p_claim=p_claim, p_opposite=p_opp)
 
-    if m in _GOF:
-        observed = _gof_observed(core)
-        if observed is None:
-            return Significance(None, None, None)
-        r = sig.multinomial_gof(observed)   # exact when sparse, else chi-square
-        details = dict(r)
-        details["p_omnibus"] = r["p"]
-        # Deferred candidate (decisions.md 2026-07-14): the modal-vs-runner-up
-        # tail that WOULD make these argmax CHOICE modes directional. Computed
-        # for the pending decision; it does not drive the label.
-        if m in _MODAL_RUNNER_CANDIDATE:
-            nc = _named_counts(core, named)
-            if nc is not None and nc[0] + nc[1] > 0:
-                nn = nc[0] + nc[1]
-                details["p_claim_modal_runner"] = sig.binom_exact_p(
-                    nc[0], nn, 0.5, alternative="greater")
-                details["p_opposite_modal_runner"] = sig.binom_exact_p(
-                    nc[0], nn, 0.5, alternative="less")
-        return Significance(r["p"], None, f"multinomial_gof_{r['method']}",
-                            details)
+    # No single-cohort omnibus GOF branch remains: `_GOF` is empty since
+    # 2026-08-11 (see its definition). The exact multinomial GOF itself is still
+    # used -- by the two-cohort `_HOMO` shapes below and available in
+    # `core.significance` -- it just no longer produces any group's label.
 
     if m in _HOMO:
         table = _homo_table(core)
@@ -390,7 +378,7 @@ class AnswerRecord:
 
 
 def _null_ref(mode: str) -> float:
-    if mode in ("seq_bool", "modal_choice", "consistency_bool"):
+    if mode in ("seq_bool", "modal_choice"):
         return 1 / 6
     if mode in ("first_bool", "first_choice", "last_choice"):
         return 1 / 3

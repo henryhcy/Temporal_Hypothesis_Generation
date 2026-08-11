@@ -205,7 +205,7 @@ def ordering_distribution(
     under the permutation key giving their temporal order (a tuple of terms,
     earliest first). Returns None if n < 10.
 
-    Used by the sequence modal/consistency groups (S-V3, S-V4, S-M3). The
+    Used by the sequence modal groups (S-V3, S-M3; S-V4 removed 2026-08-11). The
     "modal ordering" is the argmax strict permutation; "consistency" is its
     share of n. This pins the otherwise-ambiguous definition: a single
     ordering dominates iff modal_share > 0.5 (mirrors the BOOL majority rule).

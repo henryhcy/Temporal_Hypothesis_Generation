@@ -33,11 +33,11 @@ from temporal_hypo.generation.templates import load_groups
 _REPO = Path(__file__).resolve().parent.parent
 
 # mode -> how the k-category table is built for the expected-cell guard
-_GOF_ORDERING = {"modal_choice", "consistency_bool"}      # 1x6 over orderings
-_GOF_CANDIDATE = {"first_choice", "last_choice"}          # 1x3 over candidates
+_GOF_ORDERING: set[str] = set()   # the argmax modes moved to modal-vs-runner-up
+_GOF_CANDIDATE: set[str] = set()  # ditto (2026-08-11)
 _FFH_ORDERING = {"multi_same_modal_order"}                # 2x6
 _FFH_CANDIDATE = {"multi_same_first", "multi_differ_first"}  # 2x3
-_DISTRIBUTION_GROUPS = {"S-V3", "S-V4", "F-V1", "F-V2", "S-M3", "F-M1", "F-M2"}
+_DISTRIBUTION_GROUPS = {"S-M3", "F-M1", "F-M2"}   # two-cohort FFH only
 
 
 def _observed(core):
