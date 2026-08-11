@@ -12,7 +12,8 @@ def _core():
         group_id="P-V1", family="pairwise", primitive="precedes", level="vaccine",
         answer_type="BOOL", mode="dir_bool", events=("Headache", "Fever"),
         vaccines=("Pfizer",), cohort_ids=[1, 2, 3], report_id=None,
-        computable=True, natural_verdict="supported", proportion=0.7, n=20, k=14,
+        # 16/20: decisive (p=0.0059). 14/20 would label insufficient post-08-11.
+        computable=True, natural_verdict="supported", proportion=0.8, n=20, k=16,
     )
 
 

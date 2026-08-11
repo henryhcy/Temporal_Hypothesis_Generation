@@ -256,3 +256,32 @@ def test_generalizes_to_new_corpus_without_code_change():
     r = compute_answer(idx, "P-V1", ("X", "Y"), vaccines=("Janssen",))
     assert r.verdict == "supported" and r.n == 20 and r.k == 18
     assert r.significant is True
+
+
+# ---- the emit path and the labeler must agree (decisions.md 2026-08-11) ----
+
+def test_emitted_gold_verdict_matches_the_three_decision_labeler(idx):
+    """`realize` stamps the shipped label; `core_decision` is the labeler.
+
+    These are separate code paths (generation.cores vs core.answers), so this
+    pins them together: for a decisive core the realized polarity IS the label,
+    and a non-decisive core can only ever emit `insufficient`.
+    """
+    groups = load_groups()
+    decisive = cores._build_vaccine_core(          # 16/20 Headache-first
+        idx, groups["P-V1"], "dir_bool", "Pfizer",
+        idx.cohort("Pfizer"), ("Headache", "Fatigue"))
+    dec = core_decision(decisive)
+    assert dec.decisive
+    for polarity in ("supported", "refuted"):
+        assert polarity in cores.feasible_polarities(decisive)
+        assert cores.realize(decisive, polarity).gold_verdict == polarity
+
+    # Moderna is 11/20 -- the legacy rule calls it supported, the labeler does not
+    weak = cores._build_vaccine_core(
+        idx, groups["P-V1"], "dir_bool", "Moderna",
+        idx.cohort("Moderna"), ("Headache", "Fatigue"))
+    assert not core_decision(weak).decisive
+    assert weak.natural_verdict == "supported"        # the retired rule
+    assert cores.feasible_polarities(weak) == {"insufficient"}
+    assert cores.realize(weak, "supported").gold_verdict == "insufficient"

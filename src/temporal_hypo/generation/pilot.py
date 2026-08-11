@@ -173,7 +173,10 @@ def run_pilot(
 
     # --- Part C ----------------------------------------------------------
     samples = []
-    for gid in VALIDATION_GROUPS:
+    # Skip ids that no longer exist: VALIDATION_GROUPS is a hand-written span of
+    # families/answer-types/levels, and groups have been retired since it was
+    # written (the PROP groups on 07-14, S-M2 on 08-04, S-V4 on 08-11).
+    for gid in (g for g in VALIDATION_GROUPS if g in cores_by_group):
         comp = [c for c in cores_by_group[gid] if c.computable]
         if comp:
             samples.append(_validation_entry(comp[0], groups[gid], index))

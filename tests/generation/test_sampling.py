@@ -12,7 +12,7 @@ from temporal_hypo.generation.sampling import (
 
 def _core(idx, proportion, n, mode="dir_bool"):
     return ViableCore(
-        group_id="G", family="f", primitive="precedes", level="vaccine",
+        group_id="G", family="pairwise", primitive="precedes", level="vaccine",
         answer_type="BOOL", mode=mode, events=(f"E{idx}", "B"),
         vaccines=("Pfizer",), cohort_ids=[1], report_id=None, computable=True,
         natural_verdict="supported", proportion=proportion, n=n,
@@ -44,8 +44,9 @@ def test_insufficient_capped_and_targets():
 
 
 def test_under_target_supported_flag():
-    # only 5 supported-feasible cores (all symmetric, prop>0.5)
-    cores = [_core(i, 0.7, 20, mode="sym_bool_cooccurs") for i in range(5)]
+    # only 5 supported-feasible cores (all symmetric, significantly above 0.5 --
+    # 16/20, since 14/20 is not decisive and would supply nothing)
+    cores = [_core(i, 0.8, 20, mode="sym_bool_cooccurs") for i in range(5)]
     sel = balance_group(cores, "G", t=100, seed=0)
     assert sel.counts["supported"] == 5
     assert sel.under_target["supported"] is True

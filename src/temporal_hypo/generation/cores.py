@@ -14,8 +14,21 @@ Two-stage design:
    ``InstanceFacts`` (oriented slot values + recomputed gold) for a requested
    polarity. Part B (pilot dataset) drives the 45/45/10 balance through these.
 
-The gold verdict is always recomputed by the locked verdict functions on the
-realized assertion -- never hardcoded -- so it cannot drift from the claim text.
+The gold verdict is always recomputed on the realized assertion -- never
+hardcoded -- so it cannot drift from the claim text.
+
+**Which rule produces it changed on 2026-08-11.** For cohort-level claims the
+shipped label is now the THREE-DECISION verdict (``core.verdict.three_decision``,
+reached via ``cohort_decision`` here): supported and refuted both require
+significance, in opposite directions. The retired point-estimate rule
+(``aggregation.bool_verdict`` and friends) called anything off 0.5 a verdict, so
+an 11/20 coin flip shipped as ``supported`` and a framework answering
+``insufficient`` -- the correct answer -- was scored wrong.
+
+The ``_realize_*`` functions below still compute a point estimate, because the
+proportion, CI and effect size are all reported alongside the label; their
+``verdict=`` argument is superseded in ``realize``. Report-level cores are exact
+single observations with no test, so they keep their deterministic verdict.
 """
 
 from __future__ import annotations
@@ -573,51 +586,65 @@ def _enum_report_full(index, group, mode) -> list[ViableCore]:
 _HALF = 1e-12
 
 
+# Cohort modes whose claim can be ORIENTED: the same decisive core yields
+# `supported` posed one way and `refuted` posed the other -- by flipping the event
+# order (dir_*), naming a non-modal cell (the argmax modes), or swapping the two
+# cohorts (multi_dir_*).
+#
+# `sym_bool_cooccurs` is deliberately NOT here: "A and B typically co-occur" is
+# symmetric, so there is nothing to flip. Its polarity is fixed by which tail
+# fired -- co-occurring significantly often is `supported`, significantly rarely
+# is `refuted` -- and a decisive core supplies exactly ONE of the two classes.
+_ORIENTABLE = {
+    "dir_bool", "dir_choice",
+    "seq_bool", "modal_choice",
+    "first_choice", "last_choice", "first_bool",
+    "multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first",
+}
+
+
+def cohort_decision(core: ViableCore):
+    """The three-decision Decision for a cohort-level core's canonical claim.
+
+    Imported lazily: ``core.answers`` imports THIS module, so a module-level
+    import would be circular. Everything about which test runs for which mode
+    lives in ``core.answers`` -- this module must not re-implement that dispatch.
+    """
+    from temporal_hypo.core.answers import core_decision
+    return core_decision(core)
+
+
 def feasible_polarities(core: ViableCore) -> set[str]:
-    """Which instance polarities this core can produce."""
+    """Which instance polarities this core can produce.
+
+    Cohort-level (2026-08-11): the answer is decided by SIGNIFICANCE, not by the
+    point estimate. A **decisive** core can be posed either way -- oriented with
+    the effect it is ``supported``, oriented against it ``refuted`` -- and a core
+    that is not decisive can only be ``insufficient``. This is exactly why S (the
+    decisive-core count) caps both the supported and the refuted class.
+
+    The retired point-estimate rule admitted supported/refuted whenever the
+    proportion sat off 0.5 by 1e-12, which let a 11/20 coin flip ship as a
+    ``supported`` gold label.
+
+    Report-level cores keep their own rules below: they are single exact
+    observations with no test, so significance does not apply.
+    """
     if not core.computable and core.report_id is None:
         return {"insufficient"}
     m = core.mode
     out: set[str] = set()
 
-    if m in ("dir_bool", "dir_choice"):
-        if core.proportion is not None and abs(core.proportion - 0.5) > _HALF:
-            out |= {"supported", "refuted"}
-        else:
-            out |= {"insufficient"}
-    elif m == "sym_bool_cooccurs":
-        p = core.proportion
-        if p is None or abs(p - 0.5) <= _HALF:
-            out |= {"insufficient"}
-        elif p > 0.5:
-            out |= {"supported"}
-        else:
-            out |= {"refuted"}
-    elif m in ("seq_bool", "modal_choice"):
-        # "most common" argmax claim: a UNIQUE modal ordering can be supported;
-        # naming another ordering refutes it.
-        d = core.extra
-        if d.get("modal") is not None and not d.get("modal_tie", False):
-            out |= {"supported", "refuted"}
-        else:
-            out |= {"insufficient"}
-    elif m in ("first_choice", "last_choice", "first_bool"):
-        out |= {"refuted"}  # can always name a non-winner
-        if core.extra.get("unique"):
-            out |= {"supported"}
-    elif m in ("multi_differ_precedes", "multi_differ_cooccurs",
-               "multi_differ_sequence"):
-        out |= {core.natural_verdict}
-    elif m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first"):
-        if core.proportion is not None and core.proportion2 is not None \
-                and abs(core.proportion - core.proportion2) > _HALF:
-            out |= {"supported", "refuted"}
-        else:
-            out |= {"insufficient"}
-    elif m in ("multi_same_first", "multi_differ_first",
-               "multi_same_modal_order"):
-        out |= {core.natural_verdict}
-    elif m == "rep_dir_bool":
+    if core.report_id is None:
+        dec = cohort_decision(core)
+        if not dec.decisive:
+            return {"insufficient"}
+        # orientable -> either class from the same core; otherwise the data fixes
+        # which single class this core can supply.
+        return ({"supported", "refuted"} if m in _ORIENTABLE
+                else {dec.verdict})
+
+    if m == "rep_dir_bool":
         rel = core.extra["rel"]
         out |= {"refuted"}
         if rel in ("before", "after"):
@@ -651,6 +678,29 @@ def realize(core: ViableCore, polarity: str) -> InstanceFacts:
     """
     if polarity == "insufficient":
         return _realize_insufficient(core)
+    facts = _realize(core, polarity)
+    if core.report_id is None:
+        # THE GOLD LABEL (2026-08-11). Each `_realize_*` below orients the claim
+        # and stamps a point-estimate verdict; for cohort-level claims that label
+        # is superseded by the three-decision rule here.
+        #
+        # Orienting a DECISIVE core with its effect yields `supported` and against
+        # it `refuted` -- so the realized verdict is just the requested polarity.
+        # A core that is not decisive yields `insufficient` in either orientation,
+        # which is what makes shipping it as supported/refuted wrong. Callers are
+        # required to request a polarity from `feasible_polarities`, so this only
+        # ever downgrades a caller that ignored that contract.
+        dec = cohort_decision(core)
+        if not dec.decisive:
+            facts.gold_verdict = "insufficient"
+        elif core.mode in _ORIENTABLE:
+            facts.gold_verdict = polarity
+        else:
+            facts.gold_verdict = dec.verdict
+    return facts
+
+
+def _realize(core: ViableCore, polarity: str) -> InstanceFacts:
     m = core.mode
     if m in ("dir_bool", "dir_choice"):
         return _realize_directional(core, polarity)

@@ -876,3 +876,81 @@ also unchanged (S-V3 4, F-V1 74, F-V2 86); that test is an exact binomial
 already.
 
 Note for the Overleaf draft: its F-V1 = 130 and F-V2 = 176 are now 129 and 173.
+
+---
+
+## LOCKED + implemented: the gold label IS the three-decision verdict (2026-08-11)
+
+Step C of `09_next_steps.md`. The released `gold_verdict` for every cohort-level
+instance now comes from `core.verdict.three_decision`, not from the point-estimate
+majority rule. The rule was implemented and measured since 2026-07-28 but was
+authoritative for nothing: `generation.cores.realize` stamped
+`aggregation.bool_verdict` (proportion > 0.5 -> supported) and
+`feasible_polarities` admitted supported/refuted whenever the proportion sat off
+0.5 by 1e-12.
+
+### Why this had to land before any modeling
+
+Under the retired rule, "Chills typically precedes Dizziness" at 11/20 in Pfizer
+shipped as a **supported** gold label. A framework answering `insufficient` --
+the correct answer to a coin flip -- was scored **wrong**. The benchmark was
+rewarding overconfidence and penalising statistical caution, the exact opposite
+of what it claims to measure. Any eval run before this flip measured the wrong
+thing.
+
+### Measured effect (11,867 cohort-level cores)
+
+| legacy \ three-decision | supported | refuted | insufficient |
+|---|--:|--:|--:|
+| supported (4,852) | 584 | 0 | **4,268** |
+| refuted (3,498) | 0 | 942 | **2,556** |
+| insufficient (3,517) | 0 | 0 | 3,517 |
+
+**57.5% of cores change label.** Critically, nothing flips supported <-> refuted:
+both cells are 0. Three-decision is strictly more conservative than the point
+estimate, never contradictory about direction, so this is a precision change and
+not a reinterpretation of the corpus.
+
+### Two mechanisms, not one
+
+1. **The label.** `realize` overrides the realized verdict for cohort-level cores:
+   orienting a DECISIVE core with its effect gives `supported`, against it
+   `refuted`; a non-decisive core gives `insufficient` in either orientation.
+2. **Feasibility.** `feasible_polarities` now gates on decisiveness, so the
+   sampler can only draw supported/refuted from decisive cores. This is what makes
+   "S caps both classes" true in code rather than only in the plan.
+
+### New distinction: ORIENTABLE vs data-fixed modes
+
+Surfaced by this work. `_ORIENTABLE` = the modes whose claim can be posed either
+way from one core -- by flipping the event order (`dir_*`), naming a non-modal
+cell (the argmax modes), or swapping cohorts (`multi_dir_*`). A decisive
+orientable core supplies BOTH classes.
+
+`sym_bool_cooccurs` (C-V1, C-V3) is **not** orientable: "A and B typically
+co-occur" is symmetric, so there is nothing to flip. Its class is fixed by which
+tail fired, and a decisive core supplies exactly ONE of supported/refuted. This
+matters for the sampler: C-V1/C-V3 contribute 40 supported and 338 refuted, and
+no orientation trick rebalances them.
+
+### Side effects
+
+- The `multi_differ_*` / `multi_same_*` groups now emit `insufficient` for every
+  instance (0/0/10 in the pilot). Correct and honest: they are non-directional, so
+  three_decision refuses to force a verdict. They are the six groups the 07-28
+  roster decision retires.
+- Fixed a PRE-EXISTING break in `run_pilot.py`, unrelated to this change and
+  present on HEAD: `pilot.VALIDATION_GROUPS` still named the PROP groups retired
+  on 2026-07-14, so the pilot died with `KeyError: 'P-V2'`. It now skips ids that
+  no longer exist. The pilot generates end-to-end again.
+- Test fixtures across `tests/generation/` used 14/20 as their "clearly
+  supported" case -- one-sided p = 0.058, i.e. precisely the class this flip
+  reclassifies. Moved to 16/20 (p = 0.0059). A new test in `test_answers.py` pins
+  the emit path to the labeler so `generation.cores` and `core.answers` cannot
+  drift.
+
+### Still open
+
+The pilot still targets the provisional 45/45/10 balance; equal thirds is step D.
+And with C-V1/C-V3 supplying 40/338, per-group equal thirds may not be reachable
+for every group -- see `open_questions.md`.
