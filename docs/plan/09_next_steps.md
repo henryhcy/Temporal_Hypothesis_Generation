@@ -14,6 +14,7 @@ evidence, now partly stale — see its banner).
 | Min-n gate | **10 everywhere, sequence 5** (`core/min_n.py`, 08-11) |
 | Tests | **exact only** — chi-square removed from the codebase (08-11) |
 | Gold label shipped | **the three-decision verdict** (step C, 08-11) |
+| Insufficient sub-types | all three populated: 5,646 / 2,722 / 116 (step B, 08-11) |
 | Decisive cores (S) across all 25 groups | **1526** |
 | Groups at S = 0 | **6** — exactly the six pending removal |
 
@@ -43,10 +44,10 @@ modal-vs-runner-up, S-V4 removed). What remains:
    nominal 5%). Retiring is FREE: `core/positions.py` is imported only by
    `make_examples.py` and `replacement_inventory.py`, never by `core/answers.py`,
    so no gold label reads those p-values.
-4. **How to source the `sparse` insufficient sub-type.** New, and created by the
-   floor decision: `sparse` was the band between the viability floor and the test
-   floor, and those are now equal, so its measured count is **0** while the
-   07-28 decision requires insufficient to span all three sub-types.
+4. **How to source `not_locatable` outside the sequence family.** `sparse` is
+   solved (step B). All 116 `not_locatable` cores are sequence triples that are
+   present but never orderable; the pairwise, co-occurs and first/last families
+   have none, because their enumeration pre-filters to co-occurrence ≥ 10.
 5. **Is a one-family multi tier worth the shape?** Of the multi candidates only
    P-M2 (p_perm 0.025) and M-F (0.033) clear their null, and they are the same
    claim family, so only one ships. Both single-event candidates now fail
@@ -63,12 +64,12 @@ Note: the Overleaf draft has already published the new groups' IDs
 (P-V2 = R3, C-V2 = R5, P-V4 = R1) and their answer types (all BOOL), while
 `open_questions.md` still lists both as open. Reconcile before or during A.
 
-**B. Corpus helpers must report n below the viability floor.** They currently
-return None and drop n, so `sparse` and `not_locatable` are indistinguishable
-downstream — 3,319 cores sit in the unlabeled bucket. This is now a prerequisite
-for **two** insufficient sub-types, not one. It is also **not sufficient on its
-own** for `sparse`: enumeration itself stops at n ≥ 10, so no sub-viability core
-ever reaches the labeler (see open question 5).
+**B. Corpus helpers report n at every size** — **DONE 2026-08-11**
+(decisions.md). The helpers measure and `core/min_n` is the only floor;
+`ViableCore.computable` now means "clears the family floor". `sparse` 0 → 2,722,
+`not_locatable` 0 → 116, the unnameable `unknown` bucket 2,838 → 0, and S held at
+1,526. Remaining gap for D: `not_locatable` has zero supply outside the sequence
+family.
 
 **C. Flip the gold label** — **DONE 2026-08-11** (decisions.md). The shipped
 `gold_verdict` is the three-decision verdict, and `feasible_polarities` gates on
@@ -81,9 +82,9 @@ the groups that would have been mislabeled.
 targets: ~1.5·S budget per group, supported and refuted drawn from *different*
 event combinations (never the A→B / B→A mirror), insufficient spanning all three
 sub-types with the not-locatable third generated deliberately. Carries two
-constraints found on 08-11: `sparse` currently has zero supply (open question 4),
-and C-V1/C-V3 are not orientable so they arrive 40 supported / 338 refuted with
-no way to rebalance within the group.
+constraints found on 08-11: `not_locatable` has no supply outside the sequence
+family (open question 4), and C-V1/C-V3 are not orientable so they arrive 40
+supported / 338 refuted with no way to rebalance within the group.
 
 **E. Regenerate the go/no-go table** on the final roster
 (`scripts/run_verdict_labels.py`) and review before scaling past the pilot.
