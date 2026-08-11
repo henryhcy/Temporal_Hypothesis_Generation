@@ -48,39 +48,51 @@ P-V4=R1), **answer types** (BOOL vs CHOICE), and the exact **four-register
 wording**. R1's 4-event (A,B,C,D) slot is a new enumeration shape. R5 needs a new
 corpus helper (2x2 presence x presence with marginals).
 
-### Min-n floor: what does the family floor cost, and is it worth it? (2026-08-04)
-The three-decision labeler now gates on the shared family floors (20
-pairwise/co-occurs, 5 sequence, 30 first/last) instead of the retired blanket
-n >= 10. Measured cost over the full corpus (`data/pilot/verdict_labels.md`,
-regenerate with `scripts/run_verdict_labels.py`) -- S = decisive cores, which
-caps each group's supported AND refuted classes:
+### Min-n floor
+RESOLVED (see `decisions.md` 2026-08-11): floors are **10 / 5 / 10** (pairwise,
+sequence, first/last), aligning pairwise and first/last with the enumeration
+viability floor. S goes 587 -> 1362 and F-M3 revives (0 -> 19).
 
-| family | S@10 | S@15 | S@20 | S@25 | S@30 |
-|---|--:|--:|--:|--:|--:|
-| pairwise / co-occurs | 1265 | 833 | **569** | 401 | 296 |
-| first / last | 93 | 57 | 39 | 24 | **14** |
-| sequence | 0 | 0 | 0 | 0 | 0 |  (**4** at the locked floor of 5)
+### How do we source the `sparse` insufficient sub-type now? (2026-08-11)
+Consequence of the floor decision: `sparse` was the band between the enumeration
+viability floor (10) and the test floor (20/30). With the test floor now AT 10
+that band is empty, and the measured `sparse` count is **0**. But the 2026-07-28
+decision requires the insufficient class to span all three sub-types, so this
+needs a source, not an acceptance.
 
-(S@5 = S@10 for pairwise and first/last: the enumeration viability floor is
-already 10, so nothing exists below it there.)
-
-The locked floors cost pairwise 55% of its decisive supply and first/last 85%.
-Note the floor is a QUALITY choice, not a validity one -- the tests are exact,
-so they are valid at small n; the floor decides how thin the evidence behind a
-shipped question may be. Open: keep 20/30, or lower to 15 (pairwise 833,
-first/last 57), or align the floor with the enumeration viability floor of 10?
-The sequence floor of 5 is load-bearing and should stay: it is the only thing
-keeping S-V1 non-zero (S = 4 at 5, 0 at 10).
+Next-steps item B (corpus helpers report n below the viability floor) is a
+prerequisite but is **not sufficient on its own**: enumeration itself stops at
+n >= 10, so no sub-viability core is ever offered to the labeler. Options:
+(a) enumerate below the viability floor *only* for the insufficient class, so
+sparse cores are generated deliberately (parallels how `not_locatable` must be
+generated deliberately per the same decision); (b) define `sparse` by a different
+axis than n -- e.g. cores that clear the floor but whose test is on the exact
+path (`min_n.uses_exact`); (c) accept a two-sub-type insufficient class and
+amend the 2026-07-28 decision. (a) preserves the decision's intent; (b) changes
+what the sub-type means; (c) narrows the benchmark's coverage of failure modes.
 
 ### Non-directional groups: adopt modal-vs-runner-up for the CHOICE groups?
 Deferred on 2026-07-14, now forced by the three-decision labeler: S-V3, S-V4,
 F-V1, F-V2 are tested GOF-vs-uniform, which has no direction, so they can carry
 no supported/refuted verdict and all sit at S = 0. Measured rescue if the
 modal-vs-runner-up test (already locked for their BOOL twins S-V1/F-V3) replaced
-GOF: S-V3 +4, F-V1 +14, F-V2 +21 decisive cores. S-V4 (`consistency_bool`) is
-NOT rescued -- "the ordering is consistent" has no opposite direction to be
-significant in, the same defect that retires the "same" multi groups. Open:
-adopt for S-V3/F-V1/F-V2 (small but non-zero), and retire or reshape S-V4.
+GOF -- the floor decision changed these numbers a lot:
+
+| group | rescue @ floor 20/30 | **rescue @ floor 10** |
+|---|--:|--:|
+| F-V2 | +21 | **+86** |
+| F-V1 | +14 | **+74** |
+| S-V3 | +4 | **+4** |
+
+S-V4 (`consistency_bool`) is NOT rescued -- "the ordering is consistent" has no
+opposite direction to be significant in, the same defect that retires the "same"
+multi groups. Open: adopt for S-V3/F-V1/F-V2, and retire or reshape S-V4.
+
+This is now **the last remaining S = 0 blocker**: after the roster migration
+removes the other six S = 0 groups, S-V3/S-V4/F-V1/F-V2 are the only groups that
+cannot ship a verdict. At floor 10 the rescue is no longer marginal -- F-V1+F-V2
+alone would add 160 decisive cores, more than the entire first/last family had
+under the old floor (93).
 
 ### Does the sequence family survive at cohort level? (2026-08-04)
 S-M2 is REMOVED (see `decisions.md`, power-dead: best directional p = 0.058 over
@@ -101,15 +113,63 @@ changing the claim scope to "across all vaccines"; (c) apply §6 lever 5 (coarse
 events to MedDRA SOC/HLGT categories), the real structural fix, which needs a
 term→category map. Not a detail — decide before the roster migration.
 
-### C-M2 does not beat its own permutation null (2026-08-04)
-See `08_multi_tier_inventory.md`. C-M2's 23 decisive cores sit inside the
-shuffled-label distribution (mean 16.7, p95 25, **p_perm 0.129**), so its
-supported/refuted labels would be largely noise. Plausible reason: whether two
-symptoms land at the *same* timeline stage reflects annotation/narrative style,
-not the vaccine. Open: drop C-M2, or keep it as a deliberately hard/negative
-group with the caveat documented? Candidate replacements that DO clear the null:
-M-F precedes-wide (26 decisive, p_perm 0.025) and M-H early-half (18, 0.035) —
-the latter conditions on a single event, a new slot shape for the tier.
+### C-M2 does not beat its own permutation null (2026-08-04, re-confirmed 08-11)
+See `08_multi_tier_inventory.md`. C-M2's decisive cores sit inside the
+shuffled-label distribution at **both** floors, so this is not a supply problem
+and the floor decision does not rescue it:
+
+| floor | real decisive | null mean | p_perm |
+|---|--:|--:|--:|
+| 20 | 23 | 16.7 | 0.129 |
+| **10** | 42 | 34.3 | **0.151** (2000 rounds) |
+
+Lowering the floor nearly doubled its decisive count and left it *further* inside
+the null — exactly what you expect if the signal is not there. Plausible reason:
+whether two symptoms land at the *same* timeline stage reflects
+annotation/narrative style, not the vaccine. Open: drop C-M2, or keep it as a
+deliberately hard/negative group with the caveat documented? Recommendation is
+drop — a group whose supported/refuted labels are mostly noise cannot carry a
+gold label, and the multi tier now has P-M2 (30) and F-M3 (19) without it.
+
+### At floor 10 there is NO viable single-event candidate (2026-08-11)
+The 08 doc's replacement recommendation was computed at floor 20 and does not
+survive the new floor. Re-run at floor 10 with **2000 rounds**
+(`data/pilot/multi_inventory_floor10_2000rounds.json`) -- 200 rounds proved too
+coarse here, see the caveat below:
+
+| candidate | shape | p_perm @ floor 20 | p_perm @ floor 10 (2000 rds) | |
+|---|---|--:|--:|---|
+| P-M2 precedes-strict | pair | 0.005 | **0.025** | clears |
+| M-F precedes-wide | pair | 0.025 | **0.033** | clears |
+| M-C last-overall | single | 0.055 | **0.073** | fails |
+| M-H early-half | single | **0.035** | **0.120** | fails |
+| C-M2 co-occurs | pair | 0.129 | **0.151** | fails |
+| M-B first-overall | single | 0.373 | **0.453** | noise |
+
+**The single-event shape is dead at floor 10.** M-H, the 08 doc's recommended
+"new shape", degrades to 0.120; M-C, its borderline sibling, to 0.073. Neither
+can carry the tier's single-event slot. Consequence: the only validated multi
+candidates are P-M2 and M-F, which are **the same claim family** (precedes) and
+should not both ship -- so the validated multi tier collapses to ONE claim family
+plus whatever F-M3 does when it is finally tested. Reopen: is a one-family multi
+tier worth the shape at all, versus retiring the tier for v1?
+
+**Methodological caveat: 200 rounds is not enough resolution for a ship/no-ship
+call.** At p ~= 0.04 the 200-round SE is ~0.014, and M-C actually crossed the
+alpha line between run sizes (0.035 at 200 rounds -> 0.073 at 2000). Any
+permutation gate on a new group (next-steps F) should use >= 2000 rounds; the
+200-round default is for triage only.
+
+### F-M3 has never been permutation-validated, and its nearest analog is noise
+The floor decision revived F-M3 (0 -> 19 decisive), but revived is not validated:
+every `p_perm` in `08_multi_tier_inventory.md` is for a *candidate*, and F-M3 was
+never among them. Its claim shape ("{A} is first more often after {v1}") is the
+multi-event relative of **M-B first-overall, the single worst candidate in the
+sweep** (p_perm 0.458 at floor 20, 0.458 at floor 10 — pure noise). That is not
+proof F-M3 fails (different core universe: 387 triple-conditioned cores vs M-B's
+193 single-event ones), but it is reason enough not to ship it unchecked.
+Per next-steps F, run F-M3 through a permutation null before it takes a slot;
+`run_multi_inventory.py`'s candidate list needs an F-M3 entry to do it.
 
 ### Retire §6 lever 2 (position test as verdict driver)?
 The permutation null shows the Mann-Whitney normal approximation is
@@ -121,12 +181,14 @@ or re-run it with an EXACT Mann-Whitney before trusting any of its counts. Note
 `core/positions.py` uses this same normal approximation throughout, so anything
 reading its p-values as verdicts is affected.
 
-### F-M3 is S = 0 too, but for the opposite reason — do not treat it like S-M2
-F-M3 has 19 decisive cores at floor 10 and 5 at floor 20; it only reaches 0 at
-the first/last floor of 30. It is a FLOOR casualty, so the min-n decision above
-revives it or kills it. Of the four directional multi groups the 2026-07-28
-decision keeps, only P-M2 (S = 18) and C-M2 (S = 23) are live at the locked
-floors. Open: whether a two-group multi tier is enough of a tier.
+### Is a two-group multi tier enough of a tier? (updated 2026-08-11)
+RESOLVED in part: F-M3's S = 0 was a floor casualty and the floor decision
+revived it (19 decisive at floor 10), as predicted. The multi tier is now P-M2
+(30), C-M2 (43), F-M3 (19) by supply. But **two of those three are in doubt on
+validity, not supply**: C-M2 fails its permutation null at both floors, and F-M3
+has never been run against one. If C-M2 drops and F-M3 fails, the tier is P-M2
+alone. Open: whether to backfill with M-F or M-C (see the ranking item above),
+and whether a one- or two-group multi tier justifies the shape at all.
 
 ## Framework
 

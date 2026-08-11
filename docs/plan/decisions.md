@@ -743,3 +743,136 @@ sequence family has NO multi tier, and its entire cohort-level supply is S-V1's
 4 decisive cores (S-V3/S-V4 being non-directional). Whether the sequence family
 survives as more than a report-level group is now an open question, not a
 detail -- see `open_questions.md`.
+
+---
+
+## LOCKED + implemented: min-n floor = 10, aligned with viability (2026-08-11)
+
+The family floors are now **10 pairwise/co-occurs, 5 sequence, 10 first/last**
+(`core/min_n.py`), replacing the 2026-08-04 provisional 20 / 5 / 30. The pairwise
+and first/last floors are set to the **enumeration viability floor**
+(`corpus._MIN_N = 10`), so the test gate no longer discards cores the enumerator
+was willing to emit. Sequence stays at 5: its ORDERABLE denominator is thinner
+than the others, and the 5 is load-bearing -- it is the only thing keeping S-V1
+non-zero (S = 4 at 5, 0 at 10).
+
+The principle: **one universal standard (10), with a survival exception for a
+family that cannot generate anything at it.** A benchmark should hold every
+shipped question to the same evidence bar, so the default is a single number for
+all families; sequence gets 5 only because its supply is exactly zero at 10 and
+the alternative is deleting the family's entire cohort-level tier. Any future
+family is held to 10 unless it demonstrates the same zero-supply problem.
+
+Rationale: the floor is a **quality** choice, not a validity one. The tests are
+exact, so they are valid at small n; the floor only decides how thin the evidence
+behind a shipped question may be. At 20 / 30 the floor was the binding constraint
+on the whole benchmark's supply, costing pairwise 55% and first/last 85% of their
+decisive cores, and it was doing so to buy a robustness the exact tests already
+provide.
+
+### Measured effect (full corpus, regenerate with `scripts/run_verdict_labels.py`)
+
+| | floor 20/5/30 | **floor 10/5/10** |
+|---|--:|--:|
+| Decisive cores S (all groups) | 587 | **1362** |
+| P-V1 / P-V3 | 130 | **218** each |
+| C-V1 / C-V3 | 266 | **378** each |
+| F-V3 | 21 | **74** |
+| P-M2 | 18 | **30** |
+| C-M2 | 23 | **43** |
+| F-M3 | **0** | **19** |
+| S-V1 | 4 | 4 (floor unchanged) |
+
+**F-M3 is revived**, as the 2026-08-04 S-M2 entry anticipated: it was a floor
+casualty, not power-dead. The multi tier is now P-M2 (30), C-M2 (43), F-M3 (19),
+all live. Groups still at S = 0: P-M1, C-M1, S-M1, S-M3, F-M1, F-M2 (all six
+pending removal) plus S-V3, S-V4, F-V1, F-V2 -- so **after the roster migration
+the only remaining S = 0 groups are the four non-directional ones**, which makes
+the non-directional decision the sole surviving supply blocker.
+
+### Consequence: the `sparse` insufficient sub-type is now unreachable
+
+`sparse` was defined as the band between the viability floor and the test floor.
+Setting them equal collapses that band to nothing -- measured `sparse` count is
+now exactly **0** (it was the band 10-19 / 10-29). Cores below 10 are not
+enumerated at all, and the corpus helpers drop their n, so they land in the
+`unknown` bucket (3,319 cores) rather than in `sparse`.
+
+The 2026-07-28 decision REQUIRES the insufficient class to span all three
+sub-types, so this must be fixed, not accepted. Next-steps item B (helpers report
+n below the viability floor) is now a prerequisite for **two** sub-types --
+`sparse` as well as `not_locatable` -- and B alone is not sufficient: enumeration
+itself stops at 10, so sourcing `sparse` also needs a sub-viability enumeration
+path for the insufficient class. See `open_questions.md`.
+
+### Re-validation of the multi tier at the new floor (done)
+
+`08_multi_tier_inventory.md`'s permutation nulls were all computed at floor 20,
+so every `p_perm` in it is stale. Re-run at floor 10 with 2000 rounds
+(`data/pilot/multi_inventory_floor10_2000rounds.json`): P-M2 **0.025** and M-F
+**0.033** still clear; C-M2 still fails (**0.151**); and **both single-event
+candidates now fail** -- M-H 0.035 -> **0.120**, M-C 0.055 -> **0.073**. The 08
+doc's recommendation of a "P-M2 (or M-F) + M-H + F-M3" tier therefore does not
+survive this decision, and is flagged stale in place.
+
+Two open consequences (see `open_questions.md`): the validated multi tier
+collapses to a single claim family (P-M2 and M-F are the same claim, so only one
+ships), and 200 rounds is now known to be too coarse for a ship/no-ship call --
+M-C crossed the alpha line between 200 and 2000 rounds, so the next-steps F
+permutation gate needs >= 2000 rounds.
+
+---
+
+## LOCKED + implemented: exact tests only, chi-square abandoned (2026-08-11)
+
+**Every benchmark label comes from an exact test, at every n.** The asymptotic
+chi-square path is removed from the codebase, not merely deprioritised:
+`significance.chi2_gof` and `significance.chi2_contingency` are deleted, and
+`multinomial_gof` / `contingency_test` now call the exact multinomial GOF and
+Fisher-Freeman-Halton unconditionally.
+
+Rationale: current practice favours exact inference well past the n this corpus
+reaches, so the approximation was buying nothing but ambiguity. It also removes a
+class of question the benchmark should not have to answer -- "which test produced
+this gold label?" -- since the answer is now always the same test for a given
+claim shape.
+
+Consequences:
+
+- **The expected-cell guard is gone.** `min_n.MIN_EXPECTED` and
+  `min_n.uses_exact` (plus the `_min_expected_*` helpers) are deleted: they
+  existed only to choose between chi-square and exact. The min-n gate is now a
+  pure family floor and nothing else. `05_significance_tests.md`'s "binding
+  constraint" column is updated -- no row says ">= 5 per cell" any more.
+- **`chi2_sf` survives, but only as a distribution function** for the rank
+  diagnostics in `core.positions`, which produce no label and are themselves
+  under review (their normal approximation is anti-conservative on tie-heavy
+  data). Nothing on the label path consults a chi-square distribution.
+- **Feasibility is now a real constraint, and it fails loudly.** The k-category
+  exact tests enumerate every table with the observed margins -- `C(n+k-1, k-1)`
+  for GOF -- so cost grows fast in k. Past `EXACT_MAX_TABLES` (5,000,000) the
+  test raises `ExactTestTooLarge` instead of falling back. An infeasible table is
+  a design signal (coarsen the categories, or gate the core out), not something
+  to approximate away.
+
+### Measured effect (full corpus)
+
+Feasible everywhere: no core in any group trips the cap, and the full labeling
+run takes ~17 s. **Four cores changed**, all omnibus first/last distribution
+tests where the chi-square tail claimed significance and the exact test does not:
+
+| group | chi-square regime | **exact only** |
+|---|--:|--:|
+| F-V1 first_choice (omnibus significant) | 130 | **129** |
+| F-V2 last_choice (omnibus significant) | 176 | **173** |
+| S-V3 / S-V4 | 14 / 14 | 14 / 14 (already exact -- tiny n) |
+| every directional group | unchanged | unchanged (already exact) |
+
+S is unchanged at **1362**: the four affected cores sit in non-directional groups
+that contribute 0 decisive cores either way. So the correction is invisible in
+supply but not in correctness -- and it is in the expected direction, chi-square
+being anti-conservative in the tail. The modal-vs-runner-up rescue counts are
+also unchanged (S-V3 4, F-V1 74, F-V2 86); that test is an exact binomial
+already.
+
+Note for the Overleaf draft: its F-V1 = 130 and F-V2 = 176 are now 129 and 173.

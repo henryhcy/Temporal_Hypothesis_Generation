@@ -44,9 +44,9 @@ def test_tails_are_mutually_exclusive_at_alpha_below_half():
 # ---- insufficient sub-types ----------------------------------------------
 
 def test_subtype_sparse_below_the_family_floor():
-    d = V.three_decision(0.001, 0.999, 15, "pairwise")   # floor is 20
+    d = V.three_decision(0.001, 0.999, 7, "pairwise")   # floor is 10
     assert d.verdict == V.INSUFFICIENT and d.subtype == V.SPARSE
-    assert "20" in d.gate
+    assert "10" in d.gate
 
 
 def test_subtype_not_locatable_at_zero_n():
@@ -75,14 +75,16 @@ def test_sequence_floor_is_5_so_small_exact_tests_are_no_longer_gated_out():
     assert d.verdict == V.SUPPORTED
 
 
-def test_first_last_floor_is_30_which_is_stricter_than_the_old_blanket():
-    assert V.three_decision(0.001, 0.999, 25, "first_last").subtype == V.SPARSE
-    assert V.three_decision(0.001, 0.999, 30, "first_last").verdict == V.SUPPORTED
+def test_first_last_floor_is_10_matching_the_viability_floor():
+    # 2026-08-11: was 30. Below 10 a core is not enumerated at all, so the only
+    # way to reach SPARSE here is a reported sub-viability n (see next-steps B).
+    assert V.three_decision(0.001, 0.999, 9, "first_last").subtype == V.SPARSE
+    assert V.three_decision(0.001, 0.999, 10, "first_last").verdict == V.SUPPORTED
 
 
 def test_two_cohort_gate_applies_to_both_cohorts():
     assert V.three_decision(0.001, 0.9, 40, "pairwise", n2=40).verdict == V.SUPPORTED
-    assert V.three_decision(0.001, 0.9, 40, "pairwise", n2=15).subtype == V.SPARSE
+    assert V.three_decision(0.001, 0.9, 40, "pairwise", n2=8).subtype == V.SPARSE
 
 
 # ---- report-level ---------------------------------------------------------

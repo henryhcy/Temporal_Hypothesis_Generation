@@ -27,6 +27,7 @@ from pathlib import Path
 
 from temporal_hypo.core import verdict as V
 from temporal_hypo.core.answers import core_significance
+from temporal_hypo.core.min_n import family_floor
 from temporal_hypo.core.significance import ALPHA
 from temporal_hypo.generation.cores import enumerate_group_full
 from temporal_hypo.generation.corpus import CorpusIndex
@@ -166,14 +167,21 @@ def run(db_path: Path, out_dir: Path) -> dict:
     return {"rows": rows, "sweep": sweep, "out_dir": str(out_dir)}
 
 
+def _floors_blurb() -> str:
+    """The live family floors, read from the shared gate so this cannot drift."""
+    return (f"pairwise/co-occurs {family_floor('pairwise')}, "
+            f"sequence {family_floor('sequence')}, "
+            f"first/last {family_floor('first_last')}")
+
+
 def _render_md(rows, sweep) -> str:
     out = [
         "# Three-decision label distribution (decisions.md 2026-07-28)",
         "",
         "Canonical-orientation claim per enumerated core. `S` = decisive cores "
         "(supported + refuted); the equal-thirds budget is ~1.5*S.",
-        "Gate = the shared family floor (pairwise/co-occurs 20, sequence 5, "
-        "first/last 30), replacing the blanket n>=10.",
+        f"Gate = the shared family floor ({_floors_blurb()}), replacing the "
+        "blanket n>=10.",
         "",
         "| group | mode | cores | sup | ref | insuf | S | ~1.5S | "
         "underpow | sparse | non-dir | old sig | new dec | +gain | -lost |",
@@ -205,8 +213,7 @@ def _render_md(rows, sweep) -> str:
     if sweep:
         out += ["", "## Min-n floor sensitivity (directional cores only)", "",
                 "S = decisive cores at each candidate floor; tests and alpha "
-                "unchanged. The locked family floors are 20 pairwise/co-occurs, "
-                "5 sequence, 30 first/last.", "",
+                f"unchanged. The locked family floors are {_floors_blurb()}.", "",
                 "| group | fam | dir. cores | "
                 + " | ".join(f"S@{f}" for f in _SWEEP_FLOORS) + " |",
                 "|---|---|--:|" + "--:|" * len(_SWEEP_FLOORS)]

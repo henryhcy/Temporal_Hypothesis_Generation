@@ -1,13 +1,13 @@
 """Per-template diagnostics (06_pilot_examples.md, Step 3) under the new gate.
 
-For each of the 30 template groups, enumerate the whole viable-core population,
-apply the SHARED min-n gate (temporal_hypo.core.min_n) with the updated family
-floors (20 pairwise/co-occurs, 30 sequence/first-last) and the expected-cell>=5
-guard for the k-category distribution groups, and report:
+For each template group, enumerate the whole viable-core population, apply the
+SHARED min-n gate (temporal_hypo.core.min_n) with the current family floors (10,
+except sequence's thinner orderable denominator at 5), and report:
 
 - viable (testable) core count and the n-distribution;
-- the fraction falling to `insufficient` and why (below floor vs sparse cells);
-- for the chi-square-referenced distribution groups, the expected>=5 pass rate;
+- the fraction falling to `insufficient` and why (below floor);
+- `exact%`, now 1.00 by construction: since 2026-08-11 every test is exact at
+  every n, so there is no expected-cell guard and no chi-square path;
 - a flag for any group under ~50 viable cores (under-target for T=100);
 - whether the group can yield BOTH a supported and a refuted example.
 
@@ -25,7 +25,7 @@ import sqlite3
 from itertools import permutations
 from pathlib import Path
 
-from temporal_hypo.core.min_n import min_n_gate, uses_exact
+from temporal_hypo.core.min_n import family_floor, min_n_gate
 from temporal_hypo.generation.cores import enumerate_group_full, feasible_polarities
 from temporal_hypo.generation.corpus import CorpusIndex
 from temporal_hypo.generation.templates import load_groups
@@ -70,7 +70,7 @@ def _median(xs):
 
 def diagnose_group(group, cores) -> dict:
     eligible = group.level != "report"   # report-level groups carry no test
-    testable, below_floor, exact_cores = [], 0, 0
+    testable, below_floor = [], 0
     verdicts = {"supported": 0, "refuted": 0, "insufficient": 0}
     feas_sup = feas_ref = False
     for c in cores:
@@ -87,16 +87,12 @@ def diagnose_group(group, cores) -> dict:
         fp = feasible_polarities(c)
         feas_sup = feas_sup or "supported" in fp
         feas_ref = feas_ref or "refuted" in fp
-        if group.id in _DISTRIBUTION_GROUPS:
-            obs = _observed(c)
-            if obs is not None and uses_exact(obs):
-                exact_cores += 1
     ns = [c.n for c in testable if c.n is not None]
     n_testable = len(testable)
-    # informational: fraction of testable distribution cores that use the EXACT
-    # test (expected cell < 5) rather than the chi-square approximation
-    exact_rate = (round(exact_cores / n_testable, 3)
-                  if group.id in _DISTRIBUTION_GROUPS and n_testable > 0 else None)
+    # `exact_test_rate` was the fraction of distribution cores taking the exact
+    # path rather than chi-square. Since 2026-08-11 every test is exact at every
+    # n, so the rate is 1.0 by construction and is reported as such.
+    exact_rate = 1.0 if group.id in _DISTRIBUTION_GROUPS and n_testable > 0 else None
     return {
         "group": group.id, "family": group.family, "level": group.level,
         "eligible": eligible,
@@ -132,9 +128,11 @@ def run(db_path: Path, out_dir: Path) -> dict:
 
 def _render_md(rows) -> str:
     out = ["# Per-Template Diagnostics (06 Step 3): weak-order + exact tests", "",
-           "Floor-only gate: 20 pairwise/co-occurs, 30 sequence/first-last. "
+           f"Floor-only gate: pairwise/co-occurs {family_floor('pairwise')}, "
+           f"sequence {family_floor('sequence')}, "
+           f"first/last {family_floor('first_last')}. "
            "Sequence specific-ordering groups use WEAK ordering (co-occurrence "
-           "satisfies). Sparse k-category tables use the EXACT test (no gate).",
+           "satisfies). ALL k-category tables use the EXACT test, at every n.",
            "Report-level groups (P-R*/C-R1/S-R1/F-R*) carry no significance test.",
            "",
            "| group | fam | lvl | viable | <floor | n min/med/max "

@@ -122,24 +122,32 @@ Every test requires a minimum conditioned sample. Below it the p-value is
 coarse and the verdict is fragile to small extraction errors, so the instance
 is labeled `insufficient` rather than tested.
 
-Rule: a family floor, raised by an expected-count guard for the k-category
-distribution tests.
+Rule: a family floor, and NOTHING ELSE. The expected-count guard is gone
+(2026-08-11) -- every k-category test is exact, and an exact test needs no
+minimum expected cell.
 
 | Group type | Table | Min n | Binding constraint |
 |---|---|---|---|
-| Pairwise / co-occurs, 1 cohort | 1x2 | 20 | family floor |
-| Pairwise / co-occurs, 2 cohorts | 2x2 | 20 per cohort | family floor |
-| Sequence one-ordering, 1 cohort | 1x2 | 30 | family floor |
-| First/last one-candidate, 1 cohort | 1x2 | 30 | family floor |
-| First/last distribution, 1 cohort | 1x3 | 30 | >= 5 per candidate |
-| Sequence distribution, 1 cohort | 1x6 | 30 | >= 5 per ordering |
-| First/last distribution, 2 cohorts | 2x3 | 30 per cohort | >= 5 per cell |
-| Sequence distribution, 2 cohorts | 2x6 | 30 per cohort | >= 5 per cell; often fails |
+| Pairwise / co-occurs, 1 cohort | 1x2 | 10 | family floor |
+| Pairwise / co-occurs, 2 cohorts | 2x2 | 10 per cohort | family floor |
+| Sequence one-ordering, 1 cohort | 1x2 | 5 | family floor |
+| First/last one-candidate, 1 cohort | 1x2 | 10 | family floor |
+| First/last distribution, 1 cohort | 1x3 | 10 | family floor |
+| Sequence distribution, 1 cohort | 1x6 | 5 | family floor |
+| First/last distribution, 2 cohorts | 2x3 | 10 per cohort | family floor |
+| Sequence distribution, 2 cohorts | 2x6 | 5 per cohort | family floor |
 
-The position-based tests inherit the same family floor (20 pairwise/co-occurs,
-30 sequence/first-last) and additionally require enough non-zero pairs for the
-signed-rank tests. These numbers are provisional and recalibrated from the
-pilot distribution report.
+The floor is **10 for every family except sequence, which is 5** (decisions.md
+2026-08-11). Sequence gets the lower floor because its denominator -- reports
+where the triple is present AND orderable -- is a far deeper conditioning than
+pair co-presence, and at 10 the family's cohort-level supply is exactly zero. The
+10 matches the enumeration viability floor (`corpus._MIN_N`), so the gate no
+longer discards cores the enumerator was willing to emit.
+
+The position-based tests inherit the same family floors and additionally require
+enough non-zero pairs for the signed-rank tests. NOTE: those tests use a normal
+approximation that a permutation check found anti-conservative on tie-heavy
+ordinal data, and they produce no benchmark label -- see `open_questions.md`.
 
 ## How the tests are run
 

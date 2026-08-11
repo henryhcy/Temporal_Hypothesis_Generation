@@ -98,7 +98,7 @@ def test_fisher_alternative_validation():
         S.fisher_exact_2x2(8, 10, 1, 6, "bogus")
 
 
-# ---- chi-square survival + GoF + contingency -----------------------------
+# ---- exact k-category tests (chi-square removed 2026-08-11) --------------
 
 def test_chi2_sf_critical_values():
     assert approx(S.chi2_sf(3.84146, 1), 0.05)
@@ -107,11 +107,11 @@ def test_chi2_sf_critical_values():
     assert S.chi2_sf(0.0, 3) == 1.0
 
 
-def test_chi2_gof_uniform_and_skew():
-    r = S.chi2_gof([20, 20, 20])
-    assert r["stat"] == 0.0 and approx(r["p"], 1.0)
-    r2 = S.chi2_gof([40, 10, 10])  # n=60, expected 20 each
-    assert r2["method"] == "asymptotic" and r2["p"] < 0.001
+def test_chi2_test_wrappers_are_gone():
+    # 2026-08-11: no benchmark label may come from an asymptotic test, so the
+    # chi-square GOF / contingency wrappers were removed outright.
+    assert not hasattr(S, "chi2_gof")
+    assert not hasattr(S, "chi2_contingency")
 
 
 def test_multinomial_gof_exact():
@@ -123,9 +123,20 @@ def test_multinomial_gof_exact():
     assert r["p"] == S.multinomial_gof_exact([8, 1, 1])["p"]  # deterministic
 
 
-def test_gof_chooser_exact_when_sparse_else_chi2():
-    assert S.multinomial_gof([8, 1, 1])["method"] == "exact"        # expected 3.3 < 5
-    assert S.multinomial_gof([30, 30, 30])["method"] == "asymptotic"  # expected 30
+def test_gof_is_always_exact_even_when_cells_are_ample():
+    # the old chooser flipped to chi-square once every expected cell hit 5;
+    # both of these must now report the exact method.
+    assert S.multinomial_gof([8, 1, 1])["method"] == "exact"
+    assert S.multinomial_gof([30, 30, 30])["method"] == "exact"
+    assert S.contingency_test([[20, 20, 20], [20, 20, 20]])["method"] == "exact"
+
+
+def test_exact_enumeration_raises_instead_of_approximating():
+    # an infeasible table must surface as a design problem, never silently fall
+    # back to the asymptotic test
+    import pytest
+    with pytest.raises(S.ExactTestTooLarge):
+        S.multinomial_gof([2000] * 6)
 
 
 def test_fisher_freeman_halton():
@@ -144,10 +155,10 @@ def test_no_monte_carlo_anywhere():
     assert not hasattr(S, "_mc_contingency_p")
 
 
-def test_chi2_contingency_homogeneity():
-    same = S.chi2_contingency([[20, 20, 20], [20, 20, 20]])
+def test_contingency_homogeneity_via_exact_ffh():
+    same = S.contingency_test([[20, 20, 20], [20, 20, 20]])
     assert approx(same["p"], 1.0)
-    diff = S.chi2_contingency([[40, 5, 5], [5, 5, 40]])
+    diff = S.contingency_test([[40, 5, 5], [5, 5, 40]])
     assert diff["p"] < 0.001
 
 

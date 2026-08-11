@@ -170,15 +170,23 @@ def test_weak_effect_is_insufficient_not_refuted(idx):
     assert r.insufficient_subtype == V.UNDERPOWERED
 
 
-def test_sparse_core_is_labeled_below_the_family_floor():
-    # 15 reports: computable (viability floor 10) but under the pairwise test
-    # floor of 20, and unanimous -- so the sub-type must be sparse, not
-    # underpowered.
+def test_sparse_is_unreachable_now_that_the_floor_equals_the_viability_floor():
+    # 2026-08-11: the pairwise floor dropped 20 -> 10, which is exactly the
+    # enumeration viability floor. So 15 unanimous reports are now TESTABLE
+    # (they were sparse under the old floor of 20)...
     idx = _make_index([(i, "Pfizer", [["A"], ["B"]]) for i in range(15)])
     r = compute_answer(idx, "P-V1", ("A", "B"), vaccines=("Pfizer",))
     assert r.n == 15
-    assert r.test_verdict == "insufficient"
-    assert r.insufficient_subtype == V.SPARSE
+    assert r.test_verdict == "supported"
+
+    # ...and anything below 10 loses its n in the corpus helper, so it lands in
+    # the unlabeled gap rather than in SPARSE. The sub-type is therefore dead
+    # through this path until next-steps B makes the helpers report sub-floor n.
+    thin = _make_index([(i, "Pfizer", [["A"], ["B"]]) for i in range(6)])
+    r2 = compute_answer(thin, "P-V1", ("A", "B"), vaccines=("Pfizer",))
+    assert r2.n is None
+    assert r2.test_verdict == "insufficient"
+    assert r2.insufficient_subtype is None      # not SPARSE -- the known gap
 
 
 def test_omnibus_choice_groups_are_non_directional_but_keep_their_p_value():
@@ -190,7 +198,7 @@ def test_omnibus_choice_groups_are_non_directional_but_keep_their_p_value():
                + [(100 + i, "Pfizer", [["F"], ["H"], ["P"]]) for i in range(10)])
     idx = _make_index(reports)
     r = compute_answer(idx, "F-V1", ("H", "F", "P"), vaccines=("Pfizer",))
-    assert r.n == 40                                  # clears the 30 floor
+    assert r.n == 40                                  # clears the first/last floor
     assert r.p_value is not None and r.p_claim is None
     assert r.test_verdict == "insufficient"
     assert r.insufficient_subtype == V.NON_DIRECTIONAL

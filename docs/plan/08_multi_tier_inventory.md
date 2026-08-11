@@ -1,5 +1,15 @@
 # Multi-Tier (Two-Cohort) Candidate Inventory — 2026-08-04
 
+> **STALE at the current floor (noted 2026-08-11).** Every `p_perm` below was
+> computed at min-n floor 20, which `decisions.md` replaced with 10 on 2026-08-11.
+> Re-run at floor 10 with 2000 rounds, the picture changes materially: **M-H
+> early-half degrades 0.035 -> 0.120 and M-C last-overall 0.055 -> 0.073, so
+> neither single-event candidate clears** and the "Recommendation" section below
+> no longer holds. P-M2 (0.025) and M-F (0.033) still clear; C-M2 still fails
+> (0.151). The three "findings that matter" sections are unaffected — they are
+> about rank tests and about method, not about the floor. See
+> `open_questions.md` and `data/pilot/multi_inventory_floor10_2000rounds.json`.
+
 The multi tier is down to three groups (P-M2, C-M2, F-M3) after the 2026-07-28
 removals and the S-M2 removal. This is a measured inventory of candidate
 replacements, run over the full corpus (`data/medtempo.db`, 3,166 reports).

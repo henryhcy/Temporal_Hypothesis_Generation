@@ -5,7 +5,13 @@ live in ``generation.confidence``; this module supplies the *tests* (the p-value
 side), hand-rolled in stdlib only, matching the no-scipy constraint the repo
 already follows.
 
-Test families (exact tests preferred over normal approximations):
+**EXACT TESTS ONLY** (decisions.md 2026-08-11). Every benchmark label comes from
+an exact test at every n; there is no asymptotic branch and no expected-cell
+chooser. Current practice favours exact inference well past the n this corpus
+reaches, and a single test per claim shape removes a whole class of
+"which test ran here?" ambiguity from the gold labels.
+
+Test families:
 
 - One proportion vs a chance baseline -> exact **binomial** test, run
   **one-sided in the observed direction** for directional claims (the callers in
@@ -15,12 +21,22 @@ Test families (exact tests preferred over normal approximations):
   default for direction-agnostic use.
 - Two proportions (multi-vaccine) -> **Fisher** exact on the 2x2 table:
   one-sided for the directional ``multi_dir_*`` modes, two-sided for the
-  ``multi_differ_*`` "do they differ" modes; ``chi2_contingency`` is the large-n
-  equivalent.
+  ``multi_differ_*`` "do they differ" modes.
 - Multinomial / distribution (modal ordering, first-event distribution, "same
-  across cohorts") -> **chi-square** goodness-of-fit (vs uniform) or homogeneity.
-  Guard: expected cell counts >= 5; when violated, a seeded Monte-Carlo p-value
-  is used instead of the asymptotic chi-square.
+  across cohorts") -> **exact multinomial GOF** (vs uniform) or **exact
+  Fisher-Freeman-Halton** homogeneity.
+
+Exactness has a cost the approximation did not: the k-category tests enumerate
+every table with the observed margins, which is ``C(n+k-1, k-1)`` for GOF. That
+is trivial for the 3-candidate first/last tests and for the sequence tests at
+their real n (median 6), but it grows fast in k. Past ``EXACT_MAX_TABLES`` the
+test raises ``ExactTestTooLarge`` rather than quietly reverting to chi-square --
+an infeasible table is a design signal (coarsen the categories or gate the core
+out), not something to approximate.
+
+``chi2_sf`` survives ONLY as a distribution function for the rank diagnostics in
+``core.positions``, which are not label-producing (and are themselves under
+review -- the normal approximation there is anti-conservative on tie-heavy data).
 
 This module supplies p-values only. The benchmark LABEL is produced by
 ``core.verdict.three_decision``, which takes both one-sided tails and applies the
@@ -35,11 +51,13 @@ from typing import Sequence
 
 ALPHA = 0.05           # per SIDE: the directional tests are one-sided
 # Legacy blanket floor. Superseded for labeling by the shared family floors in
-# `core.min_n` (pairwise/co-occurs 20, sequence 5, first/last 30), which
-# `core.verdict.three_decision` applies. Kept only for the raw
+# `core.min_n` (10 everywhere except sequence's thinner orderable denominator at
+# 5), which `core.verdict.three_decision` applies. Kept only for the raw
 # `significance_verdict` helper below and its callers outside the label path.
 MIN_N = 10
-MIN_EXPECTED = 5.0  # asymptotic chi-square guard; below this, Monte-Carlo
+# Feasibility cap for the k-category exact enumerations. Not a statistical
+# threshold -- exceeding it raises rather than approximating (see module docs).
+EXACT_MAX_TABLES = 5_000_000
 _REL_TOL = 1e-7     # tolerance when comparing pmf tails for exact tests
 
 
@@ -236,50 +254,33 @@ def _chi2_gof_stat(observed: Sequence[float], expected: Sequence[float]) -> floa
     return stat
 
 
-def chi2_gof(observed: Sequence[int],
-             expected: Sequence[float] | None = None) -> dict:
-    """Asymptotic chi-square goodness-of-fit (large-n approximation only).
-
-    Per 05_significance_tests.md this is used only when every expected cell >= 5;
-    the exact multinomial GOF is primary otherwise. No Monte-Carlo.
-    """
-    obs = list(observed)
-    total = sum(obs)
-    cells = len(obs)
-    if cells < 2 or total <= 0:
-        return {"stat": 0.0, "df": max(0, cells - 1), "p": 1.0,
-                "min_expected": 0.0, "method": "degenerate", "n": total}
-    exp = [total / cells] * cells if expected is None else list(expected)
-    df = cells - 1
-    stat = _chi2_gof_stat(obs, exp)
-    return {"stat": stat, "df": df, "p": chi2_sf(stat, df),
-            "min_expected": min(exp), "method": "asymptotic", "n": total}
-
-
-def chi2_contingency(table: Sequence[Sequence[int]]) -> dict:
-    """Asymptotic chi-square for an R x C contingency table. No Monte-Carlo."""
-    rows = [list(r) for r in table]
-    R = len(rows)
-    C = len(rows[0]) if rows else 0
-    total = sum(sum(r) for r in rows)
-    if R < 2 or C < 2 or total <= 0:
-        return {"stat": 0.0, "df": 0, "p": 1.0, "min_expected": 0.0,
-                "method": "degenerate", "n": total}
-    row_sums = [sum(r) for r in rows]
-    col_sums = [sum(rows[i][j] for i in range(R)) for j in range(C)]
-    exp = [[row_sums[i] * col_sums[j] / total for j in range(C)] for i in range(R)]
-    stat = sum((rows[i][j] - exp[i][j]) ** 2 / exp[i][j]
-               for i in range(R) for j in range(C) if exp[i][j] > 0)
-    df = (R - 1) * (C - 1)
-    min_exp = min(exp[i][j] for i in range(R) for j in range(C))
-    return {"stat": stat, "df": df, "p": chi2_sf(stat, df),
-            "min_expected": min_exp, "method": "asymptotic", "n": total}
+#
+# NOTE: `chi2_gof` and `chi2_contingency` were REMOVED on 2026-08-11 -- no
+# benchmark label may come from an asymptotic test. `_chi2_gof_stat` above stays
+# because the EXACT multinomial GOF uses it purely as a discrepancy measure to
+# order tables; no chi-square distribution is consulted. `chi2_sf` stays only for
+# the non-label rank diagnostics in `core.positions`.
 
 
 # ---------------------------------------------------------------------------
 # exact tests (no permutation / Monte-Carlo; feasible because the conditioned
 # multinomial samples are small once co-exist reports thin the strict orderings)
 # ---------------------------------------------------------------------------
+
+class ExactTestTooLarge(RuntimeError):
+    """The exact enumeration for this table exceeds ``EXACT_MAX_TABLES``.
+
+    Raised instead of silently falling back to chi-square: the 2026-08-11
+    decision removed the asymptotic path entirely, so an infeasible table is a
+    design problem to surface (coarsen the categories, or gate the core out),
+    not something to approximate away.
+    """
+
+
+def _n_compositions(n: int, k: int) -> int:
+    """How many length-k compositions of n exist: C(n+k-1, k-1)."""
+    return math.comb(n + k - 1, k - 1)
+
 
 def _compositions(n: int, k: int):
     """Yield every length-k non-negative integer tuple summing to n."""
@@ -301,6 +302,11 @@ def multinomial_gof_exact(observed: Sequence[int],
     if k < 2 or n <= 0:
         return {"stat": 0.0, "df": max(0, k - 1), "p": 1.0,
                 "method": "exact", "n": n}
+    n_tables = _n_compositions(n, k)
+    if n_tables > EXACT_MAX_TABLES:
+        raise ExactTestTooLarge(
+            f"exact multinomial GOF over k={k} cells at n={n} needs "
+            f"{n_tables:,} tables (cap {EXACT_MAX_TABLES:,})")
     p = [1.0 / k] * k if expected is None else [e / sum(expected) for e in expected]
     exp = [pi * n for pi in p]
     stat_obs = _chi2_gof_stat(obs, exp)
@@ -330,6 +336,15 @@ def fisher_freeman_halton(table: Sequence[Sequence[int]]) -> dict:
     if total <= 0:
         return {"p": 1.0, "method": "exact", "n": total}
 
+    # upper bound on the tables `rec` will walk: one factor per column
+    bound = 1
+    for j in range(C - 1):
+        bound *= min(col[j], r1) + 1
+        if bound > EXACT_MAX_TABLES:
+            raise ExactTestTooLarge(
+                f"exact 2x{C} FFH at n={total} exceeds the "
+                f"{EXACT_MAX_TABLES:,}-table cap")
+
     def logprob(a):
         lp = math.lgamma(r1 + 1) + math.lgamma(r2 + 1) - math.lgamma(total + 1)
         for j in range(C):
@@ -356,24 +371,21 @@ def fisher_freeman_halton(table: Sequence[Sequence[int]]) -> dict:
 
 
 def multinomial_gof(observed: Sequence[int],
-                    expected: Sequence[float] | None = None,
-                    *, min_expected: float = MIN_EXPECTED) -> dict:
-    """Multinomial GOF: chi-square when every expected cell >= min_expected,
-    else the exact test (05: exact is primary, chi-square is the >=5 shortcut)."""
-    r = chi2_gof(observed, expected)
-    if r["min_expected"] < min_expected:
-        return multinomial_gof_exact(observed, expected)
-    return r
+                    expected: Sequence[float] | None = None) -> dict:
+    """Multinomial GOF -- ALWAYS the exact test (decisions.md 2026-08-11).
+
+    There is no longer a chi-square branch: the asymptotic approximation is not
+    used for any benchmark label at any n. See the module docstring.
+    """
+    return multinomial_gof_exact(observed, expected)
 
 
-def contingency_test(table: Sequence[Sequence[int]],
-                     *, min_expected: float = MIN_EXPECTED) -> dict:
-    """2xk homogeneity: chi-square when every expected cell >= min_expected,
-    else Fisher-Freeman-Halton exact."""
-    r = chi2_contingency(table)
-    if r["min_expected"] < min_expected:
-        return fisher_freeman_halton(table)
-    return r
+def contingency_test(table: Sequence[Sequence[int]]) -> dict:
+    """2xk homogeneity -- ALWAYS Fisher-Freeman-Halton exact (2026-08-11).
+
+    No chi-square branch, at any n.
+    """
+    return fisher_freeman_halton(table)
 
 
 # ---------------------------------------------------------------------------
