@@ -1,7 +1,7 @@
 # Project: Temporal Hypothesis Generation
 
-A benchmark for temporal hypothesis verification over clinical narratives,
-built on the MedTempo corpus.
+A benchmark for temporal hypothesis verification over annotated clinical
+timelines, built on the MedTempo corpus (VAERS reports).
 
 ## What this project is
 
@@ -24,14 +24,19 @@ Before implementing anything, read the plan docs:
 
 - `docs/plan/01_overview.md`      — project framing and contribution
 - `docs/plan/02_dataset_design.md` — MedTempo schema, leveled order, gold-label rules
-- `docs/plan/03_templates.md`     — the 30 template groups and three registers
+- `docs/plan/03_templates.md`     — the group seeds and the four register variants
 - `docs/plan/04_corpus_survey.md` — pilot + distribution report spec; run BEFORE the full benchmark
-- `docs/plan/05_significance_tests.md` — significance-test reference: both tracks, per-group assignments, min-n
-- `docs/plan/06_pilot_examples.md` — pilot task: per-template diagnostics and worked supported/refuted examples
+- `docs/plan/05_significance_tests.md` — significance-test reference: per-group assignments, min-n
+- `docs/plan/06_pilot_examples.md` — pilot task spec (per-template diagnostics, worked examples); largely delivered
+- `docs/plan/07_significance_findings.md` — measured power findings and the §6 levers (lever 2 is RETIRED)
+- `docs/plan/08_multi_tier_inventory.md` — two-cohort screening evidence; read its banner, parts are superseded
+- `docs/plan/09_next_steps.md`     — **current state, the live issue register, and priority order**
 - `docs/plan/decisions.md`        — locked decisions (single source of truth)
 - `docs/plan/open_questions.md`   — items still under discussion (do not assume)
 
 If a question is in `open_questions.md`, do not guess an answer in code. Ask.
+`09_next_steps.md` is the fastest way back into context: it opens with a table of
+every live issue and which doc holds the detail.
 
 Current phase is a PILOT. Verdict balance is now **equal thirds per group**
 (supported / refuted / insufficient), which supersedes the provisional 45/45/10;
@@ -42,12 +47,16 @@ confidence-tag cutoffs. Do not scale to the full benchmark until that report has
 been reviewed. Part C (gold-label validation) is mechanised in
 `scripts/validate_gold.py` and passing.
 
-The concrete starting task for this phase is `06_pilot_examples.md`:
-per-template diagnostics plus worked supported and refuted examples. A core
-must actually exist in the data (events genuinely co-occur and clear the
-min-n gate) before it can yield a hypothesis. Refuted hypotheses assert a
-false relation about a real, existing core; never build them from events that
-never co-occur.
+The generation pipeline is DONE for the testable templates (steps B, C, D, the
+release format, and mechanised Part C validation). What is NOT built: the eval
+harness — `src/` is entirely corpus, generation and statistics. See
+`09_next_steps.md` for the priority order and the one decision currently blocking
+the roster (the multi tier is P-M2 alone).
+
+A core must actually exist in the data (the events genuinely co-occur and the
+denominator clears the min-n gate) before it can yield a hypothesis. Never build
+a claim from events that never co-occur — that is what `insufficient` /
+`not_locatable` is for, and it is a separate class from `refuted`.
 
 ## Where the templates live
 
@@ -65,8 +74,9 @@ meetings, produced by `scripts/render_templates_docx.py`.
 
 - **Mechanical generation only.** Slot-filling and templated paraphrase only.
   No LLM-based rewrites for the benchmark.
-- **Three active registers.** Research, Media, Clinical. Chart-style has been
-  dropped. The "Original" canonical seed is kept as a baseline.
+- **Four register variants per group.** The canonical Original plus Research,
+  Media and Clinical. Chart-style has been dropped. Any new group needs all four
+  written before it can ship.
 - **Framework input is annotated leveled orders + hypothesis.** Never narrative
   text. Superseded the seed rule on 2026-08-11; MedTempo is published with an
   upcoming conference paper and will be archived publicly, so the annotations
@@ -77,8 +87,29 @@ meetings, produced by `scripts/render_templates_docx.py`.
   own asserted claim: `refuted` requires significance in the OPPOSITE direction,
   never "failed to prove". Every released statistic (p-value, CI, effect size)
   must describe the instance's own claim, not the canonical orientation.
-- **Exact tests only.** Chi-square is removed from the codebase. Min-n floors
-  live in `core/min_n.py` (10, sequence 5) and are the only gate.
+- **Exact tests only**, one-sided in the claim's direction, alpha 0.05 per side.
+  Chi-square is removed from the codebase. Min-n floors live in `core/min_n.py`
+  (10, sequence 5) and are the only gate — helpers measure, the gate decides, so
+  never re-implement a floor inside a helper.
+- **Each decisive core is posed BOTH ways** (a supported instance and a refuted
+  mirror). Mirror pairs share a `derived_from_core_id` and **must stay on the same
+  side of any train/test split**.
+- **Negation is the orientation operator for symmetric claims**, and it is not
+  configurable — it applies wherever the template YAML provides it, which today is
+  only C-V1 and C-V3. Samplers must PREFER PLAIN WORDING and negate only to fill a
+  remaining deficit.
+- **Conditioning rules differ per family and are the subtlety worth protecting:**
+  precedes EXCLUDES co-exist from its denominator, co-occurs treats co-exist as the
+  numerator, sequence requires all three events at DISTINCT levels, first/last
+  requires every candidate present and drops tie reports from n entirely, and a
+  term's position in a report is its FIRST mention.
+- **The permutation null (`p_perm`) is a design-time validation diagnostic only.**
+  It never enters a gold label — the model must be able to run whatever test
+  produced the label. Any new group must clear it at >= 2000 rounds before it gets
+  a roster slot; 200 rounds is triage.
+- **Rank/position tests are descriptive only.** `core/positions.py` must not be
+  imported by `core/answers.py`; the normal approximation is anti-conservative on
+  tie-heavy ordinal data (§6 lever 2, retired).
 - **Releases split input from gold.** `*_questions.jsonl` carries only
   `INPUT_FIELDS`; `*_answers.jsonl` carries the gold. `writers.split_release`
   raises if a gold field leaks.
@@ -94,6 +125,20 @@ Do not implement these unless explicitly asked:
 - Lay or forum-register paraphrases
 - LLM-based hypothesis generation
 - Connections to other temporal corpora (i2b2, MACCROBAT, THYME); MedTempo only
+- Equivalence / non-inferiority margins to revive the "differ"/"same" two-cohort
+  groups — REJECTED 2026-08-11, see `decisions.md`
+- Chi-square, and any use of `p_perm` or a rank test as a verdict driver
+
+## Standing caveats
+
+- **Changing a test can silently invalidate the reasoning behind a gate.** That is
+  how the first/last tie problem survived until Part C. Re-check the gate whenever
+  a test changes.
+- **Group-level validity is not per-core validity.** A group that clears its
+  permutation null still contains false positives at the alpha rate. Inherent to
+  significance-as-verdict; state it rather than hiding it.
+- Exact tests are discrete, so achievable p-values come in jumps and the true
+  false-positive rate never equals nominal alpha (~1.6% at n=6, ~3.3% at n=11).
 
 ## Coding conventions
 
