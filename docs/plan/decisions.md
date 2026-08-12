@@ -1960,8 +1960,8 @@ exists. Validation re-run: 20,749 instances, all six checks passing.
 
 ## FIXED while building the sample instances: two claim/label mismatches (2026-08-11)
 
-Building three fully-annotated sample instances (`scripts/make_sample_instances.py`)
-surfaced two defects that the existing checks did not cover. Both are the same shape
+Building three fully-annotated sample instances (a one-off script, since removed
+along with its output) surfaced two defects that the existing checks did not cover. Both are the same shape
 of error: a field describing something other than what the instance asserts.
 
 ### 1. F-V2 and F-R2 named the WRONG EVENT in every instance

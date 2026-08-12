@@ -14,8 +14,6 @@ dev = [
 ]
 render = [
     "python-docx>=1.1",
-    # only for scripts/sample_instances_to_excel.py, a one-off advisor artifact
-    "openpyxl>=3.1",
 ]
 
 [build-system]
