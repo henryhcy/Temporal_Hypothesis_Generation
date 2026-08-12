@@ -46,7 +46,6 @@ RULE_BY_MODE = {
     "multi_same_modal_order": "modal ordering in each cohort; same?",
     "multi_same_first": "modal first event in each cohort; same?",
     "multi_differ_first": "modal first event in each cohort; differ?",
-    "multi_dir_first": "first_among frac of focal event in each cohort; higher cohort",
     "rep_dir_bool": "per-report relation; before => supported",
     "rep_dir_choice": "per-report relation; names earlier event",
     "rep_sym_bool": "per-report relation; co_exist => supported",
@@ -60,7 +59,7 @@ RULE_BY_MODE = {
 VALIDATION_GROUPS = [
     "P-V1", "P-V2", "P-V3", "C-V1", "C-V2", "C-V3", "S-V2", "S-V3",
     "F-V1", "F-V2", "F-V3", "P-M1", "P-M2", "C-M1", "C-M2", "S-M1",
-    "S-M3", "F-M1", "F-M3", "P-R1", "C-R1", "S-R1", "F-R1",
+    "S-M3", "F-M1", "P-R1", "C-R1", "S-R1", "F-R1",
 ]
 
 

@@ -287,8 +287,6 @@ def _null_hypothesis(mode, events, vaccines) -> str:
         return f"H0: the {a}/{b} co-occurrence rate is equal for {v1} and {v2} (p1 = p2)"
     if mode == "multi_differ_sequence":
         return f"H0: P(ordering = {seq}) is equal for {v1} and {v2} (p1 = p2)"
-    if mode == "multi_dir_first":
-        return f"H0: the first-event rate is equal for {v1} and {v2} (p1 = p2)"
     if mode in ("multi_same_first", "multi_differ_first"):
         return f"H0: {v1} and {v2} have the same first-event distribution (homogeneity)"
     if mode == "multi_same_modal_order":

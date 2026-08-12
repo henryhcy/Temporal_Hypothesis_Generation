@@ -1842,3 +1842,57 @@ lever manufactured false positives rather than recovering signal. Retiring cost
 nothing: `core/positions.py` is imported only by `make_examples.py` and
 `replacement_inventory.py`, never by `core/answers.py`. The module now carries a
 header stating it is descriptive-only and must not produce labels.
+
+---
+
+## LOCKED + implemented: F-M3 retired, no substitute exists (2026-08-11)
+
+**F-M3 (`multi_dir_first`) is removed.** It failed its permutation null on first
+measurement -- 8 decisive cores against a noise mean of 5.2, p_perm 0.183-0.188, so
+shuffled labels reach 8-or-more in ~19% of rounds. Its supported/refuted labels were
+not distinguishable from randomising which vaccine each patient received.
+
+Roster: 25 -> **24** as coded. S: 1415 -> **1407**.
+
+### Substitutes were screened. There are none.
+
+Three untested first/last two-cohort shapes, floor 10, 1000 rounds:
+
+| candidate | decisive/cores | null mean | p_perm |
+|---|--:|--:|--:|
+| M-J last-of-triple, ties count as not-last | 30/387 | 21.2 | 0.096 |
+| M-G first-of-triple, ties count as not-first | 20/387 | **20.0** | 0.509 |
+| M-I last-of-triple, ties excluded | 5/105 | 6.6 | 0.698 |
+
+### Why this family cannot have a two-cohort group -- structural, not wording
+
+1. **With TWO events, "first" IS "precedes."** "A is first between A and B" is
+   literally P-M2, so a distinct first/last multi group REQUIRES three events.
+2. **Three-event co-presence in BOTH cohorts leaves 75 cores** (ties excluded) or 387
+   (ties kept). Either way it is the thinnest conditioning in the benchmark.
+3. **The widening trick that rescued precedes does not transfer.** M-F beat P-M2 on
+   supply by counting co-exist as "does not precede"; the same move here gives M-G at
+   real 20 vs null mean **20.0** -- indistinguishable from noise. Cause: the
+   first/last tie rate is ~55%, so a widened denominator is majority ties, which
+   dilute the numerator equally in both cohorts and add variance without signal.
+4. **M-I comes in BELOW chance** (5 vs 6.6 expected), the conservative-Fisher
+   signature that retired M-D: a rare numerator on a small table makes the exact test
+   heavily conservative.
+
+M-J at 0.096 is the least-bad and still ~2x alpha. More rounds cannot help -- p_perm
+is a ratio, not a precision artefact -- and narrow/wide denominators in both
+directions exhaust the design space.
+
+### Consequence for the multi tier
+
+With F-M3 gone and C-M2 failing (0.195-0.202, four independent measurements), the only
+two-cohort candidates that clear their null are **P-M2 (0.023) and M-F (0.034), which
+are the same claim family**. So the validated multi tier is at most ONE group. Whether
+to ship it alone or retire the two-cohort tier for v1 is the remaining open question.
+
+Removed from `data/templates/first_last.yaml`, `MODE_BY_GROUP`,
+`_MULTI_TRIPLE_MODES`, `_SLOT_ORIENTABLE`, the `_build_multi_core` /
+`_realize_multi_dir` focal branches, `_FISHER`, `evidence.evidence_ids`, the pilot
+mode blurbs and validation list, `final_templates` ROSTER, and `make_examples`. The
+`multi_dir_first` mode no longer exists. Validation re-run: 21,310 instances, all six
+checks passing.

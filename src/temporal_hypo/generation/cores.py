@@ -70,7 +70,7 @@ _VACCINE_TRIPLE_MODES = {
 }
 _MULTI_TRIPLE_MODES = {
     "multi_differ_sequence", "multi_same_modal_order",
-    "multi_same_first", "multi_differ_first", "multi_dir_first",
+    "multi_same_first", "multi_differ_first",
 }
 
 # Per-group statistic + verdict mode. The single source of truth mapping each
@@ -104,7 +104,6 @@ MODE_BY_GROUP: dict[str, str] = {
     "F-V3": "first_bool",
     "F-M1": "multi_same_first",
     "F-M2": "multi_differ_first",
-    "F-M3": "multi_dir_first",
 }
 
 
@@ -406,7 +405,7 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
                          extra={"modal1": d1["modal"], "modal2": d2["modal"],
                                 "counts1": d1["counts"], "counts2": d2["counts"]}, **base)
 
-    if mode in ("multi_same_first", "multi_differ_first", "multi_dir_first"):
+    if mode in ("multi_same_first", "multi_differ_first"):
         f1 = corpus.first_among_fractions(index, list(combo), c1)
         f2 = corpus.first_among_fractions(index, list(combo), c2)
         if not _is_testable(int(f1["n"]), group.family, n2=int(f2["n"])):
@@ -416,16 +415,6 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
         terms = list(combo)
         w1 = max(terms, key=lambda t: (f1[t], t))
         w2 = max(terms, key=lambda t: (f2[t], t))
-        if mode == "multi_dir_first":
-            # focal A = the term with higher combined first-rate
-            focal = max(terms, key=lambda t: (f1[t] + f2[t], t))
-            p1, p2 = f1[focal], f2[focal]
-            nv = direction_verdict(p1, p2)
-            n1, n2 = int(f1["n"]), int(f2["n"])
-            return _new_core(group, mode, computable=True, natural_verdict=nv,
-                             proportion=p1, n=n1, k=round(p1 * n1),
-                             proportion2=p2, n2=n2, k2=round(p2 * n2),
-                             extra={"focal": focal}, **base)
         same = w1 == w2
         if mode == "multi_same_first":
             nv = "supported" if same else "refuted"
@@ -658,7 +647,7 @@ _SLOT_ORIENTABLE = {
     "dir_bool", "dir_choice",
     "seq_bool", "modal_choice",
     "first_choice", "last_choice", "first_bool",
-    "multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first",
+    "multi_dir_precedes", "multi_dir_cooccurs",
 }
 
 
@@ -801,7 +790,7 @@ def _realize(core: ViableCore, polarity: str) -> InstanceFacts:
     if m in ("multi_differ_precedes", "multi_differ_cooccurs",
              "multi_differ_sequence"):
         return _realize_multi_differ(core, polarity)
-    if m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first"):
+    if m in ("multi_dir_precedes", "multi_dir_cooccurs"):
         return _realize_multi_dir(core, polarity)
     if m in ("multi_same_first", "multi_differ_first", "multi_same_modal_order"):
         return _realize_multi_categorical(core, polarity)
@@ -926,13 +915,7 @@ def _realize_multi_dir(core, polarity):
             fk = None
     ci = wilson_newcombe_diff_ci(hk, hn, lk, ln)
     tag = confidence_tag(ci_width(ci))
-    # focal event for multi_dir_first
-    if core.mode == "multi_dir_first":
-        focal = core.extra["focal"]
-        others = [t for t in core.events if t != focal]
-        ev = (focal, others[0], others[1])
-    else:
-        ev = core.events
+    ev = core.events
     verdict = direction_verdict(hp, ln and (lk / ln))
     return _mk(core, polarity, fk, ev, verdict=verdict, proportion=hp,
                n=hn, ci=ci, tag=tag, effect=cohens_h(hp, lk / ln),

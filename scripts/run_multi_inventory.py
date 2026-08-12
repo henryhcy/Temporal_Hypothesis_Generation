@@ -53,8 +53,19 @@ CANDIDATES = [
     # candidates, with tie reports excluded from the denominator per the 08-11
     # decision. The focal event is fixed from the real data so real and null are
     # counted over identical cores.
-    ("[base] F-M3 first-of-triple  A is first among A,B,C | all three present",
+    ("[base] F-M3 first-of-triple  A is first among A,B,C | ties excluded",
      "triple", "first"),
+    # Substitute candidates for F-M3, added 2026-08-11 after it failed. For TWO
+    # events "first" IS "precedes", so a distinct first/last multi shape needs
+    # three -- which is the conditioning that starved F-M3 (75 cores). The only
+    # lever left is the DENOMINATOR: counting tie reports as "not uniquely first"
+    # widens it, exactly the move that let M-F beat P-M2 on supply.
+    ("M-G  first-of-triple WIDE     A is first among A,B,C | ties count as not-first",
+     "triple", "first_wide"),
+    ("M-I  last-of-triple          A is last among A,B,C | ties excluded",
+     "triple", "last"),
+    ("M-J  last-of-triple WIDE     A is last among A,B,C | ties count as not-last",
+     "triple", "last_wide"),
 ]
 
 
@@ -102,20 +113,26 @@ def build_universe(index: CorpusIndex, floor: int):
         if cnt < 2 * floor:
             continue
         rows = []
-        wins = {x: 0 for x in combo}
+        wins_f = {x: 0 for x in combo}
+        wins_l = {x: 0 for x in combo}
         for rid, t in index.report_terms.items():
             idxs = [t.get(x) for x in combo]
             if any(i is None for i in idxs):
                 continue
-            target = min(idxs)
-            winners = [x for x, i in zip(combo, idxs) if i == target]
-            tie = len(winners) > 1
-            rows.append((rid, None if tie else winners[0], tie))
-            if not tie:
-                wins[winners[0]] += 1
-        # focal fixed from the REAL data: the most-often-first candidate
-        focal = max(combo, key=lambda x: (wins[x], x))
-        triple[combo] = (focal, rows)
+            lo, hi = min(idxs), max(idxs)
+            first = [x for x, i in zip(combo, idxs) if i == lo]
+            last = [x for x, i in zip(combo, idxs) if i == hi]
+            ftie, ltie = len(first) > 1, len(last) > 1
+            rows.append((rid, None if ftie else first[0], ftie,
+                         None if ltie else last[0], ltie))
+            if not ftie:
+                wins_f[first[0]] += 1
+            if not ltie:
+                wins_l[last[0]] += 1
+        # focals fixed from the REAL data so real and null count identical cores
+        triple[combo] = (max(combo, key=lambda x: (wins_f[x], x)),
+                         max(combo, key=lambda x: (wins_l[x], x)),
+                         rows)
     return terms, single, pair, triple
 
 
@@ -157,16 +174,27 @@ def _tally_single(rows, vax_of, sel):
 
 
 def _tally_triple(entry, vax_of, sel):
-    """First-among-triple: ties leave the denominator (decisions.md 2026-08-11)."""
-    focal, rows = entry
+    """First/last-among-triple, narrow or wide denominator.
+
+    NARROW (`first` / `last`) drops tie reports, matching the shipped F-M3 and the
+    2026-08-11 tie decision. WIDE (`*_wide`) keeps them and counts a tie as "not
+    uniquely first/last" -- the same widening that let M-F outgrow P-M2. It is a
+    different CLAIM, not a different gate: "A is first more often" where not-first
+    includes "nobody was uniquely first".
+    """
+    focal_f, focal_l, rows = entry
+    last = sel.startswith("last")
+    wide = sel.endswith("_wide")
+    focal = focal_l if last else focal_f
     n = {v: 0 for v in VACCINES}
     k = {v: 0 for v in VACCINES}
-    for rid, winner, tie in rows:
-        if tie:
-            continue                            # unresolvable: out of n
+    for rid, fw, ftie, lw, ltie in rows:
+        winner, tie = (lw, ltie) if last else (fw, ftie)
+        if tie and not wide:
+            continue                            # narrow: unresolvable leaves n
         v = vax_of[rid]
         n[v] += 1
-        k[v] += int(winner == focal)
+        k[v] += int((not tie) and winner == focal)
     return n, k
 
 

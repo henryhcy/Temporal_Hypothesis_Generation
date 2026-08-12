@@ -160,17 +160,17 @@ alpha line between run sizes (0.035 at 200 rounds -> 0.073 at 2000). Any
 permutation gate on a new group (next-steps F) should use >= 2000 rounds; the
 200-round default is for triage only.
 
-### F-M3 FAILS its permutation null (measured 2026-08-11)
-No longer an open measurement — it was run and it fails. **8 decisive cores against a
-noise mean of 5.2 and p95 of 10, p_perm 0.188** (floor 10, 2000 rounds, corrected
-corpus). Shuffled labels reach 8-or-more in 19% of rounds.
+### F-M3
+RESOLVED (2026-08-11): **retired**, with no substitute. It failed its permutation null
+(8 decisive vs noise mean 5.2, p_perm 0.183-0.188), and all three untested
+alternatives fail too: M-J last-of-triple wide 0.096, M-G first-of-triple wide 0.509
+(real 20 vs null mean 20.0), M-I last-of-triple 0.698 (below chance).
 
-The M-B analogy held, though F-M3 is the stricter claim: M-B asks "is A at level 0"
-(ties count) while F-M3 asks "is A uniquely first among A, B, C" (ties excluded per
-the 08-11 decision). It still fails.
-
-Open: **drop F-M3**, or keep it as a documented hard/negative group? The same question
-C-M2 has. Note that dropping both leaves the multi tier with one group.
+The reason is structural and worth keeping: with TWO events "first" IS "precedes", so
+a first/last multi group needs THREE, and three-event co-presence in both cohorts
+leaves 75-387 cores with a ~55% tie rate. Excluding ties starves n; including them
+dilutes the numerator equally in both cohorts, which is why the widening trick that
+rescued precedes (M-F) produces pure noise here. See `08_multi_tier_inventory.md`.
 
 ### §6 lever 2 (position test as verdict driver)
 RESOLVED (2026-08-11): **retired.** The permutation null showed the Mann-Whitney

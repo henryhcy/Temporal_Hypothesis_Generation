@@ -128,11 +128,50 @@ is a **design-time validation diagnostic**, not a labeling method — decisions.
 excludes permutation from gold-label computation because the model must be able
 to run whatever test produces the label, and that constraint is untouched.
 
+## Substitutes for F-M3: none exist (2026-08-11)
+
+After F-M3 failed, three untested first/last two-cohort shapes were screened
+(floor 10, 1000 rounds). All fail:
+
+| candidate | claim | decisive/cores | null mean | p_perm |
+|---|---|--:|--:|--:|
+| M-J last-of-triple WIDE | A is last among A,B,C; ties count as not-last | 30/387 | 21.2 | **0.096** |
+| F-M3 first-of-triple | A is first among A,B,C; ties excluded | 8/75 | 5.2 | **0.183** |
+| M-G first-of-triple WIDE | A is first among A,B,C; ties count as not-first | 20/387 | **20.0** | **0.509** |
+| M-I last-of-triple | A is last among A,B,C; ties excluded | 5/105 | 6.6 | **0.698** |
+
+### Why the family has no viable two-cohort shape
+
+It is structural, not a matter of finding the right wording:
+
+1. **With TWO events, "first" IS "precedes."** "A is first between A and B" is
+   literally "A precedes B", so it is P-M2, not a distinct group. A first/last multi
+   group therefore *requires* three events.
+2. **With THREE events, the conditioning starves it.** Requiring all three co-present
+   in BOTH cohorts leaves 75 cores when ties are excluded, or 387 when they are not.
+3. **And the widening trick that rescued precedes does not transfer.** M-F beat P-M2
+   on supply by counting co-exist as "does not precede". The same move here produces
+   **M-G at real 20 vs null mean 20.0** -- exactly what noise makes. Cause: the
+   first/last tie rate is ~55%, so the widened denominator is majority tie reports,
+   which dilute the numerator equally in both cohorts and add variance without signal.
+4. **M-I lands BELOW chance** (5 real vs 6.6 expected), the same conservative-Fisher
+   signature that retired M-D: a rare numerator on a small table makes the exact test
+   heavily conservative.
+
+M-J is the least-bad at 0.096, roughly twice alpha. More rounds cannot rescue it --
+p_perm is a ratio, not a precision artefact -- and there is no obvious better-posed
+variant left, since narrow and wide denominators are the only two choices and both
+have been tried in both directions.
+
+**Conclusion: the first/last family has no two-cohort tier.** F-M3 is retired with no
+replacement.
+
 ## Recommendation (rewritten 2026-08-11)
 
 **Only P-M2 and M-F clear, and they are the same claim family** (does A precede B
-more often in one cohort), so at most one of them ships. C-M2 fails at 0.202, F-M3
-fails at 0.188, and no single-event candidate clears.
+more often in one cohort), so at most one of them ships. C-M2 fails (0.195-0.202),
+F-M3 fails (0.183-0.188) and is now RETIRED with no viable substitute, and no
+single-event or triple-based candidate clears.
 
 So the validated multi tier is **one group**: P-M2, or M-F as a wider-denominator
 rewording of it. M-F has more supply (46 vs 30 decisive) and plainer wording; P-M2 is

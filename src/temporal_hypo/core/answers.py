@@ -79,7 +79,6 @@ _FISHER = {
     "multi_differ_precedes", "multi_dir_precedes",
     "multi_differ_cooccurs", "multi_dir_cooccurs",
     "multi_differ_sequence",
-    "multi_dir_first",
 }
 # Single-cohort omnibus GOF modes: NONE as of 2026-08-11. `modal_choice`,
 # `first_choice` and `last_choice` moved to `_MODAL_RUNNER` (their claim is an
@@ -384,7 +383,7 @@ def answer_key(core) -> tuple[list[str] | None, str | None]:
         modal = core.extra.get("modal")
         return options, (_ARROW.join(modal) if modal else None)
 
-    if m in ("multi_dir_precedes", "multi_dir_cooccurs", "multi_dir_first"):
+    if m in ("multi_dir_precedes", "multi_dir_cooccurs"):
         v1, v2 = core.vaccines
         if core.proportion is None or core.proportion2 is None \
                 or abs(core.proportion - core.proportion2) < 1e-12:

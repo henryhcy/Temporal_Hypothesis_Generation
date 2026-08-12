@@ -11,10 +11,11 @@ def test_load_all_groups():
     groups = load_groups()
     # 30 - the retired PROP groups (P-V2, C-V2, S-V2) - S-M2 (power-dead)
     #    - S-V4 (non-directional and unrescuable, removed 2026-08-11)
-    assert len(groups) == 25
-    for gid in ("P-V1", "C-V3", "S-V3", "F-M3", "P-R1"):
+    #    - F-M3 (failed its permutation null, p_perm 0.188, removed 2026-08-11)
+    assert len(groups) == 24
+    for gid in ("P-V1", "C-V3", "S-V3", "F-V3", "P-R1"):
         assert gid in groups
-    for gid in ("P-V2", "C-V2", "S-V2", "S-M2", "S-V4"):
+    for gid in ("P-V2", "C-V2", "S-V2", "S-M2", "S-V4", "F-M3"):
         assert gid not in groups
 
 

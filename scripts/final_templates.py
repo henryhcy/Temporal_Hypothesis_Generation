@@ -84,7 +84,6 @@ ROSTER = [
     ("F-V1", "first/last", "vaccine", "CHOICE", "which is most commonly the first event", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
     ("F-V2", "first/last", "vaccine", "CHOICE", "which is most commonly the last event", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
     ("F-V3", "first/last", "vaccine", "BOOL", "A is the most common first event", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),
-    ("F-M3", "first/last", "multi", "CHOICE", "A is first more often after v1 than v2", "p1 = p2", "Fisher 2x2 (1-sided)", "pipeline"),
 ]
 
 # Groups retired in the redesign (shown in the report's "what changed" note).

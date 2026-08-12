@@ -187,26 +187,3 @@ groups:
     clinical:
       question: Does the usual first event among {A}, {B}, {C} differ between {v1} and {v2} patients?
       claim: The usual first event differs between {v1} and {v2} patients.
-- id: F-M3
-  primitive: first_last
-  level: multi
-  answer_type: CHOICE
-  slots:
-  - A
-  - B
-  - C
-  - v1
-  - v2
-  variants:
-    original:
-      question: Is {A} the first event more often after {v1} or {v2}?
-      claim: '{A} is the first event more often after {v1} than {v2}.'
-    research:
-      question: Between {v1} and {v2}, which cohort more often has {A} as the earliest of {A}, {B}, {C}?
-      claim: '{v1} more often has {A} as the earliest of {A}, {B}, {C}.'
-    media:
-      question: Is {A} the first event more often after {v1} or {v2}?
-      claim: '{A} is the first event more often after {v1} than {v2}.'
-    clinical:
-      question: In which group is {A} more often the first of {A}, {B}, {C}, {v1} or {v2}?
-      claim: In {v1} recipients, {A} is more often the first.
