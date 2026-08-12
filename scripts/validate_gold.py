@@ -66,6 +66,23 @@ def check_instance(index, facts, fails: Counter, examples: dict) -> None:
         examples.setdefault(name, f"{core.group_id} {ev} {core.vaccines}: {detail}")
 
     ids = evidence_ids(index, facts)
+    if "cohort_1" in ids:
+        # two-cohort: each cohort's denominator must match the ORIENTED n it is
+        # reported under. Taking n2/k2 from the core described the wrong cohort
+        # whenever the realization swapped them.
+        if len(ids["cohort_1"]["denominator"]) != facts.gold_n:
+            bad("A: cohort_1 denominator != gold_n",
+                f"{len(ids['cohort_1']['denominator'])} vs {facts.gold_n}")
+        if len(ids["cohort_1"]["numerator"]) != facts.gold_k:
+            bad("A: cohort_1 numerator != gold_k",
+                f"{len(ids['cohort_1']['numerator'])} vs {facts.gold_k}")
+        if len(ids["cohort_2"]["denominator"]) != facts.gold_n2:
+            bad("A: cohort_2 denominator != gold_n2",
+                f"{len(ids['cohort_2']['denominator'])} vs {facts.gold_n2}")
+        if len(ids["cohort_2"]["numerator"]) != facts.gold_k2:
+            bad("A: cohort_2 numerator != gold_k2",
+                f"{len(ids['cohort_2']['numerator'])} vs {facts.gold_k2}")
+        return
     if "denominator" not in ids:
         return
     den, num, exc = ids["denominator"], ids["numerator"], ids["excluded"]

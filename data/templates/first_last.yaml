@@ -43,16 +43,16 @@ groups:
   variants:
     original:
       question: In report {r}, which of {A}, {B}, {C} occurs last?
-      claim: In report {r}, {C} occurs last among {A}, {B}, {C}.
+      claim: In report {r}, {A} occurs last among {A}, {B}, {C}.
     research:
       question: Of {A}, {B}, {C}, which is the latest event in this report?
-      claim: In this report, {C} is the latest of {A}, {B}, {C}.
+      claim: In this report, {A} is the latest of {A}, {B}, {C}.
     media:
       question: In this case, which came last, {A}, {B}, or {C}?
-      claim: In this case, {C} came last.
+      claim: In this case, {A} came last.
     clinical:
       question: Of {A}, {B}, {C}, which appeared last in this patient?
-      claim: In this patient, {C} appeared last.
+      claim: In this patient, {A} appeared last.
 - id: F-R3
   primitive: first_last
   level: report
@@ -109,16 +109,16 @@ groups:
   variants:
     original:
       question: After {v}, which of {A}, {B}, {C} is most commonly the last event?
-      claim: After {v}, {C} is most commonly the last event among {A}, {B}, {C}.
+      claim: After {v}, {A} is most commonly the last event among {A}, {B}, {C}.
     research:
       question: In {v} reports with all three, which event is most frequently the latest among {A}, {B}, {C}?
-      claim: In {v} reports with all three, {C} is most frequently the latest.
+      claim: In {v} reports with all three, {A} is most frequently the latest.
     media:
       question: After {v}, which comes last most often, {A}, {B}, or {C}?
-      claim: After {v}, {C} comes last most often.
+      claim: After {v}, {A} comes last most often.
     clinical:
       question: In {v} patients, which of {A}, {B}, {C} is most frequently the latest?
-      claim: In {v} patients, {C} is most frequently the latest.
+      claim: In {v} patients, {A} is most frequently the latest.
 - id: F-V3
   primitive: first_last
   level: vaccine

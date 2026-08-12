@@ -46,3 +46,26 @@ def test_render_substitutes_values():
     text = render(g, "media", "claim",
                   {"A": "Headache", "B": "Fever", "v": "Pfizer"})
     assert "Headache" in text and "Pfizer" in text
+
+
+def test_argmax_claims_assert_the_slot_realize_actually_names():
+    """Every argmax template must assert slot {A}, because `_realize_extreme_choice`
+    and `_realize_modal_choice` put the NAMED event first.
+
+    F-V2 and F-R2 asserted {C} instead, so all 59 F-V2 instances named an arbitrary
+    non-answer event while `gold_answer` held the real winner -- e.g. "Headache is
+    most commonly the last event among Nausea, Chills, Headache" with
+    gold_answer='Nausea'. Caught on 2026-08-11 while building the sample instances.
+    """
+    import re
+    groups = load_groups()
+    argmax = {"F-V1", "F-V2", "F-V3", "F-R1", "F-R2", "F-R3", "S-V1", "S-V3"}
+    for gid in sorted(argmax & set(groups)):
+        for register, forms in groups[gid].variants.items():
+            claim = forms["claim"]
+            # the asserted event is the first event placeholder in the claim
+            first = next((m.group(1) for m in re.finditer(r"\{([ABC])\}", claim)), None)
+            assert first == "A", (
+                f"{gid} [{register}] asserts slot {{{first}}}, but realize names "
+                f"slot {{A}}: {claim!r}"
+            )

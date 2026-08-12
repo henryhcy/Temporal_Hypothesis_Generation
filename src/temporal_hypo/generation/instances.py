@@ -85,8 +85,8 @@ def build_records(
         # enough to RECOMPUTE the label from the corpus without re-deriving the
         # conditioning: the counts, the family floor that gated it, and the null
         "gold_k": facts.gold_k,
-        "gold_n2": c.n2,
-        "gold_k2": c.k2,
+        "gold_n2": facts.gold_n2,
+        "gold_k2": facts.gold_k2,
         "family": c.family,
         "mode": c.mode,
         "min_n_floor": (family_floor(c.family) if c.report_id is None else None),

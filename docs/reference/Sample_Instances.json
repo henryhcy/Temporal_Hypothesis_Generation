@@ -1,0 +1,567 @@
+[
+  {
+    "group_id": "P-V1",
+    "why_this_example": "widest evidence spread: has co-exist reports EXCLUDED from n",
+    "mode": "dir_bool",
+    "answer_type": "BOOL",
+    "level": "vaccine",
+    "claim_all_registers": {
+      "original": "After Pfizer, Headache typically occurs before Vomiting.",
+      "research": "Among Pfizer reports, Headache precedes Vomiting in the majority of cases.",
+      "media": "After Pfizer, most people get Headache before Vomiting.",
+      "clinical": "In Pfizer recipients, Headache usually comes before Vomiting."
+    },
+    "question_original": "Does Headache typically occur before Vomiting after Pfizer?",
+    "gold": {
+      "gold_verdict": "supported",
+      "test_verdict": "supported",
+      "insufficient_subtype": null,
+      "negated": false,
+      "gold_proportion": 0.76,
+      "gold_n": 25,
+      "gold_k": 19,
+      "gold_n2": null,
+      "gold_k2": null,
+      "ci": [
+        0.5657,
+        0.885
+      ],
+      "ci_width": 0.3193,
+      "confidence_tag": "low",
+      "effect_size": 0.5469,
+      "options": null,
+      "gold_answer": null
+    },
+    "test": {
+      "sig_test": "binom_exact",
+      "p_value": 0.007317,
+      "p_claim": 0.007317,
+      "p_opposite": 0.997961,
+      "significant": true,
+      "alpha": 0.05,
+      "min_n_floor": 10,
+      "family": "pairwise"
+    },
+    "covered_case_ids": {
+      "denominator": {
+        "count": 25,
+        "report_ids": [
+          1002916,
+          1005548,
+          1080700,
+          1098926,
+          1118672,
+          1118837,
+          1137403,
+          1153432,
+          1171386,
+          1280111,
+          1320879,
+          1373556,
+          1385457,
+          1395810,
+          1420761,
+          1839276,
+          1890607,
+          1932347,
+          1940147,
+          1959286,
+          2088479,
+          2091618,
+          2105454,
+          2305508,
+          2551064
+        ]
+      },
+      "numerator": {
+        "count": 19,
+        "report_ids": [
+          1098926,
+          1118672,
+          1118837,
+          1137403,
+          1171386,
+          1280111,
+          1320879,
+          1373556,
+          1385457,
+          1420761,
+          1839276,
+          1890607,
+          1932347,
+          1940147,
+          1959286,
+          2088479,
+          2105454,
+          2305508,
+          2551064
+        ]
+      },
+      "excluded": {
+        "count": 9,
+        "report_ids": [
+          1137469,
+          1141282,
+          1149335,
+          1225836,
+          1340375,
+          1812643,
+          2201122,
+          2566456,
+          2689093
+        ]
+      }
+    },
+    "mirror_pair": {
+      "note": "same core, opposite orientation; both share derived_from_core_id and MUST stay on the same side of any train/test split",
+      "derived_from_core_id": "P-V1|Pfizer|Headache+Vomiting",
+      "supported_text": "After Pfizer, Headache typically occurs before Vomiting.",
+      "refuted_text": "After Pfizer, Vomiting typically occurs before Headache.",
+      "refuted_verdict": "refuted",
+      "refuted_p_claim": 0.997961,
+      "refuted_p_opposite": 0.007317
+    },
+    "positional_statistics_DESCRIPTIVE_ONLY": {
+      "wilcoxon_signed_rank": {
+        "what": "level(Headache) - level(Vomiting) per report, symmetric about 0?",
+        "n_present_reports": 34,
+        "n_nonzero_pairs": 25,
+        "statistic_W_plus": 67.0,
+        "p": 0.008409461015849934,
+        "method": "normal",
+        "note": "keeps ALL both-present reports, including co-exist (d=0), unlike the precedes denominator which drops them"
+      }
+    },
+    "extra_counts": {}
+  },
+  {
+    "group_id": "F-V2",
+    "why_this_example": "argmax CHOICE: per-candidate counts, ties excluded, answer key",
+    "mode": "last_choice",
+    "answer_type": "CHOICE",
+    "level": "vaccine",
+    "claim_all_registers": {
+      "original": "After Janssen, Dizziness is most commonly the last event among Dizziness, Chills, Headache.",
+      "research": "In Janssen reports with all three, Dizziness is most frequently the latest.",
+      "media": "After Janssen, Dizziness comes last most often.",
+      "clinical": "In Janssen patients, Dizziness is most frequently the latest."
+    },
+    "question_original": "After Janssen, which of Dizziness, Chills, Headache is most commonly the last event?",
+    "gold": {
+      "gold_verdict": "supported",
+      "test_verdict": "supported",
+      "insufficient_subtype": null,
+      "negated": false,
+      "gold_proportion": 0.68,
+      "gold_n": 25,
+      "gold_k": 17,
+      "gold_n2": null,
+      "gold_k2": null,
+      "ci": [
+        0.4841,
+        0.8279
+      ],
+      "ci_width": 0.3438,
+      "confidence_tag": "low",
+      "effect_size": 0.7081,
+      "options": [
+        "Chills",
+        "Dizziness",
+        "Headache"
+      ],
+      "gold_answer": "Dizziness"
+    },
+    "test": {
+      "sig_test": "modal_runner",
+      "p_value": 0.00845,
+      "p_claim": 0.00845,
+      "p_opposite": 0.997828,
+      "significant": true,
+      "alpha": 0.05,
+      "min_n_floor": 10,
+      "family": "first_last"
+    },
+    "covered_case_ids": {
+      "denominator": {
+        "count": 25,
+        "report_ids": [
+          1074476,
+          1082139,
+          1089648,
+          1093041,
+          1094194,
+          1103729,
+          1156013,
+          1158036,
+          1195134,
+          1196015,
+          1196452,
+          1198483,
+          1201116,
+          1203097,
+          1204897,
+          1205101,
+          1209030,
+          1241270,
+          1244963,
+          1268008,
+          1269156,
+          1316589,
+          1728743,
+          1759254,
+          2050908
+        ]
+      },
+      "numerator": {
+        "count": 17,
+        "report_ids": [
+          1074476,
+          1082139,
+          1089648,
+          1093041,
+          1094194,
+          1156013,
+          1196452,
+          1201116,
+          1203097,
+          1204897,
+          1205101,
+          1241270,
+          1268008,
+          1269156,
+          1316589,
+          1728743,
+          2050908
+        ]
+      },
+      "excluded": {
+        "count": 18,
+        "report_ids": [
+          1080401,
+          1102224,
+          1117861,
+          1165945,
+          1190551,
+          1197193,
+          1208584,
+          1208986,
+          1214024,
+          1214392,
+          1238082,
+          1238873,
+          1313700,
+          1396514,
+          1506754,
+          1846793,
+          1992960,
+          2537725
+        ]
+      },
+      "ties": {
+        "count": 18,
+        "report_ids": [
+          1080401,
+          1102224,
+          1117861,
+          1165945,
+          1190551,
+          1197193,
+          1208584,
+          1208986,
+          1214024,
+          1214392,
+          1238082,
+          1238873,
+          1313700,
+          1396514,
+          1506754,
+          1846793,
+          1992960,
+          2537725
+        ]
+      }
+    },
+    "mirror_pair": {
+      "note": "same core, opposite orientation; both share derived_from_core_id and MUST stay on the same side of any train/test split",
+      "derived_from_core_id": "F-V2|Janssen|Chills+Dizziness+Headache",
+      "supported_text": "After Janssen, Dizziness is most commonly the last event among Dizziness, Chills, Headache.",
+      "refuted_text": "After Janssen, Headache is most commonly the last event among Headache, Chills, Dizziness.",
+      "refuted_verdict": "refuted",
+      "refuted_p_claim": 0.999799,
+      "refuted_p_opposite": 0.001288
+    },
+    "positional_statistics_DESCRIPTIVE_ONLY": {
+      "wilcoxon_signed_rank": {
+        "what": "level(Dizziness) - level(Chills) per report, symmetric about 0?",
+        "n_present_reports": 71,
+        "n_nonzero_pairs": 48,
+        "statistic_W_plus": 703.5,
+        "p": 0.22380194666728878,
+        "method": "normal",
+        "note": "keeps ALL both-present reports, including co-exist (d=0), unlike the precedes denominator which drops them"
+      },
+      "friedman": {
+        "what": "do the three events differ in position?",
+        "n_reports": 43,
+        "Q": 6.275862068965439,
+        "df": 2,
+        "p": 0.04337244122080687
+      },
+      "kendalls_w": {
+        "what": "how consistent is the ordering across reports?",
+        "W": 0.07297514033680834,
+        "p": 0.043372441220805184
+      }
+    },
+    "extra_counts": {
+      "fracs": {
+        "Chills": 0.2,
+        "Dizziness": 0.68,
+        "Headache": 0.12
+      },
+      "winner": "Dizziness",
+      "unique": true,
+      "tie_rate": 0.4186046511627907,
+      "counts": {
+        "Chills": 5,
+        "Dizziness": 17,
+        "Headache": 3
+      }
+    }
+  },
+  {
+    "group_id": "P-M2",
+    "why_this_example": "two-cohort: per-cohort denominators, the only surviving multi group",
+    "mode": "multi_dir_precedes",
+    "answer_type": "CHOICE",
+    "level": "multi",
+    "claim_all_registers": {
+      "original": "Chills precedes Pain in extremity more often after Janssen than after Pfizer.",
+      "research": "Janssen shows a higher Chills-precedes-Pain in extremity proportion than Pfizer.",
+      "media": "Chills-before-Pain in extremity is more common after Janssen than Pfizer.",
+      "clinical": "Janssen recipients more often have Chills as a precursor to Pain in extremity."
+    },
+    "question_original": "After which vaccine, Janssen or Pfizer, does Chills more often precede Pain in extremity?",
+    "gold": {
+      "gold_verdict": "supported",
+      "test_verdict": "supported",
+      "insufficient_subtype": null,
+      "negated": false,
+      "gold_proportion": 0.6304,
+      "gold_n": 46,
+      "gold_k": 29,
+      "gold_n2": 24,
+      "gold_k2": 8,
+      "ci": [
+        0.0507,
+        0.4947
+      ],
+      "ci_width": 0.444,
+      "confidence_tag": "low",
+      "effect_size": 0.6038,
+      "options": [
+        "Pfizer",
+        "Janssen"
+      ],
+      "gold_answer": "Janssen"
+    },
+    "test": {
+      "sig_test": "fisher_exact",
+      "p_value": 0.017064,
+      "p_claim": 0.017064,
+      "p_opposite": 0.995776,
+      "significant": true,
+      "alpha": 0.05,
+      "min_n_floor": 10,
+      "family": "pairwise"
+    },
+    "covered_case_ids": {
+      "cohort_1": {
+        "denominator": {
+          "count": 46,
+          "report_ids": [
+            1081109,
+            1081513,
+            1082139,
+            1086098,
+            1092914,
+            1094194,
+            1096690,
+            1110379,
+            1114774,
+            1149344,
+            1158036,
+            1163644,
+            1167388,
+            1184010,
+            1192719,
+            1195134,
+            1196569,
+            1199334,
+            1199600,
+            1203179,
+            1204325,
+            1204839,
+            1205445,
+            1206381,
+            1209290,
+            1212154,
+            1213405,
+            1214024,
+            1218972,
+            1224017,
+            1226845,
+            1241259,
+            1258932,
+            1263467,
+            1304993,
+            1307198,
+            1316589,
+            1348836,
+            1357997,
+            1466480,
+            1714382,
+            1768019,
+            1813288,
+            1942233,
+            2017581,
+            2027297
+          ]
+        },
+        "numerator": {
+          "count": 29,
+          "report_ids": [
+            1081109,
+            1092914,
+            1096690,
+            1110379,
+            1149344,
+            1158036,
+            1163644,
+            1167388,
+            1184010,
+            1195134,
+            1196569,
+            1199334,
+            1204325,
+            1204839,
+            1205445,
+            1212154,
+            1213405,
+            1218972,
+            1224017,
+            1226845,
+            1241259,
+            1263467,
+            1304993,
+            1307198,
+            1348836,
+            1357997,
+            1466480,
+            1714382,
+            2027297
+          ]
+        },
+        "excluded": {
+          "count": 14,
+          "report_ids": [
+            1081210,
+            1145410,
+            1190629,
+            1203097,
+            1214392,
+            1215391,
+            1236375,
+            1238873,
+            1241093,
+            1288007,
+            1334414,
+            1728743,
+            1759254,
+            2050908
+          ]
+        }
+      },
+      "cohort_2": {
+        "denominator": {
+          "count": 24,
+          "report_ids": [
+            927944,
+            951488,
+            951763,
+            1004313,
+            1077427,
+            1090979,
+            1118672,
+            1137786,
+            1156244,
+            1156567,
+            1166443,
+            1179334,
+            1257243,
+            1403315,
+            1406196,
+            1412723,
+            1478861,
+            1483481,
+            1661637,
+            1775004,
+            1815950,
+            1839276,
+            1850111,
+            2219864
+          ]
+        },
+        "numerator": {
+          "count": 8,
+          "report_ids": [
+            951763,
+            1077427,
+            1156244,
+            1257243,
+            1403315,
+            1478861,
+            1483481,
+            1775004
+          ]
+        },
+        "excluded": {
+          "count": 10,
+          "report_ids": [
+            935855,
+            961289,
+            1201142,
+            1320879,
+            1348027,
+            1360448,
+            1793346,
+            1873699,
+            2693165,
+            2808653
+          ]
+        }
+      }
+    },
+    "mirror_pair": {
+      "note": "same core, opposite orientation; both share derived_from_core_id and MUST stay on the same side of any train/test split",
+      "derived_from_core_id": "P-M2|Pfizer+Janssen|Chills+Pain in extremity",
+      "supported_text": "Chills precedes Pain in extremity more often after Janssen than after Pfizer.",
+      "refuted_text": "Chills precedes Pain in extremity more often after Pfizer than after Janssen.",
+      "refuted_verdict": "refuted",
+      "refuted_p_claim": 0.995776,
+      "refuted_p_opposite": 0.017064
+    },
+    "positional_statistics_DESCRIPTIVE_ONLY": {
+      "mann_whitney_u": {
+        "what": "is the Chills-Pain in extremity rank distance shifted between cohorts?",
+        "n1": 60,
+        "n2": 34,
+        "U": 770.5,
+        "p": 0.04512388474971869,
+        "method": "normal",
+        "caveat": "anti-conservative on tie-heavy ordinal data; NOT a label"
+      }
+    },
+    "extra_counts": {}
+  }
+]

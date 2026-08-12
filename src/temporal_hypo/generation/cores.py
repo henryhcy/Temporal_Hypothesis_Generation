@@ -146,6 +146,11 @@ class InstanceFacts:
     p_value: int | None
     negated: bool = False        # the instance asserts the claim's NEGATION
     gold_k: int | None = None    # the asserted claim's numerator count
+    # two-cohort instances: the SECOND cohort as the claim orients it, not as the
+    # core stores it. Taking these from the core described the wrong cohort
+    # whenever the realization swapped them (found 2026-08-11).
+    gold_n2: int | None = None
+    gold_k2: int | None = None
 
 
 # ---------------------------------------------------------------------------
@@ -374,11 +379,15 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
         p1, n1 = _single_fraction(index, mode, combo, c1)
         p2, n2 = _single_fraction(index, mode, combo, c2)
         if not _is_testable(n1, group.family, n2=n2):
-            # n on BOTH cohorts is kept: a two-cohort core is `sparse` when one
-            # side is thin and `not_locatable` when a side is empty.
+            # n AND k on BOTH cohorts are kept: a two-cohort core is `sparse` when
+            # one side is thin and `not_locatable` when a side is empty, and the
+            # release promises every label is recomputable from the corpus.
             return _new_core(group, mode, computable=False,
                              natural_verdict="insufficient",
-                             proportion=p1, n=n1, proportion2=p2, n2=n2, **base)
+                             proportion=p1, n=n1,
+                             k=round(p1 * n1) if p1 is not None else 0,
+                             proportion2=p2, n2=n2,
+                             k2=round(p2 * n2) if p2 is not None else 0, **base)
         k1, k2 = round(p1 * n1), round(p2 * n2)
         if "differ" in mode:
             nv = differ_verdict(p1, p2)
@@ -799,7 +808,8 @@ def _realize(core: ViableCore, polarity: str) -> InstanceFacts:
 
 
 def _mk(core, polarity, flip_kind, events_assigned, *, verdict,
-        proportion=None, n=None, k=None, p_value=None, null_ref=0.5,
+        proportion=None, n=None, k=None, n2=None, k2=None,
+        p_value=None, null_ref=0.5,
         ci=None, tag=None, effect="auto", vaccines=None):
     vacc = core.vaccines if vaccines is None else vaccines
     slot: dict[str, str] = {}
@@ -816,7 +826,8 @@ def _mk(core, polarity, flip_kind, events_assigned, *, verdict,
     return InstanceFacts(
         core=core, polarity=polarity, flip_kind=flip_kind, slot_values=slot,
         events_assigned=events_assigned, vaccines_assigned=vacc,
-        gold_verdict=verdict, gold_proportion=proportion, gold_n=n, gold_k=k, ci=ci,
+        gold_verdict=verdict, gold_proportion=proportion, gold_n=n, gold_k=k,
+        gold_n2=n2, gold_k2=k2, ci=ci,
         confidence_tag=tag, effect_size=effect, p_value=p_value,
     )
 
@@ -889,8 +900,8 @@ def _realize_multi_differ(core, polarity):
     p1, p2 = core.proportion, core.proportion2
     ci, tag = _diff_ci(core)
     return _mk(core, polarity, None, core.events,
-               verdict=differ_verdict(p1, p2), proportion=p1, n=core.n,
-               ci=ci, tag=tag, effect=cohens_h(p1, p2))
+               verdict=differ_verdict(p1, p2), proportion=p1, n=core.n, k=core.k,
+               n2=core.n2, k2=core.k2, ci=ci, tag=tag, effect=cohens_h(p1, p2))
 
 
 def _realize_multi_dir(core, polarity):
@@ -917,7 +928,8 @@ def _realize_multi_dir(core, polarity):
     ev = core.events
     verdict = direction_verdict(hp, ln and (lk / ln))
     return _mk(core, polarity, fk, ev, verdict=verdict, proportion=hp,
-               n=hn, ci=ci, tag=tag, effect=cohens_h(hp, lk / ln),
+               n=hn, k=hk, n2=ln, k2=lk,
+               ci=ci, tag=tag, effect=cohens_h(hp, lk / ln),
                vaccines=vacc)
 
 
@@ -1037,4 +1049,9 @@ def _realize_insufficient(core: ViableCore) -> InstanceFacts:
     return _mk(core, "insufficient", None, events, verdict="insufficient",
                proportion=core.proportion, n=core.n,
                # k is 0 for an empty denominator, not unknown
-               k=(core.k if core.k is not None else 0), effect=None)
+               k=(core.k if core.k is not None else 0),
+               # no re-orientation happens here, so the core's cohort order is the
+               # asserted one and n2/k2 pass straight through
+               n2=core.n2, k2=(core.k2 if core.k2 is not None else
+                               (0 if core.n2 is not None else None)),
+               effect=None)

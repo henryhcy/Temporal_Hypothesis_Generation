@@ -1955,3 +1955,54 @@ Removed from `data/templates/pairwise.yaml`, `MODE_BY_GROUP`, `_SLOT_ORIENTABLE`
 blurbs and validation list, `final_templates` ROSTER, `make_examples`, and the
 `aggregation.direction_verdict` docstring. The `multi_dir_cooccurs` mode no longer
 exists. Validation re-run: 20,749 instances, all six checks passing.
+
+---
+
+## FIXED while building the sample instances: two claim/label mismatches (2026-08-11)
+
+Building three fully-annotated sample instances (`scripts/make_sample_instances.py`)
+surfaced two defects that the existing checks did not cover. Both are the same shape
+of error: a field describing something other than what the instance asserts.
+
+### 1. F-V2 and F-R2 named the WRONG EVENT in every instance
+
+The argmax realizers (`_realize_extreme_choice`, `_realize_modal_choice`) put the
+NAMED event in slot **{A}**. F-V1, F-V3, F-R1 and F-R3 assert `{A}` and were correct.
+**F-V2 and F-R2 asserted `{C}`** -- an arbitrary non-winner. Measured: **59 of 59**
+F-V2 decisive instances named an event other than their own `gold_answer`:
+
+> "After Pfizer, **Headache** is most commonly the last event among Nausea, Chills,
+> Headache." -- with `gold_answer` = **Nausea**, which had 17/25 against Headache's 3.
+
+Fixed by rewording F-V2 and F-R2 to assert `{A}` across all four registers, matching
+their siblings and the realize path. A test now asserts that every argmax template's
+first event placeholder is `{A}`.
+
+Note the earlier oriented-statistics fix could not catch this: the *statistics* were
+right, and the *answer key* was right. Only the rendered TEXT was wrong, and nothing
+compared the text against the answer key.
+
+### 2. Two-cohort `gold_n2` / `gold_k2` described the wrong cohort
+
+Added during the evidence-ids work and taken from the CORE rather than the realized
+instance, so whenever a `multi_dir_*` realization swapped cohorts they reported the
+first cohort's numbers under the second cohort's name. The sample made it obvious:
+`gold_n2` read 46 while cohort_2's denominator held 24 reports. `gold_k` was also
+absent for every multi instance, because `_realize_multi_dir` never passed `k`.
+
+`InstanceFacts` now carries oriented `gold_n2` / `gold_k2`, `_realize_multi_dir`
+passes the higher/lower counts it already computed, and the insufficient path passes
+the second cohort through (no re-orientation happens there). The multi gate-fail
+branch now also carries `k`/`k2`, which it never did.
+
+`validate_gold.py` gained the matching invariant: for two-cohort instances,
+`len(cohort_1.denominator) == gold_n`, `len(cohort_1.numerator) == gold_k`, and the
+same for cohort_2 against `gold_n2` / `gold_k2`. 20,749 instances, all passing.
+
+### The lesson worth keeping
+
+This is the third time today a field has described a different claim than the one in
+the record: the p-value tails, `_realize_insufficient`'s named cell, and now the
+template slot plus the second cohort. **Any per-instance field must be derived from
+the realized instance, never from the core** -- and the check that catches it has to
+compare the rendered TEXT against the gold, not just the numbers against each other.
