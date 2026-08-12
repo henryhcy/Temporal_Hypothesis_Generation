@@ -234,7 +234,7 @@ def _position_test(index, group, core) -> dict | None:
     if len(ev) == 2:                               # pair -> Mann-Whitney on d
         d1 = corpus.pair_distances(index, ev[0], ev[1], c1)
         d2 = corpus.pair_distances(index, ev[0], ev[1], c2)
-        if gid in ("C-M1", "C-M2"):
+        if gid == "C-M1":
             d1, d2, lbl = [abs(x) for x in d1], [abs(x) for x in d2], \
                 f"|level({ev[0]})-level({ev[1]})|"
         else:
@@ -283,7 +283,7 @@ def _null_hypothesis(mode, events, vaccines) -> str:
                 f"the {which} (P = 0.5; no unique most-common {which} event)")
     if mode in ("multi_differ_precedes", "multi_dir_precedes"):
         return f"H0: P({a} precedes {b}) is equal for {v1} and {v2} (p1 = p2)"
-    if mode in ("multi_differ_cooccurs", "multi_dir_cooccurs"):
+    if mode == "multi_differ_cooccurs":
         return f"H0: the {a}/{b} co-occurrence rate is equal for {v1} and {v2} (p1 = p2)"
     if mode == "multi_differ_sequence":
         return f"H0: P(ordering = {seq}) is equal for {v1} and {v2} (p1 = p2)"

@@ -41,7 +41,6 @@ RULE_BY_MODE = {
     "multi_differ_precedes": "two precedes fracs; |p1-p2|>10pp",
     "multi_dir_precedes": "two precedes fracs; names higher cohort",
     "multi_differ_cooccurs": "two co-occurs fracs; |p1-p2|>10pp",
-    "multi_dir_cooccurs": "two co-occurs fracs; names higher cohort",
     "multi_differ_sequence": "two sequence fracs; |p1-p2|>10pp",
     "multi_same_modal_order": "modal ordering in each cohort; same?",
     "multi_same_first": "modal first event in each cohort; same?",
@@ -58,7 +57,7 @@ RULE_BY_MODE = {
 # Groups sampled for Part C (spans families, answer types, levels).
 VALIDATION_GROUPS = [
     "P-V1", "P-V2", "P-V3", "C-V1", "C-V2", "C-V3", "S-V2", "S-V3",
-    "F-V1", "F-V2", "F-V3", "P-M1", "P-M2", "C-M1", "C-M2", "S-M1",
+    "F-V1", "F-V2", "F-V3", "P-M1", "P-M2", "C-M1", "S-M1",
     "S-M3", "F-M1", "P-R1", "C-R1", "S-R1", "F-R1",
 ]
 

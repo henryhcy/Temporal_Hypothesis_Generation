@@ -298,7 +298,7 @@ def direction_verdict(
     """Multi-vaccine CHOICE direction: claim asserts cohort 1 > cohort 2.
 
     Supported if p1 > p2, refuted if p1 < p2, insufficient on an exact tie.
-    Used by P-M2 / C-M2 (which cohort shows the higher proportion).
+    Used by P-M2 (which cohort shows the higher proportion).
     The confidence interval on the difference (Wilson-Newcombe) carries the
     uncertainty; this verdict only encodes the point-estimate direction.
     """

@@ -110,26 +110,12 @@ changing the claim scope to "across all vaccines"; (c) apply §6 lever 5 (coarse
 events to MedDRA SOC/HLGT categories), the real structural fix, which needs a
 term→category map. Not a detail — decide before the roster migration.
 
-### C-M2 does not beat its own permutation null (2026-08-04, re-confirmed 08-11)
-See `08_multi_tier_inventory.md`. C-M2's decisive cores sit inside the
-shuffled-label distribution at **both** floors, so this is not a supply problem
-and the floor decision does not rescue it:
-
-| measurement | real decisive | null mean | p_perm |
-|---|--:|--:|--:|
-| floor 20, 200 rounds | 23 | 16.7 | 0.129 |
-| floor 10, 2000 rounds (pre-fix corpus) | 42 | 34.3 | 0.151 |
-| **floor 10, 2000 rounds (corrected corpus)** | **41** | **34.6** | **0.202** |
-
-Four independent measurements, all failing, and the most recent is the worst.
-
-Lowering the floor nearly doubled its decisive count and left it *further* inside
-the null — exactly what you expect if the signal is not there. Plausible reason:
-whether two symptoms land at the *same* timeline stage reflects
-annotation/narrative style, not the vaccine. Open: drop C-M2, or keep it as a
-deliberately hard/negative group with the caveat documented? Recommendation is
-drop — a group whose supported/refuted labels are mostly noise cannot carry a
-gold label, and the multi tier now has P-M2 (30) and F-M3 (19) without it.
+### C-M2
+RESOLVED (2026-08-11): **dropped.** Four independent failing measurements
+(0.129 / 0.151 / 0.195 / 0.202), worsening as the corpus got cleaner. Likely cause
+recorded in `decisions.md`: same-level co-occurrence reflects narrative/annotation
+style rather than the vaccine, which is why P-M2 (order) passes on the same corpus
+where C-M2 (simultaneity) fails.
 
 ### At floor 10 there is NO viable single-event candidate (2026-08-11)
 The 08 doc's replacement recommendation was computed at floor 20 and does not
@@ -180,26 +166,25 @@ Free to retire: `core/positions.py` is imported only by `make_examples.py` and
 `replacement_inventory.py`, never by `core/answers.py`, so no gold label ever read
 those p-values. The module is annotated as descriptive-only.
 
-### Is a ONE-group multi tier worth the shape? (2026-08-11, sharpened)
-Now measured rather than speculative. Of everything screened at floor 10 / 2000
-rounds, **only P-M2 (0.023) and M-F (0.034) clear — and they are the same claim
-family**, so at most one ships. C-M2 fails (0.202), F-M3 fails (0.188), and no
-single-event candidate clears (M-C 0.073, M-H 0.109, M-B 0.462).
+### Is a ONE-group multi tier worth the shape? (2026-08-11, now the live question)
+Settled by measurement: **P-M2 is the only two-cohort group left.** C-M2 and F-M3 are
+dropped for failing their nulls, F-M3 has no viable substitute, and the six
+non-directional multi groups sit at S = 0 pending removal.
 
-So the validated two-cohort tier is **one group**. Options:
+So the tier is one group, S = 30, ~90 instances at 3*S. Options:
 
-(a) Ship P-M2 (or M-F) alone as the multi tier, and document that the other shapes
-    were screened out. Keeps the "does vaccine matter" claim family with one group.
-(b) Retire the two-cohort tier for v1. Loses that claim family entirely, but ships
-    nothing that fails its own null, and the benchmark is then single-cohort plus
-    report-level.
-(c) Ship C-M2 and/or F-M3 anyway as deliberately-hard negative groups, with the
-    p_perm caveat in the paper. Risky: their gold labels are not distinguishable
-    from noise, so a model penalised on them is being penalised for not
-    reproducing chance.
+(a) **Ship P-M2 alone.** Keeps the "does vaccine matter" claim family, arguably the
+    most clinically interesting question in the benchmark, and the screening story is
+    a genuine methods strength: seven two-cohort shapes tested against a
+    label-permutation null, one survived.
+(b) **Swap P-M2 for M-F** (precedes-wide, same claim family): more supply (46 vs 30
+    decisive) and plainer wording, marginally weaker against its null (0.034 vs
+    0.023). Needs four-register wording written.
+(c) **Retire the two-cohort tier for v1.** Loses the claim family entirely; the
+    benchmark becomes single-cohort plus report-level.
 
-M-F vs P-M2 if (a): M-F has more supply (46 vs 30 decisive) and plainer wording;
-P-M2 is marginally stronger against its null.
+(a) and (b) both leave ~90 of ~4,000 instances, so the tier is a rounding error on
+size but not on scientific scope.
 
 ## Framework
 

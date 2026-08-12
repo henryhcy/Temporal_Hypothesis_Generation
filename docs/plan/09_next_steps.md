@@ -8,18 +8,18 @@ partly stale — see its banner).
 
 | | |
 |---|---|
-| Roster as coded | **24 groups** = 7 report-level + 17 cohort-level |
-| Cohort groups that ship a verdict | **11** (the other 6 are non-directional, pending removal) |
-| Roster after the pending 07-28 migration | **21** (−6 non-directional, +R1/R3/R5) |
+| Roster as coded | **23 groups** = 7 report-level + 16 cohort-level |
+| Cohort groups that ship a verdict | **10** (the other 6 are non-directional, pending removal) |
+| Roster after the pending 07-28 migration | **20** (−6 non-directional, +R1/R3/R5) |
 | Min-n gate | 10, sequence 5 (`core/min_n.py`) |
 | Tests | exact only; chi-square removed from the codebase |
 | Gold label | the **three-decision verdict**, oriented to each instance's own claim |
 | Framework input | the **annotated leveled orders**, never narratives |
-| Decisive cores (S) | **1407** — of which C-M2 (42) fails its permutation null |
+| Decisive cores (S) | **1365** — every remaining group clears its null |
 | Insufficient sub-types | all populated: underpowered ~5.6k / sparse ~2.7k / not_locatable 116 |
 | Sampler | equal thirds **per group**, every decisive core posed **both ways** |
 | Release format | `*_questions.jsonl` (input only) + `*_answers.jsonl` (gold), split enforced |
-| Gold-label validation | **21,310 instances, six invariant families, all passing** |
+| Gold-label validation | **20,749 instances, six invariant families, all passing** |
 
 ## The pipeline is DONE for the testable templates
 
@@ -37,23 +37,19 @@ Steps B, C and D are complete, plus the release format and the validation guard:
 
 ## What is next, in priority order
 
-### 1. Three cheap validity calls, before anything ships
+### 1. Validity ledger - CLOSED 2026-08-11
 
-All measured, all in `open_questions.md`, none needs new analysis:
+All three items done. The roster now ships nothing that fails its own null:
 
-- **Retire §6 lever 2** — AGREED 2026-08-11. Free: `core/positions.py` is imported
-  only by two scripts, never by `core/answers.py`, so no gold label reads those rank
-  p-values. Still needs the code/doc change.
-- **F-M3 — DONE 2026-08-11.** Retired after failing its null (0.183–0.188), and all
-  three substitute shapes fail too (M-J 0.096, M-G 0.509, M-I 0.698). The first/last
-  family structurally cannot have a two-cohort group; see `decisions.md`.
-- **Drop C-M2, or accept it as a documented negative.** Four independent failing
-  measurements, most recently 0.195–0.202. It is the last group in the roster
-  shipping labels indistinguishable from noise.
-- **Then decide the multi tier's fate.** With F-M3 gone and C-M2 failing, the only
-  candidates that clear are P-M2 (0.023) and M-F (0.034) — the same claim family. So
-  the validated two-cohort tier is at most ONE group. Ship it alone, or retire the
-  tier for v1? See `open_questions.md`.
+- **Lever 2** - retired. `core/positions.py` is descriptive-only and
+  `core/answers.py` does not import it.
+- **F-M3** - retired (0.183-0.188), and all three substitute shapes fail too
+  (M-J 0.096, M-G 0.509, M-I 0.698). The first/last family structurally cannot have a
+  two-cohort group.
+- **C-M2** - dropped (0.129 / 0.151 / 0.195 / 0.202 over four measurements).
+
+**The live decision now: the multi tier is P-M2 alone.** Ship it, swap it for M-F, or
+retire the two-cohort tier for v1? See `open_questions.md`.
 
 ### 2. The eval harness — the actual path to modeling
 

@@ -239,25 +239,3 @@ groups:
     clinical:
       question: Do my {v1} and {v2} patients differ in how often {A} and {B} co-occur?
       claim: '{v1} and {v2} recipients differ in {A}-{B} co-occurrence rates.'
-- id: C-M2
-  primitive: co_occurs
-  level: multi
-  answer_type: CHOICE
-  slots:
-  - A
-  - B
-  - v1
-  - v2
-  variants:
-    original:
-      question: After which vaccine, {v1} or {v2}, do {A} and {B} more often co-occur?
-      claim: '{A} and {B} co-occur more often after {v1} than after {v2}.'
-    research:
-      question: Between {v1} and {v2}, which cohort shows higher {A}-{B} co-occurrence?
-      claim: '{v1} shows higher {A}-{B} co-occurrence than {v2}.'
-    media:
-      question: Is {A} and {B} together more common after {v1} or {v2}?
-      claim: '{A} and {B} together is more common after {v1} than {v2}.'
-    clinical:
-      question: In which group are {A} and {B} more often concurrent, {v1} or {v2}?
-      claim: In {v1} recipients, {A} and {B} are more often concurrent.

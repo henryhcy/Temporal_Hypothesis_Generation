@@ -1896,3 +1896,62 @@ Removed from `data/templates/first_last.yaml`, `MODE_BY_GROUP`,
 mode blurbs and validation list, `final_templates` ROSTER, and `make_examples`. The
 `multi_dir_first` mode no longer exists. Validation re-run: 21,310 instances, all six
 checks passing.
+
+---
+
+## LOCKED + implemented: C-M2 dropped (2026-08-11)
+
+**C-M2 (`multi_dir_cooccurs`) is removed.** It failed its permutation null on four
+independent measurements and got worse as the corpus got cleaner:
+
+| measurement | real decisive | null mean | p_perm |
+|---|--:|--:|--:|
+| floor 20, 200 rounds | 23 | 16.7 | 0.129 |
+| floor 10, 2000 rounds (pre-fix) | 42 | 34.3 | 0.151 |
+| floor 10, 1000 rounds (corrected) | 41 | 34.5 | 0.195 |
+| floor 10, 2000 rounds (corrected) | 41 | 34.6 | **0.202** |
+
+Roster: 24 -> **23** as coded. S: 1407 -> **1365**.
+
+It also responded to the floor change the wrong way round: halving the floor nearly
+doubled its decisive count (23 -> 42) and pushed it FURTHER into the null. More data
+making a group worse is the signature of no signal.
+
+### Why the labels were individually valid and collectively meaningless
+
+Every one of its 42 decisive cores had a correct exact p-value. Examples that would
+have shipped:
+
+| claim | higher cohort | lower cohort | p |
+|---|---|---|--:|
+| Fatigue & Injection site pain, Moderna > Pfizer | 19/34 = 0.559 | 5/24 = 0.208 | 0.008 |
+| Arthralgia & Nausea, Moderna > Pfizer | 13/22 = 0.591 | 4/17 = 0.235 | 0.028 |
+| Asthenia & Cough, Pfizer > Moderna | 10/12 = 0.833 | 6/15 = 0.400 | 0.028 |
+
+Defensible in isolation. But scrambling the vaccine labels produces ~35 such findings
+on average and reaches 41+ about one round in five, so there is no way to tell which
+of the 42 are real.
+
+### The likely cause, which is worth reporting
+
+Whether two symptoms land at the SAME timeline level is largely a property of how the
+report was written and annotated, not of the vaccine. "Patient experienced fatigue and
+injection site pain" in one clause co-occurs; split across two sentences it is
+ordered. That is narrative style, and style does not vary by vaccine.
+
+Contrast **P-M2** (precedes), which PASSES at 0.023 on the same corpus with the same
+test. Order is a clinical fact about onset; simultaneity in the annotation is partly a
+transcription artefact. That is a substantive finding about what MedTempo-style
+leveled orders can support, and it belongs in the paper.
+
+### Consequence: the multi tier is P-M2 alone
+
+Remaining multi groups: P-M2 (S = 30, p_perm 0.023) plus the six non-directional ones
+already slated for removal (all S = 0). Whether a one-group two-cohort tier is worth
+the shape for v1 is the open question in `open_questions.md`.
+
+Removed from `data/templates/pairwise.yaml`, `MODE_BY_GROUP`, `_SLOT_ORIENTABLE`,
+`_FISHER`, the `_build_multi_core` mode tuple, `evidence.evidence_ids`, the pilot mode
+blurbs and validation list, `final_templates` ROSTER, `make_examples`, and the
+`aggregation.direction_verdict` docstring. The `multi_dir_cooccurs` mode no longer
+exists. Validation re-run: 20,749 instances, all six checks passing.

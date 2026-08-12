@@ -88,7 +88,6 @@ MODE_BY_GROUP: dict[str, str] = {
     "C-V1": "sym_bool_cooccurs",
     "C-V3": "sym_bool_cooccurs",
     "C-M1": "multi_differ_cooccurs",
-    "C-M2": "multi_dir_cooccurs",
     # sequence
     "S-R1": "rep_seq_bool",
     "S-V1": "seq_bool",
@@ -370,7 +369,7 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
     v1, v2 = vaxes
 
     if mode in ("multi_differ_precedes", "multi_dir_precedes",
-                "multi_differ_cooccurs", "multi_dir_cooccurs",
+                "multi_differ_cooccurs",
                 "multi_differ_sequence"):
         p1, n1 = _single_fraction(index, mode, combo, c1)
         p2, n2 = _single_fraction(index, mode, combo, c2)
@@ -647,7 +646,7 @@ _SLOT_ORIENTABLE = {
     "dir_bool", "dir_choice",
     "seq_bool", "modal_choice",
     "first_choice", "last_choice", "first_bool",
-    "multi_dir_precedes", "multi_dir_cooccurs",
+    "multi_dir_precedes",
 }
 
 
@@ -790,7 +789,7 @@ def _realize(core: ViableCore, polarity: str) -> InstanceFacts:
     if m in ("multi_differ_precedes", "multi_differ_cooccurs",
              "multi_differ_sequence"):
         return _realize_multi_differ(core, polarity)
-    if m in ("multi_dir_precedes", "multi_dir_cooccurs"):
+    if m == "multi_dir_precedes":
         return _realize_multi_dir(core, polarity)
     if m in ("multi_same_first", "multi_differ_first", "multi_same_modal_order"):
         return _realize_multi_categorical(core, polarity)

@@ -72,7 +72,6 @@ ROSTER = [
     ("C-V1", "co-occurs", "vaccine", "BOOL", "A and B typically co-occur", "P = 0.5", "binomial (1-sided)", "pipeline"),
     ("C-V2", "co-occurs", "vaccine", "BOOL", "A and B occur together more than if independent", "independence", "Fisher 2x2 (1-sided)", "r5"),
     ("C-V3", "co-occurs", "vaccine", "BOOL", "co-occurrence is the dominant relation for A, B", "P = 0.5", "binomial (1-sided)", "pipeline"),
-    ("C-M2", "co-occurs", "multi", "CHOICE", "A and B co-occur more often after v1 than v2", "p1 = p2", "Fisher 2x2 (1-sided)", "pipeline"),
     # --- sequence ---
     ("S-R1", "sequence", "report", "BOOL", "order is A -> B -> C in this report", "-", "exact", "report"),
     ("S-V1", "sequence", "vaccine", "BOOL", "A -> B -> C is the most common ordering", "modal = runner-up", "binomial modal-vs-runner-up (1-sided)", "pipeline"),

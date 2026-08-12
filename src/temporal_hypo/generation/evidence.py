@@ -129,15 +129,9 @@ def evidence_ids(index, facts) -> dict:
         return _extreme_sets(index, tuple(ev), core.cohort_ids,
                              named=ev[0], last=True)
 
-    if m in ("multi_dir_precedes", "multi_dir_cooccurs"):
+    if m == "multi_dir_precedes":
         v1, v2 = facts.vaccines_assigned
-        c1, c2 = index.cohort(v1), index.cohort(v2)
-        if m == "multi_dir_precedes":
-            a, b = ev[0], ev[1]
-            return {"cohort_1": _pair_sets(index, a, b, c1),
-                    "cohort_2": _pair_sets(index, a, b, c2)}
-        if m == "multi_dir_cooccurs":
-            a, b = ev[0], ev[1]
-            return {"cohort_1": _cooccur_sets(index, a, b, c1),
-                    "cohort_2": _cooccur_sets(index, a, b, c2)}
+        a, b = ev[0], ev[1]
+        return {"cohort_1": _pair_sets(index, a, b, index.cohort(v1)),
+                "cohort_2": _pair_sets(index, a, b, index.cohort(v2))}
     return {}
