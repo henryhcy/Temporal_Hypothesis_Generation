@@ -115,10 +115,13 @@ See `08_multi_tier_inventory.md`. C-M2's decisive cores sit inside the
 shuffled-label distribution at **both** floors, so this is not a supply problem
 and the floor decision does not rescue it:
 
-| floor | real decisive | null mean | p_perm |
+| measurement | real decisive | null mean | p_perm |
 |---|--:|--:|--:|
-| 20 | 23 | 16.7 | 0.129 |
-| **10** | 42 | 34.3 | **0.151** (2000 rounds) |
+| floor 20, 200 rounds | 23 | 16.7 | 0.129 |
+| floor 10, 2000 rounds (pre-fix corpus) | 42 | 34.3 | 0.151 |
+| **floor 10, 2000 rounds (corrected corpus)** | **41** | **34.6** | **0.202** |
+
+Four independent measurements, all failing, and the most recent is the worst.
 
 Lowering the floor nearly doubled its decisive count and left it *further* inside
 the null — exactly what you expect if the signal is not there. Plausible reason:
@@ -157,35 +160,46 @@ alpha line between run sizes (0.035 at 200 rounds -> 0.073 at 2000). Any
 permutation gate on a new group (next-steps F) should use >= 2000 rounds; the
 200-round default is for triage only.
 
-### F-M3 has never been permutation-validated, and its nearest analog is noise
-The floor decision revived F-M3 (0 -> 19 decisive), but revived is not validated:
-every `p_perm` in `08_multi_tier_inventory.md` is for a *candidate*, and F-M3 was
-never among them. Its claim shape ("{A} is first more often after {v1}") is the
-multi-event relative of **M-B first-overall, the single worst candidate in the
-sweep** (p_perm 0.458 at floor 20, 0.458 at floor 10 — pure noise). That is not
-proof F-M3 fails (different core universe: 387 triple-conditioned cores vs M-B's
-193 single-event ones), but it is reason enough not to ship it unchecked.
-Per next-steps F, run F-M3 through a permutation null before it takes a slot;
-`run_multi_inventory.py`'s candidate list needs an F-M3 entry to do it.
+### F-M3 FAILS its permutation null (measured 2026-08-11)
+No longer an open measurement — it was run and it fails. **8 decisive cores against a
+noise mean of 5.2 and p95 of 10, p_perm 0.188** (floor 10, 2000 rounds, corrected
+corpus). Shuffled labels reach 8-or-more in 19% of rounds.
 
-### Retire §6 lever 2 (position test as verdict driver)?
-The permutation null shows the Mann-Whitney normal approximation is
-**anti-conservative on tie-heavy ordinal data**: shuffled labels produce ~11%
-decisive cores against a nominal 5%. The lever's headline (S-M1/S-M2/S-M3 going
-0 → 6 significant) is 6.7% — *below* the noise rate. Rank-based candidates
-M-E′ (p_perm 0.33) and M-A (0.38) collapse the same way. Open: retire the lever,
-or re-run it with an EXACT Mann-Whitney before trusting any of its counts. Note
-`core/positions.py` uses this same normal approximation throughout, so anything
-reading its p-values as verdicts is affected.
+The M-B analogy held, though F-M3 is the stricter claim: M-B asks "is A at level 0"
+(ties count) while F-M3 asks "is A uniquely first among A, B, C" (ties excluded per
+the 08-11 decision). It still fails.
 
-### Is a two-group multi tier enough of a tier? (updated 2026-08-11)
-RESOLVED in part: F-M3's S = 0 was a floor casualty and the floor decision
-revived it (19 decisive at floor 10), as predicted. The multi tier is now P-M2
-(30), C-M2 (43), F-M3 (19) by supply. But **two of those three are in doubt on
-validity, not supply**: C-M2 fails its permutation null at both floors, and F-M3
-has never been run against one. If C-M2 drops and F-M3 fails, the tier is P-M2
-alone. Open: whether to backfill with M-F or M-C (see the ranking item above),
-and whether a one- or two-group multi tier justifies the shape at all.
+Open: **drop F-M3**, or keep it as a documented hard/negative group? The same question
+C-M2 has. Note that dropping both leaves the multi tier with one group.
+
+### §6 lever 2 (position test as verdict driver)
+RESOLVED (2026-08-11): **retired.** The permutation null showed the Mann-Whitney
+normal approximation is anti-conservative on tie-heavy ordinal data (~11% decisive
+under shuffled labels vs a nominal 5%), so the lever manufactured false positives.
+Free to retire: `core/positions.py` is imported only by `make_examples.py` and
+`replacement_inventory.py`, never by `core/answers.py`, so no gold label ever read
+those p-values. The module is annotated as descriptive-only.
+
+### Is a ONE-group multi tier worth the shape? (2026-08-11, sharpened)
+Now measured rather than speculative. Of everything screened at floor 10 / 2000
+rounds, **only P-M2 (0.023) and M-F (0.034) clear — and they are the same claim
+family**, so at most one ships. C-M2 fails (0.202), F-M3 fails (0.188), and no
+single-event candidate clears (M-C 0.073, M-H 0.109, M-B 0.462).
+
+So the validated two-cohort tier is **one group**. Options:
+
+(a) Ship P-M2 (or M-F) alone as the multi tier, and document that the other shapes
+    were screened out. Keeps the "does vaccine matter" claim family with one group.
+(b) Retire the two-cohort tier for v1. Loses that claim family entirely, but ships
+    nothing that fails its own null, and the benchmark is then single-cohort plus
+    report-level.
+(c) Ship C-M2 and/or F-M3 anyway as deliberately-hard negative groups, with the
+    p_perm caveat in the paper. Risky: their gold labels are not distinguishable
+    from noise, so a model penalised on them is being penalised for not
+    reproducing chance.
+
+M-F vs P-M2 if (a): M-F has more supply (46 vs 30 decisive) and plainer wording;
+P-M2 is marginally stronger against its null.
 
 ## Framework
 

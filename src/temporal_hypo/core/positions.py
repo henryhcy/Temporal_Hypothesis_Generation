@@ -12,6 +12,18 @@ chi-square approximation (via ``significance.chi2_sf``).
 - Mann-Whitney U (two cohorts): is one cohort's positions systematically earlier?
 - Friedman (one cohort, k events ranked within report): do the events differ in
   typical position? Kendall's W is its normalised concordance (0..1).
+
+RETIRED as a verdict driver (decisions.md 2026-08-11, "§6 lever 2"). Nothing here
+produces a benchmark label, and nothing here should: a permutation null showed the
+Mann-Whitney normal approximation is ANTI-CONSERVATIVE on tie-heavy small-integer
+ordinal data -- shuffled labels yield ~11% decisive cores against a nominal 5%, so
+the lever manufactured false positives rather than recovering signal. The two
+rank-based multi candidates built on it (M-E' 0.333, M-A 0.381) are noise.
+
+These functions survive only as DESCRIPTIVE diagnostics for the advisor-facing
+worked examples (`scripts/make_examples.py`) and the design-time candidate inventory
+(`scripts/replacement_inventory.py`). `core.answers` does not import this module, and
+must not: any p-value from here is not a gold label.
 """
 
 from __future__ import annotations

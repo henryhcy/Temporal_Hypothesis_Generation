@@ -1784,3 +1784,61 @@ which requires integer counts, and every test in the project is exact on integer
 Note this is separate from the still-open REPORT-level tie question (F-R1/F-R2: one
 report where two events tie for first, set-valued gold vs `insufficient`). Shared
 credit is defensible there, because there is no aggregation to distort.
+
+---
+
+## Multi-tier screen re-run; F-M3 FAILS; lever 2 retired (2026-08-11)
+
+Refresh pass over the permutation screen, on the corrected corpus (post first-mention
+and tie fixes) at the new defaults (floor 10, 2000 rounds). Every previously recorded
+`p_perm` predated those fixes, so all figures below supersede the earlier ones.
+
+| candidate | shape | decisive/cores | null mean | null p95 | p_perm | |
+|---|---|--:|--:|--:|--:|---|
+| P-M2 precedes-strict | pair | 30/322 | 18.3 | 27 | **0.023** | clears |
+| M-F precedes-wide | pair | 46/572 | 32.2 | 44 | **0.034** | clears |
+| M-C last-overall | single | 18/193 | 11.6 | 18 | 0.073 | fails |
+| M-H early-half | single | 18/193 | 12.5 | 20 | 0.109 | fails |
+| **F-M3 first-of-triple** | **triple** | **8/75** | **5.2** | **10** | **0.188** | **FAILS** |
+| C-M2 co-occurs | pair | 41/572 | 34.6 | 47 | **0.202** | fails |
+| M-B first-overall | single | 13/193 | 12.3 | 19 | 0.462 | noise |
+
+### F-M3 was in the shipping roster and had never been screened. It fails.
+
+8 decisive cores against a noise mean of 5.2 and a noise p95 of 10. Shuffled labels
+reach 8-or-more in **19%** of rounds, so its supported/refuted labels cannot be
+distinguished from randomising which vaccine each patient received.
+
+Implemented as a new `triple` shape in `run_multi_inventory.py`: reports containing
+all three candidates, ties excluded from the denominator per the 08-11 tie decision,
+and the focal event fixed from the real data so real and null count identical cores.
+Triples are counted per report (~35 increments each) rather than over all C(65,3)
+combinations. The real count of 8 matches F-M3's actual S, confirming the shape.
+
+Note M-B and F-M3 are NOT the same claim and the script treats them differently on
+purpose: M-B asks "is A AT level 0" (ties count), F-M3 asks "is A UNIQUELY first
+among A, B, C" (ties excluded). F-M3 is the better-posed claim and still fails.
+
+### Consequence: the validated multi tier is ONE group
+
+Only P-M2 and M-F clear, and they are the same claim family, so at most one ships.
+C-M2 and F-M3 both fail. No single-event candidate clears. The choice is now: ship
+P-M2 (or M-F) alone as the multi tier, retire the two-cohort tier for v1, or ship the
+failing groups as documented negatives. See `open_questions.md`.
+
+### Round count: settled empirically
+
+Verdicts are identical at 1000, 2000 and 3000 rounds; only precision changes
+(SE ≈ √(p(1−p)/R), so ±0.011 / ±0.008 / ±0.006). 1000 rounds takes ~157 s, so there
+is no cost argument for less. **200 rounds is triage only and must never decide**: it
+read M-C as 0.035 — a passing value — where 1000+ gives ~0.076. Defaults are now
+floor 10 / 1000 rounds, and `--floor` had been left at the retired 20.
+
+### §6 lever 2: RETIRED
+
+Agreed and recorded. The Mann-Whitney normal approximation is anti-conservative on
+tie-heavy ordinal data (~11% decisive under shuffled labels vs a nominal 5%), so the
+lever manufactured false positives rather than recovering signal. Retiring cost
+nothing: `core/positions.py` is imported only by `make_examples.py` and
+`replacement_inventory.py`, never by `core/answers.py`. The module now carries a
+header stating it is descriptive-only and must not produce labels.

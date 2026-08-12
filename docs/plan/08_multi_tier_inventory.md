@@ -1,14 +1,16 @@
 # Multi-Tier (Two-Cohort) Candidate Inventory — 2026-08-04
 
-> **STALE at the current floor (noted 2026-08-11).** Every `p_perm` below was
-> computed at min-n floor 20, which `decisions.md` replaced with 10 on 2026-08-11.
-> Re-run at floor 10 with 2000 rounds, the picture changes materially: **M-H
-> early-half degrades 0.035 -> 0.120 and M-C last-overall 0.055 -> 0.073, so
-> neither single-event candidate clears** and the "Recommendation" section below
-> no longer holds. P-M2 (0.025) and M-F (0.033) still clear; C-M2 still fails
-> (0.151). The three "findings that matter" sections are unaffected — they are
-> about rank tests and about method, not about the floor. See
-> `open_questions.md` and `data/pilot/multi_inventory_floor10_2000rounds.json`.
+> **SUPERSEDED — read the refreshed table below (2026-08-11).** The original
+> figures in this doc were measured at min-n floor 20, before the first-mention and
+> tie fixes, and at 200 rounds. All of that changed on 2026-08-11, so the
+> "Results" table and the "Recommendation" have been replaced with a re-run at
+> floor 10, 2000 rounds, on the corrected corpus. The three "findings that matter"
+> sections below are UNAFFECTED — they are about rank tests and about method, not
+> about the floor.
+>
+> **Headline change: F-M3 was measured for the first time and FAILS
+> (p_perm 0.188).** With C-M2 also failing, the validated multi tier collapses to a
+> single claim family.
 
 The multi tier is down to three groups (P-M2, C-M2, F-M3) after the 2026-07-28
 removals and the S-M2 removal. This is a measured inventory of candidate
@@ -34,19 +36,47 @@ the real one. It asks: **does this group carry more signal than shuffled labels
 would produce?** A group that fails it is a group whose supported/refuted labels
 are mostly noise.
 
-## Results (min-n floor 20, alpha 0.05 per side)
+## Results (min-n floor 10, alpha 0.05 per side, 2000 rounds, corrected corpus)
 
-| candidate | shape | cores | decisive | null mean | p_perm | |
+Re-run 2026-08-11 via `scripts/run_multi_inventory.py` (defaults are now floor 10 /
+1000 rounds). `decisive/cores` is the real count over the core universe.
+
+| candidate | shape | decisive/cores | null mean | null p95 | p_perm | |
 |---|---|--:|--:|--:|--:|---|
-| **[base] P-M2** precedes-strict | pair | 99 | 18 | 7.5 | **0.005** | strongest |
-| **M-F** precedes-wide | pair | 232 | 26 | 15.6 | **0.025** | **best new** |
-| **M-H** early-half | *single event* | 163 | 18 | 10.9 | **0.035** | **new shape** |
-| M-C last-overall | single event | 163 | 17 | 10.5 | 0.055 | borderline |
-| **[base] C-M2** co-occurs | pair | 232 | 23 | 16.7 | **0.129** | **fails** |
-| M-B first-overall | single event | 163 | 13 | 10.9 | 0.373 | noise |
-| M-E′ normalised gap | pair, rank | 232 | 31 | 27.3 | 0.333 | noise |
-| M-A earliness | single, rank | 160 | 20 | 17.2 | 0.381 | noise |
-| M-D "B follows A" | pair | 4353 | 110 | — | — | below chance |
+| **[base] P-M2** precedes-strict | pair | 30/322 | 18.3 | 27 | **0.023** | **clears** |
+| **M-F** precedes-wide | pair | 46/572 | 32.2 | 44 | **0.034** | **clears** |
+| M-C last-overall | single event | 18/193 | 11.6 | 18 | 0.073 | fails |
+| M-H early-half | single event | 18/193 | 12.5 | 20 | 0.109 | fails |
+| **[base] F-M3** first-of-triple | **triple** | 8/75 | 5.2 | 10 | **0.188** | **fails** |
+| **[base] C-M2** co-occurs | pair | 41/572 | 34.6 | 47 | **0.202** | **fails** |
+| M-B first-overall | single event | 13/193 | 12.3 | 19 | 0.462 | noise |
+| M-E′ normalised gap | pair, rank | — | — | — | 0.333 | noise (floor-20 figure) |
+| M-A earliness | single, rank | — | — | — | 0.381 | noise (floor-20 figure) |
+| M-D "B follows A" | pair | — | — | — | — | below chance |
+
+Round-count stability, same code and data — the verdicts do not move, so 1000 rounds
+is sufficient and **200 is triage only** (it read M-C as 0.035, a passing value):
+
+| candidate | 200 | 1000 | 2000 | 3000 |
+|---|--:|--:|--:|--:|
+| P-M2 | 0.045 | 0.024 | 0.025 | 0.025 |
+| M-F | 0.035 | 0.036 | 0.033 | 0.032 |
+| M-C | **0.035** | 0.080 | 0.073 | 0.076 |
+| M-H | 0.095 | 0.119 | 0.120 | 0.107 |
+| C-M2 | 0.144 | 0.195 | 0.151 | 0.203 |
+| M-B | 0.458 | 0.472 | 0.453 | 0.465 |
+
+### F-M3, measured at last
+
+F-M3 shipped in the roster having never been screened. It now has: **8 decisive
+cores against a noise mean of 5.2 and a noise p95 of 10 — p_perm 0.188.** Shuffled
+labels reach 8-or-more in 19% of rounds, so its supported/refuted labels cannot be
+distinguished from randomising which vaccine each patient received.
+
+This is what the M-B analogy predicted. Note the two are NOT the same shape and the
+inventory treats them differently on purpose: M-B asks "is A *at* level 0" (ties
+count), F-M3 asks "is A *uniquely* first among A, B, C" (ties leave the denominator,
+per the 08-11 decision). F-M3 is the stricter, better-posed claim, and it still fails.
 
 Definitions of the new shapes:
 
@@ -98,18 +128,25 @@ is a **design-time validation diagnostic**, not a labeling method — decisions.
 excludes permutation from gold-label computation because the model must be able
 to run whatever test produces the label, and that constraint is untouched.
 
-## Recommendation
+## Recommendation (rewritten 2026-08-11)
 
-A multi tier of **P-M2 (or M-F), M-H, and F-M3** — one pair-precedence group,
-one single-event timing group, one first-event group — replacing C-M2. M-F and
-P-M2 are the same claim family and should not both ship; M-F is the better of
-the two on supply (26 vs 18 decisive) and on wording, P-M2 the better on
-signal-to-null (0.005 vs 0.025).
+**Only P-M2 and M-F clear, and they are the same claim family** (does A precede B
+more often in one cohort), so at most one of them ships. C-M2 fails at 0.202, F-M3
+fails at 0.188, and no single-event candidate clears.
 
-Caveats to carry: these are group-level validity checks, so a passing group
-still contains per-core false positives at the alpha rate — that is inherent to
-significance-as-verdict. And M-H's "first half" boundary (currently
-`level/max_level < 0.5`, which puts the middle stage of a 3-level report in the
-second half) needs a definitional call before it ships.
+So the validated multi tier is **one group**: P-M2, or M-F as a wider-denominator
+rewording of it. M-F has more supply (46 vs 30 decisive) and plainer wording; P-M2 is
+marginally stronger against its null (0.023 vs 0.034).
 
-Reproduce: `scripts/run_multi_inventory.py`.
+That forces the question in `open_questions.md`: **is a one-group multi tier worth
+the shape at all for v1?** The alternative is to retire the two-cohort tier and keep
+the benchmark single-cohort plus report-level, which loses the "does vaccine matter"
+claim family entirely but ships nothing that fails its own null.
+
+Caveats to carry: these are group-level checks, so a passing group still contains
+per-core false positives at the alpha rate — inherent to significance-as-verdict.
+And M-H's "first half" boundary (`level/max_level < 0.5`, which puts the middle stage
+of a 3-level report in the second half) would need a definitional call if it were
+ever revived, though at 0.109 it is not a candidate.
+
+Reproduce: `scripts/run_multi_inventory.py` (floor 10, 1000 rounds by default).

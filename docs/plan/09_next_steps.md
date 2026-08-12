@@ -15,7 +15,7 @@ partly stale — see its banner).
 | Tests | exact only; chi-square removed from the codebase |
 | Gold label | the **three-decision verdict**, oriented to each instance's own claim |
 | Framework input | the **annotated leveled orders**, never narratives |
-| Decisive cores (S) | **1415** |
+| Decisive cores (S) | **1415** — of which C-M2 (42) and F-M3 (8) fail their permutation null |
 | Insufficient sub-types | all populated: underpowered ~5.6k / sparse ~2.7k / not_locatable 116 |
 | Sampler | equal thirds **per group**, every decisive core posed **both ways** |
 | Release format | `*_questions.jsonl` (input only) + `*_answers.jsonl` (gold), split enforced |
@@ -41,13 +41,16 @@ Steps B, C and D are complete, plus the release format and the validation guard:
 
 All measured, all in `open_questions.md`, none needs new analysis:
 
-- **Drop C-M2.** Fails its own permutation null at both floors (p_perm 0.129 at 20,
-  **0.151** at 10 with 2000 rounds), and currently ships coin-flip labels.
-- **Permutation-test F-M3.** Never validated, and its nearest analog (M-B
-  first-overall) is pure noise at 0.453. Needs an entry in
-  `run_multi_inventory.py`, then a ≥2000-round run.
-- **Retire §6 lever 2.** Free: `core/positions.py` is imported only by two scripts,
-  never by `core/answers.py`, so no gold label reads those rank p-values.
+- **Retire §6 lever 2** — AGREED 2026-08-11. Free: `core/positions.py` is imported
+  only by two scripts, never by `core/answers.py`, so no gold label reads those rank
+  p-values. Still needs the code/doc change.
+- **Drop C-M2 and F-M3, or accept them as documented negatives.** Both now fail
+  their permutation null on the corrected corpus at 2000 rounds: **C-M2 0.202**
+  (its fourth failing measurement) and **F-M3 0.188** (measured for the first time
+  on 08-11). This is now ONE decision, not two.
+- **Then decide the multi tier's fate.** Only P-M2 (0.023) and M-F (0.034) clear and
+  they are the same claim family, so the validated two-cohort tier is a single
+  group. Ship it alone, or retire the tier for v1? See `open_questions.md`.
 
 ### 2. The eval harness — the actual path to modeling
 

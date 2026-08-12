@@ -19,7 +19,7 @@ excludes permutation from gold-label computation because the model must be able
 to run whatever test produces the label.
 
     python scripts/run_multi_inventory.py [--db data/medtempo.db]
-                                          [--rounds 200] [--floor 20]
+                                          [--rounds 1000] [--floor 10]
 """
 
 from __future__ import annotations
@@ -28,6 +28,7 @@ import argparse
 import json
 import random
 import sqlite3
+from itertools import combinations
 import statistics as st
 from pathlib import Path
 
@@ -47,6 +48,13 @@ CANDIDATES = [
     ("M-H  early-half              A in the timeline's first half", "single", "early"),
     ("M-C  last-overall            A is the report's last event", "single", "last"),
     ("M-B  first-overall           A is the report's first event", "single", "first"),
+    # F-M3 is a SHIPPING group that had never been screened (added 2026-08-11).
+    # Unlike M-B it conditions on a TRIPLE: reports containing all three
+    # candidates, with tie reports excluded from the denominator per the 08-11
+    # decision. The focal event is fixed from the real data so real and null are
+    # counted over identical cores.
+    ("[base] F-M3 first-of-triple  A is first among A,B,C | all three present",
+     "triple", "first"),
 ]
 
 
@@ -76,7 +84,39 @@ def build_universe(index: CorpusIndex, floor: int):
                     for rid, t in index.report_terms.items() if a in t and b in t]
             if len(rows) >= 2 * floor:          # cheap prefilter
                 pair[(a, b)] = rows
-    return terms, single, pair
+
+    # TRIPLES (F-M3). Counted per report rather than over all C(65,3) triples,
+    # which would be ~44k x 3166 scans; a report carries ~7 universe terms, so
+    # this is ~35 increments per report instead.
+    termset = set(terms)
+    tri_count: dict[tuple[str, ...], int] = {}
+    for rid, t in index.report_terms.items():
+        present = sorted(x for x in t if x in termset)
+        if len(present) < 3:
+            continue
+        for combo in combinations(present, 3):
+            tri_count[combo] = tri_count.get(combo, 0) + 1
+
+    triple = {}
+    for combo, cnt in tri_count.items():
+        if cnt < 2 * floor:
+            continue
+        rows = []
+        wins = {x: 0 for x in combo}
+        for rid, t in index.report_terms.items():
+            idxs = [t.get(x) for x in combo]
+            if any(i is None for i in idxs):
+                continue
+            target = min(idxs)
+            winners = [x for x, i in zip(combo, idxs) if i == target]
+            tie = len(winners) > 1
+            rows.append((rid, None if tie else winners[0], tie))
+            if not tie:
+                wins[winners[0]] += 1
+        # focal fixed from the REAL data: the most-often-first candidate
+        focal = max(combo, key=lambda x: (wins[x], x))
+        triple[combo] = (focal, rows)
+    return terms, single, pair, triple
 
 
 def _tally_pair(rows, vax_of, sel):
@@ -95,6 +135,15 @@ def _tally_pair(rows, vax_of, sel):
 
 
 def _tally_single(rows, vax_of, sel):
+    """NOTE the tie convention differs from `_tally_triple` on purpose.
+
+    The single-event candidates ask "is A AT the extreme level", so a report where
+    A shares level 0 with another event still counts -- that is what "A is the
+    report's first event" means for these shapes. F-M3 asks "is A UNIQUELY first
+    among A, B, C", so its ties leave the denominator. The two are therefore not
+    directly comparable; M-B and M-C are rejected candidates, so this only matters
+    if someone revives them.
+    """
     n = {v: 0 for v in VACCINES}
     k = {v: 0 for v in VACCINES}
     for rid, is_first, is_last, is_early, multi in rows:
@@ -107,10 +156,26 @@ def _tally_single(rows, vax_of, sel):
     return n, k
 
 
+def _tally_triple(entry, vax_of, sel):
+    """First-among-triple: ties leave the denominator (decisions.md 2026-08-11)."""
+    focal, rows = entry
+    n = {v: 0 for v in VACCINES}
+    k = {v: 0 for v in VACCINES}
+    for rid, winner, tie in rows:
+        if tie:
+            continue                            # unresolvable: out of n
+        v = vax_of[rid]
+        n[v] += 1
+        k[v] += int(winner == focal)
+    return n, k
+
+
 def decisive(universe, vax_of, shape, sel, floor):
     """Cores the corpus labels supported or refuted, and the cores considered."""
-    _, single, pair = universe
-    src, tally = (pair, _tally_pair) if shape == "pair" else (single, _tally_single)
+    _, single, pair, triple = universe
+    src, tally = ((pair, _tally_pair) if shape == "pair"
+                  else (triple, _tally_triple) if shape == "triple"
+                  else (single, _tally_single))
     dec = tot = 0
     for rows in src.values():
         n, k = tally(rows, vax_of, sel)
@@ -176,8 +241,12 @@ def main() -> None:
     ap = argparse.ArgumentParser(description="Multi-tier candidate inventory.")
     ap.add_argument("--db", type=Path, default=_REPO / "data" / "medtempo.db")
     ap.add_argument("--out", type=Path, default=_REPO / "data" / "pilot")
-    ap.add_argument("--rounds", type=int, default=200)
-    ap.add_argument("--floor", type=int, default=20)
+    ap.add_argument("--rounds", type=int, default=1000,
+                    help="200 is TRIAGE ONLY -- it gave M-C 0.035 where "
+                         "1000+ gives ~0.076. Never decide on 200.")
+    ap.add_argument("--floor", type=int, default=10,
+                    help="the locked pairwise/first-last floor "
+                         "(decisions.md 2026-08-11); was 20")
     args = ap.parse_args()
     rows = run(args.db, args.rounds, args.floor)
     args.out.mkdir(parents=True, exist_ok=True)
