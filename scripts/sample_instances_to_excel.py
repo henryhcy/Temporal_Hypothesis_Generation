@@ -1,22 +1,26 @@
-"""ONE-OFF: render the three sample instances as an .xlsx workbook.
+"""ONE-OFF: render ONE sample instance as a single flat row in an .xlsx.
 
 Reads `docs/reference/Sample_Instances.json` (produced by
 `scripts/make_sample_instances.py`) and writes
-`docs/reference/Sample_Instances.xlsx`.
+`docs/reference/Sample_Instances.xlsx` with **one sheet and one data row** -- the
+whole instance flattened, so the released schema reads left-to-right in the shape a
+spreadsheet user expects.
 
-Five sheets:
+Takes the FIRST example (P-V1) unless `--index` says otherwise. Report-id lists are
+comma-joined into single cells; at ~25 ids that is a few hundred characters, well
+inside Excel's 32,767-character cell limit.
 
-- **Overview**   one column per example, fields as rows -- the side-by-side read
-- **Evidence**   one row per (example, cohort, set, report_id) -- long/filterable,
-                 because the id lists are far too long for single cells
-- **Counts**     the per-cell counts behind each argmax / two-cohort test
-- **Positional** the descriptive rank statistics, NOT the label
-- **MirrorPairs** the supported/refuted pairing per core
+Header colours mark what each block is:
+  dark grey  identity          blue   the hypothesis as the framework sees it
+  green      the label         brown  the statistics behind the label
+  purple     which reports were used
+  light grey DESCRIPTIVE ONLY -- not the label
+  gold       the paired (mirror) instance
 
 Needs `openpyxl` (declared under the `render` extra, not a runtime dependency):
 
     pip install -e ".[render]"
-    python scripts/sample_instances_to_excel.py
+    python scripts/sample_instances_to_excel.py [--index 0]
 """
 
 from __future__ import annotations
@@ -31,184 +35,139 @@ from openpyxl.utils import get_column_letter
 
 _REPO = Path(__file__).resolve().parent.parent
 
-_HDR = Font(bold=True, color="FFFFFF")
-_HDR_FILL = PatternFill("solid", fgColor="44546A")
-_SECTION = Font(bold=True)
-_SECTION_FILL = PatternFill("solid", fgColor="D9E1F2")
-_WRAP = Alignment(wrap_text=True, vertical="top")
+_HDR = Font(bold=True, color="FFFFFF", size=10)
+_FILLS = {
+    "id": "44546A",
+    "text": "2F5597",
+    "gold": "375623",
+    "test": "833C00",
+    "evidence": "7030A0",
+    "descr": "808080",
+    "mirror": "BF8F00",
+}
+_NULL_BY_TEST = {
+    "binom_exact": "P = 0.5",
+    "modal_runner": "named cell = runner-up (P = 0.5 on the 2-cell table)",
+    "fisher_exact": "p1 = p2",
+}
 
 
-def _style_header(ws, row=1, ncols=None):
-    for c in range(1, (ncols or ws.max_column) + 1):
-        cell = ws.cell(row=row, column=c)
-        cell.font = _HDR
-        cell.fill = _HDR_FILL
-        cell.alignment = Alignment(vertical="top")
-    # freeze via the coordinate STRING: ws.cell(...) would CREATE that cell, which
-    # bumps max_row and makes every later append() start one row too low, leaving a
-    # blank row under each header.
-    ws.freeze_panes = f"A{row + 1}"
+def _join(ids):
+    return ", ".join(str(i) for i in ids)
 
 
-def _autosize(ws, maxw=70):
-    for col in ws.columns:
-        letter = get_column_letter(col[0].column)
-        width = max((len(str(c.value)) for c in col if c.value is not None), default=8)
-        ws.column_dimensions[letter].width = min(max(width + 2, 10), maxw)
+def flatten(s):
+    """(column, value, colour-group) triples, in reading order."""
+    gold, test = s["gold"], s["test"]
+    ev = s["covered_case_ids"]
+    pos = s.get("positional_statistics_DESCRIPTIVE_ONLY") or {}
+    mp = s["mirror_pair"]
+    ci = gold.get("ci") or [None, None]
 
+    rows = [
+        ("group_id", s["group_id"], "id"),
+        ("mode", s["mode"], "id"),
+        ("answer_type", s["answer_type"], "id"),
+        ("level", s["level"], "id"),
 
-def sheet_overview(wb, samples):
-    ws = wb.create_sheet("Overview")
-    ids = [s["group_id"] for s in samples]
-    ws.append(["field"] + ids)
-    _style_header(ws, ncols=len(ids) + 1)
+        ("question_original", s["question_original"], "text"),
+        ("claim_original", s["claim_all_registers"]["original"], "text"),
+        ("claim_research", s["claim_all_registers"]["research"], "text"),
+        ("claim_media", s["claim_all_registers"]["media"], "text"),
+        ("claim_clinical", s["claim_all_registers"]["clinical"], "text"),
 
-    def section(name):
-        ws.append([name] + [""] * len(samples))
-        for c in range(1, len(samples) + 2):
-            ws.cell(row=ws.max_row, column=c).font = _SECTION
-            ws.cell(row=ws.max_row, column=c).fill = _SECTION_FILL
+        ("gold_verdict", gold.get("gold_verdict"), "gold"),
+        ("test_verdict", gold.get("test_verdict"), "gold"),
+        ("insufficient_subtype", gold.get("insufficient_subtype"), "gold"),
+        ("negated", gold.get("negated"), "gold"),
+        ("gold_answer", gold.get("gold_answer"), "gold"),
+        ("options", _join(gold.get("options") or []) or None, "gold"),
+        ("gold_proportion", gold.get("gold_proportion"), "gold"),
+        ("gold_n", gold.get("gold_n"), "gold"),
+        ("gold_k", gold.get("gold_k"), "gold"),
+        ("gold_n2", gold.get("gold_n2"), "gold"),
+        ("gold_k2", gold.get("gold_k2"), "gold"),
+        ("ci_low", ci[0], "gold"),
+        ("ci_high", ci[1], "gold"),
+        ("ci_width", gold.get("ci_width"), "gold"),
+        ("confidence_tag", gold.get("confidence_tag"), "gold"),
+        ("effect_size", gold.get("effect_size"), "gold"),
 
-    def row(label, getter):
-        vals = []
-        for s in samples:
-            v = getter(s)
-            vals.append("" if v is None else
-                        (", ".join(map(str, v)) if isinstance(v, list) else v))
-        ws.append([label] + vals)
-        for c in range(2, len(samples) + 2):
-            ws.cell(row=ws.max_row, column=c).alignment = _WRAP
+        ("sig_test", test.get("sig_test"), "test"),
+        ("null", _NULL_BY_TEST.get(test.get("sig_test")), "test"),
+        ("p_value", test.get("p_value"), "test"),
+        ("p_claim", test.get("p_claim"), "test"),
+        ("p_opposite", test.get("p_opposite"), "test"),
+        ("significant", test.get("significant"), "test"),
+        ("alpha", test.get("alpha"), "test"),
+        ("min_n_floor", test.get("min_n_floor"), "test"),
+        ("family", test.get("family"), "test"),
+    ]
 
-    section("identity")
-    for label, key in (("mode", "mode"), ("answer_type", "answer_type"),
-                       ("level", "level"), ("why chosen", "why_this_example")):
-        row(label, lambda s, k=key: s[k])
+    # evidence: flat for a single cohort, cohort-prefixed for two
+    blocks = {"": ev} if "denominator" in ev else ev
+    for prefix, block in blocks.items():
+        pre = f"{prefix}_" if prefix else ""
+        for setname in ("denominator", "numerator", "excluded", "ties"):
+            if setname in block:
+                rows.append((f"{pre}{setname}_count",
+                             block[setname]["count"], "evidence"))
+                rows.append((f"{pre}{setname}_report_ids",
+                             _join(block[setname]["report_ids"]), "evidence"))
 
-    section("hypothesis text")
-    row("question (original)", lambda s: s["question_original"])
-    for reg in ("original", "research", "media", "clinical"):
-        row(f"claim ({reg})", lambda s, r=reg: s["claim_all_registers"][r])
+    for test_name, payload in pos.items():
+        for k, v in payload.items():
+            if k in ("what", "note", "caveat"):
+                continue
+            rows.append((f"{test_name}__{k} (DESCRIPTIVE ONLY)", v, "descr"))
 
-    section("gold label")
-    gold_fields = ["gold_verdict", "test_verdict", "insufficient_subtype", "negated",
-                   "gold_proportion", "gold_n", "gold_k", "gold_n2", "gold_k2",
-                   "ci", "ci_width", "confidence_tag", "effect_size",
-                   "options", "gold_answer"]
-    for f in gold_fields:
-        if any(s["gold"].get(f) is not None for s in samples):
-            row(f, lambda s, f=f: s["gold"].get(f))
-
-    section("test")
-    for f in ("sig_test", "p_value", "p_claim", "p_opposite", "significant",
-              "alpha", "min_n_floor", "family"):
-        if any(s["test"].get(f) is not None for s in samples):
-            row(f, lambda s, f=f: s["test"].get(f))
-
-    section("evidence sizes (see Evidence sheet for the ids)")
-
-    def sizes(s):
-        cc = s["covered_case_ids"]
-        if "denominator" in cc:
-            return "; ".join(f"{k}={v['count']}" for k, v in cc.items())
-        return " | ".join(
-            f"{ck}: " + "; ".join(f"{k}={v['count']}" for k, v in cv.items())
-            for ck, cv in cc.items())
-    row("counts", sizes)
-    _autosize(ws)
-    ws.column_dimensions["A"].width = 34
-    return ws
-
-
-def sheet_evidence(wb, samples):
-    ws = wb.create_sheet("Evidence")
-    ws.append(["group_id", "cohort", "set", "report_id"])
-    _style_header(ws)
-    for s in samples:
-        cc = s["covered_case_ids"]
-        blocks = ({"-": cc} if "denominator" in cc else cc)
-        for cohort, block in blocks.items():
-            for setname, payload in block.items():
-                for rid in payload["report_ids"]:
-                    ws.append([s["group_id"], cohort, setname, rid])
-    ws.auto_filter.ref = f"A1:D{ws.max_row}"
-    _autosize(ws)
-    return ws
-
-
-def sheet_counts(wb, samples):
-    ws = wb.create_sheet("Counts")
-    ws.append(["group_id", "key", "value"])
-    _style_header(ws)
-    for s in samples:
-        for k, v in (s.get("extra_counts") or {}).items():
-            if isinstance(v, dict):
-                for kk, vv in v.items():
-                    ws.append([s["group_id"], f"{k}.{kk}", vv])
-            else:
-                ws.append([s["group_id"], k, v])
-    _autosize(ws)
-    return ws
-
-
-def sheet_positional(wb, samples):
-    ws = wb.create_sheet("Positional")
-    ws.append(["group_id", "test", "field", "value"])
-    _style_header(ws)
-    note = ("DESCRIPTIVE ONLY -- retired as verdict drivers 2026-08-11; the label "
-            "comes from the exact test on the Overview sheet")
-    ws.append(["(note)", "", "", note])
-    ws.cell(row=ws.max_row, column=4).font = Font(italic=True)
-    for s in samples:
-        for test, payload in (s["positional_statistics_DESCRIPTIVE_ONLY"] or {}).items():
-            for k, v in payload.items():
-                ws.append([s["group_id"], test, k, v])
-    _autosize(ws)
-    return ws
-
-
-def sheet_mirrors(wb, samples):
-    ws = wb.create_sheet("MirrorPairs")
-    ws.append(["group_id", "derived_from_core_id", "supported text",
-               "refuted text", "refuted verdict", "refuted p_claim",
-               "refuted p_opposite"])
-    _style_header(ws)
-    for s in samples:
-        mp = s["mirror_pair"]
-        ws.append([s["group_id"], mp["derived_from_core_id"], mp["supported_text"],
-                   mp["refuted_text"], mp["refuted_verdict"],
-                   mp["refuted_p_claim"], mp["refuted_p_opposite"]])
-        for c in (3, 4):
-            ws.cell(row=ws.max_row, column=c).alignment = _WRAP
-    ws.append([])
-    ws.append(["Both members of a pair share derived_from_core_id and MUST stay on "
-               "the same side of any train/test split."])
-    ws.cell(row=ws.max_row, column=1).font = Font(italic=True)
-    _autosize(ws)
-    for c in ("C", "D"):
-        ws.column_dimensions[c].width = 60
-    return ws
+    rows += [
+        ("derived_from_core_id", mp["derived_from_core_id"], "mirror"),
+        ("mirror_refuted_text", mp["refuted_text"], "mirror"),
+        ("mirror_refuted_verdict", mp["refuted_verdict"], "mirror"),
+        ("mirror_refuted_p_claim", mp["refuted_p_claim"], "mirror"),
+        ("mirror_refuted_p_opposite", mp["refuted_p_opposite"], "mirror"),
+    ]
+    return [r for r in rows if r[1] is not None]
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Sample instances -> .xlsx")
+    ap = argparse.ArgumentParser(description="One sample instance -> one xlsx row")
     ap.add_argument("--src", type=Path,
                     default=_REPO / "docs" / "reference" / "Sample_Instances.json")
     ap.add_argument("--out", type=Path,
                     default=_REPO / "docs" / "reference" / "Sample_Instances.xlsx")
+    ap.add_argument("--index", type=int, default=0,
+                    help="which sample to render (default 0 = the first, P-V1)")
     args = ap.parse_args()
 
     samples = json.loads(args.src.read_text(encoding="utf-8"))
+    s = samples[args.index]
+    cells = flatten(s)
+
     wb = Workbook()
-    wb.remove(wb.active)
-    sheet_overview(wb, samples)
-    sheet_evidence(wb, samples)
-    sheet_counts(wb, samples)
-    sheet_positional(wb, samples)
-    sheet_mirrors(wb, samples)
+    ws = wb.active
+    ws.title = s["group_id"]
+    ws.append([c[0] for c in cells])
+    ws.append([c[1] for c in cells])
+
+    for i, (name, value, group) in enumerate(cells, start=1):
+        h = ws.cell(row=1, column=i)
+        h.font = _HDR
+        h.fill = PatternFill("solid", fgColor=_FILLS[group])
+        h.alignment = Alignment(wrap_text=True, vertical="bottom")
+        ws.cell(row=2, column=i).alignment = Alignment(vertical="top", wrap_text=True)
+        width = max(len(name) + 2, min(len(str(value)) + 2, 60))
+        ws.column_dimensions[get_column_letter(i)].width = min(width, 60)
+    ws.row_dimensions[1].height = 46
+    ws.freeze_panes = "A2"
     wb.save(args.out)
+
     print(f"wrote {args.out}")
-    for ws in wb.worksheets:
-        print(f"  {ws.title:<12} {ws.max_row - 1:>5} data rows x {ws.max_column} cols")
+    print(f"  sheet '{ws.title}': 1 header row + 1 data row, {len(cells)} columns")
+    for name, value, _ in cells:
+        v = str(value)
+        print(f"    {name:<46} {v[:56] + ('…' if len(v) > 56 else '')}")
 
 
 if __name__ == "__main__":
