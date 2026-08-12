@@ -17,6 +17,25 @@ gold), or accept any tied option as supported (set-valued gold)?
 **Current working assumption**: `insufficient` for clean single-valued gold.
 Not yet locked.
 
+### Confidence-tag cutoffs are PROVISIONAL (2026-08-12)
+`generation/confidence.py` buckets the 95% Wilson CI width into `high` (<= 0.15),
+`moderate` (<= 0.30) and `low` (> 0.30). **Those two numbers were never
+calibrated** — they are placeholders, and `04_corpus_survey.md` A4 is the task
+that fixes them (the CI-width distribution over viable cores, plus the fraction
+that would be tagged low).
+
+Why it matters now: at the floor-10 gate the widths are wide by construction. A
+core at k=19/n=25 has width 0.319 and therefore tags `low`, so a floor-sized core
+is essentially always `low` and the tag carries almost no information as shipped.
+Either recalibrate the cuts against the measured distribution or drop the tag and
+release the raw width. Do not report the tag as a finding until A4 runs.
+
+Related, and already locked: the interval is Wilson (not Wald) so it stays inside
+[0,1] at k=0 and k=n, its centre is shrunk toward 0.5 and therefore differs from
+the point estimate, and two-cohort groups use Wilson-Newcombe on the *difference*.
+Effect size is Cohen's h on the arcsine transform, measured against the null the
+test actually uses (`decisions.md` 2026-08-11).
+
 ### Synonym table contents
 The manual synonym table for `{A}`/`{B}`/`{C}` slot-filling has not yet
 been built. Open: how many synonyms per term type, source vocabulary

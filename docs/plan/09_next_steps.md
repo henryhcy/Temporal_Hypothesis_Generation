@@ -1,8 +1,33 @@
-# Next Steps — as of 2026-08-11 (end of day)
+# Next Steps — as of 2026-08-12
 
 Consolidated state and sequencing. Companion to `decisions.md` (locked),
 `open_questions.md` (open), and `08_multi_tier_inventory.md` (multi-tier evidence,
 partly stale — see its banner).
+
+**Read this file and `open_questions.md` at the start of every session** — after
+`git pull`. Work happens on more than one machine, so committed docs are the only
+record of current settings, pending work and known defects.
+
+## Open issues register — everything live, one table
+
+| # | issue | kind | status | detail lives in |
+|--:|---|---|---|---|
+| 1 | Multi tier is P-M2 alone — ship it, swap to M-F, or retire the tier for v1? | **decision** | **blocking the roster** | `open_questions.md` "Is a ONE-group multi tier worth the shape?" |
+| 2 | Roster migration A: remove the 6 non-directional groups, add R1/R3/R5 | build | not started; old supply estimates (372/415/144) predate every floor and test change and must be re-measured | §3 below |
+| 3 | Eval harness does not exist — architecture, metrics, baselines | build | not started; input format now settled so it is specifiable | §2 below |
+| 4 | Confidence-tag cutoffs (0.15 / 0.30) were never calibrated | **known defect** | provisional; a floor-sized core always tags `low`, so the tag is near-uninformative as shipped | `open_questions.md`, and A4 in `04_corpus_survey.md` |
+| 5 | `not_locatable` exists only in the sequence family (all 116) | dataset gap | mechanism undecided | §4 below |
+| 6 | Report-level groups (7 of 25) do not reach equal thirds | dataset gap | deferred by user decision | §4 below |
+| 7 | Report-level first/last ties — set-valued vs single-valued gold | decision | open, small | `open_questions.md` |
+| 8 | Synonym table never built; `synonym_used` echoes the raw MedDRA term | dataset gap | open — released text has no lexical variation | §4 below |
+| 9 | Sequence cohort tier has S = 8 across two groups (S-V1, S-V3) | decision | open — take in full and flag, or drop the tier | `open_questions.md` "Does the sequence family survive at cohort level?" |
+| 10 | Overleaf draft is badly stale (S, roster, tests, nulls, gold rule, input format) | write-up | hold until #1 and #2 settle | §5 below |
+| 11 | Disconnected components in MedTempo — rate never measured | survey | open | `open_questions.md` |
+| 12 | `.venv` lost its editable install | environment | workaround: `PYTHONPATH=src` | standing caveats |
+
+Nothing in this table is a correctness bug in generated data: `validate_gold.py`
+clears all 20,749 instances on six invariant families as of 2026-08-11. Items 4, 5,
+6 and 8 are completeness/calibration gaps, not wrong labels.
 
 ## Where the code now stands
 
@@ -20,6 +45,18 @@ partly stale — see its banner).
 | Sampler | equal thirds **per group**, every decisive core posed **both ways** |
 | Release format | `*_questions.jsonl` (input only) + `*_answers.jsonl` (gold), split enforced |
 | Gold-label validation | **20,749 instances, six invariant families, all passing** |
+| Reported statistics | one-sided exact p-value, 95% Wilson CI (Wilson-Newcombe on the difference for two-cohort), Cohen's h against the test's own null — all oriented to the instance's asserted claim |
+| Confidence tag | **provisional and uncalibrated** — see issue 4 |
+
+### Closed since the 08-11 entry (2026-08-12)
+
+- Two claim/label mismatches found while building sample instances and fixed:
+  F-V2/F-R2 named the wrong event in every instance, and two-cohort `gold_n2`/`gold_k2`
+  described the wrong cohort. Both now covered by regression tests and by
+  `validate_gold.py`. See `decisions.md`.
+- The one-off sample artifacts and their generator scripts were removed at the
+  user's request (`850d52f`); `openpyxl` was reverted out of the `render` extra.
+  Nothing in the pipeline depends on them.
 
 ## The pipeline is DONE for the testable templates
 
