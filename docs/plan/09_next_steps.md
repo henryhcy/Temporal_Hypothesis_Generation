@@ -96,7 +96,74 @@ Steps B, C and D are complete, plus the release format and the validation guard:
 - **Part C** — mechanised in `scripts/validate_gold.py`. Worth putting in CI: it is
   what caught the first-mention bug.
 
+## Sequencing — read this before picking anything up (2026-08-13)
+
+The register is a list, not an order. Seventeen issues are open; these are the
+dependencies that actually constrain what can be done when. The detail sections
+below (§1–§5) are older and do NOT reflect issues 13–18 — use this ordering.
+
+### The one dependency that is easy to get wrong
+
+**Issue 16 (exact rank tests) comes BEFORE issues 1 and 9.**
+
+Issues 1 (multi tier is P-M2 alone) and 9 (sequence cohort tier has S = 8) both
+look like "accept the thin tier or retire it" decisions. They are not, yet. The
+rank track conditions far less than the categorical one — co-present n ≈ 21
+against orderable n ≈ 6 — so a valid exact rank test could change the supply
+underneath both decisions. §6 lever 2 promised exactly this and failed only
+because the Mann-Whitney *normal approximation* is anti-conservative on tie-heavy
+data, not because the idea was wrong.
+
+Deciding 1 and 9 first risks retiring two tiers that were rescuable, and those
+retirements are hard to walk back once the roster, the wording and the draft have
+moved on. Test 16 first; then 1 and 9 are informed decisions rather than guesses.
+
+Note 16 may also come back negative — the exact test may still fail its
+permutation null, or the "model runs the test" rule may exclude an enumerated
+tie-conditional distribution. That is a fine outcome: it converts 1 and 9 from
+open questions into settled ones with a measurement behind them.
+
+### Order
+
+**Blocking dataset lock**
+
+1. **13 — C-V3 argmax vs majority.** Independent of everything; fix whenever. It
+   is the only item currently putting wrong labels in generated data (5 shipped
+   decisive cores). Move it to the argmax statistic, or remove the group.
+2. **16 — exact rank tests.** Upstream of 1 and 9, per above.
+3. **1 — multi tier**, **9 — sequence tier.** Decide only after 16 reports.
+4. **2 — roster migration A.** Needs 1 and 9 settled. Re-measure R1/R3/R5 supply
+   first: the 372/415/144 estimates predate every floor and test change, and
+   those changes roughly doubled supply elsewhere, so they may be *understated*.
+5. **14 — group-independent `fact_id`**, then **17 — the train/dev/test split.**
+   Strictly in that order: a split keyed on `derived_from_core_id` puts the same
+   fact on both sides, because `core_id` embeds `group_id`.
+
+**Parallel — none of this blocks lock**
+
+- 4 (confidence-tag calibration, needs 04's A4), 5 (`not_locatable` outside
+  sequence), 6 (report-level thirds), 7 (report-level ties), 8 (synonym table),
+  11 (disconnected components, 04's A6).
+
+**Blocking modeling**
+
+- 3 (eval harness). Specifiable now — the input format is settled. Can be
+  specified in parallel with the above, but not finalised until the roster is.
+
+**Write-up, after the roster settles**
+
+- 10 (Overleaf draft), 18 (expected false-label count), MedTempo citation and
+  archive coordination.
+
+**Housekeeping**
+
+- 12 (`.venv` editable install; `PYTHONPATH=src` works meanwhile).
+
 ## What is next, in priority order
+
+> **Older section (pre-2026-08-13).** §1–§5 below were written before issues
+> 13–18 existed. They still hold as detail on the items they cover; the ordering
+> above supersedes their numbering.
 
 ### 1. Validity ledger - CLOSED 2026-08-11
 
