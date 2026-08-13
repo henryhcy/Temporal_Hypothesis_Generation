@@ -2050,3 +2050,30 @@ future group built on simultaneity.
 A permutation gate needs **>= 2000 rounds** for a ship/no-ship call. At p ~ 0.04
 the 200-round SE is ~0.014, and M-C actually crossed the alpha line between run
 sizes (0.035 at 200 rounds -> 0.073 at 2000). 200 rounds is triage only.
+
+---
+
+## MedTempo is the gold-label dataset, taken as given (2026-08-12)
+
+**Decision: treat MedTempo as the gold-label corpus. Not a project risk, not a
+blocker, and no further action.** Raised on 08-12 that the shipped annotations
+are 89.5% raw o4-mini output accepted by a human reviewer, 10.5% human-corrected,
+with inter-annotator agreement measured on 27 of 3,166 reports (0.852).
+User decision: "expert annotation" is an exaggerated way of putting it, but it is
+not wrong -- the human verification pass is real -- and it does not affect
+anything badly. The corpus is external, published with its own paper, and this
+project consumes it rather than producing it.
+
+Consequences for how we write and work:
+- Keep the numbers above on record so nobody re-derives them as a surprise.
+- Prefer "expert-verified" over "expert-annotated" where it costs nothing, and
+  cite the MedTempo paper for methodology rather than restating it here.
+- Corpus quality is OUT of scope. Do not open further work on annotation
+  provenance, agreement sampling, or annotation-noise estimation.
+- The one substantive read-through stands and is already recorded: C-M2 failed
+  its permutation null on same-level co-occurrence, which plausibly tracks
+  annotation style. That is a reason to be wary of groups built on simultaneity --
+  a design note, not a corpus problem.
+
+Issue 15 is closed. Supersedes the open question "The corpus is LLM-drafted and
+expert-VERIFIED" in `open_questions.md`, which is deleted.

@@ -36,15 +36,10 @@ record of current settings, pending work and known defects.
 | 12 | `.venv` lost its editable install | environment | workaround: `PYTHONPATH=src` | standing caveats |
 | 13 | C-V3's text asks an argmax, its statistic tests a majority | **claim/label defect** | **open** — 20% of cores disagree, 5 shipped decisive | `open_questions.md` "C-V3 asks an argmax" |
 | 14 | Twin groups duplicate cores; `core_id` includes `group_id`, so a split separates them | **leakage risk** | open — needs a group-independent `fact_id` | `open_questions.md` "Twin groups duplicate" |
-| 15 | Corpus is LLM-drafted + expert-verified (89.5% raw o4-mini), not "expert-annotated"; IAA 0.852 on 27 of 3,166 reports | **framing / validity** | **open** — may be resolved by the MedTempo paper; docs must stop saying "expert-annotated" unqualified | `open_questions.md` "Corpus provenance" |
+| ~~15~~ | ~~Corpus provenance / "expert-annotated"~~ | — | **CLOSED 2026-08-12** — MedTempo is taken as the gold-label dataset; corpus quality is out of scope | `decisions.md` "MedTempo is the gold-label dataset" |
 | 16 | Positional/rank track has no exact test at our n — retired, not built | **decision + build** | open — the one lever that could also fix the thin families | `open_questions.md` "Test tracks" |
 | 17 | No train/dev/test split is produced at all | build | open — and issues 14/16 both change how it must be keyed | §4 below |
 | 18 | Expected false-label count never quantified | **write-up gap** | open — alpha-rate false positives among 1365 decisive cores is a number the paper needs | standing caveats |
-
-Issue 15 is the one that can invalidate a claim rather than a number, and it is
-upstream of everything else: gold labels are deterministic *given* the annotation,
-and ~90% of the annotation is model output a human approved. Check what the
-MedTempo paper reports before writing any corpus-quality claim.
 
 Items 1–12 contain no correctness bug in generated data: `validate_gold.py` clears
 all 20,749 instances on six invariant families as of 2026-08-11. Items 4, 5, 6 and 8
