@@ -24,10 +24,20 @@ record of current settings, pending work and known defects.
 | 10 | Overleaf draft is badly stale (S, roster, tests, nulls, gold rule, input format) | write-up | hold until #1 and #2 settle | §5 below |
 | 11 | Disconnected components in MedTempo — rate never measured | survey | open | `open_questions.md` |
 | 12 | `.venv` lost its editable install | environment | workaround: `PYTHONPATH=src` | standing caveats |
+| 13 | C-V3's text asks an argmax, its statistic tests a majority | **claim/label defect** | **open** — 20% of cores disagree, 5 shipped decisive | `open_questions.md` "C-V3 asks an argmax" |
+| 14 | Twin groups duplicate cores; `core_id` includes `group_id`, so a split separates them | **leakage risk** | open — needs a group-independent `fact_id` | `open_questions.md` "Twin groups duplicate" |
 
-Nothing in this table is a correctness bug in generated data: `validate_gold.py`
-clears all 20,749 instances on six invariant families as of 2026-08-11. Items 4, 5,
-6 and 8 are completeness/calibration gaps, not wrong labels.
+Items 1–12 contain no correctness bug in generated data: `validate_gold.py` clears
+all 20,749 instances on six invariant families as of 2026-08-11. Items 4, 5, 6 and 8
+are completeness/calibration gaps, not wrong labels.
+
+**Item 13 is different, and `validate_gold.py` structurally cannot catch it.** Its
+label is internally consistent with its statistic; what is misaligned is the TEXT
+against the statistic. Every invariant check in the validator compares gold fields to
+each other, so no invariant family covers "does the question the instance ASKS match
+the quantity it SCORES". That class of defect has now appeared three times (S-V1/F-V3
+on 07-13, F-V2/F-R2 on 08-12, C-V3 today) and is found only by reading a rendered
+instance beside its statistic. Worth a standing review step, not another invariant.
 
 ## Where the code now stands
 

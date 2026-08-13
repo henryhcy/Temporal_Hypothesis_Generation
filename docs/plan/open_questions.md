@@ -10,6 +10,60 @@ delete it from this file.
 
 ## Dataset
 
+### C-V3 asks an argmax question but ships a majority statistic (2026-08-12)
+C-V3's text is *"After {v}, is co-occurrence the dominant relation for {A} and
+{B}?"* — an **argmax** over {before, after, co-occur}. The statistic it ships is
+`sym_bool_cooccurs`: co-occurrence rate **> 0.5**, i.e. a majority claim. Those
+are different questions; a pair can be 40% co-occur / 35% before / 25% after —
+co-occurrence is dominant, yet the majority test refutes.
+
+Measured: the two readings disagree on **195 of 959 computable cores (20%)**, and
+**5 of those carry a shipped decisive verdict**. Example — Janssen, Fatigue /
+Headache: before 45, after 75, co-occur 76. Co-occurrence *is* the most common
+relation, and the instance ships `refuted`.
+
+This is the same null-alignment defect that got S-V1/F-V3 reworded on 07-13 and
+that F-V2/F-R2 hit on 08-12. `validate_gold.py` cannot catch it: the label is
+internally consistent with its statistic, and what is misaligned is the TEXT.
+A model that correctly answers the question as worded is marked wrong.
+
+Options:
+(a) **Reword to the statistic** — "do {A} and {B} co-occur in most reports where
+    both appear?" But then C-V3 is a pure paraphrase of C-V1 (same BOOL, same
+    statistic), and the register axis already supplies paraphrase, so C-V3 stops
+    earning a slot.
+(b) **Change the statistic to the argmax** — modal-vs-runner-up over the 3-cell
+    relation distribution {before, after, co-occur}. This is the house pattern
+    already locked for S-V1/S-V3/F-V1/F-V3, and it makes C-V3 a genuinely
+    distinct group instead of a duplicate. Needs a permutation-null screen.
+(c) **Remove C-V3.**
+Recommended: (b), falling back to (c). Do not ship as-is.
+
+### Twin groups duplicate the same core; the split key does not know (2026-08-12)
+Four group pairs compute the **identical statistic on the identical cores**:
+
+| pair | contrast | identical cores |
+|---|---|--:|
+| P-V1 / P-V3 | BOOL vs CHOICE | 575 / 575 (100%) |
+| C-V1 / C-V3 | **none — both BOOL** | 959 / 959 (100%) |
+| S-V1 / S-V3 | BOOL vs CHOICE | 278 / 278 (100%) |
+| F-V1 / F-V3 | CHOICE vs BOOL | 195 / 195 (100%) |
+
+Three pairs are a deliberate answer-format contrast and should stay. Two
+consequences are not deliberate:
+
+1. **Split leakage.** `instances.core_id` is
+   `f"{group_id}|{vaccines}|{events}"`, so P-V1's and P-V3's versions of one fact
+   get **different** `derived_from_core_id`. The standing caveat ("mirror pairs
+   share a `derived_from_core_id`, keep them together") covers the two
+   ORIENTATIONS of one core, not the cross-group twins. A split keyed on that id
+   puts the same fact on both sides. Fix: add a group-independent
+   `fact_id` (vaccines + events + mode-family) and split on that.
+2. **Effective size.** S = 1365 counts each twinned fact twice: **727 distinct
+   decisive facts**, 638 duplicates (47%). Both numbers are worth reporting — the
+   benchmark really does ask 1365 questions — but only 727 are independent
+   evidence, which is the number that belongs in a power or coverage claim.
+
 ### First/last tie handling for CHOICE
 Currently tie-reports are excluded from per-candidate counts. Question:
 should CHOICE instances on ties be marked `insufficient` (single-valued
