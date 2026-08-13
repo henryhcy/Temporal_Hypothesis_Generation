@@ -83,6 +83,96 @@ purely that S-V1/S-V3 are starved at any balance rule.
 
 ---
 
+## Corpus provenance
+
+### The corpus is LLM-drafted and expert-VERIFIED, not "expert-annotated" (issue 15)
+Every doc in this repo — `CLAUDE.md` line 3, `01_overview`, `02_dataset_design` —
+describes MedTempo as "expert-annotated". Measured against
+`data/o4mini_annotation_final.csv` and what `db/build.py` actually loads:
+
+| | shipped reports |
+|---|--:|
+| `final_result == 1` → **`llm_result_final` used AS-IS** (o4-mini output a human marked correct) | **2,834 (89.5%)** |
+| `final_result == 0` → `final_corrected_version` used (human edited the LLM draft) | 332 (10.5%) |
+| double-annotated, with a measured `a1_a2_agreement` | **27 of 3,166 (0.85%)**, mean **0.852** |
+
+So the pipeline is: o4-mini drafts the leveled order → a human verifies →
+~10% get corrected → a ~27-report subset is double-annotated at 0.85 agreement.
+That is a legitimate and common methodology, but it is **not** what "expert-
+annotated" implies, and three things follow that the benchmark must handle
+explicitly rather than have a reviewer find:
+
+1. **It is the validity ceiling.** Gold labels are computed deterministically
+   from these annotations, so annotation error propagates directly into gold
+   labels. "Deterministic gold labels" is the benchmark's central claim, and it
+   is deterministic *given* the annotation — which is itself ~90% model output.
+2. **Circularity with the CRAFT framing.** The project is positioned as "CRAFT
+   extracts; this framework verifies". If the corpus was itself extracted by an
+   LLM, then evaluating LLMs against hypotheses derived from LLM-extracted
+   timelines is a loop. The human verification pass is the answer, but it has to
+   be stated up front with the numbers above.
+3. **0.85 agreement on 27 reports is thin** for a corpus-quality claim. Expect
+   reviewers to ask for a larger double-annotated sample, and note that agreement
+   was computed on the annotation, not on the derived gold labels.
+
+**This may already be resolved upstream.** MedTempo has its own conference paper
+(`decisions.md` 2026-08-11), which presumably documents the methodology and may
+report a proper IAA. Open: confirm what that paper reports, cite it, and make
+this repo's wording match. If the upstream paper does report better numbers, this
+reduces to a docs fix. If it does not, the double-annotated sample needs
+extending before the benchmark paper can make a corpus-quality claim.
+
+**Related, and possibly the same root cause:** `decisions.md` records that C-M2
+failed its permutation null because "same-level co-occurrence reflects
+narrative/annotation style rather than the vaccine". If same-level assignment is
+largely o4-mini's judgement about simultaneity, then C-M2's failure is partly a
+measurement of *annotation* noise, not of the corpus. Worth re-reading that
+finding in this light before proposing any group built on co-occurrence.
+
+## Test tracks
+
+### The positional/rank track has no valid test at the n we have (issue 16)
+Status is easy to misread: positional results are not *missing*, they were
+**measured and retired** on 2026-08-11 (§6 lever 2). The reason was specific —
+the Mann-Whitney **normal approximation** is anti-conservative on tie-heavy
+ordinal data, calling ~11% of cores decisive under shuffled cohort labels against
+a nominal 5%. Running the track as it stands would manufacture false gold labels.
+
+What was retired is the **approximation**, not the idea. The codebase now says
+exact tests only, and the rank track is the one place that rule was never
+applied. Current state of `core/positions.py`:
+
+| test | used for | exact path? |
+|---|---|---|
+| Wilcoxon signed-rank | single-cohort precedes pairs | **yes**, n <= 15 |
+| Mann-Whitney U | two-cohort (multi tier) | **no** — normal only |
+| Friedman | sequence / first-last triples | **no** — chi-square only |
+| Kendall's W | consistency | **no** — chi-square only |
+
+The three families with no exact path are exactly the three that are starved.
+
+Why this is worth doing rather than dropping: **the rank track conditions far
+less.** The categorical sequence test needs all three events at distinct levels
+(median n ~ 6); a rank test runs over every co-present report (median n ~ 21).
+That was lever 2's original promise, and it failed only on the approximation.
+So a valid exact rank test is a candidate fix for BOTH the thin-family problem
+and the missing second track.
+
+Open questions before building it:
+- **Is an exact rank test admissible under the "model runs the test" rule?**
+  With heavy ties the exact conditional distribution is the permutation
+  distribution over the observed multiset. That is deterministic and enumerable
+  (a DP over the tied multiset, not sampling), so it is reproducible — but
+  `decisions.md` excludes permutation from gold labels on the grounds that the
+  model must be able to run whatever produced the label. Decide whether an
+  enumerated tie-conditional distribution counts as exact (it should) or as
+  permutation (it should not).
+- **Does it clear its own permutation null?** Non-negotiable, >= 2000 rounds. The
+  whole point is that the approximate version did not.
+- **If it clears, is it a second reported statistic or a verdict driver for the
+  starved groups?** These are different commitments; the second is what would
+  actually rescue the sequence tier.
+
 ## Claim/label defects
 
 ### C-V3 asks an argmax question but ships a majority statistic (issue 13)
