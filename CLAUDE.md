@@ -22,17 +22,24 @@ CRAFT extracts; this framework verifies hypotheses against extracted information
 
 Before implementing anything, read the plan docs:
 
-- `docs/plan/01_overview.md`      — project framing and contribution
-- `docs/plan/02_dataset_design.md` — MedTempo schema, leveled order, gold-label rules
-- `docs/plan/03_templates.md`     — the group seeds and the four register variants
-- `docs/plan/04_corpus_survey.md` — pilot + distribution report spec; run BEFORE the full benchmark
-- `docs/plan/05_significance_tests.md` — significance-test reference: per-group assignments, min-n
-- `docs/plan/06_pilot_examples.md` — pilot task spec (per-template diagnostics, worked examples); largely delivered
-- `docs/plan/07_significance_findings.md` — measured power findings and the §6 levers (lever 2 is RETIRED)
+**Docs 01–06 are SEED documents.** They were written in June and describe the
+project as originally conceived. A 2026-08-12 audit corrected the statements that
+had drifted — each is struck in place with its date and replacement, so the
+history stays readable — but treat them as annotated history, not as spec. When a
+seed doc and `decisions.md` / `CLAUDE.md` / the code disagree, the seed doc is
+wrong.
+
+- `docs/plan/01_overview.md`      — project framing and contribution; input medium and contribution numbers corrected
+- `docs/plan/02_dataset_design.md` — leveled-order schema (current) + gold-label rules (**rules 3–8 superseded, read the strikeouts**) + release format (**reversed 08-11**)
+- `docs/plan/03_templates.md`     — YAML structure (current); roster counts, PROP, verdict mechanics and negation all corrected
+- `docs/plan/04_corpus_survey.md` — pilot spec; **delivered except A4 (confidence-tag calibration) and A6 (disconnected components)**
+- `docs/plan/05_significance_tests.md` — min-n section is CURRENT; the per-group test table is **historical** (lists seven retired groups)
+- `docs/plan/06_pilot_examples.md` — pilot task spec; delivered. Its "cores must actually exist" rule is still exactly right
+- `docs/plan/07_significance_findings.md` — measured power findings and the §6 levers (lever 2 is RETIRED); carries update banners
 - `docs/plan/08_multi_tier_inventory.md` — two-cohort screening evidence; read its banner, parts are superseded
 - `docs/plan/09_next_steps.md`     — **current state, the live issue register, and priority order**
-- `docs/plan/decisions.md`        — locked decisions (single source of truth)
-- `docs/plan/open_questions.md`   — items still under discussion (do not assume)
+- `docs/plan/decisions.md`        — locked decisions, **chronological and append-only**: read newest-first, and never quote one entry as current without checking for a later one on the same topic
+- `docs/plan/open_questions.md`   — items still under discussion (do not assume). Cleaned 08-12; every entry is genuinely open and carries its issue number
 
 If a question is in `open_questions.md`, do not guess an answer in code. Ask.
 `09_next_steps.md` is the fastest way back into context: it opens with a table of

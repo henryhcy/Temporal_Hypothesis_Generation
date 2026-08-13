@@ -1,5 +1,13 @@
 # 05. Significance Tests: Reference and Implementation
 
+> **STATUS (2026-08-12): the min-n section is current (updated 08-11); the test
+> descriptions and the per-group table were NOT, and contradicted it.** Two
+> corrections applied below: chi-square is gone everywhere (it survived only in
+> this doc's prose), and the position-test track is descriptive-only. The
+> per-group table lists seven groups that no longer exist and is marked as
+> historical rather than deleted, since it records what each retired group was
+> tested with.
+
 This is the single reference for the significance-test design. It covers the
 two test representations, the per-group test assignments for both, the
 minimum-n constraint on every test, how the tests are run at inference, and
@@ -24,6 +32,15 @@ cohorts, not by variance.
 
 ## Two test representations
 
+> **AMENDED 2026-08-11: this is no longer a choice of two label-producing
+> tracks.** The categorical track produces every gold label. The position track
+> is **descriptive only** — `core/positions.py` must not be imported by
+> `core/answers.py`. Its normal approximation is anti-conservative on tie-heavy
+> ordinal data: under shuffled cohort labels the rank tests call ~11% of cores
+> decisive against a nominal 5%, so the §6 lever-2 proposal to make them the
+> verdict driver was retired. The description below is kept because the
+> complementarity argument is still the right intuition for *diagnostics*.
+
 Every cohort-level group can carry two tests drawn from the same leveled-order
 data.
 
@@ -42,8 +59,15 @@ categorical test only.
 
 ## The categorical tests
 
-Exact tests are primary; chi-square tests are large-sample approximations used
-only when every expected cell count is >= 5.
+**EXACT TESTS ONLY (2026-08-11).** ~~Exact tests are primary; chi-square tests
+are large-sample approximations used only when every expected cell count is
+>= 5.~~ There is no asymptotic branch and no expected-cell chooser anywhere in
+the codebase: one test per claim shape, at every n. Past
+`significance.EXACT_MAX_TABLES` the k-category enumeration raises
+`ExactTestTooLarge` rather than quietly reverting — an infeasible table is a
+design signal (coarsen the categories, or gate the core out), not something to
+approximate. `chi2_sf` survives solely as a distribution function for the
+descriptive rank tests.
 
 - **Binomial exact** (one cohort, two categories). Tests whether a proportion
   departs from a chance baseline p0. Used for pairwise/co-occurs vaccine-level
@@ -55,9 +79,13 @@ only when every expected cell count is >= 5.
   cohort proportions differ. Used for multi-vaccine BOOL/CHOICE on a single
   outcome. **One-sided** for the directional `multi_dir_*` modes; **two-sided**
   for the `multi_differ_*` "do they differ" modes.
-- **Exact multinomial goodness-of-fit** (one cohort, k categories), with
-  chi-square goodness-of-fit as the large-n approximation. Tests whether a
-  distribution departs from uniform. Used for "most common ordering" and
+- **Exact multinomial goodness-of-fit** (one cohort, k categories) ~~with
+  chi-square goodness-of-fit as the large-n approximation~~. Tests whether a
+  distribution departs from uniform. **NOTE (2026-07-14 / 2026-08-11): GOF no
+  longer labels any argmax claim.** Showing a distribution is not flat does not
+  show the NAMED cell is the mode, so every "most common X" group moved to
+  modal-vs-runner-up (a one-sided exact binomial of the named cell against its
+  strongest competitor). Used for "most common ordering" and
   "which is first" within one cohort.
 - **Fisher-Freeman-Halton exact** (two cohorts, k categories, 2xk), with
   chi-square homogeneity as the large-n approximation. Tests whether two
@@ -97,6 +125,13 @@ The other 23 groups:
 
 | Group | Categorical test | Position-based test |
 |---|---|---|
+> **HISTORICAL TABLE (as of 2026-07).** Kept as the record of what each group
+> was tested with; **do not read it as the current assignment.** Retired since:
+> P-V2 / C-V2 / S-V2 (PROP, 07-14), S-M2 (08-04), S-V4 (08-11), C-M2 and F-M3
+> (08-11, failed their nulls). The argmax groups (S-V1, S-V3, F-V1, F-V2, F-V3)
+> moved to modal-vs-runner-up. The right-hand column is descriptive-only. The
+> live mapping is `cores.MODE_BY_GROUP` plus the dispatch in `core/answers.py`.
+
 | P-V1, P-V2, P-V3 | Binomial exact vs 1/2 | Wilcoxon signed-rank |
 | P-M1, P-M2 | Fisher's exact | Mann-Whitney U |
 | C-V1, C-V2, C-V3 | Binomial exact vs 1/2 | none (no rank analog) |
@@ -111,10 +146,16 @@ The other 23 groups:
 | F-M1, F-M2 | Fisher-Freeman-Halton | Kruskal-Wallis / Mann-Whitney per event |
 | F-M3 | Fisher's exact | Mann-Whitney U |
 
-Verdict polarity: most groups map significant to "the asserted effect is
-real". S-M3 and F-M1 ask "is it the SAME", so significant = differs = "no"
-(inverted). F-M2 asks "do they differ", natural polarity. The gold-label code
-needs a per-group polarity flag.
+~~Verdict polarity: most groups map significant to "the asserted effect is
+real". S-M3 and F-M1 ask "is it the SAME" … The gold-label code needs a
+per-group polarity flag.~~
+
+**SUPERSEDED 2026-07-28. No polarity flag exists or should be added.** The
+three-decision test made it unnecessary: the label follows from WHICH TAIL is
+significant, so direction is a property of the claim, not a per-group constant.
+The groups that needed an inverted flag (S-M3, F-M1, F-M2) are exactly the
+"same"/"differ" shapes that cannot map onto three decisions at all — needing the
+flag was the symptom, and they are pending removal.
 
 ## Minimum-n constraint (applies to every test)
 

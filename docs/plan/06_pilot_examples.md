@@ -1,5 +1,13 @@
 # 06. Pilot Task: Per-Template Diagnostics and Worked Examples
 
+> **STATUS (2026-08-12): DELIVERED.** The diagnostics and worked examples exist
+> (`scripts/run_template_diag.py`, `scripts/make_examples.py`,
+> `scripts/run_verdict_labels.py`). Header numbers are historical: the roster is
+> 23 groups not 30, and T = 100 / 45/45/10 were superseded by equal thirds at a
+> ~3·S budget. **The "cores must actually exist" requirement below is still
+> exactly right and is the doc's lasting contribution** — it is the reasoning
+> behind the `not_locatable` sub-type.
+
 This is a concrete task for the pilot phase. It produces, for each of the 30
 template groups, a viability diagnostic and a small set of worked examples
 covering both supported and refuted hypotheses. It runs before any full
@@ -7,7 +15,7 @@ benchmark generation and its output is reviewed to recalibrate the provisional
 sampling numbers.
 
 Read first: `CLAUDE.md`, `02_dataset_design.md` (leveled-order schema and
-gold-label rules), `03_templates.md` (the 30 groups and registers),
+gold-label rules), `03_templates.md` (the group roster and registers),
 `04_corpus_survey.md` (pilot and distribution-report spec), and `decisions.md`
 (locked and provisional decisions). The sampling numbers (T = 100, 45/45/10
 verdict balance, min-n) are provisional; do not scale beyond the examples
@@ -66,7 +74,7 @@ the shared min-n helper (see `decisions.md`) so creation and later model
 evaluation use the same threshold.
 
 ### Step 3. Per-template diagnostic
-For each of the 30 groups, report:
+For each group, report:
 - number of viable cores;
 - the n-distribution across viable cores (min, median, max);
 - the fraction of cores that clear the min-n gate vs fall to insufficient;

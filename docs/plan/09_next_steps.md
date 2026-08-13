@@ -1,5 +1,15 @@
 # Next Steps — as of 2026-08-12
 
+> **Doc audit completed 2026-08-12.** Every plan doc was scanned against the code
+> and against `decisions.md`. Seed docs 01–06 had drifted badly — 02 alone
+> carried four superseded gold-label rules and a release section that was exactly
+> backwards — and are now corrected in place with dated strikeouts.
+> `open_questions.md` was cleaned (11 already-resolved items removed, others
+> trimmed to their open remainder) so the file answers "what is open?" again.
+> `decisions.md` gained a read-newest-first banner: it is append-only, so its
+> seed section still says "narratives", "30 groups" and "Johnson". Details in the
+> audit entry at the bottom of this file.
+
 Consolidated state and sequencing. Companion to `decisions.md` (locked),
 `open_questions.md` (open), and `08_multi_tier_inventory.md` (multi-tier evidence,
 partly stale — see its banner).
@@ -16,8 +26,8 @@ record of current settings, pending work and known defects.
 | 2 | Roster migration A: remove the 6 non-directional groups, add R1/R3/R5 | build | not started; old supply estimates (372/415/144) predate every floor and test change and must be re-measured | §3 below |
 | 3 | Eval harness does not exist — architecture, metrics, baselines | build | not started; input format now settled so it is specifiable | §2 below |
 | 4 | Confidence-tag cutoffs (0.15 / 0.30) were never calibrated | **known defect** | provisional; a floor-sized core always tags `low`, so the tag is near-uninformative as shipped | `open_questions.md`, and A4 in `04_corpus_survey.md` |
-| 5 | `not_locatable` exists only in the sequence family (all 116) | dataset gap | mechanism undecided | §4 below |
-| 6 | Report-level groups (7 of 25) do not reach equal thirds | dataset gap | deferred by user decision | §4 below |
+| 5 | `not_locatable` exists only in the sequence family (all 118) | dataset gap | mechanism undecided | §4 below |
+| 6 | Report-level groups (7 of 23) do not reach equal thirds | dataset gap | deferred by user decision | §4 below |
 | 7 | Report-level first/last ties — set-valued vs single-valued gold | decision | open, small | `open_questions.md` |
 | 8 | Synonym table never built; `synonym_used` echoes the raw MedDRA term | dataset gap | open — released text has no lexical variation | §4 below |
 | 9 | Sequence cohort tier has S = 8 across two groups (S-V1, S-V3) | decision | open — take in full and flag, or drop the tier | `open_questions.md` "Does the sequence family survive at cohort level?" |
@@ -51,7 +61,7 @@ instance beside its statistic. Worth a standing review step, not another invaria
 | Gold label | the **three-decision verdict**, oriented to each instance's own claim |
 | Framework input | the **annotated leveled orders**, never narratives |
 | Decisive cores (S) | **1365** — every remaining group clears its null |
-| Insufficient sub-types | all populated: underpowered ~5.6k / sparse ~2.7k / not_locatable 116 |
+| Insufficient sub-types | all populated: underpowered 3,246 / sparse 4,941 / not_locatable 118 (re-measured 08-12) |
 | Sampler | equal thirds **per group**, every decisive core posed **both ways** |
 | Release format | `*_questions.jsonl` (input only) + `*_answers.jsonl` (gold), split enforced |
 | Gold-label validation | **20,749 instances, six invariant families, all passing** |
@@ -162,3 +172,48 @@ by hand on Overleaf.
   test changes.
 - The `.venv` lost its editable install; tests need `PYTHONPATH=src` until
   `pip install -e .` is re-run.
+
+---
+
+## Doc audit — 2026-08-12
+
+Scanned every plan doc against the code and `decisions.md` before adding
+templates or touching dataset construction, on the principle that a stale spec is
+worse than no spec: it gets followed.
+
+### What was wrong
+
+| doc | state found | action |
+|---|---|---|
+| `CLAUDE.md` | current | doc index annotated with each seed doc's status |
+| `01_overview` | "over clinical **narratives**", "30 groups × 3 registers", "Johnson", proportions as output | corrected in place, dated |
+| `02_dataset_design` | **most dangerous** — rules 3,4,6,7,8 superseded; release section exactly backwards; schema single-file | rules struck with replacements; release rewritten; schema now two-file |
+| `03_templates` | roster 13/8/9=30 (actual 10/5/8=23), PROP + `{p}`, "negation is not stored in the YAML", verdict mechanics = the retired point-estimate rule, 10-15k size target | all corrected; roster table marked a snapshot with the regeneration command |
+| `04_corpus_survey` | 30 groups, T=100, 45/45/10, "Johnson", Part C as a hand-check | banner marking A4/A6 as the only live parts; Part C marked mechanised, with its known limit |
+| `05_significance_tests` | **self-contradictory** — prescribed chi-square in one section, exact-only in another; per-group table listed 7 retired groups; position tests as a live label track | chi-square struck; position track marked descriptive-only; table marked historical |
+| `06_pilot_examples` | 30 groups, T=100, 45/45/10 | banner; its "cores must exist" rule flagged as still correct |
+| `07`, `08` | already carried supersession banners | none needed |
+| `open_questions` | **11 of ~24 entries already RESOLVED** — roughly half the file | resolved entries removed, 3 trimmed to their open remainder, issue numbers added |
+| `decisions.md` | append-only history being read as current | read-newest-first banner; reasoning rescued from the deleted open questions appended |
+
+### What this cost us, and the rule worth keeping
+
+Two of these had already caused real work. The retired point-estimate verdict
+rule survived in `02` and `03` for two weeks after the three-decision test
+replaced it, and `05` prescribed chi-square in its own prose while its own min-n
+section said exact-only. Nobody implemented from them in that window — but the
+docs are what a new session reads first, and `CLAUDE.md` explicitly points
+implementers at `02` for gold-label rules.
+
+**Rule: a decision is not landed until the doc it contradicts is struck.**
+Appending to `decisions.md` records the decision; it does not retract the old one
+from wherever it was already written down. The seed docs are the natural place
+for that debt to accumulate because nothing in the test suite touches them.
+
+### Not in scope of the audit
+
+The audit corrected statements about the project. It did not re-derive numbers:
+per-group S, instance counts and permutation p-values were taken from the
+committed docs and from one fresh `run_verdict_labels.py` run, which reconciled
+(S = 1365, the six S = 0 groups exactly as recorded). One drift noted and left:
+`not_locatable` reads 116 in some places and 118 in the current run.

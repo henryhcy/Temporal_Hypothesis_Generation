@@ -4,6 +4,15 @@ Single source of truth for what has been settled. Append entries with the
 date when a decision is locked. Do not silently rewrite past entries; if a
 decision changes, append a new entry that supersedes it.
 
+> **READ THIS FILE NEWEST-FIRST WHEN IN DOUBT.** It is chronological and
+> append-only, so early entries record what was true in June/July and have often
+> been superseded — the seed section immediately below still says "clinical
+> narratives", "30 template groups" and "Johnson", all three of which are now
+> wrong. That is by design: the history is the point. But it means **no single
+> entry here can be quoted as current** without checking for a later one on the
+> same topic. For current state, read `09_next_steps.md`; for current
+> conventions, `CLAUDE.md`.
+
 ---
 
 ## Initial seed (project setup)
@@ -2006,3 +2015,38 @@ the record: the p-value tails, `_realize_insufficient`'s named cell, and now the
 template slot plus the second cohort. **Any per-instance field must be derived from
 the realized instance, never from the core** -- and the check that catches it has to
 compare the rendered TEXT against the gold, not just the numbers against each other.
+
+---
+
+## Reasoning preserved from retired open questions (2026-08-12)
+
+Bookkeeping entry. `open_questions.md` had accumulated 11 items already marked
+RESOLVED, which made the "open" list unreadable — you could not tell what was
+live without reading every entry. They are removed from that file per the stated
+convention. Two pieces of reasoning existed ONLY there and are recorded here so
+the deletion loses nothing.
+
+### Why the first/last family structurally cannot have a two-cohort group
+Behind the F-M3 retirement, and it generalises beyond that one group. With TWO
+events, "which is first" IS "which precedes" — a first/last multi group is only
+distinct from the precedes tier once it uses THREE events. But three-event
+co-presence in both cohorts leaves 75-387 cores carrying a ~55% tie rate, and the
+tie is the trap: excluding tied reports starves n, while including them dilutes
+the numerator EQUALLY in both cohorts. That symmetry is why the widening trick
+that rescued precedes (M-F, `p_perm` 0.033) produces pure noise here — M-G scored
+20 decisive against a null mean of 20.0. The family has no two-cohort form that
+is both distinct from precedes and adequately powered.
+
+### Why C-M2 failed its null where P-M2 passed, on the same corpus
+Same-level co-occurrence appears to reflect **narrative and annotation style**
+rather than the vaccine: whether two events land at the same level depends on how
+a reporter wrote the sequence and how the annotator resolved simultaneity. That
+varies by report, not by cohort, so shuffling the vaccine labels barely changes
+the statistic. Order (P-M2) survives the same shuffle because it encodes
+something about the events themselves. Worth remembering before proposing any
+future group built on simultaneity.
+
+### Method note, promoted to CLAUDE.md
+A permutation gate needs **>= 2000 rounds** for a ship/no-ship call. At p ~ 0.04
+the 200-round SE is ~0.014, and M-C actually crossed the alpha line between run
+sizes (0.035 at 200 rounds -> 0.073 at 2000). 200 rounds is triage only.
