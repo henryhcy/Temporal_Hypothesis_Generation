@@ -1,0 +1,26 @@
+pilot complete. Wrote artifacts to: data\release\v1
+  records generated:   147936
+  groups:              20
+  validation entries:  16
+
+Part B per-group verdict counts (supported/refuted/insufficient):
+  P-R1  300/300/  0  under-target: insufficient
+  P-R2  300/300/  0  under-target: insufficient
+  P-V1  167/167/167
+  P-V2  751/751/751
+  P-V3  167/167/167
+  P-V4  2857/2857/2857
+  P-M2   29/ 29/ 29
+  C-R1  181/119/  0  under-target: supported,refuted,insufficient
+  C-V1  252/252/252
+  C-V2  349/349/349
+  C-V3  174/174/174
+  S-R1  300/300/  0  under-target: insufficient
+  S-V1    2/  2/  2
+  S-V3    2/  2/  2
+  F-R1  300/300/  0  under-target: insufficient
+  F-R2  300/300/  0  under-target: insufficient
+  F-R3  300/300/  0  under-target: insufficient
+  F-V1   34/ 34/ 34
+  F-V2   46/ 46/ 46
+  F-V3   34/ 34/ 34

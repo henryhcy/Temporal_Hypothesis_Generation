@@ -39,3 +39,8 @@ _zip_extract/
 # OS
 .DS_Store
 Thumbs.db
+
+# Release: raw JSONL regenerable (scripts/run_pilot.py --out data/release/v1);
+# the committed artifact is the .gz pair plus the reports and statistics.
+data/release/*/pilot_instances_questions.jsonl
+data/release/*/pilot_instances_answers.jsonl

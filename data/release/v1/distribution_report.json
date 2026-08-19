@@ -1,0 +1,444 @@
+{
+  "A1_viable_core_counts": {
+    "per_group": {
+      "P-R1": {
+        "viable_cores": 300,
+        "total_enumerated": 300
+      },
+      "P-R2": {
+        "viable_cores": 300,
+        "total_enumerated": 300
+      },
+      "P-V1": {
+        "viable_cores": 425,
+        "total_enumerated": 900
+      },
+      "P-V2": {
+        "viable_cores": 3015,
+        "total_enumerated": 5040
+      },
+      "P-V3": {
+        "viable_cores": 425,
+        "total_enumerated": 900
+      },
+      "P-V4": {
+        "viable_cores": 9067,
+        "total_enumerated": 16380
+      },
+      "P-M2": {
+        "viable_cores": 270,
+        "total_enumerated": 534
+      },
+      "C-R1": {
+        "viable_cores": 300,
+        "total_enumerated": 300
+      },
+      "C-V1": {
+        "viable_cores": 519,
+        "total_enumerated": 900
+      },
+      "C-V2": {
+        "viable_cores": 900,
+        "total_enumerated": 900
+      },
+      "C-V3": {
+        "viable_cores": 519,
+        "total_enumerated": 900
+      },
+      "S-R1": {
+        "viable_cores": 300,
+        "total_enumerated": 300
+      },
+      "S-V1": {
+        "viable_cores": 235,
+        "total_enumerated": 1680
+      },
+      "S-V3": {
+        "viable_cores": 235,
+        "total_enumerated": 1680
+      },
+      "F-R1": {
+        "viable_cores": 300,
+        "total_enumerated": 300
+      },
+      "F-R2": {
+        "viable_cores": 300,
+        "total_enumerated": 300
+      },
+      "F-R3": {
+        "viable_cores": 300,
+        "total_enumerated": 300
+      },
+      "F-V1": {
+        "viable_cores": 178,
+        "total_enumerated": 1680
+      },
+      "F-V2": {
+        "viable_cores": 218,
+        "total_enumerated": 1680
+      },
+      "F-V3": {
+        "viable_cores": 178,
+        "total_enumerated": 1680
+      }
+    },
+    "viable_target": 50,
+    "under_target_groups": [],
+    "starved_groups": []
+  },
+  "A2_cohort_size_distribution": {
+    "pairwise": {
+      "summary": {
+        "count": 15140,
+        "min": 10.0,
+        "p25": 18.0,
+        "median": 28.0,
+        "p75": 47.0,
+        "max": 465.0
+      },
+      "histogram": {
+        "<= 10": 306,
+        "10-25": 6498,
+        "25-50": 5124,
+        "50-100": 2187,
+        "100-250": 740,
+        "> 250": 285
+      }
+    },
+    "sequence": {
+      "summary": {
+        "count": 470,
+        "min": 5.0,
+        "p25": 5.0,
+        "median": 7.0,
+        "p75": 9.0,
+        "max": 28.0
+      },
+      "histogram": {
+        "<= 10": 390,
+        "10-25": 78,
+        "25-50": 2,
+        "50-100": 0,
+        "100-250": 0,
+        "> 250": 0
+      }
+    },
+    "first_last": {
+      "summary": {
+        "count": 574,
+        "min": 10.0,
+        "p25": 11.0,
+        "median": 14.0,
+        "p75": 18.0,
+        "max": 55.0
+      },
+      "histogram": {
+        "<= 10": 98,
+        "10-25": 427,
+        "25-50": 48,
+        "50-100": 1,
+        "100-250": 0,
+        "> 250": 0
+      }
+    }
+  },
+  "A3_natural_verdict_distribution": {
+    "per_group": {
+      "P-R1": {
+        "supported": 300,
+        "refuted": 0,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 1.0,
+          "refuted": 0.0,
+          "insufficient": 0.0
+        }
+      },
+      "P-R2": {
+        "supported": 300,
+        "refuted": 0,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 1.0,
+          "refuted": 0.0,
+          "insufficient": 0.0
+        }
+      },
+      "P-V1": {
+        "supported": 292,
+        "refuted": 113,
+        "insufficient": 495,
+        "fractions": {
+          "supported": 0.3244,
+          "refuted": 0.1256,
+          "insufficient": 0.55
+        }
+      },
+      "P-V2": {
+        "supported": 1868,
+        "refuted": 1133,
+        "insufficient": 2039,
+        "fractions": {
+          "supported": 0.3706,
+          "refuted": 0.2248,
+          "insufficient": 0.4046
+        }
+      },
+      "P-V3": {
+        "supported": 292,
+        "refuted": 113,
+        "insufficient": 495,
+        "fractions": {
+          "supported": 0.3244,
+          "refuted": 0.1256,
+          "insufficient": 0.55
+        }
+      },
+      "P-V4": {
+        "supported": 4696,
+        "refuted": 4312,
+        "insufficient": 7372,
+        "fractions": {
+          "supported": 0.2867,
+          "refuted": 0.2632,
+          "insufficient": 0.4501
+        }
+      },
+      "P-M2": {
+        "supported": 110,
+        "refuted": 158,
+        "insufficient": 266,
+        "fractions": {
+          "supported": 0.206,
+          "refuted": 0.2959,
+          "insufficient": 0.4981
+        }
+      },
+      "C-R1": {
+        "supported": 181,
+        "refuted": 119,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.6033,
+          "refuted": 0.3967,
+          "insufficient": 0.0
+        }
+      },
+      "C-V1": {
+        "supported": 98,
+        "refuted": 408,
+        "insufficient": 394,
+        "fractions": {
+          "supported": 0.1089,
+          "refuted": 0.4533,
+          "insufficient": 0.4378
+        }
+      },
+      "C-V2": {
+        "supported": 450,
+        "refuted": 450,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 0.5,
+          "refuted": 0.5,
+          "insufficient": 0.0
+        }
+      },
+      "C-V3": {
+        "supported": 177,
+        "refuted": 312,
+        "insufficient": 411,
+        "fractions": {
+          "supported": 0.1967,
+          "refuted": 0.3467,
+          "insufficient": 0.4567
+        }
+      },
+      "S-R1": {
+        "supported": 300,
+        "refuted": 0,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 1.0,
+          "refuted": 0.0,
+          "insufficient": 0.0
+        }
+      },
+      "S-V1": {
+        "supported": 165,
+        "refuted": 0,
+        "insufficient": 1515,
+        "fractions": {
+          "supported": 0.0982,
+          "refuted": 0.0,
+          "insufficient": 0.9018
+        }
+      },
+      "S-V3": {
+        "supported": 165,
+        "refuted": 0,
+        "insufficient": 1515,
+        "fractions": {
+          "supported": 0.0982,
+          "refuted": 0.0,
+          "insufficient": 0.9018
+        }
+      },
+      "F-R1": {
+        "supported": 300,
+        "refuted": 0,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 1.0,
+          "refuted": 0.0,
+          "insufficient": 0.0
+        }
+      },
+      "F-R2": {
+        "supported": 300,
+        "refuted": 0,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 1.0,
+          "refuted": 0.0,
+          "insufficient": 0.0
+        }
+      },
+      "F-R3": {
+        "supported": 300,
+        "refuted": 0,
+        "insufficient": 0,
+        "fractions": {
+          "supported": 1.0,
+          "refuted": 0.0,
+          "insufficient": 0.0
+        }
+      },
+      "F-V1": {
+        "supported": 158,
+        "refuted": 0,
+        "insufficient": 1522,
+        "fractions": {
+          "supported": 0.094,
+          "refuted": 0.0,
+          "insufficient": 0.906
+        }
+      },
+      "F-V2": {
+        "supported": 193,
+        "refuted": 0,
+        "insufficient": 1487,
+        "fractions": {
+          "supported": 0.1149,
+          "refuted": 0.0,
+          "insufficient": 0.8851
+        }
+      },
+      "F-V3": {
+        "supported": 158,
+        "refuted": 0,
+        "insufficient": 1522,
+        "fractions": {
+          "supported": 0.094,
+          "refuted": 0.0,
+          "insufficient": 0.906
+        }
+      }
+    },
+    "per_family": {
+      "pairwise": {
+        "supported": 8764,
+        "refuted": 7118,
+        "insufficient": 11472,
+        "fractions": {
+          "supported": 0.3204,
+          "refuted": 0.2602,
+          "insufficient": 0.4194
+        }
+      },
+      "sequence": {
+        "supported": 630,
+        "refuted": 0,
+        "insufficient": 3030,
+        "fractions": {
+          "supported": 0.1721,
+          "refuted": 0.0,
+          "insufficient": 0.8279
+        }
+      },
+      "first_last": {
+        "supported": 1409,
+        "refuted": 0,
+        "insufficient": 4531,
+        "fractions": {
+          "supported": 0.2372,
+          "refuted": 0.0,
+          "insufficient": 0.7628
+        }
+      }
+    }
+  },
+  "A4_ci_width_distribution": {
+    "summary": {
+      "count": 15914,
+      "min": 0.0197,
+      "p25": 0.2551,
+      "median": 0.3193,
+      "p75": 0.4002,
+      "max": 0.6517
+    },
+    "histogram": {
+      "<= 0.15": 882,
+      "0.15-0.3": 6007,
+      "0.3-0.45": 7165,
+      "0.45-0.6": 1650,
+      "> 0.6": 210
+    },
+    "fraction_low_confidence_gt_0.30": 0.5671,
+    "note": "provisional low-confidence cut = CI width > 0.30; A4 calibrates it"
+  },
+  "A5_multi_vaccine_overlap": {
+    "per_pair": {
+      "Pfizer+Moderna": {
+        "both_clear": 82,
+        "one_thin": 89,
+        "total": 171,
+        "fraction_insufficient": 0.5205,
+        "enough_for_reduced_budget": true
+      },
+      "Pfizer+Janssen": {
+        "both_clear": 102,
+        "one_thin": 108,
+        "total": 210,
+        "fraction_insufficient": 0.5143,
+        "enough_for_reduced_budget": true
+      },
+      "Moderna+Janssen": {
+        "both_clear": 86,
+        "one_thin": 67,
+        "total": 153,
+        "fraction_insufficient": 0.4379,
+        "enough_for_reduced_budget": true
+      }
+    },
+    "janssen_pairs_flagged": []
+  },
+  "A6_representation_diagnostics": {
+    "first_last_tie_rate": {
+      "summary": {
+        "count": 574,
+        "min": 0.0,
+        "p25": 0.36,
+        "median": 0.4545,
+        "p75": 0.56,
+        "max": 0.7347
+      },
+      "note": "per-core fraction of reports with >=2 candidates tied at the earliest/latest level (first/last vaccine groups)"
+    },
+    "first_level_co_occurrence_rate": 0.6226,
+    "duplicate_term_across_levels_count": 7,
+    "cycle_check": "N/A",
+    "disconnected_component_rate": "N/A",
+    "na_rationale": "Annotations are stored as leveled orders (a single acyclic chain of co-exist clusters); raw pairwise relations are not retained, so cycles and disconnected components are not recoverable. The duplicate-term-across-levels count is the computable integrity check."
+  }
+}
