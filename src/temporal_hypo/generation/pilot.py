@@ -15,6 +15,8 @@ from temporal_hypo.generation import cores as cores_mod
 from temporal_hypo.generation import instances as inst_mod
 from temporal_hypo.generation import report_a, writers
 from temporal_hypo.generation.cores import (
+    cohort_decision,
+    enumerate_false_cores,
     enumerate_group,
     enumerate_group_full,
     feasible_polarities,
@@ -208,9 +210,19 @@ def run_pilot(
                       for c in cores_by_group[gid] if c.computable]
             b_summary[gid] = _natural_verdict_counts(chosen)
         else:
+            pool = cores_by_group[gid]
+            if group.level != "report":
+                # not_locatable comes from deliberately FALSE combinations
+                # (issue 5, decisions.md 2026-08-14): count the decisive cores
+                # first so the injection matches the equal-thirds insufficient
+                # share (~S/3 per sub-type), with a little slack for water-fill.
+                S = sum(1 for c in pool
+                        if c.computable and cohort_decision(c).decisive)
+                pool = pool + enumerate_false_cores(
+                    index, group, count=-(-S // 3) + 3, seed=f"{seed}|{gid}")
             # `group` is passed so feasible_polarities can see negated wording;
             # `t=None` lets the group's own S set the budget (equal thirds).
-            sel = balance_group(cores_by_group[gid], gid, group, t=None, seed=seed)
+            sel = balance_group(pool, gid, group, t=None, seed=seed)
             chosen = sel.chosen
             b_summary[gid] = {
                 "S": sel.S,

@@ -187,3 +187,58 @@ def test_negation_is_minimised_not_configurable():
     assert realize(low, "refuted").negated is False    # plain wording suffices
     assert realize(low, "supported").negated is True   # negate only when needed
     assert feasible_polarities(low, g) == {"supported", "refuted"}
+
+
+# -- false combinations: the not_locatable supply (issue 5, 2026-08-14) -----
+
+def test_false_cores_are_zero_joint_and_not_locatable():
+    from temporal_hypo.core.answers import oriented_significance
+    from temporal_hypo.generation.cores import enumerate_false_cores
+    # a corpus where A/B/C co-occur but X never appears with any of them
+    reports = []
+    vid = 1
+    for _ in range(12):
+        reports.append((vid, "Pfizer", [["A"], ["B"], ["C"]])); vid += 1
+    for _ in range(12):
+        reports.append((vid, "Pfizer", [["X"], ["Y"]])); vid += 1
+    for vax in ("Moderna", "Janssen"):
+        for _ in range(12):
+            reports.append((vid, vax, [["A"], ["B"]])); vid += 1
+        for _ in range(12):
+            reports.append((vid, vax, [["X"], ["Y"]])); vid += 1
+    index = CorpusIndex.load(make_db(reports))
+    groups = load_groups()
+
+    false = enumerate_false_cores(index, groups["P-V1"], count=9, seed=0)
+    assert false, "generator found no zero-joint pairs in a corpus full of them"
+    for c in false:
+        assert c.n == 0 and c.k == 0 and not c.computable
+        # the combination must be genuinely absent from that cohort
+        cohort = set(index.cohort(c.vaccines[0]))
+        joint = [vid for vid in cohort
+                 if all(e in index.report_terms[vid] for e in c.events)]
+        assert joint == []
+        # and every event must be a REAL term of that cohort's vocabulary
+        vocab = index.term_freq(index.cohort(c.vaccines[0]))
+        assert all(e in vocab for e in c.events)
+        # realized, it is insufficient/not_locatable end to end
+        assert feasible_polarities(c) == {"insufficient"}
+        facts = realize(c, "insufficient")
+        assert facts.gold_verdict == "insufficient"
+        sig = oriented_significance(facts)
+        assert sig.decision.subtype == "not_locatable"
+
+    # determinism: same seed, same combinations
+    again = enumerate_false_cores(index, groups["P-V1"], count=9, seed=0)
+    assert [(c.vaccines, c.events) for c in false] == \
+        [(c.vaccines, c.events) for c in again]
+
+
+def test_false_cores_reject_report_level():
+    import pytest as _pytest
+    reports = [(1, "Pfizer", [["A"], ["B"]])]
+    index = CorpusIndex.load(make_db(reports))
+    groups = load_groups()
+    with _pytest.raises(ValueError):
+        from temporal_hypo.generation.cores import enumerate_false_cores
+        enumerate_false_cores(index, groups["P-R1"], count=3, seed=0)

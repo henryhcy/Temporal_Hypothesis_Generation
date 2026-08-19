@@ -33,6 +33,8 @@ single observations with no test, so they keep their deterministic verdict.
 
 from __future__ import annotations
 
+import random
+
 from dataclasses import dataclass, field
 from itertools import combinations
 
@@ -609,6 +611,71 @@ def _enum_report_full(index, group, mode) -> list[ViableCore]:
             cores.append(core)
     return cores
 
+
+# ---------------------------------------------------------------------------
+# deliberately FALSE combinations: the not_locatable supply (issue 5)
+# ---------------------------------------------------------------------------
+
+def enumerate_false_cores(index: CorpusIndex, group: Group, *,
+                          count: int, seed=0) -> list[ViableCore]:
+    """Random combinations of REAL cohort terms with ZERO joint reports.
+
+    decisions.md 2026-08-14 batch 2 (user): not_locatable instances "should
+    never be generated from core because core is for successful pairs. I need
+    the combination to be false and it could be randomly combined as long as
+    there is no actual reports as so." Every event is a real term of the
+    cohort's vocabulary, so the claim LOOKS answerable; only querying the store
+    reveals an empty conditioned denominator -- which is exactly the capability
+    the not_locatable sub-type tests. n = 0 makes `three_decision` label these
+    insufficient/not_locatable with no special-casing anywhere downstream.
+
+    Deterministic under `seed` (int or str). Vaccine-level groups sample per
+    cohort; the multi tier samples per vaccine PAIR and requires joint zero in
+    BOTH cohorts. Report-level groups have no insufficient class by design
+    (2026-08-14) and are rejected.
+    """
+    if group.level == "report":
+        raise ValueError("report-level groups have no insufficient class")
+    mode = MODE_BY_GROUP[group.id]
+    need = 3 if mode in _VACCINE_TRIPLE_MODES else 2
+    rng = random.Random(seed)
+    out: list[ViableCore] = []
+    seen: set = set()
+
+    def term_reports(cohort: list[int]) -> dict[str, set[int]]:
+        m: dict[str, set[int]] = {}
+        for vid in cohort:
+            for t in index.report_terms[vid]:
+                m.setdefault(t, set()).add(vid)
+        return m
+
+    scopes = ([(v,) for v in VACCINES] if group.level == "vaccine"
+              else list(VACCINE_PAIRS))
+    per_scope = -(-count // len(scopes))
+    for vaxes in scopes:
+        maps = [term_reports(index.cohort(v)) for v in vaxes]
+        vocab = sorted(set(maps[0]).intersection(*[set(m) for m in maps[1:]])) \
+            if len(maps) > 1 else sorted(maps[0])
+        if len(vocab) < need:
+            continue
+        got = attempts = 0
+        while got < per_scope and attempts < 200 * per_scope:
+            attempts += 1
+            combo = tuple(sorted(rng.sample(vocab, need)))
+            if (vaxes, combo) in seen:
+                continue
+            if any(set.intersection(*[m[t] for t in combo]) for m in maps):
+                continue                     # the combination actually occurs
+            seen.add((vaxes, combo))
+            got += 1
+            kw = dict(events=combo, vaccines=tuple(vaxes),
+                      cohort_ids=index.cohort(vaxes[0]), report_id=None,
+                      computable=False, natural_verdict="insufficient",
+                      proportion=None, n=0, k=0)
+            if group.level == "multi":
+                kw.update(proportion2=None, n2=0, k2=0)
+            out.append(_new_core(group, mode, **kw))
+    return out[:count]
 
 # ---------------------------------------------------------------------------
 # feasibility + realization
