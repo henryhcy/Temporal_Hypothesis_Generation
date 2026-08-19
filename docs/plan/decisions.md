@@ -2120,3 +2120,59 @@ exactly matches levels-per-report). Any independence between event chains inside
 one narrative was resolved at ANNOTATION time, upstream of this benchmark, and
 upstream corpus quality is out of scope by the issue-15 decision (2026-08-12).
 No representation change and no insufficient-marking mechanism is needed.
+
+---
+
+## Dataset-creation decision batch 2 (2026-08-14)
+
+The remaining calls, all made by the user; nothing blocks the v1 build now.
+
+1. **Issue 9 — (b): S-V1 and S-V3 ship IN FULL, flagged.** S = 4 each (largely
+   the same four triples posed as BOOL vs CHOICE), 12 items per group at equal
+   thirds. Levers 4 (vaccine-agnostic pooling) and 5 (MedDRA coarsening) are
+   recorded as post-v1 options, not v1 work.
+2. **Issue 2 — all three additions CONFIRMED**: P-V2 (R3 conditional
+   antecedent), P-V4 (R1 pair-vs-pair, four events accepted), C-V2 (R5
+   association vs independence). Four-register + negated wording authored at
+   implementation; C-V2 requires negation (symmetric claim); each addition must
+   clear its own >=2000-round permutation screen at full enumeration before it
+   ships.
+3. **Issue 14 — fact_id ships as a FIELD now, the split stays deferred.**
+   fact_id = "{statistic}|{vaccines}|{events}" (no group id) is emitted on
+   every record at creation, so twins share it; the later train/dev/test split
+   keys on it. S-style counts quoted for power/coverage must use DISTINCT
+   fact_ids (727 today), not instance counts.
+4. **Issue 5 — not_locatable comes from deliberately FALSE combinations.**
+   User: "It should never be generated from core because core is for successful
+   pairs. I need the combination to be false and it could be randomly combined
+   as long as there is no actual reports as so." Implementation: a seeded
+   generator samples pairs/triples of REAL cohort terms whose joint report count
+   in that cohort is ZERO; those become insufficient/not_locatable instances.
+   Enumerated cores are never a source. (The sequence family's 118 natural
+   zero-orderable triples remain valid not_locatable supply.)
+5. **Issues 6+7 — (iii): order-asking report-level questions are NOT POSED on
+   tied reports.** Enumeration picks the earliest fully-ordered pair/triple in
+   the report instead (every report has >= 2 stages, so one exists). Report
+   level therefore becomes strictly TWO-CLASS deterministic -- supported/refuted,
+   balanced 50/50 -- and insufficient does not exist at report level, matching
+   the user's framing. C-R1 keeps using co-exist pairs (they are its supported
+   case). Context: the earliest two events are tied in 62% of reports, so this
+   also removes a large degenerate-question pool.
+6. **Issue 4 — CLOSED by REMOVAL.** confidence_tag (never-calibrated 0.15/0.30
+   cutoffs) and ci_width leave the released records. The Wilson CI itself
+   STAYS: it is the locked 07-13 reported statistic and nothing about it was in
+   question. Grep-verified that nothing downstream consumed tag or width (only
+   the emitting pipeline and their own tests), so removal is free and A4's
+   calibration job disappears.
+7. **Issue 18 — deferred until after dataset creation**, per user. It is pure
+   read-only arithmetic over the finished records (sum of exact per-core test
+   sizes at each n) and lands in the statistics report + limitations.
+
+### C-V3 register audit (same date, while implementing issue 13)
+
+Only the ORIGINAL register actually asked the argmax ("is co-occurrence the
+dominant relation"); research/media/clinical asked the MAJORITY question
+("concurrent more common than ordered" = rate > 0.5, i.e. the very statistic
+being retired). With the statistic moving to modal-vs-runner-up, all four
+registers are reworded to argmax phrasing so the four paraphrases finally ask
+the same question.

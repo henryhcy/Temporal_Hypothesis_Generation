@@ -17,34 +17,6 @@ Every item here appears in the `09_next_steps.md` issue register with its number
 
 ## Decisions blocking work
 
-### Does the sequence family survive at cohort level? (issue 9)
-The sequence family's entire cohort-level supply is:
-
-| group | mode | S |
-|---|---|--:|
-| S-V1 | seq_bool (modal-vs-runner-up) | **4** |
-| S-V3 | modal_choice (modal-vs-runner-up since 08-11) | **4** |
-| S-R1 | report-level | n/a — deterministic, unaffected |
-
-Eight decisive cores across two groups, and they are largely the SAME four
-triples asked two ways, so this is not a family. (S-M1/S-M2/S-M3 are gone or
-going; S-V4 was removed 08-11.) Options: (a) accept sequence as a
-report-level-only family; (b) apply §6 lever 4 (vaccine-agnostic scope, pooling
-all 3,166 reports, ~46% of triples become significant) at the cost of changing
-the claim scope to "across all vaccines"; (c) apply §6 lever 5 (coarsen events to
-MedDRA SOC/HLGT categories), the real structural fix, which needs a term→category
-map.
-
-This subsumes the old "per-group vs benchmark-level balance" question. Equal
-thirds stays **per group** — template wording is mechanical and fixed per group,
-so group identity is trivially readable from the question text, and a group
-shipped at 40/338 would let a model learn "text shaped like this → refuted" and
-score ~89% with no temporal reasoning. Benchmark-level balance only closes that
-shortcut if group identity is hidden, which it cannot be. What remains open is
-purely that S-V1/S-V3 are starved at any balance rule.
-
----
-
 ### Adopt any of the six screened candidate families? (issue 19)
 `10_family_expansion.md` (branch `template-family-expansion`, 2026-08-14) screened
 six families the shipped grid cannot express, 30 groups in
@@ -176,101 +148,7 @@ Recommended: (b), falling back to (c). Do not ship as-is.
 **DECIDED 2026-08-14: (b).** Implementation and the >=2000-round permutation
 screen are pending; if the screen fails, fall back to (c). See `decisions.md`.
 
-### Twin groups duplicate the same core; the split key does not know (issue 14)
-Four group pairs compute the **identical statistic on the identical cores**:
-
-| pair | contrast | identical cores |
-|---|---|--:|
-| P-V1 / P-V3 | BOOL vs CHOICE | 575 / 575 (100%) |
-| C-V1 / C-V3 | **none — both BOOL** | 959 / 959 (100%) |
-| S-V1 / S-V3 | BOOL vs CHOICE | 278 / 278 (100%) |
-| F-V1 / F-V3 | CHOICE vs BOOL | 195 / 195 (100%) |
-
-Three pairs are a deliberate answer-format contrast and should stay. Two
-consequences are not deliberate:
-
-1. **Split leakage.** `instances.core_id` is `f"{group_id}|{vaccines}|{events}"`,
-   so P-V1's and P-V3's versions of one fact get **different**
-   `derived_from_core_id`. The standing caveat ("mirror pairs share a
-   `derived_from_core_id`, keep them together") covers the two ORIENTATIONS of
-   one core, not the cross-group twins. A split keyed on that id puts the same
-   fact on both sides. Fix: add a group-independent `fact_id` (vaccines + events
-   + mode-family) and split on that.
-2. **Effective size.** S = 1365 counts each twinned fact twice: **727 distinct
-   decisive facts**, 638 duplicates (47%). Both numbers are real — the benchmark
-   does ask 1365 questions — but only 727 are independent evidence, which is the
-   number that belongs in a power or coverage claim.
-
----
-
 ## Dataset
-
-### Confidence-tag cutoffs are PROVISIONAL (issue 4)
-`generation/confidence.py` buckets the 95% Wilson CI width into `high` (<= 0.15),
-`moderate` (<= 0.30) and `low` (> 0.30). **Those two numbers were never
-calibrated** — they are placeholders, and `04_corpus_survey.md` A4 is the task
-that fixes them (the CI-width distribution over viable cores, plus the fraction
-that would be tagged low).
-
-Why it matters now: at the floor-10 gate the widths are wide by construction. A
-core at k=19/n=25 has width 0.319 and therefore tags `low`, so a floor-sized core
-is essentially always `low` and the tag carries almost no information as shipped.
-Either recalibrate the cuts against the measured distribution or drop the tag and
-release the raw width. Do not report the tag as a finding until A4 runs.
-
-Related, and already locked: the interval is Wilson (not Wald) so it stays inside
-[0,1] at k=0 and k=n, its centre is shrunk toward 0.5 and therefore differs from
-the point estimate, and two-cohort groups use Wilson-Newcombe on the *difference*.
-Effect size is Cohen's h on the arcsine transform, measured against the null the
-test actually uses (`decisions.md` 2026-08-11).
-
-### Sourcing `not_locatable` for the non-sequence families (issue 5)
-*(Trimmed 2026-08-12: step B resolved `sparse` (0 → 2,722) and partly resolved
-`not_locatable` (0 → 116). Only the remainder is open.)*
-
-All 118 `not_locatable` cores are in the SEQUENCE groups (triples present but
-always at the same level, so nothing is orderable). The pairwise, co-occurs and
-first/last families have **zero** — their enumeration pre-filters pairs/triples
-to co-occurrence >= 10, which guarantees a non-empty denominator. So the
-insufficient third cannot span all three sub-types within those groups, and 118
-is well under what an equal-thirds insufficient class would want anyway.
-
-Open: source it from the pilot enumeration path, which already forms ALL
-combinations of the top-K terms and therefore includes pairs that never co-occur?
-Or add an explicit generator that picks known non-co-occurring event pairs per
-cohort? The 2026-07-28 decision requires this third to be generated deliberately
-either way; the question is which mechanism.
-
-### Report-level first/last tie handling for CHOICE (issue 7)
-*(Narrowed 2026-08-12: the COHORT-level rule was settled on 08-11 — tie reports
-leave the denominator entirely. This is now a report-level question only.)*
-
-Should a report-level CHOICE instance whose candidates tie be marked
-`insufficient` (single-valued gold), or accept any tied option as supported
-(set-valued gold)? **Current working assumption**: `insufficient`. Set-valued
-gold is more defensible at report level than at cohort level precisely because
-there is no aggregation to distort — which is why it was rejected for cohorts but
-is genuinely open here.
-
-### Report-level groups do not reach equal thirds (issue 6)
-Deferred by user decision. Seven of the 23 groups are report-level. The question
-underneath: what does `insufficient` mean for a single-report claim? The CHOICE
-variants treat a co-exist pair as unanswerable while the BOOL variants map
-co_exist to `refuted`.
-
-### R1/R3/R5 group definitions (issue 2)
-*(Trimmed 2026-08-12: selection, IDs and answer types were all confirmed
-2026-07-28 — R1, R3, R5 adopted, R4 dropped, IDs P-V2=R3, C-V2=R5, P-V4=R1, all
-BOOL.)*
-
-Open before coding: the exact **four-register wording** for each. R1 needs a
-4-event (A,B,C,D) enumeration shape and R5 a 2x2 presence x presence corpus
-helper with marginals. Their supply estimates (P-V2 372, P-V4 415, C-V2 144)
-predate every floor and test change and **must be re-measured** — the floor-10
-and exact-test changes roughly doubled supply elsewhere, so these may be
-understated rather than overstated.
-
----
 
 ## Framework
 
