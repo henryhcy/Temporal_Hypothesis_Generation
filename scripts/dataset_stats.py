@@ -46,15 +46,11 @@ def _sha256(path: Path) -> str:
 def build_stats(rel_dir: Path, stem: str) -> dict:
     a_path = rel_dir / f"{stem}_answers.jsonl"
     q_path = rel_dir / f"{stem}_questions.jsonl"
-    records = [json.loads(l) for l in
-               a_path.read_text(encoding="utf-8").splitlines() if l.strip()]
-
-    # one INSTANCE = one (core, polarity) realization = 8 records
-    by_instance: dict[str, dict] = {}
-    for r in records:
-        key = r["hypothesis_id"].rsplit("-", 2)[0]     # strip register-format
-        by_instance.setdefault(key, r)
-    instances = list(by_instance.values())
+    instances = [json.loads(l) for l in
+                 a_path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    # answers are one row per instance (writers.split_release, 2026-08-14);
+    # each row lists its 8 question records
+    n_records = sum(len(r["hypothesis_ids"]) for r in instances)
 
     groups = sorted({r["group_id"] for r in instances})
     per_group: dict[str, dict] = {}
@@ -72,7 +68,7 @@ def build_stats(rel_dir: Path, stem: str) -> dict:
             "mode": gi[0]["mode"],
             "answer_type": gi[0]["answer_type"],
             "instances": len(gi),
-            "records": len(gi) * 8,
+            "records": sum(len(r["hypothesis_ids"]) for r in gi),
             "supported": verd.get("supported", 0),
             "refuted": verd.get("refuted", 0),
             "insufficient": verd.get("insufficient", 0),
@@ -129,7 +125,7 @@ def build_stats(rel_dir: Path, stem: str) -> dict:
                         "sha256": _sha256(a_path)},
         },
         "totals": {
-            "records": len(records),
+            "records": n_records,
             "instances": len(instances),
             "groups": len(groups),
             "registers": 4, "formats": 2,

@@ -187,10 +187,32 @@ def split_release(records: list[dict], out_dir: Path, *, stem: str = "benchmark"
     q_path = out_dir / f"{stem}_questions.jsonl"
     a_path = out_dir / f"{stem}_answers.jsonl"
     write_jsonl(questions, q_path)
-    write_jsonl(records, a_path)
+
+    # Answers are ONE ROW PER INSTANCE (2026-08-14). The 8 register/format
+    # records of one instance share every gold field, so per-record answers
+    # duplicated the evidence-id lists eightfold -- measured at 389 MB for the
+    # v1 release, versus ~a tenth of that deduplicated. `instance_id` is the
+    # hypothesis_id minus its register-format suffix; `hypothesis_ids` lists
+    # the question rows the gold row answers, so the join stays trivial.
+    _PER_RECORD = ("hypothesis_id", "register", "format", "text")
+    by_inst: dict[str, dict] = {}
+    order: list[str] = []
+    for r in records:
+        iid = r["hypothesis_id"].rsplit("-", 2)[0]
+        gold = by_inst.get(iid)
+        if gold is None:
+            gold = {k: v for k, v in r.items() if k not in _PER_RECORD}
+            gold["instance_id"] = iid
+            gold["hypothesis_ids"] = []
+            by_inst[iid] = gold
+            order.append(iid)
+        gold["hypothesis_ids"].append(r["hypothesis_id"])
+    answers = [by_inst[i] for i in order]
+    write_jsonl(answers, a_path)
 
     leaked = sorted({k for q in questions for k in q} - set(INPUT_FIELDS))
     if leaked:
         raise ValueError(f"non-input fields leaked into the questions file: {leaked}")
     return {"questions": str(q_path), "answers": str(a_path),
-            "n_questions": len(questions), "input_fields": list(INPUT_FIELDS)}
+            "n_questions": len(questions), "n_instances": len(answers),
+            "input_fields": list(INPUT_FIELDS)}

@@ -246,8 +246,11 @@ def run_pilot(
                 inst_mod.build_records(facts, group, seq=seq, band=band,
                                        index=index)
             )
-    writers.write_jsonl(all_records, out_dir / out_name)
-    # also emit the input/gold split so the leakage boundary is enforced
+    if full:
+        # the whole-population diagnostic keeps its single flat file
+        writers.write_jsonl(all_records, out_dir / out_name)
+    # the input/gold split IS the release; the balanced run writes no combined
+    # file (it duplicated the 389 MB answers byte for byte, 2026-08-14)
     release = writers.split_release(all_records, out_dir, stem=out_name.split(".")[0])
 
     # --- Part C ----------------------------------------------------------
