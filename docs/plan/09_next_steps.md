@@ -1,4 +1,4 @@
-# Next Steps — as of 2026-08-12
+# Next Steps — as of 2026-08-14 (dataset build day)
 
 > **Doc audit completed 2026-08-12.** Every plan doc was scanned against the code
 > and against `decisions.md`. Seed docs 01–06 had drifted badly — 02 alone
@@ -23,21 +23,21 @@ record of current settings, pending work and known defects.
 | # | issue | kind | status | detail lives in |
 |--:|---|---|---|---|
 | ~~1~~ | ~~Multi tier~~ | — | **DECIDED 2026-08-14: ship P-M2 alone** | `decisions.md` "Dataset-creation decision batch" |
-| 2 | Roster migration A: remove the 6 non-directional groups, add R1/R3/R5 | build | removal + additions ALL CONFIRMED 2026-08-14 (batch 2); in build; each addition needs its own >=2000-round screen at full enumeration | `decisions.md` batch 2 |
+| 2 | Roster migration A | build | **IMPLEMENTED 2026-08-14**: six groups removed, P-V2/P-V4/C-V2 coded + worded; full-enumeration 2000-round screens RUNNING (`data/pilot/new_groups_screen.json`) — additions ship only if they clear | `decisions.md` batch 2 |
 | 3 | Eval harness does not exist — architecture, metrics, baselines | build | not started; input format now settled so it is specifiable | §2 below |
 | ~~4~~ | ~~Confidence tag~~ | — | **CLOSED 2026-08-14 by removal**: tag + width fields leave the release; the Wilson CI stays | `decisions.md` batch 2 |
-| 5 | `not_locatable` exists only in the sequence family (all 118) | dataset gap | DECIDED 2026-08-14: seeded random FALSE combinations (zero joint reports), never from cores; generator in build | `decisions.md` batch 2 |
-| 6 | Report-level groups do not reach equal thirds | dataset gap | DISSOLVED 2026-08-14: report level is two-class by design (see issue 7); ships 50/50 supported/refuted | `decisions.md` batch 2 |
-| 7 | Report-level first/last ties | decision | **DECIDED 2026-08-14: (iii) not posed on tied reports** — enumeration picks ordered pairs/triples; no insufficient at report level | `decisions.md` batch 2 |
+| ~~5~~ | ~~not_locatable sourcing~~ | — | **CLOSED 2026-08-14: implemented** — `enumerate_false_cores` injects seeded zero-joint combinations at balance time, ceil(S/3)+3 per non-report group | `decisions.md` batch 2 |
+| ~~6~~ | ~~Report-level equal thirds~~ | — | **CLOSED 2026-08-14**: dissolved — report level is two-class by design, implemented with issue 7 | `decisions.md` batch 2 |
+| ~~7~~ | ~~Report-level ties~~ | — | **CLOSED 2026-08-14: implemented** — `_report_combo` picks the earliest fully-ordered pair/triple; C-R1 keeps ties (its supported case) | `decisions.md` batch 2 |
 | ~~8~~ | ~~Synonym table~~ | — | **CLOSED 2026-08-14: v1 ships without it** (documented limitation) | `decisions.md` batch |
 | 9 | Sequence cohort tier has S = 8 across two groups (S-V1, S-V3) | decision | **DECIDED 2026-08-14: (b) take in full, flagged thin**; levers 4/5 recorded as post-v1 | `decisions.md` batch 2 |
 | 10 | Overleaf draft is badly stale (S, roster, tests, nulls, gold rule, input format) | write-up | hold until #1 and #2 settle | §5 below |
 | ~~11~~ | ~~Disconnected components~~ | — | **CLOSED 2026-08-14 by inspection**: the leveled-order format is a single chain by construction; `num_groups` = stage count (mislabeled); upstream per issue 15 | `decisions.md` batch |
 | 12 | `.venv` lost its editable install | environment | workaround: `PYTHONPATH=src` | standing caveats |
-| 13 | C-V3's text asks an argmax, its statistic tests a majority | **claim/label defect** | **DECIDED 2026-08-14: move to modal-vs-runner-up**; implementation + >=2000-round screen pending (fallback: drop) | `decisions.md` batch |
-| 14 | Twin groups duplicate cores | **leakage risk** | DECIDED 2026-08-14: `fact_id` field ships at creation; split (deferred) keys on it; quote distinct-fact counts in the paper | `decisions.md` batch 2 |
+| ~~13~~ | ~~C-V3 argmax vs majority~~ | — | **CLOSED 2026-08-14: implemented AND CLEARED** — 258 decisive of 959 vs null mean 62.6, p_perm 0.0005 (`data/pilot/cv3_screen.json`); natural balance 101/157 vs the old 40/338; registers reworded to argmax | `decisions.md` batch 2 |
+| ~~14~~ | ~~Twin-core leakage~~ | — | **CLOSED 2026-08-14: `fact_id` field ships on every record** (statistic-family + cohort + sorted events); the deferred split (issue 17) keys on it; papers quote distinct-fact counts | `decisions.md` batch 2 |
 | ~~15~~ | ~~Corpus provenance / "expert-annotated"~~ | — | **CLOSED 2026-08-12** — MedTempo is taken as the gold-label dataset; corpus quality is out of scope | `decisions.md` "MedTempo is the gold-label dataset" |
-| 16 | Positional/rank track has no exact test at our n — retired, not built | **decision + build** | open as a VERDICT-DRIVER question; descriptive positional attributes CONFIRMED for v1 answers (2026-08-14) | `open_questions.md` "Test tracks" |
+| 16 | Positional/rank track has no exact test at our n | **decision + build** | verdict-driver question still open; descriptive positional attributes **SHIPPED** in answer records 2026-08-14 (`generation/positional.py`) | `open_questions.md` "Test tracks" |
 | 17 | No train/dev/test split is produced at all | build | DEFERRED by user 2026-08-14 until after dataset creation; issues 14/16 still change how it must be keyed | §4 below |
 | 18 | Expected false-label count never quantified | **write-up gap** | deferred by user 2026-08-14 until after dataset creation; pure arithmetic over released records | `decisions.md` batch 2 |
 | 19 | Six candidate template families screened; 5 clear their nulls | **decision** | open — adopt R1/R3 + N2 + N1 + R5 (+N3/N4 narrowly)? Blocked behind issue 14 | `10_family_expansion.md` (branch `template-family-expansion`) |
@@ -60,20 +60,20 @@ instance beside its statistic. Worth a standing review step, not another invaria
 
 | | |
 |---|---|
-| Roster as coded | **23 groups** = 7 report-level + 16 cohort-level |
-| Cohort groups that ship a verdict | **10** (the other 6 are non-directional, pending removal) |
-| Roster after the pending 07-28 migration | **20** (−6 non-directional, +R1/R3/R5) |
+| Roster as coded | **20 groups** = 7 report-level + 12 single-cohort + P-M2 (migration A COMPLETE 2026-08-14; P-V2/P-V4/C-V2 pending their screens) |
+| Cohort groups that ship a verdict | **all 13** — the non-directional groups are gone; every cohort mode has a directional alternative |
+| Report-level classes | **two** (supported/refuted, 50/50): order questions are not posed on tied reports; `insufficient` does not exist at report level |
 | Min-n gate | 10, sequence 5 (`core/min_n.py`) |
 | Tests | exact only; chi-square removed from the codebase |
 | Gold label | the **three-decision verdict**, oriented to each instance's own claim |
 | Framework input | the **annotated leveled orders**, never narratives |
-| Decisive cores (S) | **1365** — every remaining group clears its null |
+| Decisive cores (S) | **stale — re-measure at generation.** The 1365 predates today: C-V3's argmax alone is 258 (was 378 shared with C-V1); the additions measured 2,302 / 16,884 / 2,098 decisive at full enumeration |
 | Insufficient sub-types | all populated: underpowered 3,246 / sparse 4,941 / not_locatable 118 (re-measured 08-12) |
-| Sampler | equal thirds **per group**, every decisive core posed **both ways** |
-| Release format | `*_questions.jsonl` (input only) + `*_answers.jsonl` (gold), split enforced |
-| Gold-label validation | **20,749 instances, six invariant families, all passing** |
-| Reported statistics | one-sided exact p-value, 95% Wilson CI (Wilson-Newcombe on the difference for two-cohort), Cohen's h against the test's own null — all oriented to the instance's asserted claim |
-| Confidence tag | **provisional and uncalibrated** — see issue 4 |
+| Sampler | equal thirds **per group**, every decisive core posed **both ways**; ceil(S/3)+3 seeded FALSE combinations injected per non-report group for the not_locatable third |
+| Release format | `*_questions.jsonl` (input only) + `*_answers.jsonl` (gold), split enforced; answers now carry `fact_id` and the descriptive `positional` block |
+| Gold-label validation | six invariant families incl. per-arm DB recomputation for the new modes; last exhaustive run 17,341 instances (pre-additions), sampled clean at 20 groups |
+| Reported statistics | one-sided exact p-value, 95% Wilson CI (Wilson-Newcombe on the difference for every two-arm/two-cohort mode), Cohen's h against the test's own null — all oriented to the instance's asserted claim |
+| Confidence fields | Wilson CI only — the tag and width fields were REMOVED 2026-08-14 (issue 4 closed by removal) |
 
 ### Closed since the 08-11 entry (2026-08-12)
 

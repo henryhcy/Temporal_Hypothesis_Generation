@@ -114,42 +114,6 @@ Open questions before building it:
   starved groups?** These are different commitments; the second is what would
   actually rescue the sequence tier.
 
-## Claim/label defects
-
-### C-V3 asks an argmax question but ships a majority statistic (issue 13)
-C-V3's text is *"After {v}, is co-occurrence the dominant relation for {A} and
-{B}?"* — an **argmax** over {before, after, co-occur}. The statistic it ships is
-`sym_bool_cooccurs`: co-occurrence rate **> 0.5**, a majority claim. Those are
-different questions; a pair can be 40% co-occur / 35% before / 25% after —
-co-occurrence is dominant, yet the majority test refutes.
-
-Measured: the two readings disagree on **195 of 959 computable cores (20%)**, and
-**5 of those carry a shipped decisive verdict**. Example — Janssen, Fatigue /
-Headache: before 45, after 75, co-occur 76. Co-occurrence *is* the most common
-relation, and the instance ships `refuted`.
-
-Same null-alignment defect that got S-V1/F-V3 reworded on 07-13 and F-V2/F-R2 on
-08-12. `validate_gold.py` cannot catch it: the label is internally consistent
-with its statistic, and what is misaligned is the TEXT. A model that correctly
-answers the question as worded is marked wrong.
-
-Options:
-(a) **Reword to the statistic** — "do {A} and {B} co-occur in most reports where
-    both appear?" But then C-V3 is a pure paraphrase of C-V1 (same BOOL, same
-    statistic), and the register axis already supplies paraphrase, so C-V3 stops
-    earning a slot.
-(b) **Change the statistic to the argmax** — modal-vs-runner-up over the 3-cell
-    relation distribution. This is the house pattern already locked for
-    S-V1/S-V3/F-V1/F-V3, and it makes C-V3 genuinely distinct instead of a
-    duplicate. Needs a permutation-null screen at >= 2000 rounds.
-(c) **Remove C-V3.**
-Recommended: (b), falling back to (c). Do not ship as-is.
-
-**DECIDED 2026-08-14: (b).** Implementation and the >=2000-round permutation
-screen are pending; if the screen fails, fall back to (c). See `decisions.md`.
-
-## Dataset
-
 ## Framework
 
 ### Architecture detail (issue 3)
