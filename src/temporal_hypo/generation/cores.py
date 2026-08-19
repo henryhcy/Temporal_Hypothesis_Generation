@@ -43,10 +43,7 @@ from temporal_hypo.core.aggregation import (
 from temporal_hypo.core.min_n import min_n_gate
 from temporal_hypo.generation import corpus
 from temporal_hypo.generation.confidence import (
-    Z_95,
     cohens_h,
-    confidence_tag,
-    ci_width,
     wilson_ci,
     wilson_newcombe_diff_ci,
 )
@@ -135,7 +132,6 @@ class InstanceFacts:
     gold_proportion: float | None
     gold_n: int | None
     ci: tuple[float, float] | None
-    confidence_tag: str | None
     effect_size: float | None
     p_value: int | None
     negated: bool = False        # the instance asserts the claim's NEGATION
@@ -151,9 +147,8 @@ class InstanceFacts:
 # small helpers
 # ---------------------------------------------------------------------------
 
-def _ci_fields(k: int, n: int) -> tuple[tuple[float, float], str]:
-    ci = wilson_ci(k, n)
-    return ci, confidence_tag(ci_width(ci))
+def _ci_fields(k: int, n: int) -> tuple[float, float]:
+    return wilson_ci(k, n)
 
 
 def _two_cell(counts: dict, named) -> float | None:
@@ -409,30 +404,59 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
     raise ValueError(f"unhandled multi mode: {mode}")
 
 
+_REPORT_TRIPLE_MODES = ("rep_seq_bool", "rep_first_choice",
+                        "rep_last_choice", "rep_first_bool")
+
+
+def _report_combo(tmap: dict, present: list, mode: str) -> tuple | None:
+    """The events a report-level question is posed about (2026-08-14, issues 6+7).
+
+    Order-asking questions are NOT POSED on tied reports: the combo is the
+    earliest fully-ORDERED pair/triple (all at distinct levels), scanned
+    deterministically over the level-then-name ordering. This mirrors how every
+    cohort family drops unresolvable reports from its denominator (co-exist for
+    precedes, non-orderable triples for sequence, ties for first/last) -- and it
+    makes report level strictly TWO-CLASS: with distinct levels, rel is always
+    before/after, `holds` is decidable, and first/last winners are unique, so
+    `insufficient` cannot arise. C-R1 (rep_sym_bool) keeps the earliest two
+    events INCLUDING ties, because co-existence is its supported case and it is
+    the report-level group that asks about exactly that.
+    """
+    if mode == "rep_sym_bool":
+        return tuple(present[:2]) if len(present) >= 2 else None
+    if mode in _REPORT_TRIPLE_MODES:
+        m = len(present)
+        for i in range(m):
+            for j in range(i + 1, m):
+                if tmap[present[i]] == tmap[present[j]]:
+                    continue
+                for k in range(j + 1, m):
+                    if tmap[present[k]] not in (tmap[present[i]],
+                                                tmap[present[j]]):
+                        return (present[i], present[j], present[k])
+        return None
+    m = len(present)
+    for i in range(m):
+        for j in range(i + 1, m):
+            if tmap[present[i]] != tmap[present[j]]:
+                return (present[i], present[j])
+    return None
+
+
 def _enum_report(index: CorpusIndex, group: Group, mode: str) -> list[ViableCore]:
     cores: list[ViableCore] = []
-    triple = mode in ("rep_seq_bool", "rep_first_choice", "rep_last_choice",
-                       "rep_first_bool")
     # iterate reports deterministically by id; bound total cores per group
     for vid in sorted(index.report_terms):
         if len(cores) >= MAX_REPORT_CORES:
             break
         tmap = index.report_terms[vid]
         present = sorted(tmap, key=lambda t: (tmap[t], t))
-        if triple:
-            if len(present) < 3:
-                continue
-            combo = tuple(present[:3])  # earliest three by level then name
-            core = _build_report_core(index, group, mode, vid, tmap, combo)
-            if core is not None:
-                cores.append(core)
-        else:
-            if len(present) < 2:
-                continue
-            combo = tuple(present[:2])
-            core = _build_report_core(index, group, mode, vid, tmap, combo)
-            if core is not None:
-                cores.append(core)
+        combo = _report_combo(tmap, present, mode)
+        if combo is None:
+            continue
+        core = _build_report_core(index, group, mode, vid, tmap, combo)
+        if core is not None:
+            cores.append(core)
     return cores
 
 
@@ -572,18 +596,15 @@ def _enum_multi_full(index, group, mode) -> list[ViableCore]:
 
 
 def _enum_report_full(index, group, mode) -> list[ViableCore]:
-    # One core per report (earliest two/three events), no MAX_REPORT_CORES cap.
+    # One core per report, no MAX_REPORT_CORES cap; same tie rule as capped.
     cores: list[ViableCore] = []
-    triple = mode in ("rep_seq_bool", "rep_first_choice", "rep_last_choice",
-                       "rep_first_bool")
-    need = 3 if triple else 2
     for vid in sorted(index.report_terms):
         tmap = index.report_terms[vid]
         present = sorted(tmap, key=lambda t: (tmap[t], t))
-        if len(present) < need:
+        combo = _report_combo(tmap, present, mode)
+        if combo is None:
             continue
-        core = _build_report_core(index, group, mode, vid, tmap,
-                                  tuple(present[:need]))
+        core = _build_report_core(index, group, mode, vid, tmap, combo)
         if core is not None:
             cores.append(core)
     return cores
@@ -775,7 +796,7 @@ def _realize(core: ViableCore, polarity: str) -> InstanceFacts:
 def _mk(core, polarity, flip_kind, events_assigned, *, verdict,
         proportion=None, n=None, k=None, n2=None, k2=None,
         p_value=None, null_ref=0.5,
-        ci=None, tag=None, effect="auto", vaccines=None):
+        ci=None, effect="auto", vaccines=None):
     vacc = core.vaccines if vaccines is None else vaccines
     slot: dict[str, str] = {}
     slot.update(_slot_events(events_assigned))
@@ -785,7 +806,7 @@ def _mk(core, polarity, flip_kind, events_assigned, *, verdict,
     if p_value is not None:
         slot["p"] = str(p_value)
     if ci is None and k is not None and n:
-        ci, tag = _ci_fields(k, n)
+        ci = _ci_fields(k, n)
     if effect == "auto":
         effect = cohens_h(proportion, null_ref) if proportion is not None else None
     return InstanceFacts(
@@ -793,7 +814,7 @@ def _mk(core, polarity, flip_kind, events_assigned, *, verdict,
         events_assigned=events_assigned, vaccines_assigned=vacc,
         gold_verdict=verdict, gold_proportion=proportion, gold_n=n, gold_k=k,
         gold_n2=n2, gold_k2=k2, ci=ci,
-        confidence_tag=tag, effect_size=effect, p_value=p_value,
+        effect_size=effect, p_value=p_value,
     )
 
 
@@ -871,11 +892,6 @@ def _realize_extreme_choice(core, polarity):
                proportion=p, n=n, k=round(p * n), null_ref=1 / 3)
 
 
-def _diff_ci(core):
-    ci = wilson_newcombe_diff_ci(core.k, core.n, core.k2, core.n2)
-    return ci, confidence_tag(ci_width(ci))
-
-
 def _realize_multi_dir(core, polarity):
     p1, p2 = core.proportion, core.proportion2
     v1, v2 = core.vaccines
@@ -896,12 +912,11 @@ def _realize_multi_dir(core, polarity):
             vacc, hp, hk, hn, lk, ln = (v1, v2), p1, k1, n1, k2, n2
             fk = None
     ci = wilson_newcombe_diff_ci(hk, hn, lk, ln)
-    tag = confidence_tag(ci_width(ci))
     ev = core.events
     verdict = direction_verdict(hp, ln and (lk / ln))
     return _mk(core, polarity, fk, ev, verdict=verdict, proportion=hp,
                n=hn, k=hk, n2=ln, k2=lk,
-               ci=ci, tag=tag, effect=cohens_h(hp, lk / ln),
+               ci=ci, effect=cohens_h(hp, lk / ln),
                vaccines=vacc)
 
 

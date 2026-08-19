@@ -150,8 +150,7 @@ def write_validation_sample(samples: list[dict], path: Path) -> None:
         sub = f" ({s_['subtype']})" if s_.get("subtype") else ""
         out.append(f"- **gold verdict: {s_['verdict']}{sub}**")
         if s_.get("ci"):
-            out.append(f"- 95% CI: {s_['ci']} (width {s_['ci_width']}, "
-                       f"{s_['confidence_tag']})")
+            out.append(f"- 95% CI: {s_['ci']}")
         if s_.get("cohort2"):
             c2 = s_["cohort2"]
             out.append(f"- cohort 2: proportion={c2['proportion2']} n={c2['n2']} "

@@ -5,7 +5,6 @@ from __future__ import annotations
 from temporal_hypo.generation.confidence import (
     bootstrap_ci,
     cohens_h,
-    confidence_tag,
     ci_width,
     percentile,
     wilson_ci,
@@ -42,14 +41,6 @@ def test_bootstrap_reproducible_and_centered():
     b = bootstrap_ci(samples, lambda s: sum(s) / len(s), b=500, seed=42)
     assert a == b  # deterministic given seed
     assert a[0] < 0.7 < a[1] or abs(a[1] - 0.7) < 0.2
-
-
-def test_confidence_tag_thresholds():
-    assert confidence_tag(0.10) == "high"
-    assert confidence_tag(0.15) == "high"
-    assert confidence_tag(0.25) == "moderate"
-    assert confidence_tag(0.30) == "moderate"
-    assert confidence_tag(0.45) == "low"
 
 
 def test_ci_width_and_percentile():

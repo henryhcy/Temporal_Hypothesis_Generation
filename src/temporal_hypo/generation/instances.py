@@ -33,6 +33,42 @@ def core_id(facts: InstanceFacts) -> str:
     return f"{c.group_id}|{vx}|{ev}"
 
 
+# Group-INDEPENDENT identity of the underlying fact (issue 14, decisions.md
+# 2026-08-14). Answer-format twins (P-V1/P-V3, S-V1/S-V3, F-V1/F-V3) compute the
+# identical statistic on identical cores under different group_ids, so a split
+# keyed on `derived_from_core_id` -- which embeds the group -- would put the same
+# fact on both sides. The later train/dev/test split MUST group by `fact_id`,
+# and power/coverage claims must count DISTINCT fact_ids, not instances.
+# C-V1 and C-V3 stopped being twins with the 08-14 argmax change, so they
+# correctly map to different statistics here.
+_STAT_BY_MODE = {
+    "dir_bool": "precedes", "dir_choice": "precedes",
+    "sym_bool_cooccurs": "cooc_majority",
+    "cooc_modal_bool": "cooc_modal",
+    "seq_bool": "seq_modal", "modal_choice": "seq_modal",
+    "first_choice": "first_modal", "first_bool": "first_modal",
+    "last_choice": "last_modal",
+    "multi_dir_precedes": "precedes_2cohort",
+    "rep_dir_bool": "rep_precedes", "rep_dir_choice": "rep_precedes",
+    "rep_sym_bool": "rep_cooc",
+    "rep_seq_bool": "rep_seq",
+    "rep_first_choice": "rep_first", "rep_first_bool": "rep_first",
+    "rep_last_choice": "rep_last",
+}
+
+
+def fact_id(facts: InstanceFacts) -> str:
+    """Group-independent identity: same statistic + cohort + events = same fact.
+
+    Events are SORTED so the id is invariant under orientation and level order;
+    which side of a fact an instance asserts is orientation, not identity.
+    """
+    c = facts.core
+    ev = "+".join(sorted(c.events))
+    vx = "+".join(c.vaccines) if c.vaccines else (f"R{c.report_id}")
+    return f"{_STAT_BY_MODE[c.mode]}|{vx}|{ev}"
+
+
 def _round(x, nd=4):
     return None if x is None else round(x, nd)
 
@@ -94,9 +130,7 @@ def build_records(
         # GOLD-SIDE: the report ids the statistic was computed over. Never input.
         "evidence_ids": evidence,
         "ci": [_round(ci[0]), _round(ci[1])] if ci else None,
-        "ci_width": _round(ci[1] - ci[0]) if ci else None,
         "effect_size": _round(facts.effect_size),
-        "confidence_tag": facts.confidence_tag,
         # significance test on the gold value (None for report-level / insufficient)
         "p_value": _round(sig.p_value, 6),
         "significant": sig.significant,
@@ -127,6 +161,8 @@ def build_records(
         "flip_kind": facts.flip_kind,
         "band": band,
         "derived_from_core_id": core_id(facts),
+        # the split key and the honest supply-counting key (issue 14)
+        "fact_id": fact_id(facts),
         "synonym_used": list(facts.events_assigned),
         "factual_core": factual_core,
     }

@@ -8,8 +8,10 @@ quantile z = 1.959963985. Methods (per decisions.md):
 - Seeded percentile bootstrap for statistics without a clean closed form
   (sequence/modal/multi).
 
-Confidence tags use PROVISIONAL CI-width cuts; Part A4 of the pilot reports the
-width distribution so these cuts can be recalibrated. They are not locked.
+The confidence TAG (high/moderate/low width cuts) was REMOVED on 2026-08-14
+(decisions.md batch 2, issue 4): the cuts were never calibrated and at this
+corpus's sample sizes the tag was near-constant. The interval and its width
+remain reportable; the bucketing does not.
 """
 
 from __future__ import annotations
@@ -20,11 +22,6 @@ from typing import Callable, Sequence
 
 # Standard-normal two-sided 95% quantile.
 Z_95 = 1.959963985
-
-# Provisional CI-width -> confidence tag cutoffs (A4 recalibrates these).
-_TAG_HIGH_MAX = 0.15
-_TAG_MODERATE_MAX = 0.30
-
 
 def wilson_ci(k: int, n: int, z: float = Z_95) -> tuple[float, float]:
     """Wilson score interval for k successes out of n trials.
@@ -106,15 +103,6 @@ def bootstrap_ci(
 def ci_width(ci: tuple[float, float]) -> float:
     """Width of a confidence interval."""
     return ci[1] - ci[0]
-
-
-def confidence_tag(width: float) -> str:
-    """Map a CI width to a high/moderate/low tag (PROVISIONAL cuts; see A4)."""
-    if width <= _TAG_HIGH_MAX:
-        return "high"
-    if width <= _TAG_MODERATE_MAX:
-        return "moderate"
-    return "low"
 
 
 def cohens_h(p1: float, p2: float) -> float:

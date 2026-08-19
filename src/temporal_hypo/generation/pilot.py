@@ -135,11 +135,10 @@ def _validation_entry(core, group, index, polarity=None) -> dict:
         "alpha": ALPHA,
         "min_n_floor": (family_floor(core.family)
                         if core.report_id is None else None),
-        "ci": facts.ci, "ci_width": None, "confidence_tag": facts.confidence_tag,
+        "ci": facts.ci,
     }
     if facts.ci:
         entry["ci"] = [round(facts.ci[0], 4), round(facts.ci[1], 4)]
-        entry["ci_width"] = round(facts.ci[1] - facts.ci[0], 4)
     if core.n2 is not None:
         entry["cohort2"] = {"proportion2": (round(core.proportion2, 4)
                                            if core.proportion2 is not None else None),

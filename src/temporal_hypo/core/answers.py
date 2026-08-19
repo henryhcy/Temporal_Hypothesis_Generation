@@ -35,9 +35,7 @@ from temporal_hypo.core import significance as sig
 from temporal_hypo.core import verdict as vd
 from temporal_hypo.generation import cores as _cores
 from temporal_hypo.generation.confidence import (
-    ci_width,
     cohens_h,
-    confidence_tag,
     wilson_ci,
     wilson_newcombe_diff_ci,
 )
@@ -396,8 +394,6 @@ class AnswerRecord:
     proportion2: float | None
     n2: int | None
     ci: tuple[float, float] | None
-    ci_width: float | None
-    confidence_tag: str | None
     effect_size: float | None
     p_value: float | None
     significant: bool | None
@@ -445,17 +441,16 @@ def _two_cell_proportion(core) -> float | None:
 
 
 def _ci_effect(core):
-    """(ci, width, tag, effect_size) on the core's canonical proportion."""
+    """(ci, effect_size) on the core's canonical proportion."""
     if core.proportion is None or core.report_id is not None:
-        return None, None, None, None
+        return None, None
     if core.mode in _FISHER:
         if None in (core.k, core.n, core.k2, core.n2):
-            return None, None, None, None
+            return None, None
         ci = wilson_newcombe_diff_ci(core.k, core.n, core.k2, core.n2)
-        return ci, ci_width(ci), confidence_tag(ci_width(ci)), \
-            cohens_h(core.proportion, core.proportion2)
+        return ci, cohens_h(core.proportion, core.proportion2)
     if core.k is None or core.n is None:
-        return None, None, None, None
+        return None, None
     ci = wilson_ci(core.k, core.n)
     # The CI stays on the REPORTED proportion (the descriptive share of the whole
     # denominator); the EFFECT SIZE is measured on the quantity the test actually
@@ -463,8 +458,7 @@ def _ci_effect(core):
     basis = core.proportion
     if core.mode in _MODAL_RUNNER or core.mode == "cooc_modal_bool":
         basis = _two_cell_proportion(core) or core.proportion
-    return ci, ci_width(ci), confidence_tag(ci_width(ci)), \
-        cohens_h(basis, _null_ref(core.mode))
+    return ci, cohens_h(basis, _null_ref(core.mode))
 
 
 _GROUPS: dict[str, Group] | None = None
@@ -514,7 +508,7 @@ def compute_answer(corpus: CorpusIndex, group_id: str, events,
         raise ValueError(
             f"{group_id}: events {tuple(events)} not all present for the cohort")
 
-    ci, width, tag, effect = _ci_effect(core)
+    ci, effect = _ci_effect(core)
     s = core_significance(core)
     options, gold = answer_key(core)
     return AnswerRecord(
@@ -524,7 +518,7 @@ def compute_answer(corpus: CorpusIndex, group_id: str, events,
         computable=core.computable, verdict=core.natural_verdict,
         proportion=core.proportion, n=core.n, k=core.k,
         proportion2=core.proportion2, n2=core.n2,
-        ci=ci, ci_width=width, confidence_tag=tag, effect_size=effect,
+        ci=ci, effect_size=effect,
         p_value=s.p_value, significant=s.significant, sig_test=s.test,
         options=options, gold_answer=gold,
         p_claim=s.p_claim, p_opposite=s.p_opposite,

@@ -45,7 +45,10 @@ def test_build_records_expands_register_and_format():
         assert r["gold_n"] == 20
         assert r["band"] == "high"
         assert r["factual_core"]["events"] == ["Headache", "Fever"]
-        assert r["ci"] is not None and r["ci_width"] is not None
+        assert r["ci"] is not None            # width/tag fields removed 08-14
+        # fact_id (issue 14): group-independent, so it must NOT embed the group
+        assert r["fact_id"].startswith("precedes|")
+        assert "P-V1" not in r["fact_id"]
 
 
 def test_records_carry_consistent_gold_across_variants():
@@ -76,3 +79,22 @@ def test_choice_record_carries_options_and_gold_answer():
         assert r["options"] == ["A", "B", "C"]
         assert r["gold_answer"] == "A"
         assert r["sig_test"] == "modal_runner"   # was multinomial_gof pre-08-11
+
+
+def test_fact_id_collapses_answer_format_twins():
+    """Issue 14: P-V1 (BOOL) and P-V3 (CHOICE) compute the same statistic on the
+    same core, so they must share a fact_id even though their core_ids differ --
+    that shared id is what keeps one fact on one side of a future split."""
+    from temporal_hypo.generation.instances import core_id, fact_id
+    groups = load_groups()
+    f1 = realize(_core(), "supported")
+    c2 = _core()
+    c2.group_id = "P-V3"
+    c2.answer_type = "CHOICE"
+    c2.mode = "dir_choice"
+    f2 = realize(c2, "supported")
+    assert core_id(f1) != core_id(f2)         # the OLD key separates the twins
+    assert fact_id(f1) == fact_id(f2)         # the split key does not
+    # orientation must not change identity either
+    f1r = realize(_core(), "refuted")
+    assert fact_id(f1) == fact_id(f1r)
