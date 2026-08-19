@@ -2176,3 +2176,36 @@ dominant relation"); research/media/clinical asked the MAJORITY question
 being retired). With the statistic moving to modal-vs-runner-up, all four
 registers are reworded to argmax phrasing so the four paraphrases finally ask
 the same question.
+
+---
+
+## v1 DATASET GENERATED; all three additions CLEAR their screens (2026-08-14)
+
+The 2000-round full-enumeration screens (`scripts/screen_new_groups.py`,
+`data/pilot/new_groups_screen.json`) all come back at the 0.0005 floor -- no
+shuffled round approached any real count:
+
+| group | decisive/cores | null mean | null p95 | p_perm | null model |
+|---|--:|--:|--:|--:|---|
+| P-V2 | 2,302 / 10,060 | 341.3 | 452 | **0.0005** | level shuffle |
+| P-V4 | 16,884 / 49,862 | 1,848.9 | 2,435 | **0.0005** | level shuffle |
+| C-V2 | 2,098 / 26,764 | 924.4 | 976 | **0.0005** | edge swap |
+
+So the 20-group roster is FINAL and the generated artifact ships unchanged:
+`data/release/v1` -- 147,936 records / 18,492 instances, verdicts
+6,845/6,783/4,864, 8,964 distinct facts, 6,664 mirror pairs, positional
+coverage 65.7%, committed gzipped with sha256 provenance (f0ea221).
+
+Release-format refinement, same date: answers are ONE ROW PER INSTANCE
+(instance_id + hypothesis_ids), because per-record answers duplicated the
+evidence-id lists eightfold (389 MB measured -> 52 MB). The input/gold
+boundary and the questions file are unchanged.
+
+Presentation caveats recorded with the artifact, decisions pending user
+review: P-V4 supplies 46% of all instances (cap or keep); C-R1 ships
+181/119 (class fixed by data; balancing would need authored negation);
+S-V1/S-V3 ship at S = 2 per the issue-9 (b) decision.
+
+The Overleaf dataset-construction section is drafted
+(`docs/draft/dataset_construction.md`) and PRESENTED; Overleaf is untouched
+pending the user's approval, per their instruction.

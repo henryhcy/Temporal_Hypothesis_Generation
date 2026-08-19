@@ -23,7 +23,7 @@ record of current settings, pending work and known defects.
 | # | issue | kind | status | detail lives in |
 |--:|---|---|---|---|
 | ~~1~~ | ~~Multi tier~~ | — | **DECIDED 2026-08-14: ship P-M2 alone** | `decisions.md` "Dataset-creation decision batch" |
-| 2 | Roster migration A | build | **IMPLEMENTED 2026-08-14**: six groups removed, P-V2/P-V4/C-V2 coded + worded; full-enumeration 2000-round screens RUNNING (`data/pilot/new_groups_screen.json`) — additions ship only if they clear | `decisions.md` batch 2 |
+| ~~2~~ | ~~Roster migration A~~ | — | **CLOSED 2026-08-14: COMPLETE** — six groups removed; P-V2/P-V4/C-V2 shipped, all three cleared their 2000-round screens at p_perm 0.0005 | `decisions.md` "v1 DATASET GENERATED" |
 | 3 | Eval harness does not exist — architecture, metrics, baselines | build | not started; input format now settled so it is specifiable | §2 below |
 | ~~4~~ | ~~Confidence tag~~ | — | **CLOSED 2026-08-14 by removal**: tag + width fields leave the release; the Wilson CI stays | `decisions.md` batch 2 |
 | ~~5~~ | ~~not_locatable sourcing~~ | — | **CLOSED 2026-08-14: implemented** — `enumerate_false_cores` injects seeded zero-joint combinations at balance time, ceil(S/3)+3 per non-report group | `decisions.md` batch 2 |
@@ -31,7 +31,7 @@ record of current settings, pending work and known defects.
 | ~~7~~ | ~~Report-level ties~~ | — | **CLOSED 2026-08-14: implemented** — `_report_combo` picks the earliest fully-ordered pair/triple; C-R1 keeps ties (its supported case) | `decisions.md` batch 2 |
 | ~~8~~ | ~~Synonym table~~ | — | **CLOSED 2026-08-14: v1 ships without it** (documented limitation) | `decisions.md` batch |
 | 9 | Sequence cohort tier has S = 8 across two groups (S-V1, S-V3) | decision | **DECIDED 2026-08-14: (b) take in full, flagged thin**; levers 4/5 recorded as post-v1 | `decisions.md` batch 2 |
-| 10 | Overleaf draft is badly stale (S, roster, tests, nulls, gold rule, input format) | write-up | hold until #1 and #2 settle | §5 below |
+| 10 | Overleaf update | write-up | dataset-construction section DRAFTED and presented (`docs/draft/dataset_construction.md`); awaiting user approval before any sync; rest of the draft still stale | §5 below |
 | ~~11~~ | ~~Disconnected components~~ | — | **CLOSED 2026-08-14 by inspection**: the leveled-order format is a single chain by construction; `num_groups` = stage count (mislabeled); upstream per issue 15 | `decisions.md` batch |
 | 12 | `.venv` lost its editable install | environment | workaround: `PYTHONPATH=src` | standing caveats |
 | ~~13~~ | ~~C-V3 argmax vs majority~~ | — | **CLOSED 2026-08-14: implemented AND CLEARED** — 258 decisive of 959 vs null mean 62.6, p_perm 0.0005 (`data/pilot/cv3_screen.json`); natural balance 101/157 vs the old 40/338; registers reworded to argmax | `decisions.md` batch 2 |

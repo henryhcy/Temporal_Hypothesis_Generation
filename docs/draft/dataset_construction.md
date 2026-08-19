@@ -2,10 +2,8 @@
 
 > DRAFT 2026-08-14, presented for approval before any Overleaf update.
 > Every number is measured from `data/release/v1/dataset_statistics.json`
-> (commit noted there) or from the committed screen JSONs; nothing is
-> estimated. Cells marked [SCREEN] are filled from
-> `data/pilot/new_groups_screen.json` the moment the 2000-round runs
-> complete.
+> or the committed screen results; nothing is estimated. All screens are
+> COMPLETE: every shipping group cleared its 2000-round permutation null.
 
 ## 1. Source corpus
 
@@ -113,9 +111,9 @@ against a degree-preserving **edge-swap** null; two-cohort shapes against a
 | group | statistic | decisive / cores | null mean | p_perm |
 |---|---|--:|--:|--:|
 | C-V3 (argmax rework) | modal-vs-runner-up | 258 / 959 | 62.6 | **0.0005** |
-| P-V2 | two-arm Fisher | 2,302 / 10,060 | ~341 | [SCREEN] |
-| P-V4 | two-arm Fisher | 16,884 / 49,862 | ~1,856 | [SCREEN] |
-| C-V2 | presence Fisher | 2,098 / 26,764 | [SCREEN] | [SCREEN] |
+| P-V2 | two-arm Fisher | 2,302 / 10,060 | 341.3 | **0.0005** |
+| P-V4 | two-arm Fisher | 16,884 / 49,862 | 1,848.9 | **0.0005** |
+| C-V2 | presence Fisher | 2,098 / 26,764 | 924.4 | **0.0005** |
 | P-M2 (shipped 08-04) | two-cohort Fisher | 30 / 322 | 18.3 | 0.023–0.025 |
 
 The screening history is itself a result: seven candidate two-cohort shapes
