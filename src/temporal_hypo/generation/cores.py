@@ -781,7 +781,22 @@ def enumerate_false_cores(index: CorpusIndex, group: Group, *,
     if group.level == "report":
         raise ValueError("report-level groups have no insufficient class")
     mode = MODE_BY_GROUP[group.id]
-    need = 3 if mode in _VACCINE_TRIPLE_MODES else 2
+    # Falseness is MODE-SPECIFIC because the conditioning is (the first
+    # generation run crashed on exactly this): a 2-event zero-joint pair is
+    # meaningless for P-V2's three slots, and C-V2 does not condition on
+    # co-presence at all, so "never together" would give it a COMPUTABLE
+    # (likely refuted) core, not a not_locatable one.
+    #
+    #   pair modes            never co-present            -> n = 0
+    #   triple argmax modes   all three never co-present  -> n = 0
+    #   antecedent (a, b, c)  b co-occurs with NEITHER a nor c -> n = n2 = 0
+    #   pairpair (a, b, c, d) both pairs never co-present -> n = n2 = 0
+    #   assoc (a, b)          a is a real CORPUS term ABSENT from this cohort
+    #                         -> arm 1 (reports with A) is empty, n = 0, while
+    #                         arm 2 keeps its true values (n2 = cohort, k2 = B)
+    need = (4 if mode == "pairpair_bool"
+            else 3 if mode in _VACCINE_TRIPLE_MODES or mode == "antecedent_bool"
+            else 2)
     rng = random.Random(seed)
     out: list[ViableCore] = []
     seen: set = set()
@@ -793,32 +808,66 @@ def enumerate_false_cores(index: CorpusIndex, group: Group, *,
                 m.setdefault(t, set()).add(vid)
         return m
 
+    all_terms = sorted({t for tm in index.report_terms.values() for t in tm})
+
+    def zero_joint(maps, terms) -> bool:
+        return all(not set.intersection(*[m.get(t, set()) for t in terms])
+                   for m in maps)
+
     scopes = ([(v,) for v in VACCINES] if group.level == "vaccine"
               else list(VACCINE_PAIRS))
     per_scope = -(-count // len(scopes))
     for vaxes in scopes:
+        cohort = index.cohort(vaxes[0])
         maps = [term_reports(index.cohort(v)) for v in vaxes]
         vocab = sorted(set(maps[0]).intersection(*[set(m) for m in maps[1:]])) \
             if len(maps) > 1 else sorted(maps[0])
+        absent = [t for t in all_terms if t not in maps[0]]
         if len(vocab) < need:
             continue
         got = attempts = 0
         while got < per_scope and attempts < 200 * per_scope:
             attempts += 1
-            combo = tuple(sorted(rng.sample(vocab, need)))
+            kw2: dict = {}
+            if mode == "assoc_bool":
+                if not absent:
+                    break
+                a = rng.choice(absent)
+                b = rng.choice(vocab)
+                combo = (a, b)
+                n2 = len(cohort)
+                k2 = len(maps[0].get(b, ()))
+                kw2 = dict(proportion2=k2 / n2 if n2 else None, n2=n2, k2=k2)
+            elif mode == "antecedent_bool":
+                a, c = sorted(rng.sample(vocab, 2))
+                b = rng.choice([t for t in vocab if t not in (a, c)])
+                combo = (a, b, c)
+                if not (zero_joint(maps, (a, b)) and zero_joint(maps, (c, b))):
+                    continue
+                kw2 = dict(proportion2=None, n2=0, k2=0)
+            elif mode == "pairpair_bool":
+                pick = rng.sample(vocab, 4)
+                combo = tuple(sorted(pick[:2]) + sorted(pick[2:]))
+                if not (zero_joint(maps, combo[:2])
+                        and zero_joint(maps, combo[2:])):
+                    continue
+                kw2 = dict(proportion2=None, n2=0, k2=0)
+            else:
+                combo = tuple(sorted(rng.sample(vocab, need)))
+                if not zero_joint(maps, combo):
+                    continue
+                if group.level == "multi":
+                    kw2 = dict(proportion2=None, n2=0, k2=0)
             if (vaxes, combo) in seen:
                 continue
-            if any(set.intersection(*[m[t] for t in combo]) for m in maps):
-                continue                     # the combination actually occurs
             seen.add((vaxes, combo))
             got += 1
-            kw = dict(events=combo, vaccines=tuple(vaxes),
-                      cohort_ids=index.cohort(vaxes[0]), report_id=None,
-                      computable=False, natural_verdict="insufficient",
-                      proportion=None, n=0, k=0)
-            if group.level == "multi":
-                kw.update(proportion2=None, n2=0, k2=0)
-            out.append(_new_core(group, mode, **kw))
+            out.append(_new_core(group, mode,
+                                 events=combo, vaccines=tuple(vaxes),
+                                 cohort_ids=cohort, report_id=None,
+                                 computable=False,
+                                 natural_verdict="insufficient",
+                                 proportion=None, n=0, k=0, **kw2))
     return out[:count]
 
 # ---------------------------------------------------------------------------

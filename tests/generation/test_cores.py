@@ -306,3 +306,37 @@ def test_assoc_orients_by_negation_like_cv1():
     assert neg.negated is True and neg.gold_verdict == "supported"
     c, o = core_significance(core), oriented_significance(neg)
     assert o.p_claim == c.p_opposite and o.p_opposite == c.p_claim
+
+
+def test_false_cores_respect_new_mode_conditioning():
+    """Regression: the first generation run crashed because P-V2 false cores
+    came out with two events. Each new mode's falseness must match ITS
+    conditioning -- and the assoc case is not co-presence at all."""
+    from temporal_hypo.core.answers import oriented_significance
+    from temporal_hypo.generation.cores import enumerate_false_cores
+    reports = []
+    vid = 1
+    for vax in ("Pfizer", "Moderna", "Janssen"):
+        for _ in range(12):
+            reports.append((vid, vax, [["A"], ["B"], ["C"]])); vid += 1
+        for _ in range(12):
+            reports.append((vid, vax, [["X"], ["Y"]])); vid += 1
+    # 'Z' exists only in Moderna -> an absent-from-Pfizer corpus term for assoc
+    reports.append((vid, "Moderna", [["Z"], ["A"]])); vid += 1
+    index = CorpusIndex.load(make_db(reports))
+    groups = load_groups()
+
+    for gid, n_events in (("P-V2", 3), ("P-V4", 4), ("C-V2", 2)):
+        false = enumerate_false_cores(index, groups[gid], count=6, seed=1)
+        assert false, f"{gid}: no false cores found"
+        for c in false:
+            assert len(c.events) == n_events, (gid, c.events)
+            assert c.n == 0 and not c.computable
+            facts = realize(c, "insufficient")
+            sig = oriented_significance(facts)
+            assert sig.decision.subtype == "not_locatable", (gid, c.events)
+    # assoc arm 2 keeps its TRUE values (it is not conditioned on co-presence)
+    fc = enumerate_false_cores(index, groups["C-V2"], count=3, seed=1)
+    for c in fc:
+        if c.vaccines == ("Pfizer",):
+            assert c.n2 == len(index.cohort("Pfizer")) and c.k2 >= 0
