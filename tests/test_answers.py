@@ -104,13 +104,6 @@ def test_multi_dir_choice_picks_higher_vaccine(idx):
     assert abs(r.proportion - 0.8) < 1e-9 and abs(r.proportion2 - 0.55) < 1e-9
 
 
-def test_multi_differ_verdict(idx):
-    r = compute_answer(idx, "P-M1", ("Headache", "Fatigue"),
-                       vaccines=("Pfizer", "Moderna"))
-    # |0.80 - 0.55| = 0.25 > 0.10 -> differ supported
-    assert r.verdict == "supported"
-
-
 # ---- distribution (chi-square GoF) ---------------------------------------
 
 def test_first_choice_winner(idx):
@@ -407,3 +400,77 @@ def test_questions_file_carries_no_gold_fields():
     for leaked in ("gold_verdict", "gold_n", "gold_k", "evidence_ids",
                    "p_claim", "p_opposite", "gold_answer", "test_verdict"):
         assert leaked not in INPUT_FIELDS
+
+
+# ---- C-V3: modal-vs-runner-up over the relation distribution (issue 13) ---
+
+from temporal_hypo.core.answers import (  # noqa: E402
+    core_significance as _core_sig,
+    oriented_significance as _oriented_sig,
+)
+
+
+def _cv3_core(before: int, after: int, co: int) -> cores.ViableCore:
+    n = before + after + co
+    runner = max(before, after)
+    return cores.ViableCore(
+        group_id="C-V3", family="pairwise", primitive="co_occurs",
+        level="vaccine", answer_type="BOOL", mode="cooc_modal_bool",
+        events=("A", "B"), vaccines=("Pfizer",), cohort_ids=[], report_id=None,
+        computable=True,
+        natural_verdict=("supported" if co > runner else
+                         "refuted" if co < runner else "insufficient"),
+        proportion=co / n, n=n, k=co,
+        extra={"counts": {"before": before, "after": after, "co_exist": co},
+               "named": "co_exist"},
+    )
+
+
+def test_cv3_end_to_end_refuted_when_order_dominates(idx):
+    # In the fixture corpus Headache and Fatigue are ALWAYS at distinct levels
+    # (16 H-first + 4 F-first, co_exist 0), so "co-occurrence is the dominant
+    # relation" is decisively false: named 0 vs runner-up 16.
+    r = compute_answer(idx, "C-V3", ("Headache", "Fatigue"),
+                       vaccines=("Pfizer",))
+    assert r.mode == "cooc_modal_bool"
+    assert r.sig_test == "modal_runner"
+    assert r.test_verdict == "refuted"
+    # the descriptive share stays the co_exist share of both-present reports
+    assert r.n == 20 and r.k == 0
+
+
+def test_cv3_plurality_supported_without_majority():
+    # 40 of 90 is NOT a majority (44%), but co_exist beats its runner-up 40 to
+    # 25 -- the exact semantic gap issue 13 existed for: the retired majority
+    # statistic could never support this core, the argmax statistic can.
+    s = _core_sig(_cv3_core(before=25, after=25, co=40))
+    assert s.test == "modal_runner"
+    assert s.decision.verdict == "supported"
+    assert s.p_claim < 0.05
+
+
+def test_cv3_issue13_shipped_case_is_insufficient_not_refuted():
+    # The measured wrong label (Janssen, Fatigue/Headache): before 45, after 75,
+    # co_exist 76. Co-occurrence IS the most common relation; the majority
+    # statistic shipped `refuted`. The argmax test cannot separate 76 from 75,
+    # so the honest label is insufficient.
+    s = _core_sig(_cv3_core(before=45, after=75, co=76))
+    assert s.decision.verdict == "insufficient"
+    assert s.p_claim > 0.05 and s.p_opposite > 0.05
+
+
+def test_cv3_negation_supplies_both_classes_and_swaps_tails():
+    groups = load_groups()
+    core = _cv3_core(before=50, after=20, co=10)      # order dominates: refuted
+    # not slot-orientable (the named cell is fixed by the text), so both classes
+    # come via the authored negation, exactly like C-V1
+    assert cores.feasible_polarities(core, groups["C-V3"]) == \
+        {"supported", "refuted"}
+    plain = cores.realize(core, "refuted")
+    assert plain.negated is False and plain.gold_verdict == "refuted"
+    assert plain.events_assigned == ("A", "B")        # slots never move
+    neg = cores.realize(core, "supported")            # asserts the negation
+    assert neg.negated is True and neg.gold_verdict == "supported"
+    # the negated instance's own statistics are the swapped tails
+    c, o = _core_sig(core), _oriented_sig(neg)
+    assert o.p_claim == c.p_opposite and o.p_opposite == c.p_claim

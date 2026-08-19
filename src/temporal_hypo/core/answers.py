@@ -74,12 +74,9 @@ _MODAL_RUNNER = {"seq_bool", "first_bool",
 # (core.min_n) on the CORE's conditioned denominator, which is what "is there
 # enough data behind this question" actually means; the exact binomial itself
 # needs no minimum.
-# Two-proportion modes -> Fisher exact on the 2x2.
-_FISHER = {
-    "multi_differ_precedes", "multi_dir_precedes",
-    "multi_differ_cooccurs",
-    "multi_differ_sequence",
-}
+# Two-proportion modes -> Fisher exact on the 2x2. P-M2 is the whole multi
+# tier since the 2026-08-14 removal of the six non-directional groups.
+_FISHER = {"multi_dir_precedes"}
 # Single-cohort omnibus GOF modes: NONE as of 2026-08-11. `modal_choice`,
 # `first_choice` and `last_choice` moved to `_MODAL_RUNNER` (their claim is an
 # argmax, not a distribution shape), and `consistency_bool` (S-V4) was removed
@@ -87,20 +84,11 @@ _FISHER = {
 # so its opposite is the null and it can never be refuted OR supported under the
 # three-decision rule. See decisions.md 2026-08-11.
 _GOF: set[str] = set()
-# Two-cohort distribution modes -> exact Fisher-Freeman-Halton homogeneity.
-_HOMO = {"multi_same_first", "multi_differ_first", "multi_same_modal_order"}
-# Categorical multi modes (no proportion CI).
-_MULTI_CATEGORICAL = {"multi_same_first", "multi_differ_first",
-                      "multi_same_modal_order"}
-
-
-# Modes with no directional alternative: the omnibus goodness-of-fit /
-# homogeneity tests and the "differ"/"same" multi shapes. A three-decision
-# verdict is undefined for these (decisions.md 2026-07-28) -- they are reported
-# as `non_directional`, not forced into supported/refuted.
-_NON_DIRECTIONAL = _GOF | _HOMO | {
-    "multi_differ_precedes", "multi_differ_cooccurs", "multi_differ_sequence",
-}
+# The non-directional sets (_HOMO homogeneity, _MULTI_CATEGORICAL,
+# _NON_DIRECTIONAL) were REMOVED on 2026-08-14 with the six S=0 groups that
+# populated them: every shipping cohort mode now has a directional alternative,
+# so the three-decision rule applies everywhere. `verdict.three_decision` keeps
+# its non_directional guard for safety, but no mode reaches it.
 # ADOPTED 2026-08-11: the argmax CHOICE modes now USE modal-vs-runner-up as their
 # label-driving test (they are in `_MODAL_RUNNER` above), so there is no longer a
 # separate "candidate tail" reported alongside an omnibus label. The old
@@ -132,20 +120,9 @@ def _perms(events: Sequence[str]) -> list[tuple[str, ...]]:
     return list(permutations(events))
 
 
-# NOTE: `_gof_observed` was removed on 2026-08-11 with the single-cohort omnibus
-# branch it fed. The two-cohort tables are still built by `_homo_table` below.
-
-
-def _homo_table(core) -> list[list[int]] | None:
-    c1 = core.extra.get("counts1")
-    c2 = core.extra.get("counts2")
-    if c1 is None or c2 is None:
-        return None
-    if core.mode == "multi_same_modal_order":
-        ps = _perms(core.events)
-        return [[c1.get(p, 0) for p in ps], [c2.get(p, 0) for p in ps]]
-    return [[c1.get(t, 0) for t in core.events],
-            [c2.get(t, 0) for t in core.events]]
+# NOTE: `_gof_observed` was removed on 2026-08-11 with the single-cohort
+# omnibus branch it fed, and `_homo_table` on 2026-08-14 with the two-cohort
+# homogeneity shapes.
 
 
 def _named_counts(core, named) -> tuple[int, int, object] | None:
@@ -200,6 +177,27 @@ def core_tails(core, *, named=None) -> Significance:
                             {"null": p0, "alternative": "greater"},
                             p_claim=p_claim, p_opposite=p_opp)
 
+    if m == "cooc_modal_bool":
+        # C-V3 (issue 13, 2026-08-14): modal-vs-runner-up with the named cell
+        # FIXED to co_exist by the template text. Deliberately NOT in
+        # `_MODAL_RUNNER`: those modes re-derive `named` from the instance's
+        # event assignment in `oriented_significance`, but this claim's named
+        # cell is a relation, not an event slot -- its orientation operator is
+        # negation, which the generic tail-swap path already handles.
+        counts = core.extra.get("counts") or {}
+        named_count = counts.get("co_exist", 0)
+        runner = max(counts.get("before", 0), counts.get("after", 0))
+        nn = named_count + runner
+        if nn == 0:
+            return Significance(None, None, None)
+        p_claim = sig.binom_exact_p(named_count, nn, 0.5, alternative="greater")
+        p_opp = sig.binom_exact_p(named_count, nn, 0.5, alternative="less")
+        return Significance(p_claim, None, "modal_runner",
+                            {"null": 0.5, "alternative": "greater",
+                             "named": "co_exist", "top": named_count,
+                             "runner": runner, "n_cells": nn},
+                            p_claim=p_claim, p_opposite=p_opp)
+
     if m in _MODAL_RUNNER:
         # modal-vs-runner-up: is the NAMED ordering/event significantly ahead of
         # its nearest competitor? One-sided exact binomial on the 2-cell table.
@@ -221,15 +219,6 @@ def core_tails(core, *, named=None) -> Significance:
     if m in _FISHER:
         if core.n2 is None or core.k2 is None:
             return Significance(None, None, None)
-        if m in _NON_DIRECTIONAL:
-            # "do they differ" -- H1 is existence, not direction. Significant can
-            # only mean supported; not-significant can never mean refuted (that
-            # would accept H0). No three-decision mapping exists; report the
-            # omnibus p and let the labeler tag it non_directional.
-            p = sig.fisher_exact_2x2(core.k, core.n, core.k2, core.n2,
-                                     alternative="two-sided")
-            return Significance(p, None, "fisher_exact_two_sided",
-                                {"alternative": "two-sided", "p_omnibus": p})
         # directional multi_dir_*: the canonical claim is "cohort 1's rate is
         # higher than cohort 2's".
         p_claim = sig.fisher_exact_2x2(core.k, core.n, core.k2, core.n2,
@@ -240,19 +229,10 @@ def core_tails(core, *, named=None) -> Significance:
                             {"alternative": "greater"},
                             p_claim=p_claim, p_opposite=p_opp)
 
-    # No single-cohort omnibus GOF branch remains: `_GOF` is empty since
-    # 2026-08-11 (see its definition). The exact multinomial GOF itself is still
-    # used -- by the two-cohort `_HOMO` shapes below and available in
-    # `core.significance` -- it just no longer produces any group's label.
-
-    if m in _HOMO:
-        table = _homo_table(core)
-        if table is None:
-            return Significance(None, None, None)
-        r = sig.contingency_test(table)     # Fisher-Freeman-Halton when sparse
-        details = dict(r)
-        details["p_omnibus"] = r["p"]
-        return Significance(r["p"], None, f"homogeneity_{r['method']}", details)
+    # No omnibus branch remains: `_GOF` has been empty since 2026-08-11 and
+    # the two-cohort `_HOMO` shapes were removed on 2026-08-14. The exact
+    # multinomial GOF / Fisher-Freeman-Halton stay available in
+    # `core.significance`; they just produce no group's label.
 
     return Significance(None, None, None)
 
@@ -454,7 +434,8 @@ def _two_cell_proportion(core) -> float | None:
     right descriptive number to report but not what the test compares.
     """
     counts = core.extra.get("counts") or {}
-    named = core.extra.get("modal") or core.extra.get("winner")
+    named = (core.extra.get("named") or core.extra.get("modal")
+             or core.extra.get("winner"))
     if not counts or named is None:
         return None
     top = counts.get(named, 0)
@@ -466,8 +447,6 @@ def _two_cell_proportion(core) -> float | None:
 def _ci_effect(core):
     """(ci, width, tag, effect_size) on the core's canonical proportion."""
     if core.proportion is None or core.report_id is not None:
-        return None, None, None, None
-    if core.mode in _MULTI_CATEGORICAL:
         return None, None, None, None
     if core.mode in _FISHER:
         if None in (core.k, core.n, core.k2, core.n2):
@@ -482,7 +461,7 @@ def _ci_effect(core):
     # denominator); the EFFECT SIZE is measured on the quantity the test actually
     # compares, which for the argmax modes is named-vs-runner-up (2026-08-11).
     basis = core.proportion
-    if core.mode in _MODAL_RUNNER:
+    if core.mode in _MODAL_RUNNER or core.mode == "cooc_modal_bool":
         basis = _two_cell_proportion(core) or core.proportion
     return ci, ci_width(ci), confidence_tag(ci_width(ci)), \
         cohens_h(basis, _null_ref(core.mode))

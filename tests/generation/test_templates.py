@@ -13,10 +13,14 @@ def test_load_all_groups():
     #    - S-V4 (non-directional and unrescuable, removed 2026-08-11)
     #    - F-M3 (failed its permutation null, p_perm 0.188, removed 2026-08-11)
     #    - C-M2 (failed its null on four measurements, 0.202, removed 2026-08-11)
-    assert len(groups) == 23
-    for gid in ("P-V1", "C-V3", "S-V3", "F-V3", "P-R1"):
+    #    - the six S=0 non-directional multi groups P-M1/C-M1/S-M1/S-M3/F-M1/F-M2
+    #      (roster migration A removal half, 2026-08-14). The migration's
+    #      addition half re-adds P-V2/C-V2 (new definitions) + P-V4 -> 20.
+    assert len(groups) == 17
+    for gid in ("P-V1", "C-V3", "S-V3", "F-V3", "P-R1", "P-M2"):
         assert gid in groups
-    for gid in ("P-V2", "C-V2", "S-V2", "S-M2", "S-V4", "F-M3", "C-M2"):
+    for gid in ("S-V2", "S-M2", "S-V4", "F-M3", "C-M2",
+                "P-M1", "C-M1", "S-M1", "S-M3", "F-M1", "F-M2"):
         assert gid not in groups
 
 

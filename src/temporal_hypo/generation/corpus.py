@@ -173,6 +173,26 @@ def sequence_fraction(
     return (seq / orderable, orderable)
 
 
+def relation_distribution(
+    index: CorpusIndex, a: str, b: str, cohort: list[int]
+) -> dict:
+    """Counts of {before, after, co_exist} for A vs B over both-present reports.
+
+    Same conditioning as ``co_occurs_fraction`` (denominator = both present),
+    but the full 3-cell distribution instead of only the co_exist share. Added
+    2026-08-14 for C-V3's modal-vs-runner-up statistic (decisions.md issue 13):
+    "co-occurrence is the dominant relation" is an ARGMAX over the three cells,
+    so its gold computation needs all three counts. Reports n always; callers
+    gate on the shared family floor.
+    """
+    counts = {"before": 0, "after": 0, "co_exist": 0}
+    for vid in cohort:
+        rel = relation(index.report_terms[vid], a, b)
+        if rel != "missing":
+            counts[rel] += 1
+    return {"counts": counts, "n": sum(counts.values())}
+
+
 def pair_distances(
     index: CorpusIndex, a: str, b: str, cohort: list[int]
 ) -> list[int]:

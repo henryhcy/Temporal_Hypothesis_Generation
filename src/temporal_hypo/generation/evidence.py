@@ -118,7 +118,9 @@ def evidence_ids(index, facts) -> dict:
 
     if m in ("dir_bool", "dir_choice"):
         return _pair_sets(index, ev[0], ev[1], core.cohort_ids)
-    if m == "sym_bool_cooccurs":
+    if m in ("sym_bool_cooccurs", "cooc_modal_bool"):
+        # cooc_modal_bool's numerator is its NAMED cell (co_exist), which is
+        # exactly the co-occurs numerator; negation never moves it.
         return _cooccur_sets(index, ev[0], ev[1], core.cohort_ids)
     if m in ("seq_bool", "modal_choice"):
         return _ordering_sets(index, tuple(ev), core.cohort_ids)

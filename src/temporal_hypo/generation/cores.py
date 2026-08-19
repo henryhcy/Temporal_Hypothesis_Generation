@@ -38,7 +38,6 @@ from itertools import combinations
 
 from temporal_hypo.core.aggregation import (
     bool_verdict,
-    differ_verdict,
     direction_verdict,
 )
 from temporal_hypo.core.min_n import min_n_gate
@@ -63,14 +62,12 @@ MAX_REPORT_CORES = 300
 # Locked viability threshold (mirrors corpus._MIN_N).
 _MIN_N = 10
 
-# Modes whose cores are event TRIPLES rather than pairs.
+# Modes whose cores are event TRIPLES rather than pairs. Since the 2026-08-14
+# roster removal the multi tier is P-M2 alone (a pair), so only the
+# single-cohort argmax modes remain triple-shaped.
 _VACCINE_TRIPLE_MODES = {
     "seq_bool", "modal_choice",
     "first_choice", "last_choice", "first_bool",
-}
-_MULTI_TRIPLE_MODES = {
-    "multi_differ_sequence", "multi_same_modal_order",
-    "multi_same_first", "multi_differ_first",
 }
 
 # Per-group statistic + verdict mode. The single source of truth mapping each
@@ -81,19 +78,18 @@ MODE_BY_GROUP: dict[str, str] = {
     "P-R2": "rep_dir_choice",
     "P-V1": "dir_bool",
     "P-V3": "dir_choice",
-    "P-M1": "multi_differ_precedes",
     "P-M2": "multi_dir_precedes",
     # pairwise -- co_occurs
     "C-R1": "rep_sym_bool",
     "C-V1": "sym_bool_cooccurs",
-    "C-V3": "sym_bool_cooccurs",
-    "C-M1": "multi_differ_cooccurs",
+    # C-V3 moved to the argmax statistic its text asks (issue 13, 2026-08-14):
+    # modal-vs-runner-up over the 3-cell relation distribution, named cell
+    # co_exist. C-V1 keeps the majority statistic; the two are no longer twins.
+    "C-V3": "cooc_modal_bool",
     # sequence
     "S-R1": "rep_seq_bool",
     "S-V1": "seq_bool",
     "S-V3": "modal_choice",
-    "S-M1": "multi_differ_sequence",
-    "S-M3": "multi_same_modal_order",
     # first / last
     "F-R1": "rep_first_choice",
     "F-R2": "rep_last_choice",
@@ -101,8 +97,6 @@ MODE_BY_GROUP: dict[str, str] = {
     "F-V1": "first_choice",
     "F-V2": "last_choice",
     "F-V3": "first_bool",
-    "F-M1": "multi_same_first",
-    "F-M2": "multi_differ_first",
 }
 
 
@@ -284,6 +278,27 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
                          proportion=frac, n=n,
                          k=round(frac * n) if frac is not None else 0, **base)
 
+    if mode == "cooc_modal_bool":
+        # C-V3 (issue 13): "co-occurrence is the DOMINANT relation" -- an argmax
+        # over {before, after, co_exist}, tested modal-vs-runner-up with the
+        # named cell fixed to co_exist by the template text. `proportion`/`k`
+        # stay the DESCRIPTIVE co_exist share/count of the both-present
+        # denominator; the tested two-cell quantity lives in `extra["counts"]`.
+        a, b = combo
+        dist = corpus.relation_distribution(index, a, b, cohort)
+        n = dist["n"]
+        counts = dist["counts"]
+        k = counts["co_exist"]
+        runner = max(counts["before"], counts["after"])
+        ok = _is_testable(n, group.family)
+        nv = ("supported" if k > runner else
+              "refuted" if k < runner else "insufficient")
+        return _new_core(group, mode, computable=ok,
+                         natural_verdict=nv if ok else "insufficient",
+                         proportion=(k / n) if n else None, n=n, k=k,
+                         extra={"counts": dict(counts), "named": "co_exist"},
+                         **base)
+
     if mode in ("seq_bool", "modal_choice"):
         # STRICT ordering over the ORDERABLE denominator (ordering_distribution
         # excludes co-occurrence).
@@ -344,15 +359,14 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | 
 
 
 def _enum_multi(index: CorpusIndex, group: Group, mode: str) -> list[ViableCore]:
+    # Every multi-tier group is pair-shaped since the 2026-08-14 removal.
     cores: list[ViableCore] = []
-    triple = mode in _MULTI_TRIPLE_MODES
     for v1, v2 in VACCINE_PAIRS:
         c1, c2 = index.cohort(v1), index.cohort(v2)
-        k = K_TRIPLE if triple else K_PAIR
         # intersect the two cohorts' top terms so cores are plausible in both
-        shared = [t for t in index.top_terms(c1, k) if t in set(index.top_terms(c2, k))]
-        sets = combinations(shared, 3) if triple else combinations(shared, 2)
-        for combo in sets:
+        shared = [t for t in index.top_terms(c1, K_PAIR)
+                  if t in set(index.top_terms(c2, K_PAIR))]
+        for combo in combinations(shared, 2):
             core = _build_multi_core(index, group, mode, (v1, v2), c1, c2, combo)
             if core is not None:
                 cores.append(core)
@@ -373,9 +387,7 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
     base = dict(events=tuple(combo), vaccines=vaxes, cohort_ids=c1, report_id=None)
     v1, v2 = vaxes
 
-    if mode in ("multi_differ_precedes", "multi_dir_precedes",
-                "multi_differ_cooccurs",
-                "multi_differ_sequence"):
+    if mode == "multi_dir_precedes":
         p1, n1 = _single_fraction(index, mode, combo, c1)
         p2, n2 = _single_fraction(index, mode, combo, c2)
         if not _is_testable(n1, group.family, n2=n2):
@@ -389,51 +401,10 @@ def _build_multi_core(index, group, mode, vaxes, c1, c2, combo) -> ViableCore | 
                              proportion2=p2, n2=n2,
                              k2=round(p2 * n2) if p2 is not None else 0, **base)
         k1, k2 = round(p1 * n1), round(p2 * n2)
-        if "differ" in mode:
-            nv = differ_verdict(p1, p2)
-        else:
-            nv = direction_verdict(p1, p2)
+        nv = direction_verdict(p1, p2)
         return _new_core(group, mode, computable=True, natural_verdict=nv,
                          proportion=p1, n=n1, k=k1,
                          proportion2=p2, n2=n2, k2=k2, **base)
-
-    if mode in ("multi_same_modal_order",):
-        d1 = corpus.ordering_distribution(index, list(combo), c1)
-        d2 = corpus.ordering_distribution(index, list(combo), c2)
-        if (not _is_testable(d1["n"], group.family, n2=d2["n"])
-                or d1["modal"] is None or d2["modal"] is None):
-            return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient",
-                             n=d1["n"], n2=d2["n"], **base)
-        same = d1["modal"] == d2["modal"]
-        nv = "supported" if same else "refuted"
-        return _new_core(group, mode, computable=True, natural_verdict=nv,
-                         proportion=d1["modal_share"], n=d1["n"], k=d1["modal_count"],
-                         proportion2=d2["modal_share"], n2=d2["n"], k2=d2["modal_count"],
-                         extra={"modal1": d1["modal"], "modal2": d2["modal"],
-                                "counts1": d1["counts"], "counts2": d2["counts"]}, **base)
-
-    if mode in ("multi_same_first", "multi_differ_first"):
-        f1 = corpus.first_among_fractions(index, list(combo), c1)
-        f2 = corpus.first_among_fractions(index, list(combo), c2)
-        if not _is_testable(int(f1["n"]), group.family, n2=int(f2["n"])):
-            return _new_core(group, mode, computable=False,
-                             natural_verdict="insufficient",
-                             n=int(f1["n"]), n2=int(f2["n"]), **base)
-        terms = list(combo)
-        w1 = max(terms, key=lambda t: (f1[t], t))
-        w2 = max(terms, key=lambda t: (f2[t], t))
-        same = w1 == w2
-        if mode == "multi_same_first":
-            nv = "supported" if same else "refuted"
-        else:  # multi_differ_first
-            nv = "supported" if not same else "refuted"
-        return _new_core(group, mode, computable=True, natural_verdict=nv,
-                         proportion=f1[w1], n=int(f1["n"]), k=round(f1[w1] * int(f1["n"])),
-                         proportion2=f2[w2], n2=int(f2["n"]),
-                         extra={"w1": w1, "w2": w2,
-                                "counts1": f1["counts"], "counts2": f2["counts"]},
-                         **base)
 
     raise ValueError(f"unhandled multi mode: {mode}")
 
@@ -588,14 +559,11 @@ def _enum_vaccine_full(index, group, mode) -> list[ViableCore]:
 
 
 def _enum_multi_full(index, group, mode) -> list[ViableCore]:
+    # Every multi-tier group is pair-shaped since the 2026-08-14 removal.
     cores: list[ViableCore] = []
-    triple = mode in _MULTI_TRIPLE_MODES
     for v1, v2 in VACCINE_PAIRS:
         c1, c2 = index.cohort(v1), index.cohort(v2)
-        if triple:
-            cand = set(_cooccurring_triples(index, c1)) & set(_cooccurring_triples(index, c2))
-        else:
-            cand = set(_cooccurring_pairs(index, c1)) & set(_cooccurring_pairs(index, c2))
+        cand = set(_cooccurring_pairs(index, c1)) & set(_cooccurring_pairs(index, c2))
         for combo in sorted(cand):
             core = _build_multi_core(index, group, mode, (v1, v2), c1, c2, combo)
             if core is not None:
@@ -791,17 +759,14 @@ def _realize(core: ViableCore, polarity: str) -> InstanceFacts:
         return _realize_directional(core, polarity)
     if m == "sym_bool_cooccurs":
         return _realize_symmetric_bool(core, polarity)
+    if m == "cooc_modal_bool":
+        return _realize_cooc_modal(core, polarity)
     if m in ("seq_bool", "modal_choice"):
         return _realize_modal_choice(core, polarity)
     if m in ("first_choice", "last_choice", "first_bool"):
         return _realize_extreme_choice(core, polarity)
-    if m in ("multi_differ_precedes", "multi_differ_cooccurs",
-             "multi_differ_sequence"):
-        return _realize_multi_differ(core, polarity)
     if m == "multi_dir_precedes":
         return _realize_multi_dir(core, polarity)
-    if m in ("multi_same_first", "multi_differ_first", "multi_same_modal_order"):
-        return _realize_multi_categorical(core, polarity)
     if m.startswith("rep_"):
         return _realize_report(core, polarity)
     raise ValueError(f"cannot realize mode {m}")
@@ -856,6 +821,21 @@ def _realize_symmetric_bool(core, polarity):
                proportion=p, n=n, k=k)
 
 
+def _realize_cooc_modal(core, polarity):
+    """C-V3 since 2026-08-14 (issue 13): the claim names the co_exist cell.
+
+    The named cell is fixed by the template text, so slots and events never
+    move; orientation is by NEGATION only (like the other symmetric claims).
+    The reported proportion stays the descriptive co_exist share; the effect
+    size is measured on the TESTED two-cell quantity, named vs runner-up
+    against 0.5, matching the argmax modes (decisions.md 2026-08-11).
+    """
+    p, n, k = core.proportion, core.n, core.k
+    return _mk(core, polarity, None, core.events, verdict=core.natural_verdict,
+               proportion=p, n=n, k=k,
+               effect=cohens_h(_two_cell(core.extra["counts"], "co_exist"), 0.5))
+
+
 def _realize_modal_choice(core, polarity):
     d = core.extra
     n = core.n
@@ -896,14 +876,6 @@ def _diff_ci(core):
     return ci, confidence_tag(ci_width(ci))
 
 
-def _realize_multi_differ(core, polarity):
-    p1, p2 = core.proportion, core.proportion2
-    ci, tag = _diff_ci(core)
-    return _mk(core, polarity, None, core.events,
-               verdict=differ_verdict(p1, p2), proportion=p1, n=core.n, k=core.k,
-               n2=core.n2, k2=core.k2, ci=ci, tag=tag, effect=cohens_h(p1, p2))
-
-
 def _realize_multi_dir(core, polarity):
     p1, p2 = core.proportion, core.proportion2
     v1, v2 = core.vaccines
@@ -931,20 +903,6 @@ def _realize_multi_dir(core, polarity):
                n=hn, k=hk, n2=ln, k2=lk,
                ci=ci, tag=tag, effect=cohens_h(hp, lk / ln),
                vaccines=vacc)
-
-
-def _realize_multi_categorical(core, polarity):
-    # same/differ first or modal-order: categorical comparison, no CI
-    if core.mode == "multi_same_modal_order":
-        same = core.extra["modal1"] == core.extra["modal2"]
-        verdict = "supported" if same else "refuted"
-    elif core.mode == "multi_same_first":
-        same = core.extra["w1"] == core.extra["w2"]
-        verdict = "supported" if same else "refuted"
-    else:  # multi_differ_first
-        same = core.extra["w1"] == core.extra["w2"]
-        verdict = "supported" if not same else "refuted"
-    return _mk(core, polarity, None, core.events, verdict=verdict)
 
 
 def _realize_report(core, polarity):

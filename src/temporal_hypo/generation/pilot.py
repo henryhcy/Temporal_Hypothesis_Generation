@@ -33,18 +33,14 @@ RULE_BY_MODE = {
     "dir_bool": "precedes denom = reports with both, ordered; supported if frac>0.5",
     "dir_choice": "precedes frac on ordered-pair denom; names higher-frac event",
     "sym_bool_cooccurs": "co-occurs frac (both-present denom); supported if >0.5",
+    "cooc_modal_bool": "co_exist vs max(before, after), modal-vs-runner-up "
+                       "(both-present denom); named cell = co_exist",
     "seq_bool": "most-common ordering (orderable denom); unique modal; modal-vs-runner-up test",
     "modal_choice": "argmax strict ordering over orderable denom; modal-vs-runner-up test",
     "first_choice": "first_among argmax (all-candidates denom); modal-vs-runner-up test",
     "last_choice": "last_among argmax (all-candidates denom); modal-vs-runner-up test",
     "first_bool": "most-common first event (all-candidates denom); unique winner; modal-vs-runner-up test",
-    "multi_differ_precedes": "two precedes fracs; |p1-p2|>10pp",
     "multi_dir_precedes": "two precedes fracs; names higher cohort",
-    "multi_differ_cooccurs": "two co-occurs fracs; |p1-p2|>10pp",
-    "multi_differ_sequence": "two sequence fracs; |p1-p2|>10pp",
-    "multi_same_modal_order": "modal ordering in each cohort; same?",
-    "multi_same_first": "modal first event in each cohort; same?",
-    "multi_differ_first": "modal first event in each cohort; differ?",
     "rep_dir_bool": "per-report relation; before => supported",
     "rep_dir_choice": "per-report relation; names earlier event",
     "rep_sym_bool": "per-report relation; co_exist => supported",
@@ -56,9 +52,8 @@ RULE_BY_MODE = {
 
 # Groups sampled for Part C (spans families, answer types, levels).
 VALIDATION_GROUPS = [
-    "P-V1", "P-V2", "P-V3", "C-V1", "C-V2", "C-V3", "S-V2", "S-V3",
-    "F-V1", "F-V2", "F-V3", "P-M1", "P-M2", "C-M1", "S-M1",
-    "S-M3", "F-M1", "P-R1", "C-R1", "S-R1", "F-R1",
+    "P-V1", "P-V2", "P-V3", "C-V1", "C-V2", "C-V3", "S-V3",
+    "F-V1", "F-V2", "F-V3", "P-M2", "P-R1", "C-R1", "S-R1", "F-R1",
 ]
 
 
@@ -89,6 +84,7 @@ _EXCLUSION_REASON = {
     "dir_choice": "co-exist (same level) -- not ordered, so excluded from a "
                   "PRECEDES denominator",
     "sym_bool_cooccurs": "n/a -- every both-present report counts for CO-OCCURS",
+    "cooc_modal_bool": "n/a -- every both-present report counts for CO-OCCURS",
     "seq_bool": "two or more of the three share a level -- triple not orderable",
     "modal_choice": "two or more of the three share a level -- triple not orderable",
     "first_choice": "tie for first -- no single earliest event",

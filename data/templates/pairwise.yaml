@@ -94,28 +94,6 @@ groups:
     clinical:
       question: In {v} patients, what usually shows up first, {A} or {B}?
       claim: In {v} patients, {A} usually shows up first.
-- id: P-M1
-  primitive: precedes
-  level: multi
-  answer_type: BOOL
-  slots:
-  - A
-  - B
-  - v1
-  - v2
-  variants:
-    original:
-      question: Does the {A}-before-{B} rate differ between {v1} and {v2}?
-      claim: The {A}-before-{B} rate differs between {v1} and {v2}.
-    research:
-      question: Among reports with both events, is the {A}-precedes-{B} proportion different between {v1} and {v2}?
-      claim: The {A}-precedes-{B} proportion differs between {v1} and {v2} cohorts.
-    media:
-      question: Is there a real difference between {v1} and {v2} in how often {A} comes before {B}?
-      claim: '{v1} and {v2} differ in how often {A} comes before {B}.'
-    clinical:
-      question: Do my {v1} and {v2} patients differ in how often {A} comes before {B}?
-      claim: '{v1} and {v2} recipients differ in the rate of {A} before {B}.'
 - id: P-M2
   primitive: precedes
   level: multi
@@ -203,39 +181,17 @@ groups:
       question_negated: After {v}, is co-occurrence NOT the dominant relation for {A} and {B}?
       claim_negated: After {v}, co-occurrence is not the dominant relation for {A} and {B}.
     research:
-      question: Among {v} reports with both events, is concurrent presentation more common than ordered?
-      claim: Among {v} reports with both events, concurrent presentation is more common than ordered.
-      question_negated: Among {v} reports with both events, is ordered presentation more common than concurrent?
-      claim_negated: Among {v} reports with both events, concurrent presentation is NOT more common than ordered.
+      question: Among {v} reports with both events, is concurrent presentation the most common relation?
+      claim: Among {v} reports with both events, concurrent presentation is the most common relation.
+      question_negated: Among {v} reports with both events, is concurrent presentation NOT the most common relation?
+      claim_negated: Among {v} reports with both events, concurrent presentation is not the most common relation.
     media:
-      question: After {v}, are {A} and {B} more often together than in order?
-      claim: After {v}, {A} and {B} are more often together than in order.
-      question_negated: After {v}, are {A} and {B} more often in order than together?
-      claim_negated: After {v}, {A} and {B} are NOT more often together than in order.
+      question: After {v}, do {A} and {B} show up together more often than in either order?
+      claim: After {v}, {A} and {B} show up together more often than in either order.
+      question_negated: After {v}, is it the case that {A} and {B} do NOT show up together more often than in either order?
+      claim_negated: After {v}, {A} and {B} do not show up together more often than in either order.
     clinical:
-      question: In {v} recipients with both, is concurrence more common than sequential onset?
-      claim: In {v} recipients with both, concurrence is more common than sequential onset.
-      question_negated: In {v} recipients with both, is sequential onset more common than concurrence?
-      claim_negated: In {v} recipients with both, concurrence is NOT more common than sequential onset.
-- id: C-M1
-  primitive: co_occurs
-  level: multi
-  answer_type: BOOL
-  slots:
-  - A
-  - B
-  - v1
-  - v2
-  variants:
-    original:
-      question: Does the {A}-{B} co-occurrence rate differ between {v1} and {v2}?
-      claim: The {A}-{B} co-occurrence rate differs between {v1} and {v2}.
-    research:
-      question: Among reports with both events, is the co-occurrence proportion different between {v1} and {v2}?
-      claim: The co-occurrence proportion differs between {v1} and {v2}.
-    media:
-      question: Is there a real difference between {v1} and {v2} in how often {A} and {B} happen together?
-      claim: '{v1} and {v2} differ in how often {A} and {B} happen together.'
-    clinical:
-      question: Do my {v1} and {v2} patients differ in how often {A} and {B} co-occur?
-      claim: '{v1} and {v2} recipients differ in {A}-{B} co-occurrence rates.'
+      question: In {v} recipients with both, is concurrence the most common presentation?
+      claim: In {v} recipients with both, concurrence is the most common presentation.
+      question_negated: In {v} recipients with both, is concurrence NOT the most common presentation?
+      claim_negated: In {v} recipients with both, concurrence is not the most common presentation.

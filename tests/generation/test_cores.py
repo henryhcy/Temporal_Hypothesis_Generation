@@ -97,21 +97,6 @@ def test_multi_dir_swaps_vaccines():
     assert ref.flip_kind == "vaccine_swap"
 
 
-def test_multi_differ_polarity_by_data():
-    differ = _core("multi_differ_precedes", "BOOL", level="multi",
-                   vaccines=("Pfizer", "Moderna"), proportion=0.8, n=20, k=16,
-                   proportion2=0.5, n2=20, k2=10, natural_verdict="supported")
-    same = _core("multi_differ_precedes", "BOOL", level="multi",
-                 vaccines=("Pfizer", "Moderna"), proportion=0.55, n=20, k=11,
-                 proportion2=0.5, n2=20, k2=10, natural_verdict="refuted")
-    # "differ" is non-directional: significant can only mean supported and
-    # not-significant can never mean refuted, so three_decision tags these
-    # non_directional and they can ship NOTHING. These are exactly the multi
-    # groups the 2026-07-28 roster decision retires.
-    assert feasible_polarities(differ) == {"insufficient"}
-    assert feasible_polarities(same) == {"insufficient"}
-
-
 # -- enumeration integration: n>=10 gating ---------------------------------
 
 def test_enumeration_respects_min_n():

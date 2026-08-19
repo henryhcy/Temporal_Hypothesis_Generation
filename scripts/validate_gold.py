@@ -115,7 +115,7 @@ def check_instance(index, facts, fails: Counter, examples: dict) -> None:
             if not (a is not None and b is not None and a < b):
                 bad("D: numerator report does not satisfy 'A before B'",
                     f"report {vid} levels={a},{b}")
-    elif m == "sym_bool_cooccurs":
+    elif m in ("sym_bool_cooccurs", "cooc_modal_bool"):
         for vid in num:
             a, b = _lv(index, vid, ev)
             if a != b:
@@ -182,7 +182,9 @@ def recompute_independently(conn, index, facts, fails: Counter, examples: dict):
     got = None
     if m in _PRECEDES:
         got = agg.precedes_fraction(conn, ev[0], ev[1], cohort)
-    elif m == "sym_bool_cooccurs":
+    elif m in ("sym_bool_cooccurs", "cooc_modal_bool"):
+        # co_occurs_fraction returns the co_exist share of the both-present
+        # denominator -- for cooc_modal_bool that is exactly gold_k / gold_n.
         got = agg.co_occurs_fraction(conn, ev[0], ev[1], cohort)
     if got is None:
         return

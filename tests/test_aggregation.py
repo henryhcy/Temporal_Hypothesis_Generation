@@ -7,7 +7,6 @@ import pytest
 from temporal_hypo.core.aggregation import (
     bool_verdict,
     co_occurs_fraction,
-    differ_verdict,
     direction_verdict,
     first_among_fractions,
     get_cohort,
@@ -272,10 +271,8 @@ def test_bool_verdict():
     assert bool_verdict(0.5) == "insufficient"
 
 
-def test_differ_verdict():
-    assert differ_verdict(0.70, 0.55) == "supported"  # 15pp > 10pp
-    assert differ_verdict(0.70, 0.62) == "refuted"    # 8pp ≤ 10pp
-    assert differ_verdict(0.70, 0.60) == "refuted"    # exactly 10pp — not strictly greater
+# test_differ_verdict removed 2026-08-14: differ_verdict left with the six
+# non-directional multi groups (roster migration A, decisions.md batch 2).
 
 
 def test_direction_verdict():

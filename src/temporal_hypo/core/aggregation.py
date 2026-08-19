@@ -285,13 +285,6 @@ def bool_verdict(
     return "insufficient"
 
 
-def differ_verdict(
-    p1: float, p2: float
-) -> Literal["supported", "refuted"]:
-    """|p1 - p2| > 10 percentage points → supported (decisions.md rule 8)."""
-    return "supported" if abs(p1 - p2) > 0.10 else "refuted"
-
-
 def direction_verdict(
     p1: float, p2: float
 ) -> Literal["supported", "refuted", "insufficient"]:
