@@ -17,44 +17,6 @@ Every item here appears in the `09_next_steps.md` issue register with its number
 
 ## Decisions blocking work
 
-### Is a ONE-group multi tier worth the shape? (issue 1 — blocking the roster)
-Settled by measurement: **P-M2 is the only two-cohort group left.** C-M2 and F-M3
-were dropped for failing their permutation nulls, F-M3 has no viable substitute,
-and the six non-directional multi groups sit at S = 0 pending removal.
-
-So the tier is one group, S = 30, ~90 instances at 3·S. Options:
-
-(a) **Ship P-M2 alone.** Keeps the "does the vaccine matter" claim family,
-    arguably the most clinically interesting question in the benchmark, and the
-    screening story is a genuine methods strength: seven two-cohort shapes tested
-    against a label-permutation null, one survived.
-(b) **Swap P-M2 for M-F** (precedes-wide, same claim family): more supply (46 vs
-    30 decisive) and plainer wording, marginally weaker against its null (0.034
-    vs 0.023). Needs four-register wording written.
-(c) **Retire the two-cohort tier for v1.** Loses the claim family entirely; the
-    benchmark becomes single-cohort plus report-level.
-
-(a) and (b) both leave ~90 of ~20,700 instances, so the tier is a rounding error
-on size but not on scientific scope. Note (a) and (b) are the SAME claim family
-(precedes) and should not both ship.
-
-**Supporting evidence — no single-event candidate survives floor 10.** The 08
-doc's replacement recommendation was computed at floor 20 and does not survive.
-Re-run at floor 10 with 2000 rounds
-(`data/pilot/multi_inventory_floor10_2000rounds.json`):
-
-| candidate | shape | p_perm @ floor 20 | p_perm @ floor 10 (2000 rds) | |
-|---|---|--:|--:|---|
-| P-M2 precedes-strict | pair | 0.005 | **0.025** | clears |
-| M-F precedes-wide | pair | 0.025 | **0.033** | clears |
-| M-C last-overall | single | 0.055 | **0.073** | fails |
-| M-H early-half | single | **0.035** | **0.120** | fails |
-| C-M2 co-occurs | pair | 0.129 | **0.151** | fails |
-| M-B first-overall | single | 0.373 | **0.453** | noise |
-
-M-H, the 08 doc's recommended "new shape", degrades to 0.120; M-C to 0.073.
-Neither can carry a single-event slot.
-
 ### Does the sequence family survive at cohort level? (issue 9)
 The sequence family's entire cohort-level supply is:
 
@@ -82,6 +44,59 @@ shortcut if group identity is hidden, which it cannot be. What remains open is
 purely that S-V1/S-V3 are starved at any balance rule.
 
 ---
+
+### Adopt any of the six screened candidate families? (issue 19)
+`10_family_expansion.md` (branch `template-family-expansion`, 2026-08-14) screened
+six families the shipped grid cannot express, 30 groups in
+`data/templates/candidates/`. Five clear their permutation nulls; the recommended
+order is R1/R3 comparative, then N2 immediate-succession, then N1 position with a
+structural null, then R5 presence-association, then N3 and N4 narrowly for
+capability rather than mass. Stratified cohorts, N4b at 3/4, and recurrence are
+rejected on measurement.
+
+**Blocked behind issue 14.** Every candidate family has a BOOL and a CHOICE variant
+computing the same statistic on the same cores -- the twin duplication that already
+affects four shipped pairs. Adopting six families before the group-independent
+`fact_id` exists multiplies the split leak rather than causing it.
+
+Open beyond that: this is a scope decision as much as a supply one. N5 burden and
+R5 association are not claims about temporal ORDER, so adopting them widens what the
+benchmark is about, and that is an advisor question.
+
+### A single-event position claim cannot use a 0.5 null (issue 20)
+Measured 2026-08-14. Stage populations are uneven -- mean 2.45 terms at rank 0, 2.21
+at rank 1, ~1.74 from rank 3 on -- so a term drawn at random from a report's slots is
+more likely to be early, and the corpus structural early rate is **0.5327**, not 0.5.
+Testing against 0.5 manufactures support: the permutation null mean sat at 15.2% of
+cores against a nominal alpha of 5%. Against the per-core structural rate it lands at
+5.3%, i.e. alpha, and the family gets stronger.
+
+Open: `core/answers.py::_null_ref` returns a hardcoded 0.5 for every mode and would
+have to widen to `_null_ref(mode, core)` to express a per-core null. That interface
+was deliberately flattened to 0.5 on 08-11 to fix a claim/test mismatch, so widening
+it needs care and a re-run of `validate_gold.py` family D.
+
+Pair-ORDER claims are unaffected: swapping A and B is a symmetry of the shuffle, so
+`precedes` really is 0.5 exactly. The bias is specific to one-event position claims.
+
+### Cross-cohort comparison of a single-event position is invalid as posed (issue 21)
+Measured 2026-08-14, and the trap generalises, so it is worth keeping even though the
+shapes it kills are all rejected anyway.
+
+Comparing one event's position between two cohorts with a Fisher 2x2 is confounded by
+**report geometry**: the two cohorts contain different timelines, so they carry
+different structural rates. The per-core structural gap between age bands is median
+3.5pp, Q3 6.0pp, max 12.8pp, with **37 of 124 comparable cores above 5pp** -- the same
+magnitude as the effects being called significant. A label-shuffle null cannot absorb
+it, because every shuffled round gives both cohorts the same geometry mix while the
+real data has a systematic difference. The null is therefore too permissive by
+construction, which is why X6 (age-band position) shows p_dec 0.003 and still must be
+rejected.
+
+Affects X6, X7 and M-H, and also **T-V3 and K-V5**, the two candidate groups that
+compare two events without requiring co-occurrence. Fix: test each arm against its
+own structural rate and compare the deviations. Until then those two groups are on
+hold. Does NOT affect pair-order contrasts (P-M2, X1, X3, X5).
 
 ## Test tracks
 
@@ -157,6 +172,9 @@ Options:
     duplicate. Needs a permutation-null screen at >= 2000 rounds.
 (c) **Remove C-V3.**
 Recommended: (b), falling back to (c). Do not ship as-is.
+
+**DECIDED 2026-08-14: (b).** Implementation and the >=2000-round permutation
+screen are pending; if the screen fails, fall back to (c). See `decisions.md`.
 
 ### Twin groups duplicate the same core; the split key does not know (issue 14)
 Four group pairs compute the **identical statistic on the identical cores**:
@@ -239,24 +257,6 @@ Deferred by user decision. Seven of the 23 groups are report-level. The question
 underneath: what does `insufficient` mean for a single-report claim? The CHOICE
 variants treat a co-exist pair as unanswerable while the BOOL variants map
 co_exist to `refuted`.
-
-### Synonym table contents (issue 8)
-The manual synonym table for `{A}`/`{B}`/`{C}` slot-filling has not been built,
-so `synonym_used` echoes the raw MedDRA term and the released text has no lexical
-variation. Open: how many synonyms per term type, source vocabulary (UMLS, MeSH,
-manual), and validation process.
-
-### Disconnected components in MedTempo (issue 11)
-Rate never measured (`04_corpus_survey.md` A6). If common, the leveled-order
-representation needs to handle multiple components per report. If rare (under
-5%), mark such reports `insufficient` for cross-component hypotheses and proceed.
-
-### Coverage of multi-vaccine pairs
-With only three vaccine pairs, the two-cohort tier is thin. Currently uses the
-general n >= 10 floor per cohort. *(The original entry asked about tightening it
-for "differ" verdicts; those groups are retired, so what remains is whether 10 is
-right for the directional tier — which is now largely moot given the tier is one
-group. Fold into issue 1.)*
 
 ### R1/R3/R5 group definitions (issue 2)
 *(Trimmed 2026-08-12: selection, IDs and answer types were all confirmed

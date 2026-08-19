@@ -2077,3 +2077,46 @@ Consequences for how we write and work:
 
 Issue 15 is closed. Supersedes the open question "The corpus is LLM-drafted and
 expert-VERIFIED" in `open_questions.md`, which is deleted.
+
+---
+
+## Dataset-creation decision batch (2026-08-14)
+
+User decisions unblocking the v1 dataset build:
+
+1. **Issue 13 — C-V3 becomes modal-vs-runner-up.** The statistic moves from
+   "co-occurrence rate > 0.5" to the argmax its text already asks: the modal cell
+   vs the runner-up over the 3-cell relation distribution {before, after,
+   co_occur}. NOT shipped until it clears a >=2000-round label-permutation screen
+   (the standing rule for any changed statistic); if the screen fails, C-V3 is
+   DROPPED instead. Side effect either way: C-V1 and C-V3 stop being statistical
+   twins, so issue 14's twin count falls from four pairs to three.
+2. **Issue 1 — the multi tier ships P-M2 ALONE.** The M-F swap, retiring the
+   tier, and the comparative-family substitution are all declined for v1. The
+   screening story (seven two-cohort shapes tested, one survivor) is a methods
+   strength for the paper.
+3. **Issue 2 — the removal half is CONFIRMED.** P-M1, C-M1, S-M1, S-M3, F-M1,
+   F-M2 (all S = 0) leave the roster. The three additions (R1/R3/R5 =
+   P-V4/P-V2/C-V2) are pending the user's confirmation of the listed template
+   wording; each must clear its own >=2000-round permutation screen at full
+   enumeration before shipping.
+4. **Issue 8 — v1 ships WITHOUT the synonym table.** `synonym_used` keeps
+   echoing the raw MedDRA term. Documented limitation, not a blocking gap.
+5. **Positional statistics ship as DESCRIPTIVE gold-side attributes** wherever
+   computable (signed-rank on level gaps for pair modes, Mann-Whitney for the
+   two-cohort group, Friedman/Kendall for triples), each marked
+   descriptive-only. They never drive a verdict -- §6 lever 2 stays retired, and
+   the issue-16 verdict-driver question stays open without blocking the dataset.
+6. **Issue 17 — the train/dev/test split is DEFERRED until after dataset
+   creation.** Issue 14 (fact_id) remains open as a field-design question.
+
+### Issue 11 CLOSED by inspection (same date)
+
+"Disconnected components in MedTempo" is moot at this layer: the released
+leveled-order format is a single totally-ordered chain of stages by construction
+(`db/build.py::_parse_levels` parses a JSON list of stages; `num_groups` in both
+the DB and the source CSV is just the STAGE COUNT, mislabeled -- its distribution
+exactly matches levels-per-report). Any independence between event chains inside
+one narrative was resolved at ANNOTATION time, upstream of this benchmark, and
+upstream corpus quality is out of scope by the issue-15 decision (2026-08-12).
+No representation change and no insufficient-marking mechanism is needed.

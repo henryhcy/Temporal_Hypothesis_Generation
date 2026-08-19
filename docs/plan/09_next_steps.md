@@ -22,24 +22,27 @@ record of current settings, pending work and known defects.
 
 | # | issue | kind | status | detail lives in |
 |--:|---|---|---|---|
-| 1 | Multi tier is P-M2 alone — ship it, swap to M-F, or retire the tier for v1? | **decision** | **blocking the roster** | `open_questions.md` "Is a ONE-group multi tier worth the shape?" |
-| 2 | Roster migration A: remove the 6 non-directional groups, add R1/R3/R5 | build | not started; old supply estimates (372/415/144) predate every floor and test change and must be re-measured | §3 below |
+| ~~1~~ | ~~Multi tier~~ | — | **DECIDED 2026-08-14: ship P-M2 alone** | `decisions.md` "Dataset-creation decision batch" |
+| 2 | Roster migration A: remove the 6 non-directional groups, add R1/R3/R5 | build | removal CONFIRMED 2026-08-14; additions pending user confirmation of template wording; re-measure supply + p_perm screen at full enumeration | §3 below, `decisions.md` batch |
 | 3 | Eval harness does not exist — architecture, metrics, baselines | build | not started; input format now settled so it is specifiable | §2 below |
 | 4 | Confidence-tag cutoffs (0.15 / 0.30) were never calibrated | **known defect** | provisional; a floor-sized core always tags `low`, so the tag is near-uninformative as shipped | `open_questions.md`, and A4 in `04_corpus_survey.md` |
 | 5 | `not_locatable` exists only in the sequence family (all 118) | dataset gap | mechanism undecided | §4 below |
 | 6 | Report-level groups (7 of 23) do not reach equal thirds | dataset gap | deferred by user decision | §4 below |
 | 7 | Report-level first/last ties — set-valued vs single-valued gold | decision | open, small | `open_questions.md` |
-| 8 | Synonym table never built; `synonym_used` echoes the raw MedDRA term | dataset gap | open — released text has no lexical variation | §4 below |
+| ~~8~~ | ~~Synonym table~~ | — | **CLOSED 2026-08-14: v1 ships without it** (documented limitation) | `decisions.md` batch |
 | 9 | Sequence cohort tier has S = 8 across two groups (S-V1, S-V3) | decision | open — take in full and flag, or drop the tier | `open_questions.md` "Does the sequence family survive at cohort level?" |
 | 10 | Overleaf draft is badly stale (S, roster, tests, nulls, gold rule, input format) | write-up | hold until #1 and #2 settle | §5 below |
-| 11 | Disconnected components in MedTempo — rate never measured | survey | open | `open_questions.md` |
+| ~~11~~ | ~~Disconnected components~~ | — | **CLOSED 2026-08-14 by inspection**: the leveled-order format is a single chain by construction; `num_groups` = stage count (mislabeled); upstream per issue 15 | `decisions.md` batch |
 | 12 | `.venv` lost its editable install | environment | workaround: `PYTHONPATH=src` | standing caveats |
-| 13 | C-V3's text asks an argmax, its statistic tests a majority | **claim/label defect** | **open** — 20% of cores disagree, 5 shipped decisive | `open_questions.md` "C-V3 asks an argmax" |
+| 13 | C-V3's text asks an argmax, its statistic tests a majority | **claim/label defect** | **DECIDED 2026-08-14: move to modal-vs-runner-up**; implementation + >=2000-round screen pending (fallback: drop) | `decisions.md` batch |
 | 14 | Twin groups duplicate cores; `core_id` includes `group_id`, so a split separates them | **leakage risk** | open — needs a group-independent `fact_id` | `open_questions.md` "Twin groups duplicate" |
 | ~~15~~ | ~~Corpus provenance / "expert-annotated"~~ | — | **CLOSED 2026-08-12** — MedTempo is taken as the gold-label dataset; corpus quality is out of scope | `decisions.md` "MedTempo is the gold-label dataset" |
-| 16 | Positional/rank track has no exact test at our n — retired, not built | **decision + build** | open — the one lever that could also fix the thin families | `open_questions.md` "Test tracks" |
-| 17 | No train/dev/test split is produced at all | build | open — and issues 14/16 both change how it must be keyed | §4 below |
+| 16 | Positional/rank track has no exact test at our n — retired, not built | **decision + build** | open as a VERDICT-DRIVER question; descriptive positional attributes CONFIRMED for v1 answers (2026-08-14) | `open_questions.md` "Test tracks" |
+| 17 | No train/dev/test split is produced at all | build | DEFERRED by user 2026-08-14 until after dataset creation; issues 14/16 still change how it must be keyed | §4 below |
 | 18 | Expected false-label count never quantified | **write-up gap** | open — alpha-rate false positives among 1365 decisive cores is a number the paper needs | standing caveats |
+| 19 | Six candidate template families screened; 5 clear their nulls | **decision** | open — adopt R1/R3 + N2 + N1 + R5 (+N3/N4 narrowly)? Blocked behind issue 14 | `10_family_expansion.md` (branch `template-family-expansion`) |
+| 20 | Single-event position claims cannot use a 0.5 null | **known defect (new families only)** | measured — stage populations are uneven, structural rate 0.5327; the fix needs `_null_ref(mode, core)` | `10_family_expansion.md` §4.3, §4.5 |
+| 21 | Cross-cohort comparison of a single-event position is invalid | **method finding** | measured — the label-shuffle null cannot absorb per-core report geometry (37 of 124 cores carry a >5pp structural gap); affects T-V3, K-V5, X6, X7, M-H | `10_family_expansion.md` §4.5 |
 
 Items 1–12 contain no correctness bug in generated data: `validate_gold.py` clears
 all 20,749 instances on six invariant families as of 2026-08-11. Items 4, 5, 6 and 8
