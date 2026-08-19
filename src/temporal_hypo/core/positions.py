@@ -20,10 +20,13 @@ ordinal data -- shuffled labels yield ~11% decisive cores against a nominal 5%, 
 the lever manufactured false positives rather than recovering signal. The two
 rank-based multi candidates built on it (M-E' 0.333, M-A 0.381) are noise.
 
-These functions survive only as DESCRIPTIVE diagnostics for the advisor-facing
-worked examples (`scripts/make_examples.py`) and the design-time candidate inventory
-(`scripts/replacement_inventory.py`). `core.answers` does not import this module, and
-must not: any p-value from here is not a gold label.
+These functions survive only as DESCRIPTIVE outputs: the advisor-facing worked
+examples (`scripts/make_examples.py`), the design-time candidate inventory
+(`scripts/replacement_inventory.py`), and -- since 2026-08-14 -- the released
+answer records' `positional` block (`generation/positional.py`), which carries
+role=descriptive_only and the approximation method explicitly. `core.answers`
+does not import this module, and must not: any p-value from here is not a gold
+label.
 """
 
 from __future__ import annotations

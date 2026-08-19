@@ -98,3 +98,29 @@ def test_fact_id_collapses_answer_format_twins():
     # orientation must not change identity either
     f1r = realize(_core(), "refuted")
     assert fact_id(f1) == fact_id(f1r)
+
+
+def test_positional_block_is_descriptive_and_answer_side():
+    """2026-08-14: positional stats ship on the answer side, marked descriptive,
+    and never appear among the input fields."""
+    from temporal_hypo.generation.instances import INPUT_FIELDS
+    from tests.test_answers import _corpus
+    from temporal_hypo.generation import cores as C
+    groups = load_groups()
+    idx = _corpus()
+    core = C._build_vaccine_core(idx, groups["P-V1"], "dir_bool", "Pfizer",
+                                 idx.cohort("Pfizer"), ("Fatigue", "Headache"))
+    facts = realize(core, "supported")
+    recs = build_records(facts, groups["P-V1"], seq=0, index=idx)
+    pos = recs[0]["positional"]
+    assert pos is not None
+    assert pos["role"] == "descriptive_only"
+    assert pos["test"] == "wilcoxon_signed_rank"
+    # the rank track conditions LESS: co-exist kept, so n_present >= gold_n
+    assert pos["n_present"] >= recs[0]["gold_n"]
+    # orientation follows the asserted claim: Headache precedes Fatigue in
+    # 16/20 fixture reports, and this instance asserts Headache-first, so the
+    # median signed gap level(first)-level(second) must be negative
+    assert recs[0]["factual_core"]["events"][0] == "Headache"
+    assert pos["median_gap"] < 0
+    assert "positional" not in INPUT_FIELDS

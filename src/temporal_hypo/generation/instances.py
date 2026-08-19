@@ -22,6 +22,7 @@ from temporal_hypo.core.min_n import family_floor
 from temporal_hypo.core.significance import ALPHA
 from temporal_hypo.generation.cores import InstanceFacts
 from temporal_hypo.generation.evidence import evidence_ids
+from temporal_hypo.generation.positional import positional_stats
 from temporal_hypo.generation.templates import FORMATS, REGISTERS, Group, render
 
 
@@ -129,6 +130,9 @@ def build_records(
         "alpha": ALPHA,
         # GOLD-SIDE: the report ids the statistic was computed over. Never input.
         "evidence_ids": evidence,
+        # descriptive rank statistics (2026-08-14): NEVER a verdict driver --
+        # the block says so itself via role=descriptive_only and its `method`
+        "positional": positional_stats(index, facts) if index is not None else None,
         "ci": [_round(ci[0]), _round(ci[1])] if ci else None,
         "effect_size": _round(facts.effect_size),
         # significance test on the gold value (None for report-level / insufficient)
