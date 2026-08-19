@@ -83,6 +83,28 @@ def positional_stats(index, facts) -> dict | None:
             "kendalls_w": round(float(kw["W"]), 4),
         }
 
+    if m in ("antecedent_bool", "pairpair_bool"):
+        # Two within-cohort arms: per-arm signed-rank on the level gaps, plus
+        # Mann-Whitney between the two arms' gap distributions -- "is the A->B
+        # gap pattern different from the C->(B|D) one", descriptive only.
+        arm2 = (ev[2], ev[1]) if m == "antecedent_bool" else (ev[2], ev[3])
+        d1 = corpus.pair_distances(index, ev[0], ev[1], core.cohort_ids)
+        d2 = corpus.pair_distances(index, arm2[0], arm2[1], core.cohort_ids)
+        if not d1 or not d2:
+            return None
+        mw = positions.mann_whitney_u(d1, d2)
+        return {
+            "role": "descriptive_only",
+            "test": "mann_whitney_u_arms",
+            "method": mw["method"],          # normal approx: anti-conservative
+            "n1_present": len(d1),
+            "n2_present": len(d2),
+            "U": round(float(mw["U"]), 4),
+            "p": round(float(mw["p"]), 6),
+            "median_gap_1": st.median(d1),
+            "median_gap_2": st.median(d2),
+        }
+
     if m == "multi_dir_precedes":
         v1, v2 = facts.vaccines_assigned
         d1 = corpus.pair_distances(index, ev[0], ev[1], index.cohort(v1))

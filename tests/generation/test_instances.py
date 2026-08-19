@@ -124,3 +124,18 @@ def test_positional_block_is_descriptive_and_answer_side():
     assert recs[0]["factual_core"]["events"][0] == "Headache"
     assert pos["median_gap"] < 0
     assert "positional" not in INPUT_FIELDS
+
+
+def test_positional_covers_the_two_arm_modes():
+    from temporal_hypo.generation.positional import positional_stats
+    from tests.test_answers import _corpus
+    from temporal_hypo.generation import cores as C
+    groups = load_groups()
+    idx = _corpus()
+    core = C._build_vaccine_core(idx, groups["P-V2"], "antecedent_bool",
+                                 "Pfizer", idx.cohort("Pfizer"),
+                                 ("Headache", "Pyrexia", "Fatigue"))
+    facts = realize(core, "insufficient")
+    pos = positional_stats(idx, facts)
+    assert pos is not None and pos["test"] == "mann_whitney_u_arms"
+    assert pos["role"] == "descriptive_only"
