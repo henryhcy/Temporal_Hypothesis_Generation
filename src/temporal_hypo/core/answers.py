@@ -72,9 +72,12 @@ _MODAL_RUNNER = {"seq_bool", "first_bool",
 # (core.min_n) on the CORE's conditioned denominator, which is what "is there
 # enough data behind this question" actually means; the exact binomial itself
 # needs no minimum.
-# Two-proportion modes -> Fisher exact on the 2x2. P-M2 is the whole multi
-# tier since the 2026-08-14 removal of the six non-directional groups.
-_FISHER = {"multi_dir_precedes"}
+# Two-proportion modes -> Fisher exact on the 2x2: the two-cohort P-M2 plus
+# the 2026-08-14 within-cohort two-arm additions. "Arm 1's rate exceeds arm
+# 2's" is the canonical claim for all four; what an ARM is differs (a vaccine
+# cohort; an ordered pair's denominator; the with-A / without-A split).
+_FISHER = {"multi_dir_precedes", "antecedent_bool", "pairpair_bool",
+           "assoc_bool"}
 # Single-cohort omnibus GOF modes: NONE as of 2026-08-11. `modal_choice`,
 # `first_choice` and `last_choice` moved to `_MODAL_RUNNER` (their claim is an
 # argmax, not a distribution shape), and `consistency_bool` (S-V4) was removed
@@ -306,7 +309,8 @@ def oriented_significance(facts, *, alpha: float = sig.ALPHA) -> Significance:
         return core_significance(core, named=named, alpha=alpha)
 
     s = core_significance(core, alpha=alpha)
-    reversed_claim = (facts.flip_kind in ("direction", "option", "vaccine_swap")
+    reversed_claim = (facts.flip_kind in ("direction", "option",
+                                          "vaccine_swap", "arm_swap")
                       or facts.negated)
     if not reversed_claim or s.p_claim is None:
         return s

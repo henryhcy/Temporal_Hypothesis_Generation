@@ -186,6 +186,24 @@ def recompute_independently(conn, index, facts, fails: Counter, examples: dict):
         # co_occurs_fraction returns the co_exist share of the both-present
         # denominator -- for cooc_modal_bool that is exactly gold_k / gold_n.
         got = agg.co_occurs_fraction(conn, ev[0], ev[1], cohort)
+    elif m in ("antecedent_bool", "pairpair_bool"):
+        # two arms, both recomputable through the same DB mirror; oriented to
+        # the instance, so arm 1 is (ev0, ev1) and arm 2 is (ev2, ev1) for the
+        # antecedent shape or (ev2, ev3) for pair-vs-pair. assoc_bool has no
+        # aggregation mirror; checks A-E plus the evidence sets cover it.
+        arm2 = (ev[2], ev[1]) if m == "antecedent_bool" else (ev[2], ev[3])
+        f1, n1 = agg.precedes_fraction(conn, ev[0], ev[1], cohort)
+        f2, n2 = agg.precedes_fraction(conn, arm2[0], arm2[1], cohort)
+        if n1 != facts.gold_n or n2 != facts.gold_n2:
+            fails["F: DB-backed arm n disagrees"] += 1
+            examples.setdefault("F: DB-backed arm n disagrees",
+                                f"{core.group_id} {ev}: {n1}/{n2} vs "
+                                f"{facts.gold_n}/{facts.gold_n2}")
+        elif f1 is not None and round(f1 * n1) != facts.gold_k:
+            fails["F: DB-backed arm k disagrees"] += 1
+            examples.setdefault("F: DB-backed arm k disagrees",
+                                f"{core.group_id} {ev}")
+        return
     if got is None:
         return
     frac, n = got

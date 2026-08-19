@@ -242,3 +242,67 @@ def test_false_cores_reject_report_level():
     with _pytest.raises(ValueError):
         from temporal_hypo.generation.cores import enumerate_false_cores
         enumerate_false_cores(index, groups["P-R1"], count=3, seed=0)
+
+
+# -- the 08-14 additions: P-V2 / P-V4 / C-V2 --------------------------------
+
+def _two_arm_core(mode, events, **kw):
+    base = dict(
+        group_id={"antecedent_bool": "P-V2", "pairpair_bool": "P-V4",
+                  "assoc_bool": "C-V2"}[mode],
+        family="pairwise", primitive="precedes", level="vaccine",
+        answer_type="BOOL", mode=mode, events=events, vaccines=("Pfizer",),
+        cohort_ids=[], report_id=None, computable=True,
+        natural_verdict="supported",
+        proportion=0.9, n=30, k=27, proportion2=0.3, n2=30, k2=9,
+    )
+    base.update(kw)
+    return ViableCore(**base)
+
+
+def test_antecedent_realize_swaps_arms():
+    from temporal_hypo.core.answers import core_significance, oriented_significance
+    core = _two_arm_core("antecedent_bool", ("Chills", "Fever", "Rash"))
+    assert feasible_polarities(core) == {"supported", "refuted"}
+    sup = realize(core, "supported")
+    assert sup.gold_verdict == "supported"
+    assert sup.events_assigned == ("Chills", "Fever", "Rash")
+    assert (sup.gold_n, sup.gold_k, sup.gold_n2, sup.gold_k2) == (30, 27, 30, 9)
+    ref = realize(core, "refuted")
+    assert ref.gold_verdict == "refuted"
+    # arms swap: the claim now puts the LOW-rate antecedent first
+    assert ref.events_assigned == ("Rash", "Fever", "Chills")
+    assert (ref.gold_n, ref.gold_k, ref.gold_n2, ref.gold_k2) == (30, 9, 30, 27)
+    assert ref.flip_kind == "arm_swap"
+    # and the asserted claim's tails are the canonical tails swapped
+    c, o = core_significance(core), oriented_significance(ref)
+    assert o.p_claim == c.p_opposite and o.p_opposite == c.p_claim
+
+
+def test_pairpair_realize_swaps_pairs():
+    core = _two_arm_core("pairpair_bool", ("A", "B", "C", "D"))
+    sup = realize(core, "supported")
+    assert sup.events_assigned == ("A", "B", "C", "D")
+    ref = realize(core, "refuted")
+    assert ref.events_assigned == ("C", "D", "A", "B")
+    assert ref.flip_kind == "arm_swap"
+    # slot D renders: 4-event slot map must cover it
+    assert ref.slot_values["D"] == "B"
+
+
+def test_assoc_orients_by_negation_like_cv1():
+    from temporal_hypo.core.answers import core_significance, oriented_significance
+    from temporal_hypo.generation.templates import load_groups as _lg
+    groups = _lg()
+    core = _two_arm_core("assoc_bool", ("A", "B"), primitive="co_occurs",
+                         proportion=0.2, n=40, k=8, proportion2=0.7,
+                         n2=40, k2=28, natural_verdict="refuted")
+    # symmetric: no slot orientation, so both classes come via negation
+    assert feasible_polarities(core, groups["C-V2"]) == {"supported", "refuted"}
+    plain = realize(core, "refuted")
+    assert plain.negated is False and plain.gold_verdict == "refuted"
+    assert (plain.gold_n, plain.gold_k) == (40, 8)     # arms never move
+    neg = realize(core, "supported")
+    assert neg.negated is True and neg.gold_verdict == "supported"
+    c, o = core_significance(core), oriented_significance(neg)
+    assert o.p_claim == c.p_opposite and o.p_opposite == c.p_claim

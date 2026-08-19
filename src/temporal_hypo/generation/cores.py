@@ -76,11 +76,17 @@ MODE_BY_GROUP: dict[str, str] = {
     "P-R1": "rep_dir_bool",
     "P-R2": "rep_dir_choice",
     "P-V1": "dir_bool",
+    # the 07-28 roster additions, implemented 2026-08-14 (decisions.md batch 2):
+    # two within-cohort two-proportion contrasts -- both arms keep the full
+    # denominator, unlike the multi tier, which splits the corpus.
+    "P-V2": "antecedent_bool",
     "P-V3": "dir_choice",
+    "P-V4": "pairpair_bool",
     "P-M2": "multi_dir_precedes",
     # pairwise -- co_occurs
     "C-R1": "rep_sym_bool",
     "C-V1": "sym_bool_cooccurs",
+    "C-V2": "assoc_bool",
     # C-V3 moved to the argmax statistic its text asks (issue 13, 2026-08-14):
     # modal-vs-runner-up over the 3-cell relation distribution, named cell
     # co_exist. C-V1 keeps the majority statistic; the two are no longer twins.
@@ -183,7 +189,7 @@ def _other_permutation(modal: tuple[str, ...], counts: dict) -> tuple[str, ...]:
 
 
 def _slot_events(events: tuple[str, ...]) -> dict[str, str]:
-    names = ("A", "B", "C")
+    names = ("A", "B", "C", "D")          # D since P-V4 (4 events, 2026-08-14)
     return {names[i]: ev for i, ev in enumerate(events)}
 
 
@@ -226,6 +232,39 @@ def _new_core(group: Group, mode: str, **kw) -> ViableCore:
 
 def _enum_vaccine(index: CorpusIndex, group: Group, mode: str) -> list[ViableCore]:
     cores: list[ViableCore] = []
+    # The two-arm modes have structured candidate shapes, not plain
+    # combinations: P-V2 picks a CONSEQUENT and two antecedents (a < c
+    # canonically -- swapping them is orientation, not identity); P-V4 picks two
+    # DISJOINT pairs (swapping the pairs is orientation). A shared per-cohort
+    # fraction cache keeps the pair scans linear in distinct pairs.
+    if mode == "antecedent_bool":
+        for vax in VACCINES:
+            cohort = index.cohort(vax)
+            terms = index.top_terms(cohort, K_TRIPLE)
+            cache: dict = {}
+            for b in terms:
+                others = [t for t in terms if t != b]
+                for a, c in combinations(others, 2):
+                    core = _build_vaccine_core(index, group, mode, vax, cohort,
+                                               (a, b, c), frac_cache=cache)
+                    if core is not None:
+                        cores.append(core)
+        return cores
+    if mode == "pairpair_bool":
+        for vax in VACCINES:
+            cohort = index.cohort(vax)
+            terms = index.top_terms(cohort, K_TRIPLE)
+            prs = list(combinations(terms, 2))
+            cache = {}
+            for i, p1 in enumerate(prs):
+                for p2 in prs[i + 1:]:
+                    if set(p1) & set(p2):
+                        continue
+                    core = _build_vaccine_core(index, group, mode, vax, cohort,
+                                               p1 + p2, frac_cache=cache)
+                    if core is not None:
+                        cores.append(core)
+        return cores
     is_triple = mode in _VACCINE_TRIPLE_MODES
     for vax in VACCINES:
         cohort = index.cohort(vax)
@@ -242,6 +281,16 @@ def _enum_vaccine(index: CorpusIndex, group: Group, mode: str) -> list[ViableCor
     return cores
 
 
+def _cached_precedes(index, a, b, cohort, cache):
+    """precedes_fraction with an optional (a, b)-keyed memo for enumerators."""
+    if cache is None:
+        return corpus.precedes_fraction(index, a, b, cohort)
+    key = (a, b)
+    if key not in cache:
+        cache[key] = corpus.precedes_fraction(index, a, b, cohort)
+    return cache[key]
+
+
 def _is_testable(n, family, *, n2=None) -> bool:
     """Does this conditioned denominator clear the SHARED family floor?
 
@@ -253,9 +302,55 @@ def _is_testable(n, family, *, n2=None) -> bool:
     return min_n_gate(n, family, n2=n2).testable
 
 
-def _build_vaccine_core(index, group, mode, vax, cohort, combo) -> ViableCore | None:
+def _build_vaccine_core(index, group, mode, vax, cohort, combo,
+                        frac_cache=None) -> ViableCore | None:
     base = dict(events=tuple(combo), vaccines=(vax,), cohort_ids=cohort,
                report_id=None)
+
+    if mode == "antecedent_bool":
+        # P-V2 (R3): "B follows A more often than it follows C". Arm 1 = the
+        # (A, B) ordered denominator with k = A-before-B; arm 2 = same for
+        # (C, B). Both arms live in ONE cohort; the Fisher 2x2 compares them.
+        a, b, c = combo
+        p1, n1 = _cached_precedes(index, a, b, cohort, frac_cache)
+        p2, n2 = _cached_precedes(index, c, b, cohort, frac_cache)
+        ok = _is_testable(n1, group.family, n2=n2)
+        nv = direction_verdict(p1, p2) if (ok and p1 is not None
+                                           and p2 is not None) else "insufficient"
+        return _new_core(group, mode, computable=ok, natural_verdict=nv,
+                         proportion=p1, n=n1,
+                         k=round(p1 * n1) if p1 is not None else 0,
+                         proportion2=p2, n2=n2,
+                         k2=round(p2 * n2) if p2 is not None else 0, **base)
+
+    if mode == "pairpair_bool":
+        # P-V4 (R1): "A precedes B more often than C precedes D", four distinct
+        # events, both directed rates in their alphabetical direction.
+        a, b, c, d = combo
+        p1, n1 = _cached_precedes(index, a, b, cohort, frac_cache)
+        p2, n2 = _cached_precedes(index, c, d, cohort, frac_cache)
+        ok = _is_testable(n1, group.family, n2=n2)
+        nv = direction_verdict(p1, p2) if (ok and p1 is not None
+                                           and p2 is not None) else "insufficient"
+        return _new_core(group, mode, computable=ok, natural_verdict=nv,
+                         proportion=p1, n=n1,
+                         k=round(p1 * n1) if p1 is not None else 0,
+                         proportion2=p2, n2=n2,
+                         k2=round(p2 * n2) if p2 is not None else 0, **base)
+
+    if mode == "assoc_bool":
+        # C-V2 (R5): association vs independence, presence x presence. Arm 1 =
+        # reports WITH A (k = also B), arm 2 = reports WITHOUT A (k = B).
+        a, b = combo
+        n1, k1, n2, k2 = corpus.presence_association(index, a, b, cohort)
+        p1 = k1 / n1 if n1 else None
+        p2 = k2 / n2 if n2 else None
+        ok = _is_testable(n1, group.family, n2=n2)
+        nv = direction_verdict(p1, p2) if (ok and p1 is not None
+                                           and p2 is not None) else "insufficient"
+        return _new_core(group, mode, computable=ok, natural_verdict=nv,
+                         proportion=p1, n=n1, k=k1,
+                         proportion2=p2, n2=n2, k2=k2, **base)
 
     if mode in ("dir_bool", "dir_choice"):
         a, b = combo
@@ -572,6 +667,55 @@ def enumerate_group_full(index: CorpusIndex, group: Group) -> list[ViableCore]:
 
 def _enum_vaccine_full(index, group, mode) -> list[ViableCore]:
     cores: list[ViableCore] = []
+    if mode in ("antecedent_bool", "pairpair_bool"):
+        # Candidates come from the ordered-viable pair set (ordered n >= floor
+        # on the REAL corpus); a shared fraction cache keeps this linear in
+        # distinct pairs rather than in candidate combinations.
+        for vax in VACCINES:
+            cohort = index.cohort(vax)
+            cache: dict = {}
+            viable = []
+            for pr in _cooccurring_pairs(index, cohort):
+                _p, n = _cached_precedes(index, pr[0], pr[1], cohort, cache)
+                if n >= _MIN_N:
+                    viable.append(pr)
+            if mode == "pairpair_bool":
+                for i, p1 in enumerate(viable):
+                    for p2 in viable[i + 1:]:
+                        if set(p1) & set(p2):
+                            continue
+                        core = _build_vaccine_core(index, group, mode, vax,
+                                                   cohort, p1 + p2,
+                                                   frac_cache=cache)
+                        if core is not None:
+                            cores.append(core)
+            else:
+                by_consequent: dict[str, list[str]] = {}
+                for x, y in viable:
+                    # each ordered-viable pair supplies BOTH directed arms
+                    by_consequent.setdefault(y, []).append(x)
+                    by_consequent.setdefault(x, []).append(y)
+                for b, ants in sorted(by_consequent.items()):
+                    for a, c in combinations(sorted(set(ants)), 2):
+                        core = _build_vaccine_core(index, group, mode, vax,
+                                                   cohort, (a, b, c),
+                                                   frac_cache=cache)
+                        if core is not None:
+                            cores.append(core)
+        return cores
+    if mode == "assoc_bool":
+        for vax in VACCINES:
+            cohort = index.cohort(vax)
+            freq = index.term_freq(cohort)
+            n_cohort = len(cohort)
+            terms = sorted(t for t, cnt in freq.items()
+                           if cnt >= _MIN_N and n_cohort - cnt >= _MIN_N)
+            for combo in combinations(terms, 2):
+                core = _build_vaccine_core(index, group, mode, vax, cohort,
+                                           combo)
+                if core is not None:
+                    cores.append(core)
+        return cores
     is_triple = mode in _VACCINE_TRIPLE_MODES
     for vax in VACCINES:
         cohort = index.cohort(vax)
@@ -712,6 +856,10 @@ _SLOT_ORIENTABLE = {
     "seq_bool", "modal_choice",
     "first_choice", "last_choice", "first_bool",
     "multi_dir_precedes",
+    # the 08-14 two-arm additions: swapping the two ARMS re-words the claim to
+    # assert either side (antecedents A<->C; the two pairs). assoc_bool is NOT
+    # here -- it is symmetric like C-V1 and orients by negation.
+    "antecedent_bool", "pairpair_bool",
 }
 
 
@@ -855,6 +1003,10 @@ def _realize(core: ViableCore, polarity: str) -> InstanceFacts:
         return _realize_extreme_choice(core, polarity)
     if m == "multi_dir_precedes":
         return _realize_multi_dir(core, polarity)
+    if m in ("antecedent_bool", "pairpair_bool"):
+        return _realize_two_arm(core, polarity)
+    if m == "assoc_bool":
+        return _realize_assoc(core, polarity)
     if m.startswith("rep_"):
         return _realize_report(core, polarity)
     raise ValueError(f"cannot realize mode {m}")
@@ -957,6 +1109,45 @@ def _realize_extreme_choice(core, polarity):
     p = fr[named]
     return _mk(core, polarity, fk, ev, verdict=verdict,
                proportion=p, n=n, k=round(p * n), null_ref=1 / 3)
+
+
+def _realize_two_arm(core, polarity):
+    """P-V2 / P-V4: orientation swaps the two ARMS, mirroring _realize_multi_dir.
+
+    Supported asserts the HIGHER-rate arm first; refuted the lower one. The
+    emitted n/k/n2/k2 follow the asserted order, so gold_n always describes the
+    arm the claim's text puts first -- the same invariant the 08-11 gold_n2 fix
+    pinned for the two-cohort group.
+    """
+    p1, p2 = core.proportion, core.proportion2
+    hi_first = p1 >= p2
+    keep = (hi_first == (polarity == "supported"))
+    if core.mode == "antecedent_bool":
+        a, b, c = core.events
+        ev = (a, b, c) if keep else (c, b, a)
+    else:
+        a, b, c, d = core.events
+        ev = (a, b, c, d) if keep else (c, d, a, b)
+    if keep:
+        pp, n, k, pp2, n2, k2, fk = (p1, core.n, core.k,
+                                     p2, core.n2, core.k2, None)
+    else:
+        pp, n, k, pp2, n2, k2, fk = (p2, core.n2, core.k2,
+                                     p1, core.n, core.k, "arm_swap")
+    ci = wilson_newcombe_diff_ci(k, n, k2, n2)
+    return _mk(core, polarity, fk, ev, verdict=direction_verdict(pp, pp2),
+               proportion=pp, n=n, k=k, n2=n2, k2=k2, ci=ci,
+               effect=cohens_h(pp, pp2))
+
+
+def _realize_assoc(core, polarity):
+    """C-V2: symmetric, so events and arms never move; orientation is by
+    NEGATION, derived in realize() exactly as for C-V1/C-V3."""
+    ci = wilson_newcombe_diff_ci(core.k, core.n, core.k2, core.n2)
+    return _mk(core, polarity, None, core.events, verdict=core.natural_verdict,
+               proportion=core.proportion, n=core.n, k=core.k,
+               n2=core.n2, k2=core.k2, ci=ci,
+               effect=cohens_h(core.proportion, core.proportion2))
 
 
 def _realize_multi_dir(core, polarity):

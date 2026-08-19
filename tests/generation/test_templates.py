@@ -14,10 +14,13 @@ def test_load_all_groups():
     #    - F-M3 (failed its permutation null, p_perm 0.188, removed 2026-08-11)
     #    - C-M2 (failed its null on four measurements, 0.202, removed 2026-08-11)
     #    - the six S=0 non-directional multi groups P-M1/C-M1/S-M1/S-M3/F-M1/F-M2
-    #      (roster migration A removal half, 2026-08-14). The migration's
-    #      addition half re-adds P-V2/C-V2 (new definitions) + P-V4 -> 20.
-    assert len(groups) == 17
-    for gid in ("P-V1", "C-V3", "S-V3", "F-V3", "P-R1", "P-M2"):
+    #      (roster migration A removal half, 2026-08-14)
+    #    + the addition half (same day, decisions.md batch 2): P-V2 and C-V2
+    #      re-enter with NEW definitions (conditional antecedent; association
+    #      vs independence -- not the retired PROP claims) plus P-V4 -> 20.
+    assert len(groups) == 20
+    for gid in ("P-V1", "P-V2", "P-V4", "C-V2", "C-V3", "S-V3", "F-V3",
+                "P-R1", "P-M2"):
         assert gid in groups
     for gid in ("S-V2", "S-M2", "S-V4", "F-M3", "C-M2",
                 "P-M1", "C-M1", "S-M1", "S-M3", "F-M1", "F-M2"):
@@ -26,7 +29,7 @@ def test_load_all_groups():
 
 def test_every_variant_renders_with_full_slots():
     groups = load_groups()
-    fillers = {"A": "Headache", "B": "Fever", "C": "Rash",
+    fillers = {"A": "Headache", "B": "Fever", "C": "Rash", "D": "Chills",
                "v": "Pfizer", "v1": "Pfizer", "v2": "Moderna",
                "r": "VAERS-1", "p": "70"}
     for g in groups.values():

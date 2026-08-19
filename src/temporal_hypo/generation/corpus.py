@@ -193,6 +193,29 @@ def relation_distribution(
     return {"counts": counts, "n": sum(counts.values())}
 
 
+def presence_association(
+    index: CorpusIndex, a: str, b: str, cohort: list[int]
+) -> tuple[int, int, int, int]:
+    """(n1, k1, n2, k2) for the association-vs-independence 2x2 (C-V2, R5).
+
+    Arm 1 = reports containing A (k1 of them also contain B); arm 2 = reports
+    NOT containing A (k2 contain B). "A and B occur together more often than
+    their separate rates predict" is P(B | A) > P(B | not A), a one-sided
+    Fisher on this table. Symmetric in A and B (the transposed table gives the
+    same association direction), so orientation is by NEGATION, like C-V1.
+    """
+    n1 = k1 = n2 = k2 = 0
+    for vid in cohort:
+        t = index.report_terms[vid]
+        if a in t:
+            n1 += 1
+            k1 += int(b in t)
+        else:
+            n2 += 1
+            k2 += int(b in t)
+    return n1, k1, n2, k2
+
+
 def pair_distances(
     index: CorpusIndex, a: str, b: str, cohort: list[int]
 ) -> list[int]:

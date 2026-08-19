@@ -136,4 +136,32 @@ def evidence_ids(index, facts) -> dict:
         a, b = ev[0], ev[1]
         return {"cohort_1": _pair_sets(index, a, b, index.cohort(v1)),
                 "cohort_2": _pair_sets(index, a, b, index.cohort(v2))}
+
+    # The within-cohort two-arm modes (2026-08-14) reuse the cohort_1/cohort_2
+    # keys for their two ARMS, oriented as the instance asserts them -- the keys
+    # mean "first/second conditioned denominator in the claim's order", which
+    # for P-M2 happens to be two vaccine cohorts.
+    if m == "antecedent_bool":
+        return {"cohort_1": _pair_sets(index, ev[0], ev[1], core.cohort_ids),
+                "cohort_2": _pair_sets(index, ev[2], ev[1], core.cohort_ids)}
+    if m == "pairpair_bool":
+        return {"cohort_1": _pair_sets(index, ev[0], ev[1], core.cohort_ids),
+                "cohort_2": _pair_sets(index, ev[2], ev[3], core.cohort_ids)}
+    if m == "assoc_bool":
+        with_a, without_a = [], []
+        both, b_only = [], []
+        for vid in core.cohort_ids:
+            t = index.report_terms[vid]
+            if ev[0] in t:
+                with_a.append(vid)
+                if ev[1] in t:
+                    both.append(vid)
+            else:
+                without_a.append(vid)
+                if ev[1] in t:
+                    b_only.append(vid)
+        return {"cohort_1": {"denominator": with_a, "numerator": both,
+                             "excluded": []},
+                "cohort_2": {"denominator": without_a, "numerator": b_only,
+                             "excluded": []}}
     return {}

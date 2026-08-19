@@ -43,6 +43,11 @@ RULE_BY_MODE = {
     "last_choice": "last_among argmax (all-candidates denom); modal-vs-runner-up test",
     "first_bool": "most-common first event (all-candidates denom); unique winner; modal-vs-runner-up test",
     "multi_dir_precedes": "two precedes fracs; names higher cohort",
+    "antecedent_bool": "B-follows-A rate vs B-follows-C rate (two ordered-pair "
+                       "arms, one cohort); Fisher 2x2",
+    "pairpair_bool": "A-before-B rate vs C-before-D rate (two ordered-pair "
+                     "arms, one cohort); Fisher 2x2",
+    "assoc_bool": "P(B|A) vs P(B|not A), presence x presence; Fisher 2x2",
     "rep_dir_bool": "per-report relation; before => supported",
     "rep_dir_choice": "per-report relation; names earlier event",
     "rep_sym_bool": "per-report relation; co_exist => supported",
@@ -54,7 +59,7 @@ RULE_BY_MODE = {
 
 # Groups sampled for Part C (spans families, answer types, levels).
 VALIDATION_GROUPS = [
-    "P-V1", "P-V2", "P-V3", "C-V1", "C-V2", "C-V3", "S-V3",
+    "P-V1", "P-V2", "P-V3", "P-V4", "C-V1", "C-V2", "C-V3", "S-V3",
     "F-V1", "F-V2", "F-V3", "P-M2", "P-R1", "C-R1", "S-R1", "F-R1",
 ]
 

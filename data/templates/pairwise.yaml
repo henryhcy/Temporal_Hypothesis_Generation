@@ -73,6 +73,28 @@ groups:
     clinical:
       question: In {v} recipients, does {A} usually come before {B}?
       claim: In {v} recipients, {A} usually comes before {B}.
+- id: P-V2
+  primitive: precedes
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - C
+  - v
+  variants:
+    original:
+      question: After {v}, does {B} follow {A} more often than it follows {C}?
+      claim: After {v}, {B} follows {A} more often than it follows {C}.
+    research:
+      question: Among {v} reports, is the rate at which {B} follows {A} higher than the rate at which it follows {C}?
+      claim: Among {v} reports, the rate at which {B} follows {A} is higher than the rate at which it follows {C}.
+    media:
+      question: After {v}, does {B} come after {A} more often than after {C}?
+      claim: After {v}, {B} comes after {A} more often than after {C}.
+    clinical:
+      question: In {v} recipients, does {B} more often follow {A} than {C}?
+      claim: In {v} recipients, {B} more often follows {A} than {C}.
 - id: P-V3
   primitive: precedes
   level: vaccine
@@ -94,6 +116,29 @@ groups:
     clinical:
       question: In {v} patients, what usually shows up first, {A} or {B}?
       claim: In {v} patients, {A} usually shows up first.
+- id: P-V4
+  primitive: precedes
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - C
+  - D
+  - v
+  variants:
+    original:
+      question: After {v}, does {A} precede {B} more often than {C} precedes {D}?
+      claim: After {v}, {A} precedes {B} more often than {C} precedes {D}.
+    research:
+      question: Among {v} reports, is the {A}-before-{B} rate higher than the {C}-before-{D} rate?
+      claim: Among {v} reports, the {A}-before-{B} rate is higher than the {C}-before-{D} rate.
+    media:
+      question: After {v}, does {A} come before {B} more often than {C} comes before {D}?
+      claim: After {v}, {A} comes before {B} more often than {C} comes before {D}.
+    clinical:
+      question: In {v} recipients, is the {A}-then-{B} order more frequent than the {C}-then-{D} order?
+      claim: In {v} recipients, the {A}-then-{B} order is more frequent than the {C}-then-{D} order.
 - id: P-M2
   primitive: precedes
   level: multi
@@ -166,6 +211,35 @@ groups:
       claim: In {v} recipients, {A} and {B} typically present together.
       question_negated: In {v} recipients, is it the case that {A} and {B} do NOT typically present together?
       claim_negated: In {v} recipients, {A} and {B} do not typically present together.
+- id: C-V2
+  primitive: co_occurs
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: After {v}, do {A} and {B} occur together more often than their separate rates would predict?
+      claim: After {v}, {A} and {B} occur together more often than their separate rates would predict.
+      question_negated: After {v}, is it the case that {A} and {B} do NOT occur together more often than their separate rates would predict?
+      claim_negated: After {v}, {A} and {B} do not occur together more often than their separate rates would predict.
+    research:
+      question: Among {v} reports, is {B} more prevalent in reports containing {A} than in reports without it?
+      claim: Among {v} reports, {B} is more prevalent in reports containing {A} than in reports without it.
+      question_negated: Among {v} reports, is {B} no more prevalent in reports containing {A} than in reports without it?
+      claim_negated: Among {v} reports, {B} is not more prevalent in reports containing {A} than in reports without it.
+    media:
+      question: After {v}, do people who report {A} also report {B} more often than everyone else does?
+      claim: After {v}, people who report {A} also report {B} more often than everyone else does.
+      question_negated: After {v}, do people who report {A} report {B} no more often than everyone else does?
+      claim_negated: After {v}, people who report {A} do not report {B} more often than everyone else does.
+    clinical:
+      question: In {v} recipients, is {A} associated with {B} beyond what their individual frequencies imply?
+      claim: In {v} recipients, {A} is associated with {B} beyond what their individual frequencies imply.
+      question_negated: In {v} recipients, is {A} unassociated with {B} once their individual frequencies are accounted for?
+      claim_negated: In {v} recipients, {A} is not associated with {B} beyond what their individual frequencies imply.
 - id: C-V3
   primitive: co_occurs
   level: vaccine
