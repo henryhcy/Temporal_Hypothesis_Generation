@@ -17,6 +17,10 @@ Each update:
     python scripts/final_templates.py            # regenerates Final_Template_Design.tex
     python scripts/sync_overleaf.py ../overleaf-aaai [--dest sections] [--push]
 
+To sync something outside the default generated set (paths are repo-relative):
+    python scripts/sync_overleaf.py ../overleaf-aaai \
+        --files docs/draft/dataset_construction.tex --dest sections --push
+
 By default it stages/commits/copies but does NOT push, so you can review; add
 --push to push. Auth is the Overleaf clone's own git credential -- this script
 never sees your token.
@@ -33,8 +37,12 @@ from pathlib import Path
 _REPO = Path(__file__).resolve().parent.parent
 _SRC = _REPO / "docs" / "reference"
 
-# The generated files to mirror into the Overleaf project.
-FILES = ["Findings_and_Templates.tex", "Final_Template_Design.tex"]
+# The generated files to mirror into the Overleaf project, as paths relative to
+# the repo root. Anything under docs/ is allowed -- `--files` overrides this for
+# a one-off sync (e.g. the hand-written draft under docs/draft, which is not a
+# generator output and so is not in the default set).
+FILES = ["docs/reference/Findings_and_Templates.tex",
+         "docs/reference/Final_Template_Design.tex"]
 
 
 def _git(clone: Path, *args: str) -> str:
@@ -55,7 +63,11 @@ def main() -> int:
     ap.add_argument("--push", action="store_true",
                     help="push after committing (default: commit only, review first)")
     ap.add_argument("--message", default="Update generated template report(s)")
+    ap.add_argument("--files", nargs="+", metavar="PATH",
+                    help="repo-relative .tex paths to sync instead of the "
+                         "default generated set (e.g. docs/draft/foo.tex)")
     args = ap.parse_args()
+    files = args.files or FILES
 
     clone = args.overleaf_clone.resolve()
     if not (clone / ".git").exists():
@@ -63,15 +75,16 @@ def main() -> int:
     dest = clone / args.dest
     dest.mkdir(parents=True, exist_ok=True)
 
-    missing = [f for f in FILES if not (_SRC / f).exists()]
+    missing = [f for f in files if not (_REPO / f).exists()]
     if missing:
-        sys.exit(f"error: missing generated files (run the generators first): {missing}")
+        sys.exit(f"error: missing files (run the generators first?): {missing}")
 
-    for f in FILES:
-        shutil.copy2(_SRC / f, dest / f)
-        print(f"copied {f} -> {dest / f}")
+    for f in files:
+        name = Path(f).name
+        shutil.copy2(_REPO / f, dest / name)
+        print(f"copied {f} -> {dest / name}")
 
-    rel = [str((Path(args.dest) / f)) for f in FILES]
+    rel = [str(Path(args.dest) / Path(f).name) for f in files]
     _git(clone, "add", *rel)
     status = _git(clone, "status", "--porcelain", *rel)
     if not status:
