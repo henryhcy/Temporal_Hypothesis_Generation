@@ -1,0 +1,372 @@
+% Dataset construction section --- ARR (ACL Rolling Review) format, two-column.
+%
+% Compiles standalone in Overleaf with the official ACL/ARR template, which
+% supplies acl.sty. To drop this into an existing paper, take everything between
+% \begin{document} and \end{document} and delete the \title/\maketitle lines.
+%
+% Every number below is measured from data/release/v1/dataset_statistics.json,
+% run_summary.json, or the committed permutation screens. None is estimated.
+% Regenerate with: python scripts/dataset_stats.py --release data/release/v1
+
+\documentclass[11pt]{article}
+
+\usepackage[review]{acl}      % use \usepackage[]{acl} for camera-ready
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{Dataset Construction}
+
+\begin{document}
+\maketitle
+
+\section{Source Corpus}
+\label{sec:corpus}
+
+The benchmark is built on MedTempo, a corpus of 3{,}166 VAERS adverse-event
+reports annotated with a \emph{leveled order}: a single totally ordered chain of
+stages in which each stage holds the MedDRA-coded events reported at that point
+of the clinical course. The annotation, not the narrative, is the benchmark's
+ground truth \emph{and} the framework's input --- gold labels are computed
+mechanically from the leveled orders, and released instances reference report
+identifiers rather than text. Table~\ref{tab:corpus} summarises the corpus.
+
+Two annotation conventions are load-bearing. When a term recurs within a report,
+its \emph{first} mention fixes its stage. Reports whose earliest events share a
+stage are never asked order questions they cannot answer
+(\S\ref{sec:realization}).
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+Reports & 3{,}166 \\
+\quad Janssen / Pfizer / Moderna & 1{,}164 / 1{,}019 / 983 \\
+Distinct event terms (vocabulary) & 1{,}660 \\
+Events per report (mean / median / max) & 7.2 / 6 / 43 \\
+Stages per report (mean / median / max) & 3.4 / 3 / 14 \\
+\bottomrule
+\end{tabular}
+\caption{Source corpus. Stages are the levels of the annotated leveled order;
+events co-reported at one stage are temporally indistinguishable.}
+\label{tab:corpus}
+\end{table}
+
+\section{Hypothesis Space}
+\label{sec:space}
+
+Twenty template groups span four temporal families --- precedes, co-occurs,
+strict sequence, and first/last --- at three scopes: a single report, one vaccine
+cohort, and a contrast between two cohorts (Table~\ref{tab:roster}). Each group
+is realised in four registers (a canonical \textsc{Original} plus
+\textsc{Research}, \textsc{Media}, and \textsc{Clinical}) and two surface formats
+(question and claim) by mechanical slot-filling, with no model-generated
+rewriting, yielding eight text variants per instance. Answers are \textsc{Bool}
+or \textsc{Choice}.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+Family & Report & One cohort & Two \\
+\midrule
+precedes & P-R1, P-R2 & P-V1--P-V4 & P-M2 \\
+co-occurs & C-R1 & C-V1--C-V3 & --- \\
+sequence & S-R1 & S-V1, S-V3 & --- \\
+first/last & F-R1--F-R3 & F-V1--F-V3 & --- \\
+\bottomrule
+\end{tabular}
+\caption{The 20-group roster: 7 report-level, 12 single-cohort, 1 two-cohort.}
+\label{tab:roster}
+\end{table}
+
+Three groups are two-proportion contrasts \emph{within} a single cohort, a shape
+the grid previously lacked: P-V2 asks whether $B$ follows $A$ more often than it
+follows $C$; P-V4 whether $A$ precedes $B$ more often than $C$ precedes $D$; and
+C-V2 whether $A$ and $B$ co-occur more often than their separate rates predict
+(association against independence). Both arms retain the full cohort
+denominator, unlike the two-cohort tier, which partitions the corpus. C-V3 poses
+an argmax --- whether co-occurrence is the \emph{dominant} relation for a pair
+--- over the three-cell distribution $\{\textrm{before}, \textrm{after},
+\textrm{co-occur}\}$.
+
+\section{Gold Labels}
+\label{sec:gold}
+
+\paragraph{Conditioning.} Each family fixes its own denominator, and these
+distinctions are the substantive content of the task. \emph{Precedes} counts only
+reports where both events occupy distinct stages, since co-existence is evidence
+in neither direction. \emph{Co-occurs} counts all reports containing both events,
+because co-existence is the event of interest. \emph{Sequence} requires all three
+events at distinct stages. \emph{First/last} requires every candidate present and
+drops tie reports from the denominator entirely. The association group conditions
+on presence alone, comparing $P(B \mid A \textrm{ present})$ against $P(B \mid A
+\textrm{ absent})$.
+
+\paragraph{Tests.} All tests are exact. Majority claims use a one-sided exact
+binomial against $0.5$. Every argmax claim uses modal-versus-runner-up: an exact
+binomial on the named cell against its strongest competitor, null $0.5$. This
+distinction matters --- a goodness-of-fit test against uniform establishes only
+that a distribution is not flat, never that the \emph{named} cell is the mode.
+Two-arm and two-cohort contrasts use Fisher's exact test on the $2\times2$ table.
+No chi-square approximation appears anywhere, and there is no expected-cell
+requirement; the sole gate is a per-family minimum denominator ($n \geq 10$;
+sequence $n \geq 5$), applied to both arms where two exist.
+
+\paragraph{The three-decision rule.} A claim is \emph{supported} only when its own
+one-sided tail is significant at $\alpha = 0.05$, and \emph{refuted} only when the
+\emph{opposite} tail is. Refutation therefore requires positive counter-evidence
+and never means ``failed to prove''; a single claim-direction $p$-value cannot
+separate refutation from indeterminacy, so both tails are computed for every
+instance. All remaining cases are \emph{insufficient}, sub-typed as
+\emph{underpowered} (testable, decisive in neither direction), \emph{sparse}
+($0 < n < \textrm{floor}$), or \emph{not-locatable} ($n = 0$). Report-level claims
+are single exact observations: deterministic, two-class, and carrying no test.
+
+\paragraph{Oriented statistics.} Every released statistic --- both one-sided
+$p$-values, the 95\% Wilson interval (Wilson--Newcombe on the difference for
+two-arm shapes), and Cohen's $h$ against the null the test actually uses ---
+describes the claim \emph{as that instance asserts it}, not the underlying core's
+canonical orientation.
+
+\section{Instance Realisation}
+\label{sec:realization}
+
+Every decisive core is posed \textbf{both ways}: once oriented with its effect,
+yielding \emph{supported}, and once against it, yielding \emph{refuted}. The two
+form a mirror pair over identical evidence and an identical computation, so a
+system answering \emph{supported} to both directions of one fact is detected
+immediately. Consequently the decisive-core count $S$ caps the supported and
+refuted classes jointly, and the per-group budget is ${\approx}3S$.
+
+Re-orientation is not a single operation. Direction-asking groups swap slots ---
+event order, the two arms, or the two cohorts. Symmetric claims (C-V1, C-V2,
+C-V3) admit no such swap, since ``$A$ and $B$ co-occur'' has no $A$/$B$ ordering
+to reverse; these orient by \textbf{authored negation}, with the negated surface
+form written into the template definition rather than derived at generation time.
+Samplers prefer plain wording and negate only to fill a residual deficit, which
+holds negation to 775 of 18{,}492 instances (4.2\%).
+
+\section{Balancing and the Insufficient Third}
+\label{sec:balance}
+
+Each group ships \textbf{equal thirds} --- supported, refuted, insufficient ---
+capped by its own decisive supply, with the insufficient third spread across
+sub-types by round-robin allocation. Balance is enforced per group rather than
+across the benchmark because template wording is fixed per group and therefore
+trivially identifiable from the question text; a group shipped at, say, 40/338
+would let a system learn a text-shape-to-label shortcut and score highly on it
+without any temporal reasoning.
+
+The not-locatable sub-type requires deliberate construction. Enumeration visits
+only combinations the corpus actually contains, so a claim with an empty
+denominator can never arise from it. A seeded sampler therefore mints claims from
+real cohort-vocabulary terms whose joint count is zero --- for the association
+group, a real corpus term absent from that cohort. Every event named is genuine
+vocabulary, so the claim \emph{appears} answerable, and only querying the
+annotation store reveals the empty denominator. This is precisely the capability
+the sub-type is meant to probe: whether a system reports insufficiency or
+fabricates a relationship. Report-level groups ship two balanced classes by
+design, since indeterminacy has no meaning for a single exact observation.
+
+\section{Validity Screens}
+\label{sec:screens}
+
+No group ships on plausibility. Each is screened against a permutation null
+matched to its claim shape: single-cohort order groups against a
+\textbf{level shuffle} (term-to-stage assignment shuffled within each report,
+preserving report size, stage-size multiset, term frequencies, and
+co-occurrence); the presence-based association group against a degree-preserving
+\textbf{edge swap}; two-cohort shapes against a \textbf{label shuffle}. A group
+ships only if its real decisive count beats 2{,}000 shuffled rounds at
+$p_{\textrm{perm}} \leq 0.05$ (Table~\ref{tab:screens}).
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrr}
+\toprule
+Group & Null & Dec./cores & $p_{\textrm{perm}}$ \\
+\midrule
+C-V3 & level shuffle & 258 / 959 & 0.0005 \\
+P-V2 & level shuffle & 2{,}302 / 10{,}060 & 0.0005 \\
+P-V4 & level shuffle & 16{,}884 / 49{,}862 & 0.0005 \\
+C-V2 & edge swap & 2{,}098 / 26{,}764 & 0.0005 \\
+P-M2 & label shuffle & 30 / 322 & 0.025 \\
+\bottomrule
+\end{tabular}
+\caption{Permutation screens at 2{,}000 rounds; 0.0005 is the resolution floor.
+Null means were 62.6, 341.3, 1{,}848.9, 924.4 and 18.3 respectively.}
+\label{tab:screens}
+\end{table}
+
+The screening history is itself a result. Seven candidate two-cohort shapes were
+tested and only P-M2 survived, which is why the two-cohort tier ships a single
+group. C-V3's original majority statistic was replaced after the same method
+revealed that its text and its test answered different questions. The rank-test
+track was retired as a verdict driver when the Mann--Whitney normal approximation
+proved anti-conservative on tie-heavy ordinal data, calling ${\sim}11\%$ of cores
+decisive under shuffled labels at a nominal 5\%; rank statistics survive in the
+release as explicitly descriptive attributes.
+
+\section{Release Format and Validation}
+\label{sec:release}
+
+Two files enforce the input/gold boundary mechanically. The questions file
+carries one row per text variant and only the input fields: identifier, group,
+level, answer type, register, format, text, options, and cohort specification.
+The answers file carries one row per instance --- listing its eight question
+identifiers --- with the gold verdict and sub-type, oriented counts, both
+one-sided $p$-values, test name, $\alpha$, floor, interval, effect size,
+orientation provenance, and the \textbf{evidence report identifiers}. Those
+identifiers are the answer to the localisation step, so they are never input. The
+writer raises an error if any non-input field reaches the questions file.
+
+Two identifiers accompany each instance. \texttt{derived\_from\_core\_id} keeps
+mirror pairs together. The group-independent \texttt{fact\_id} keys every split
+and supply claim, because answer-format twins ask the same underlying fact under
+two group identifiers: the release contains 18{,}492 instances over 11{,}828
+cores but only \textbf{8{,}964 distinct facts}, and the latter is the figure that
+belongs in any coverage or power claim.
+
+Gold labels are validated by six mechanical invariant families: evidence
+arithmetic, set algebra, per-family conditioning re-derived from the leveled
+orders, direction (every numerator report satisfies the claim as asserted),
+verdict-against-tails consistency including the minimum-$n$ gate, and independent
+recomputation of the counts through a separate database-backed path. The release
+passes all six. This validator has caught real defects at every earlier stage --- a
+non-deterministic first-mention rule, a wrong-cohort denominator, and a
+wrong-event claim wording --- which is the argument for running it continuously.
+
+\section{Dataset Statistics}
+\label{sec:stats}
+
+Table~\ref{tab:totals} reports aggregate composition and
+Table~\ref{tab:pergroup} the per-group breakdown. Verdict balance is near-exact
+in aggregate (6{,}845 / 6{,}783 / 4{,}864) and exact within every cohort-level
+group by construction.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+Records (instance $\times$ register $\times$ format) & 147{,}936 \\
+Instances & 18{,}492 \\
+Groups & 20 \\
+Distinct cores & 11{,}828 \\
+Distinct facts (split key) & 8{,}964 \\
+\midrule
+Supported / refuted / insufficient & 6{,}845 / 6{,}783 / 4{,}864 \\
+\quad underpowered & 1{,}729 \\
+\quad sparse & 1{,}505 \\
+\quad not-locatable & 1{,}630 \\
+\midrule
+Mirror pairs & 6{,}664 \\
+Negated instances & 775 \\
+\midrule
+Conditioned $n$, median (IQR) & 26 (16--42) \\
+$|$Cohen's $h|$ on decisive, median & 0.77 \\
+$p$ on supported claims, median & 0.007 \\
+\bottomrule
+\end{tabular}
+\caption{Aggregate statistics for the v1 release.}
+\label{tab:totals}
+\end{table}
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llllrrrrrlrr}
+\toprule
+Group & Sc. & Claim & Ans. & $S$ & Inst. & Sup. & Ref. & Insuf. & u/s/n & Facts & Med.\ $n$ \\
+\midrule
+F-R1 & R & first & \textsc{Cho} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
+F-R2 & R & last & \textsc{Cho} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
+F-R3 & R & first & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
+P-R1 & R & precedes & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
+P-R2 & R & precedes & \textsc{Cho} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
+S-R1 & R & sequence & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
+C-R1 & R & co-occurs & \textsc{Boo} & 300 & 300 & 181 & 119 & 0 & --- & 300 & --- \\
+\midrule
+P-V4 & C & pair-vs-pair & \textsc{Boo} & 2{,}857 & 8{,}571 & 2{,}857 & 2{,}857 & 2{,}857 & 952/952/953 & 4{,}163 & 25 \\
+P-V2 & C & antecedent & \textsc{Boo} & 751 & 2{,}253 & 751 & 751 & 751 & 250/250/251 & 1{,}153 & 27 \\
+C-V2 & C & association & \textsc{Boo} & 349 & 1{,}047 & 349 & 349 & 349 & 229/0/120 & 698 & 195 \\
+C-V1 & C & co-occurs majority & \textsc{Boo} & 252 & 756 & 252 & 252 & 252 & 84/84/84 & 504 & 21 \\
+C-V3 & C & co-occurs argmax & \textsc{Boo} & 174 & 522 & 174 & 174 & 174 & 58/58/58 & 348 & 23 \\
+P-V1 & C & precedes & \textsc{Boo} & 167 & 501 & 167 & 167 & 167 & 55/56/56 & 334 & 17 \\
+P-V3 & C & precedes & \textsc{Cho} & 167 & 501 & 167 & 167 & 167 & 55/56/56 & 334 & 17 \\
+F-V2 & C & last argmax & \textsc{Cho} & 46 & 138 & 46 & 46 & 46 & 15/15/16 & 92 & 14 \\
+F-V1 & C & first argmax & \textsc{Cho} & 34 & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
+F-V3 & C & first argmax & \textsc{Boo} & 34 & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
+S-V1 & C & sequence argmax & \textsc{Boo} & 2 & 6 & 2 & 2 & 2 & 0/1/1 & 4 & 5 \\
+S-V3 & C & sequence argmax & \textsc{Cho} & 2 & 6 & 2 & 2 & 2 & 0/1/1 & 4 & 5 \\
+\midrule
+P-M2 & M & precedes, 2 cohorts & \textsc{Cho} & 29 & 87 & 29 & 29 & 29 & 9/10/10 & 58 & 22 \\
+\bottomrule
+\end{tabular}
+\caption{Per-group composition. Scope: R = report, C = one cohort, M = two
+cohorts. $S$ is the decisive-core count at release enumeration, which caps the
+supported and refuted classes jointly. The u/s/n column gives the insufficient
+sub-types (underpowered / sparse / not-locatable). Facts counts distinct
+\texttt{fact\_id} values; median $n$ is the conditioned denominator.}
+\label{tab:pergroup}
+\end{table*}
+
+Two features of Table~\ref{tab:pergroup} are worth reading directly. First,
+supply is extremely uneven: P-V4 alone contributes 46\% of all instances and the
+two new within-cohort contrast groups together contribute 58\%, while the
+sequence cohort tier contributes six instances. Second, C-V2 ships no
+\emph{sparse} instances, because its denominator is the full cohort (median
+$n = 195$) and so essentially never falls below the floor; its insufficient third
+therefore spans two sub-types rather than three.
+
+\section{Limitations}
+\label{sec:limitations}
+
+Several limitations are inherent to the construction and are stated rather than
+mitigated.
+
+\paragraph{Enumeration ceiling.} $S$ in Table~\ref{tab:pergroup} is the decisive
+supply reached by the release enumeration, which visits combinations of the most
+frequent cohort terms, not the corpus maximum. Exhaustive enumeration yields
+substantially more for several groups --- C-V2 2{,}098 against 349 shipped, P-V2
+2{,}302 against 751, C-V1 378 against 252 --- so the shipped dataset is bounded by
+enumeration breadth rather than by statistical power. Because the surplus is
+concentrated in the already-dominant groups, exhaustive regeneration would
+require a per-group cap to avoid worsening the imbalance above.
+
+\paragraph{Class balance is per group, not per family.} Aggregate thirds coexist
+with a composition dominated by two groups; consumers reporting a single accuracy
+figure should macro-average over groups.
+
+\paragraph{Report level has no insufficient class.} Seven groups and 3{,}000
+instances (16\% of the release) are two-class by design, so that fraction of the
+benchmark cannot exercise indeterminacy. Six of the seven sit at exactly 300/300
+by enumeration cap rather than by data; C-R1 ships 181/119 because its symmetric
+claim admits no orientation operator and no negated wording was authored for it.
+
+\paragraph{No lexical variation.} Slot fillers are raw MedDRA terms; a synonym
+table is future work, so surface variation comes entirely from the register and
+format axes.
+
+\paragraph{False positives are structural.} Decisive labels carry
+$\alpha$-rate false positives by construction. Exact tests are conservative at
+small $n$, so the realised rate is below nominal, but it is not zero and cannot be
+removed by any screen: a group clearing its permutation null establishes
+group-level validity, not per-core validity.
+
+\paragraph{Positional attributes are descriptive.} The rank statistics released
+alongside each instance use approximations retired as verdict drivers and must
+not be read as labels.
+
+\end{document}
