@@ -114,6 +114,78 @@ Open questions before building it:
   starved groups?** These are different commitments; the second is what would
   actually rescue the sequence tier.
 
+## Enumeration breadth
+
+### The top-K ceiling is a pilot knob that outlived its reason (issue 22)
+`cores.py` caps enumeration at `K_PAIR = 25` / `K_TRIPLE = 16` most-frequent
+terms per cohort, labelled only "Provisional enumeration breadth (logged pilot
+knobs; see 04_corpus_survey)". **No decision anywhere sets or defends these
+values**, and 04's Part A recalibration ("set the final T at the knee of the
+per-group viable-core distribution") never ran for them.
+
+The original reason was tractability: the vocabulary is 1,660 terms, so all
+pairs is ~1.4M per cohort and all triples ~761M. Top-25 gives 300 pairs, top-16
+gives 560 triples. That was the right call for a pilot whose job was to inspect
+a few instances end to end.
+
+**It is no longer the binding reason.** `enumerate_group_full` draws from the
+co-occurrence set (pairs/triples clearing `_MIN_N`), never the full vocabulary,
+so it never approaches those numbers -- and it demonstrably runs: the 2,000-round
+permutation screens used it, reaching 49,862 cores for P-V4.
+
+Measured cost of keeping the cap (decisive cores, release vs exhaustive):
+
+| group | shipped S | full | using |
+|---|--:|--:|--:|
+| C-V2 | 349 | 2,098 | 17% |
+| P-V2 | 751 | 2,302 | 33% |
+| S-V1 | 2 | 4 | 50% |
+| C-V1 | 252 | 378 | 67% |
+| C-V3 | 174 | 258 | 67% |
+| P-V1 | 167 | 220 | 76% |
+| F-V2 | 46 | 59 | 78% |
+| F-V1 | 34 | 36 | 94% |
+| P-M2 | 29 | 30 | 97% |
+
+Two consequences. **The docs quote full-enumeration numbers while the dataset
+ships capped ones** -- the screens report P-V4 at 16,884 decisive; the release
+ships 2,857. And the issue-9 decision to "take the sequence tier in full" was
+made against S = 2 when the corpus supports 4, so the tier was never actually
+taken in full.
+
+Open: regenerate with `--full`, and if so under what per-group cap? The surplus
+is concentrated in the already-dominant groups (P-V4 alone would go 2,857 ->
+16,884), so uncapped exhaustive regeneration makes the composition imbalance
+substantially worse, not better. Breadth and cap have to be decided together.
+
+### The report-level cap is a chronological prefix, and it skews by vaccine (issue 23)
+`MAX_REPORT_CORES = 300` bounds the report tier so it does not swamp the cohort
+tier -- 7 groups x 3,166 reports would be ~22k instances against ~15k cohort
+ones. That bound is defensible. Its **implementation** is not: `_enum_report`
+iterates `sorted(index.report_terms)` and breaks at 300, so it takes the 300
+LOWEST report ids. VAERS ids are chronological, and that window is 916915 to
+1049872 -- which predates Janssen's authorisation.
+
+Measured on the shipped release (3,900 report-level instances, 419 distinct
+reports):
+
+| | report-level | corpus |
+|---|--:|--:|
+| Moderna | 55.1% | 31.0% |
+| Pfizer | 36.1% | 32.2% |
+| **Janssen** | **8.8%** | **36.8%** |
+
+Janssen is under-represented roughly four-fold across all seven report-level
+groups -- 16% of the release. It is 8.8% rather than 0% only because each group's
+`_report_combo` filter skips different early reports, so the union spills past
+the pure prefix.
+
+This is a **defect, not a limitation**: nobody chose a chronological sample, and
+the cap's purpose (bound the tier) is served equally well by a stratified or
+seeded-random draw. The fix is confined to `_enum_report` -- sample 300 reports
+stratified by vaccine, or shuffle under the existing seed before taking 300.
+Requires regeneration, so it should land with whatever issue 22 decides.
+
 ## Framework
 
 ### Architecture detail (issue 3)

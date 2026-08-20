@@ -337,23 +337,60 @@ Several limitations are inherent to the construction and are stated rather than
 mitigated.
 
 \paragraph{Enumeration ceiling.} $S$ in Table~\ref{tab:pergroup} is the decisive
-supply reached by the release enumeration, which visits combinations of the most
-frequent cohort terms, not the corpus maximum. Exhaustive enumeration yields
-substantially more for several groups --- C-V2 2{,}098 against 349 shipped, P-V2
-2{,}302 against 751, C-V1 378 against 252 --- so the shipped dataset is bounded by
-enumeration breadth rather than by statistical power. Because the surplus is
-concentrated in the already-dominant groups, exhaustive regeneration would
-require a per-group cap to avoid worsening the imbalance above.
+supply reached by the release enumeration, which visits pairs and triples drawn
+from the most frequent cohort terms (25 and 16 respectively), not the corpus
+maximum. Exhaustive enumeration yields substantially more
+(Table~\ref{tab:ceiling}), so the shipped dataset is bounded by enumeration
+breadth rather than by statistical power. Two qualifications follow. The
+sequence tier was taken ``in full'' at $S = 2$ when the corpus supports 4.
+And because the surplus is concentrated in the already-dominant groups --- P-V4
+alone would rise from 2{,}857 to 16{,}884 --- exhaustive regeneration requires a
+per-group cap decided jointly with it, or the composition imbalance below grows
+rather than shrinks.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+Group & Released $S$ & Exhaustive & Share \\
+\midrule
+C-V2 & 349 & 2{,}098 & 17\% \\
+P-V2 & 751 & 2{,}302 & 33\% \\
+S-V1 & 2 & 4 & 50\% \\
+C-V1 & 252 & 378 & 67\% \\
+C-V3 & 174 & 258 & 67\% \\
+P-V1 & 167 & 220 & 76\% \\
+F-V2 & 46 & 59 & 78\% \\
+F-V1 & 34 & 36 & 94\% \\
+P-M2 & 29 & 30 & 97\% \\
+\bottomrule
+\end{tabular}
+\caption{Decisive supply released against the exhaustive enumeration of all
+pairs and triples clearing the minimum denominator.}
+\label{tab:ceiling}
+\end{table}
 
 \paragraph{Class balance is per group, not per family.} Aggregate thirds coexist
 with a composition dominated by two groups; consumers reporting a single accuracy
 figure should macro-average over groups.
 
-\paragraph{Report level has no insufficient class.} Seven groups and 3{,}000
+\paragraph{Report level has no insufficient class.} Seven groups and 3{,}900
 instances (16\% of the release) are two-class by design, so that fraction of the
 benchmark cannot exercise indeterminacy. Six of the seven sit at exactly 300/300
 by enumeration cap rather than by data; C-R1 ships 181/119 because its symmetric
 claim admits no orientation operator and no negated wording was authored for it.
+
+\paragraph{Report-level vaccine coverage is skewed.} The report tier is bounded
+at 300 cores per group so that seven report groups do not outweigh the cohort
+tier. In this release that bound is applied by taking the lowest report
+identifiers, and because identifiers are chronological the resulting window
+predates one vaccine's authorisation. Janssen accordingly supplies 8.8\% of
+report-level instances against 36.8\% of the corpus (Moderna 55.1\% against
+31.0\%; Pfizer 36.1\% against 32.2\%). The bound itself is sound --- a
+stratified or seeded-random draw of the same size removes the skew --- so this is
+a property of the present artifact rather than of the design, and it does not
+affect the cohort-level tier, whose denominators are whole cohorts.
 
 \paragraph{No lexical variation.} Slot fillers are raw MedDRA terms; a synonym
 table is future work, so surface variation comes entirely from the register and

@@ -43,6 +43,8 @@ record of current settings, pending work and known defects.
 | 19 | Six candidate template families screened; 5 clear their nulls | **decision** | open — adopt R1/R3 + N2 + N1 + R5 (+N3/N4 narrowly)? Blocked behind issue 14 | `10_family_expansion.md` (branch `template-family-expansion`) |
 | 20 | Single-event position claims cannot use a 0.5 null | **known defect (new families only)** | measured — stage populations are uneven, structural rate 0.5327; the fix needs `_null_ref(mode, core)` | `10_family_expansion.md` §4.3, §4.5 |
 | 21 | Cross-cohort comparison of a single-event position is invalid | **method finding** | measured — the label-shuffle null cannot absorb per-core report geometry (37 of 124 cores carry a >5pp structural gap); affects T-V3, K-V5, X6, X7, M-H | `10_family_expansion.md` §4.5 |
+| 22 | Top-K enumeration ceiling (`K_PAIR`/`K_TRIPLE`) is an undocumented pilot knob; release ships 17–97% of available decisive supply | **decision** | open — regenerate with `--full`? needs a per-group cap decided jointly, since the surplus sits in the dominant groups | `open_questions.md` "Enumeration breadth" |
+| 23 | `MAX_REPORT_CORES` takes the 300 lowest report ids = a chronological prefix; Janssen is 8.8% of report-level instances vs 36.8% of corpus | **defect** | open — fix confined to `_enum_report` (stratify or shuffle); needs regeneration | `open_questions.md` "Enumeration breadth" |
 
 Items 1–12 contain no correctness bug in generated data: `validate_gold.py` clears
 all 20,749 instances on six invariant families as of 2026-08-11. Items 4, 5, 6 and 8
