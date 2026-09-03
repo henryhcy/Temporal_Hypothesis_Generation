@@ -2209,3 +2209,242 @@ S-V1/S-V3 ship at S = 2 per the issue-9 (b) decision.
 The Overleaf dataset-construction section is drafted
 (`docs/draft/dataset_construction.md`) and PRESENTED; Overleaf is untouched
 pending the user's approval, per their instruction.
+
+---
+
+## LOCKED: model pipeline / eval-harness architecture (2026-09-01)
+
+Branch `model-pipeline-design`. The design is `11_model_pipeline.md`; this entry
+records what is locked, the doc carries the reasoning and the measured numbers.
+Issue 3 moves from "not started" to "designed; M1 (deterministic chain) + M2
+(local-LLM extraction + local-LLM text-to-SQL) being built this session". Three
+new issues are filed in `09_next_steps.md`: 24 (P-V2/P-V4 count-vs-rate wording,
+decision), 25 (`test_verdict` provenance defect on 1,800 rows, defect), 26 (P3
+paraphrase authorship, decision). Scope was set by the user at plan review:
+"implement for local only; stop at text-to-SQL; do eval on the local setup" —
+M3–M5 (fine-tuned extractor + split, in-context and agent baselines, write-up
+hooks) are designed, not built.
+
+> **Cross-reference for top-down readers:** the entry at `decisions.md:1514-1518`
+> ("the VAERS NARRATIVES, never the annotations", 2026-08-11) is SUPERSEDED by the
+> entry at `:1574` of the SAME date ("the framework reads ANNOTATIONS, not
+> narratives"). Anyone reading this file forwards meets the reversed statement
+> first. The narrative-free eval DB below is the mechanical form of the later
+> decision.
+
+### Decision: a three-stage contract with `StructuredClaim` as the S1 output
+
+`question row (INPUT_FIELDS only) -S1-> StructuredClaim -S2-> per-arm ArmRows -S3->
+Prediction -S4-> metrics`. Every extractor (rules, prompted LLM, fine-tuned) emits
+the same `StructuredClaim` (`framework/claim_schema.py`): a WHAT layer (tier,
+family, primitive, mode — the 20 `cores.MODE_BY_GROUP` strings — events in the
+asserted order, cohorts, negated, answer_type, options, asserted_option) and a
+HOW layer (`Procedure`: test, null, claim_tail, alpha, min_n_floor, arms,
+conditioning). The HOW layer is a pure function of `(mode, negated)`
+(`derive_procedure`), asserted by test against `answers._BINOM_NULL /
+_MODAL_RUNNER / _FISHER` plus the `cooc_modal_bool` special case; extractors may
+fill it so that null-choice and test/tail errors are measurable rather than
+derived away. `from_gold(answer_row)` is the reference claim and the free training
+label. Every retrieval method returns, per arm, rows `(vaers_id, in_denominator,
+in_numerator, excluded, cell)` (`framework/sql/aggregate.py::ARM_COLUMNS`); `cell`
+is NULL for excluded rows and `counts` is built from denominator rows only,
+because `answers._named_counts` takes `max` over every non-named key and a tie
+bucket leaking in as a cell would corrupt every argmax p-value.
+
+### Decision: the eval DB is narrative-free and keyed on `vaers_id`
+
+The harness reads `data/medtempo_eval.db` (built by `scripts/build_eval_db.py` from
+`medtempo.db`), never the raw DB. Schema: `reports(vaers_id PK, vaccine,
+num_stages)`, `level_terms(vaers_id, level_index, term)`, views `first_mention`
+(`MIN(level_index)` per report and term — the first-mention rule as a view; 7
+(report, term) pairs sit at two levels in the real DB) and `report_terms`. No
+`narrative` column, no surrogate `report_id`. This is the mechanical guard behind
+"the framework never sees narrative text", and it makes every id in the harness
+the release's `vaers_id`. The executor opens it `mode=ro`, allows only
+SELECT/READ on the four relations (+ FUNCTION) through `set_authorizer`, one
+statement starting SELECT/WITH, 5 s progress-handler timeout, 10,000-row cap,
+and logs every call to `sql_log.jsonl`.
+
+### Decision: the min-n floors and alpha are GIVEN to the model in both modes
+
+Floors (10; sequence 5) and alpha (0.05 per side) go in every prompt,
+`procedure-blind` and `procedure-given` alike. `05_significance_tests.md`
+designed the gate to be shared by both sides; withholding it would make the 3,234
+`sparse` + `underpowered` instances (17.5%) unwinnable for a reason unrelated to
+the capability. What the model must supply is the test, the null, the tail, the
+arms and the conditioning — not the constants.
+
+### Decision: S3 is `core_significance(core, named=claim.named_cell())`, never `compute_answer`
+
+`compute_answer` reports the WINNER's tail (verified on F-V1: it would call an
+asserted runner-up "supported"). The harness builds a `ViableCore` from the claim
+and the retrieved counts (`run_test.to_viable_core`, with `extra` complete for all
+20 modes so `answer_key` never returns None on the 1,200 report-tier first/last
+CHOICE instances; `computable = min_n_gate(n, family, n2=n2).testable`; no rows
+=> `n=0` => `not_locatable`, never `n=None`), calls `core_significance(named=)`,
+and applies the negation tail swap exactly as `oriented_significance` does.
+Report tier: `report_rule` on the ORIENTED events + `verdict.deterministic`,
+tested against all 3,900 gold rows. An unknown family from a model is recorded as
+a procedure error and the gold family is used for the gate (`family_floor` must
+not raise inside the harness).
+
+### Decision: `procedure-honouring` is the default S3 variant
+
+The harness runs the model's STATED test / null / tail on the model's counts
+(`binom_exact_p`, `fisher_exact_2x2`, `three_decision`), so a wrong procedure
+yields a wrong verdict and the null-choice and test/tail failure modes are causal,
+not cosmetic. `gold-procedure` (override HOW; isolates WHAT + retrieval),
+`model-computed` (model returns p's and verdict) and `agent` (tools `run_sql`,
+`exact_test`, `min_n_gate`, `submit_evidence(arm, ids)` required before `submit`)
+are the other variants; only the first two are built in M1/M2. Alternative-test
+adjudication: verdict scored as-is; the named test is bucketed `gold | synonym
+(binomial/sign -> binom_exact; fisher/hypergeometric -> fisher_exact) |
+other-exact | approximate`; `approximate` is never "valid" (exact tests only).
+
+### Decision: retrieval is scored on `evidence_ids` sets with the 0/0 convention
+
+Per arm: set precision / recall / F1 / exact match of the predicted denominator
+(and numerator) ids against the gold `evidence_ids`; P = R = F1 = 1.0 iff both
+sets are empty, 0.0 if gold is empty and the prediction is not — that row is the
+`not_locatable` fabrication probe, also reported as a false-positive-rate column.
+`coexist_leak` = |pred_den ∩ gold.excluded| / |gold.excluded|; `cohort_leak`
+likewise for out-of-cohort ids. The report tier is scored as `report_hit` and
+kept OUT of the retrieval macro (its 3,900 instances have no denominator).
+
+### Decision: the headline is group-macro of class-macro-F1 with a bootstrap CI, fact-weighted companion
+
+Class-macro-F1 over {supported, refuted, insufficient} per group (the `### Metrics`
+decision at `decisions.md:656-659`), averaged over groups with at least a stated
+minimum number of instances (S-V1 / S-V3 have 6 each and are excluded and LISTED),
+bootstrap CI over instances; a fact-weighted number (each `fact_id` weight 1)
+alongside; micro accuracy, per-tier / family / register / format / negated /
+sub-type breakdowns; the report tier's macro is over {supported, refuted} only.
+The unit is the instance (8 texts aggregated); distinct `fact_id` is quoted in
+every headline count. Default eval set = `original` register x both formats on
+`eval-core` (per-group cap 90 at 30/30/30, mirror pairs and twins kept together);
+all 8 texts only on a seeded 200-instance invariance subset.
+
+### Decision: a fourth response token, `underdetermined`
+
+2,292 records (C-V3 research + clinical 2,088; F-V3 research 204) never name the
+events, so no reading of the input determines the claim. The harness answers
+`underdetermined` for them, scores that token separately, and excludes those rows
+from every other metric by default. It is distinct from `insufficient`, which is a
+property of the DATA (`CLAUDE.md`), and it is the reason B0 is 100% on 145,644
+records rather than on 147,936.
+
+### Decision: CHOICE options are shuffled with a seeded permutation before any parser reads the row
+
+The release lists the asserted option first on F-R1 / P-R2 and last on F-R2, so
+`options[0]` and `options[2]` are perfect baselines there. The harness applies a
+seeded shuffle (seed recorded in `config.json`) before S1 sees the row, reports the
+`options[i]` baselines, requires parses to be invariant to option permutation, and
+treats `None` (80 tie instances) as a valid answer class.
+
+### Decision: leakage protocols P1 / P2 hold out fact AND X, never X alone
+
+Every instance's 8 texts share one gold row, so a register holdout that keeps the
+fact on the train side measures nothing. P0 `fact_split` (sanity floor), P1
+`fact ∧ register` (the reported generalization number, 4 folds), P2 `fact ∧ group`
+(procedure inference for a novel shape; 964 facts span two groups via twins, so
+the held-out group's facts leave the train side too), P3 `novel_paraphrase`
+(authorship = issue 26). Table in `11_model_pipeline.md` §4.
+
+### Decision: the provisional split lives at `data/splits/fact_split_v1.json`, keyed on `fact_id`
+
+Pipeline-internal, not part of the release; stratified by group of first
+appearance, 70/10/20, groups with fewer than 10 facts entirely to test, no
+`fact_id` / `derived_from_core_id` / `instance_id` straddles; the release sha256s
+recorded inside. Placed OUTSIDE `data/release/v1/` so the published artifact
+directory stays immutable (a small deviation from the option wording "under
+data/release/v1/splits/"; the intent — provisional, internal, not release — is
+unchanged). Issue 17 stays open as the RELEASE question; regeneration for issues
+22/23 changes instance ids but `fact_id` survives it. Not built this session (only
+the fine-tune stage needs it).
+
+### Decision: local GPU first, API adapters behind the same interface
+
+No API keys; RTX 5060 Ti 16 GB (Blackwell, sm_120 — torch >= 2.7 / CUDA 12.8
+wheels when fine-tuning arrives; no bitsandbytes on Windows). Runtime: Ollama
+(`/api/chat` with JSON-schema `format`, temperature 0), model
+`qwen2.5:7b-instruct` (Q4_K_M, ~4.7 GB) for both extraction and SQL,
+`qwen2.5-coder:7b` optional second SQL model. The client is stdlib `urllib` —
+zero new required dependencies; `anthropic` / `openai` adapters later behind
+`llm_client.Provider.complete(messages, schema, model)`. Responses cached on disk
+under `results/cache/` keyed sha256(model + messages + schema), so re-runs are
+free and deterministic.
+
+### Decision: the harness never reads `test_verdict` (issue 25)
+
+`test_verdict` equals the CANONICAL verdict at report tier
+(`oriented_significance` returns `core_significance` there), so it disagrees with
+`gold_verdict` on exactly 1,800 refuted report-level rows (300 each in P-R1,
+P-R2, S-R1, F-R1, F-R2, F-R3). No gold label is wrong; the provenance field is.
+`gold_verdict` is the label everywhere in the harness (`io.load_release` asserts
+`gold_verdict == test_verdict` only where `report_id is None`); the fix — the
+report branch of `oriented_significance` plus the `instances.py` comment — needs
+regeneration or a field patch and is filed as issue 25.
+
+---
+
+## Scorer definitions fixed on the B0 run; `underdetermined` policy (2026-09-01)
+
+Found while running the deterministic B0 baseline (`results/oracle_v1`, all
+147,936 records) and the first local-LLM smoke run; all three are scorer
+definitions in `framework/evaluate.py`, none changes a gold label.
+
+### Decision: twin consistency keys on the ASSERTED claim
+Twins are instances sharing `fact_id` AND the same asserted claim -- identical
+oriented events, the same `negated` flag and the same cohort order. A key on
+`(fact_id, events)` alone paired every negation-oriented mirror (C-V1 252,
+C-V2 349, C-V3 174 pairs) and every P-M2 vaccine-swap mirror (29) with its own
+opposite and reported the GOLD as 29% inconsistent (804 of 2,571 groups). With
+the corrected key B0 reads 1.000 over 1,767 twin groups.
+
+### Decision: the not_locatable false-positive rate is PER ARM
+A `not_locatable` instance has an EMPTY gold denominator in at least one arm; the
+fabrication false positive is a non-empty predicted denominator for such an arm.
+The first definition ("any predicted arm non-empty") charged the legitimately
+non-empty other arm of P-V2/P-V4/P-M2 one-arm-empty instances and read 0.208 on
+B0 (12,784 records); the per-arm definition reads 0.000, as an exact retriever
+must.
+
+### Decision: only TEMPLATE-underdetermined rows are set aside from scoring
+The 2,292 rows whose templates never name the events (C-V3 research/clinical,
+F-V3 research) are the only rows excluded from the verdict metrics; they are
+scored on the `underdetermined` token alone. A model that answers
+`underdetermined` -- or emits a claim with missing events -- on any OTHER row is
+scored as a wrong verdict and counted under `underdetermined.unexpected`, so the
+token cannot be used to opt out of hard items. (The first local 7B run produced
+16 such rows; excluding them would have lifted its accuracy from 0.740 to 0.771.)
+
+### Definition: first/last modes compare roles B.. as an unordered candidate set
+"Which of A, B, C is first" is the same claim under any order of B and C. The
+release lists B/C in options order and the harness shuffles options before any
+parser reads the row, so extraction metrics (`events_ordered_em`, `claim_em`,
+per-role accuracy) compare the candidates as a set for `first_choice`,
+`first_bool`, `last_choice`, `rep_first_choice`, `rep_last_choice`,
+`rep_first_bool` (`evaluate.canonical_terms`). Role A and every other mode keep
+strict order -- there the order IS the claim.
+
+Regression tests: `tests/framework/test_pipeline.py` (B0 slice: twins 1.0, FPR
+0.0, claim_em 1.0 under shuffled options) and `tests/framework/test_evaluate.py`.
+
+## DECIDED: the text-to-SQL stage will use API models (2026-09-02)
+
+The S2 text-to-SQL stage will be run with **frontier API models (OpenAI GPT or
+Anthropic Claude)**, not a local 7B, when the harness is next extended. Decided
+after the local smoke runs showed S2 is the discriminating stage and the local
+`qwen2.5-coder:7b` is far below it (denominator F1 0.250, 128/486 `sql_error`,
+conditioning wrong on 41.5% of records — `11_model_pipeline.md` §10.3).
+
+- The harness needs no structural change: the `Provider` protocol in
+  `framework/extract/llm_client.py` was designed for exactly this — add an
+  `openai`/`anthropic` adapter with the same `complete(messages, schema)`
+  interface and the same disk cache.
+- The local results in §10.3 stand as the local-model baseline row, not as the
+  headline S2 number.
+- S1 extraction remains local-first (a 7B with the tier hint already reads
+  0.918); this decision covers S2 only.
+- Supersedes the local-only scoping of 2026-09-01 for S2 alone; no API keys are
+  in the environment yet, so nothing runs until they exist.

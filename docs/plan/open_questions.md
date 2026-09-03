@@ -188,11 +188,61 @@ Requires regeneration, so it should land with whatever issue 22 decides.
 
 ## Framework
 
-### Architecture detail (issue 3)
-The intended loop: hypothesis → decide which test applies → query the annotation
-store for the conditioned reports → aggregate → exact test → three-decision
-verdict. Retrieval is a mechanical query over structured data, so the capability
-under test is steps 1, 2 and 5. Not yet specified in detail.
+### P-V2 / P-V4 wording says "more often" while the statistic compares RATES (issue 24)
+Found 2026-09-01 while specifying the eval harness (`11_model_pipeline.md` §1, §10).
+
+**Audit DONE 2026-09-01** — `11a_template_faithfulness_audit.md` audits all 184
+template strings: 70 FAITHFUL / 65 NOTE / 38 AMBIGUOUS (24 strong) / 1 MISMATCH /
+10 underdetermined-input, with every affected-instance count measured. Beyond the
+original finding it adds: C-V2 clinical `question_negated` ("unassociated" =
+independence, a two-sided reading) mismatches the one-sided negative-association
+gold on 145 instances; P-V2 clinical "than {C}" admits a second syntactic parse
+differing on 1,059/2,000; and "rate" wording alone does not fix P-V2/P-V4 (the
+research registers never name the denominator — the antecedent-conditioned
+reading differs on 158). Proposed register-voiced rewordings for all 25 strings
+are in the audit §4. **Open: adopt the rewordings (text-only, ids and labels
+unchanged) or accept and document.**
+Both groups are Fisher exact 2x2 comparisons of two RATES inside one cohort
+(`antecedent_bool`: k1/n1 = P(B after A | A,B ordered) vs k2/n2 = P(B after C | C,B
+ordered); `pairpair_bool`: P(A before B) vs P(C before D)). The research register
+says "rate"; the original, media and clinical registers say "more often" / "more
+frequent", which a reader can take as a COUNT comparison (k1 > k2). The two arms
+have different denominators, so the two readings disagree — measured on the release
+(instances where sign(k1 - k2) differs from sign(k1/n1 - k2/n2)):
+
+| group | mode | registers with count wording | instances where count-order ≠ rate-order |
+|---|---|---|--:|
+| P-V2 | `antecedent_bool` | original, media, clinical | **273** of 2,253 |
+| P-V4 | `pairpair_bool` | original, media, clinical | **2,194** of 8,571 |
+| C-V2 | `assoc_bool` | none — all four registers are rate / association wording | 467, not affected |
+| P-M2 | `multi_dir_precedes` | none — a cross-cohort contrast is a rate by nature | 8, not affected |
+
+Same defect class as issue 13 (C-V3's registers asked the majority question while
+the statistic was argmax): the label is internally consistent with its statistic,
+the TEXT is not, and `validate_gold.py` structurally cannot see it. It does not
+threaten the B0 upper bound (the rules parser maps template → mode, not wording →
+statistic), but it confounds the register-invariance metric on P-V2/P-V4 and is a
+genuine ambiguity for any model that reads the text as written.
+
+Open: reword the three registers to rate language (text-only regeneration; ids and
+labels unchanged) or accept and document the ambiguity. The M1 deliverable is the
+register/statistic faithfulness audit — for each of the 184 template strings, the
+implied denominator and contrast diffed against `pilot.RULE_BY_MODE` — which also
+decides whether any other group carries the same defect.
+
+### May the P3 paraphrase probe be LLM-authored? (issue 26)
+**DEFERRED 2026-09-02 by decision:** P3 is not pursued for now; the paper claims
+only what P0/P1/P2 evidence. Revisit if an out-of-template generalization claim
+is wanted at write-up time.
+`11_model_pipeline.md` §4 defines P3 `novel_paraphrase`: ~200 rewrites of benchmark
+claims that never appear as benchmark text — the only protocol that evidences
+out-of-template NL → procedure generalization (P0 sees all 182 distinct forms; P1
+holds out one register while the sibling forms of the same fact stay visible). Three
+ways to author it: hand-written (a few hours, no policy question); LLM-authored but
+EVAL-ONLY (never released as benchmark text — `CLAUDE.md` "Mechanical generation
+only … no LLM-based rewrites for the benchmark" governs benchmark text, so this needs
+an explicit ruling); or skipped (then the paper claims only paraphrase robustness
+across the four authored registers). User decision; nothing in M1/M2 depends on it.
 
 ### CRAFT integration
 Whether the framework uses CRAFT as the relation extractor, or implements its own
@@ -210,19 +260,13 @@ coordinate with the public archive before the annotation artifact is distributed
 
 ## Evaluation
 
-### Metrics breakdown
-Verdict agreement is the headline. The six failure modes should be reported
-separately: query parsing, conditioning, aggregation, null choice, test/tail, and
-the min-n gate. Add **pair-consistency** over mirror pairs — a model answering
-`supported` to both directions of one core is the cheapest failure to catch. Not
-specified in detail.
-
-### Baselines
-The deterministic upper bound is a true **100%**, which makes it a real reference
-rather than an estimate. Then: full-cohort annotations in context (~30K tokens,
-cacheable), tool-using with code execution, and a single-pass variant. Not
-formalized.
-
-### Models to evaluate
-Continuity with CRAFT suggests GPT-4.1, Claude Sonnet 4.5, Llama-3.3-70B,
-MedGemma-27B. To be confirmed once budget and timeline are firm.
+### Models to evaluate (issue 3)
+**Partially resolved 2026-09-02:** the S2 text-to-SQL stage will use API models
+(OpenAI GPT or Anthropic Claude) — see `decisions.md` under that date; the local
+7B S2 rows become the local baseline. Still open: which specific API model(s),
+the budget, and the local roster for S1 — `qwen2.5:7b-instruct` (primary),
+Llama-3.x-8B and MedGemma-4B at 4-bit as time allows; Llama-3.3-70B / MedGemma-27B
+when hardware or budget exists — the `Provider` adapter is the only thing that changes
+(`11_model_pipeline.md` §3, §11). The architecture, metrics-breakdown and baselines
+entries that used to sit here were resolved into `11_model_pipeline.md` and
+`decisions.md` on 2026-09-01 and removed.

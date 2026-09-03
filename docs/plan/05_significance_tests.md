@@ -194,10 +194,15 @@ ordinal data, and they produce no benchmark label -- see `open_questions.md`.
 
 The same closed-form tests run twice: once offline to compute the gold label,
 and once by the model at inference. The model is given a code-execution tool
-and runs the identical test through a statistics library (e.g., scipy). Because
+and runs the identical test ~~through a statistics library (e.g., scipy)~~
+**through the harness's exact-test tool, which wraps `core/significance.py`
+(`binom_exact_p`, `fisher_exact_2x2` — stdlib only, no scipy; 2026-09-01, see
+`11_model_pipeline.md` §6)**. Because
 both sides use the same closed-form test and the same min-n helper, they match
 by construction; any discrepancy reflects the model extracting different counts
-from the narratives, which is the capability under test.
+~~from the narratives~~ **from the annotations (2026-09-01; the framework has read
+the annotated leveled orders, never narratives, since the 2026-08-11 reversal)**,
+which is the capability under test.
 
 No permutation or Monte-Carlo test is used anywhere. Permutation is not a
 closed-form step the model can execute, and the gold label must use whatever
@@ -238,10 +243,23 @@ from chance; the CI states how precisely the rate is estimated.
 
 ## Evaluation modes (deferred to the evaluation phase)
 
-Two modes are planned; see `open_questions.md` for details.
+Two modes are planned; ~~see `open_questions.md` for details~~ **specified
+2026-09-01 in `11_model_pipeline.md` §3 and §6 under the harness names given in
+brackets below**.
 
-- **Test-chosen-by-model** (agentic, headline): the model selects, builds,
+- **Test-chosen-by-model** (agentic, headline) **[harness: `procedure-blind`]**:
+  the model selects, builds,
   runs, and interprets the test. Graded on the VERDICT, allowing a valid
-  alternative test to count as correct.
-- **Test-given-in-prompt** (isolation): the test and null are specified, so
-  the evaluation isolates execution from selection.
+  alternative test to count as correct. **Adjudication rule (2026-09-01,
+  `11_model_pipeline.md` §6):** the verdict is scored as-is; the named test is
+  bucketed `gold | synonym (binomial/sign → binom_exact; fisher/hypergeometric →
+  fisher_exact) | other-exact | approximate`. An approximate test (chi-square,
+  normal approximation) is never "valid" — exact tests only (`CLAUDE.md`
+  Conventions). Under the default `procedure-honouring` variant the harness runs
+  the model's STATED test on the model's counts, so a wrong procedure yields a
+  wrong verdict rather than being silently corrected.
+- **Test-given-in-prompt** (isolation) **[harness: `procedure-given`]**: the test
+  and null are specified, so
+  the evaluation isolates execution from selection. The min-n floors (10, sequence
+  5) and alpha (0.05 per side) are given in BOTH modes — the gate was designed
+  above to be shared by both sides.

@@ -38,6 +38,7 @@ wrong.
 - `docs/plan/07_significance_findings.md` — measured power findings and the §6 levers (lever 2 is RETIRED); carries update banners
 - `docs/plan/08_multi_tier_inventory.md` — two-cohort screening evidence; read its banner, parts are superseded
 - `docs/plan/09_next_steps.md`     — **current state, the live issue register, and priority order**
+- `docs/plan/11_model_pipeline.md` — **the eval harness / model pipeline design (2026-09-01)**: stage contract, `StructuredClaim`, narrative-free eval DB, metrics, leakage protocols, milestones, results (§10.3); M1+M2 BUILT on branch `model-pipeline-design`; `11a_template_faithfulness_audit.md` audits all 184 template strings (issue 24)
 - `docs/plan/decisions.md`        — locked decisions, **chronological and append-only**: read newest-first, and never quote one entry as current without checking for a later one on the same topic
 - `docs/plan/open_questions.md`   — items still under discussion (do not assume). Cleaned 08-12; every entry is genuinely open and carries its issue number
 
@@ -55,10 +56,19 @@ been reviewed. Part C (gold-label validation) is mechanised in
 `scripts/validate_gold.py` and passing.
 
 The generation pipeline is DONE for the testable templates (steps B, C, D, the
-release format, and mechanised Part C validation). What is NOT built: the eval
-harness — `src/` is entirely corpus, generation and statistics. See
-`09_next_steps.md` for the priority order and the one decision currently blocking
-the roster (the multi tier is P-M2 alone).
+release format, and mechanised Part C validation). ~~What is NOT built: the eval
+harness — `src/` is entirely corpus, generation and statistics.~~ **2026-09-01:**
+the eval harness is designed in `11_model_pipeline.md` and M1+M2 are BUILT on
+branch `model-pipeline-design`: `src/temporal_hypo/framework/` holds rules/LLM
+extraction, the SQL compiler + LLM text-to-SQL, the oracle hookup and the scorer;
+the deterministic B0 baseline reproduces the gold on ALL 147,936 records
+(`scripts/run_eval.py --pipeline oracle`), and local 7B smoke results live in
+`11_model_pipeline.md` §10.3. The fine-tuned extractor and the in-context and
+agent baselines (M3–M5) are NOT built. See
+`09_next_steps.md` for the priority order ~~and the one decision currently blocking
+the roster (the multi tier is P-M2 alone)~~ (**2026-09-01:** that decision was made
+on 2026-08-14 — P-M2 ships alone; the 20-group roster is FINAL and the v1 dataset is
+generated).
 
 A core must actually exist in the data (the events genuinely co-occur and the
 denominator clears the min-n gate) before it can yield a hypothesis. Never build
@@ -103,7 +113,9 @@ meetings, produced by `scripts/render_templates_docx.py`.
   side of any train/test split**.
 - **Negation is the orientation operator for symmetric claims**, and it is not
   configurable — it applies wherever the template YAML provides it, which today is
-  only C-V1 and C-V3. Samplers must PREFER PLAIN WORDING and negate only to fill a
+  ~~only C-V1 and C-V3~~ **C-V1, C-V2 and C-V3 (corrected 2026-09-01: C-V2 shipped
+  negated wording on 2026-08-14 and 349 negated C-V2 instances are in the release)**.
+  Samplers must PREFER PLAIN WORDING and negate only to fill a
   remaining deficit.
 - **Conditioning rules differ per family and are the subtlety worth protecting:**
   precedes EXCLUDES co-exist from its denominator, co-occurs treats co-exist as the
@@ -122,6 +134,18 @@ meetings, produced by `scripts/render_templates_docx.py`.
   raises if a gold field leaks.
 - **Run `scripts/validate_gold.py` before trusting generated data.** Six
   invariant families; it is what caught the first-mention bug.
+- **The eval harness reads `data/medtempo_eval.db`, never `data/medtempo.db`**
+  (2026-09-01). The eval DB is keyed on `vaers_id`, has no `narrative` column and no
+  surrogate id; it is the mechanical guard behind "never narrative text". Build it
+  with `scripts/build_eval_db.py`; the DDL in `framework/sql/views.sql` is what
+  models see.
+- **Never call `core/answers.py::compute_answer` for an asserted claim** (2026-09-01).
+  It reports the WINNER's tail, not the asserted cell's; the harness scores a claim
+  with `core_significance(core, named=claim.named_cell())` and applies the negation
+  tail swap exactly as `oriented_significance` does.
+- **Never read `test_verdict`** (issue 25, 2026-09-01). It equals the canonical, not
+  the oriented, verdict on 1,800 report-level refuted rows. `gold_verdict` is the
+  label; the harness and every metric use it alone.
 
 ## Out of scope for v1
 
