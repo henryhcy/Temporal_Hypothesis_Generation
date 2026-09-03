@@ -44,3 +44,9 @@ Thumbs.db
 # the committed artifact is the .gz pair plus the reports and statistics.
 data/release/*/pilot_instances_questions.jsonl
 data/release/*/pilot_instances_answers.jsonl
+
+# eval harness artifacts (docs/plan/11_model_pipeline.md)
+results/*
+!results/subsets/
+data/medtempo_eval.db
+*.db-journal

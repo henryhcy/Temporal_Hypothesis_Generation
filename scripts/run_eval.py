@@ -1,0 +1,241 @@
+"""CLI entry point: run one pipeline over the release and score it.
+
+Usage:
+    PYTHONPATH=src python scripts/run_eval.py --pipeline oracle --subset all --out results/oracle_v1
+    PYTHONPATH=src python scripts/run_eval.py --pipeline llm-s1+compiler --model qwen2.5:7b-instruct \\
+        --subset eval_core --condition blind-group --procedure blind --limit 200 --out results/smoke_llm_s1
+    PYTHONPATH=src python scripts/run_eval.py --pipeline rules+llm-sql --model qwen2.5-coder:7b --subset eval_core --out results/llm_sql
+    PYTHONPATH=src python scripts/run_eval.py --pipeline llm-s1+llm-sql --model qwen2.5:7b-instruct --subset eval_core --out results/full_local
+
+Pipelines
+    oracle            rules -> compiler -> gold procedure   (B0: must score 100% -- harness self-check)
+    rules+compiler    rules -> compiler -> honouring        (same components, model-facing procedure path)
+    llm-s1+compiler   LLM extraction -> compiler -> honouring     (isolates S1)
+    rules+llm-sql     rules -> LLM text-to-SQL -> honouring        (isolates S2)
+    llm-s1+llm-sql    LLM extraction -> LLM text-to-SQL -> honouring (the full local pipeline)
+    trivial           majority_per_group / always_insufficient / options[0] / options[2]
+
+The pipeline never opens data/medtempo.db: retrieval runs against data/medtempo_eval.db
+(build it with scripts/build_eval_db.py). Gold is read only by the scorer.
+"""
+
+from __future__ import annotations
+
+import argparse
+import hashlib
+import json
+import sys
+import time
+from pathlib import Path
+
+from temporal_hypo.framework import baselines
+from temporal_hypo.framework.evaluate import evaluate, write_report
+from temporal_hypo.framework.extract.rules import RulesExtractor, vocabulary_from_db
+from temporal_hypo.framework.io import load_release, release_sha256s
+from temporal_hypo.framework.pipeline import CompilerRetriever, Pipeline
+from temporal_hypo.framework.sql.build_eval_db import open_eval_db
+from temporal_hypo.framework.sql.executor import ReadOnlyExecutor
+from temporal_hypo.framework.subsets import eval_core, fewshot_pool, read_subset, write_subset
+
+_REPO_ROOT = Path(__file__).resolve().parent.parent
+
+PIPELINES = ("oracle", "rules+compiler", "llm-s1+compiler", "rules+llm-sql",
+             "llm-s1+llm-sql", "trivial")
+
+
+def _sha256(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _select_records(release, args, subset_ids):
+    registers = args.registers.split(",") if args.registers else None
+    formats = args.formats.split(",") if args.formats else None
+    groups = args.groups.split(",") if args.groups else None
+    return list(release.iter_records(registers=registers, formats=formats,
+                                     groups=groups, instance_ids=subset_ids,
+                                     limit=args.limit))
+
+
+def _fewshot_pairs(release, exclude_ids, k_per_mode, seed):
+    """(question_row, answer_row) pairs for few-shot prompting, disjoint from the eval set."""
+    pool = fewshot_pool(release, set(exclude_ids or ()), k_per_mode=k_per_mode, seed=seed)
+    pairs = []
+    for ans in pool:
+        # the original/question rendering is the canonical surface form
+        hid = next((h for h in ans["hypothesis_ids"] if h.endswith("-original-question")),
+                   ans["hypothesis_ids"][0])
+        q = release.question_for(hid) if hasattr(release, "question_for") else None
+        if q is None:
+            q = next((r for r in release.questions if r["hypothesis_id"] == hid), None)
+        if q is not None:
+            pairs.append((q, ans))
+    return pairs
+
+
+def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
+    procedure_mode = "gold" if args.pipeline == "oracle" else "honouring"
+    procedure_given = args.procedure == "given"
+    llm_client = None
+    if "llm" in args.pipeline:
+        from temporal_hypo.framework.extract.llm_client import CacheDir, OllamaClient
+
+        if not args.model:
+            raise SystemExit("--model is required for LLM pipelines")
+        llm_client = OllamaClient(base_url=args.ollama_url, cache=CacheDir(args.cache_dir),
+                                 timeout_s=args.llm_timeout, num_ctx=args.num_ctx)
+
+    # S1
+    if args.pipeline in ("oracle", "rules+compiler", "rules+llm-sql"):
+        extractor = RulesExtractor(vocabulary=vocabulary)
+    else:
+        from temporal_hypo.framework.extract.llm import LLMExtractor
+
+        shots = _fewshot_pairs(release, subset_ids, args.k_shot_per_mode, args.seed) \
+            if args.k_shot > 0 else []
+        extractor = LLMExtractor(llm_client, args.model, procedure_given=procedure_given,
+                                 fewshot=shots, k_shot=args.k_shot, vocabulary=vocabulary,
+                                 tier_hint=args.tier_hint, routing_hint=args.routing_hint)
+
+    # S2
+    if args.pipeline in ("oracle", "rules+compiler", "llm-s1+compiler"):
+        retriever = CompilerRetriever(executor)
+    else:
+        from temporal_hypo.framework.sql.llm_sql import LLMSQLRetriever
+
+        retriever = LLMSQLRetriever(llm_client, args.sql_model or args.model, executor)
+
+    tokens_of = (lambda ex: getattr(ex, "last_tokens", None)) if llm_client else None
+    extra_tokens = (lambda: getattr(retriever, "last_tokens", None)) if llm_client else None
+    return Pipeline(name=args.pipeline, extractor=extractor, retriever=retriever,
+                    procedure_mode=procedure_mode, condition=args.condition,
+                    model=args.model, options_seed=args.seed, keep_ids=not args.no_ids,
+                    tokens_of=tokens_of, extra_tokens=extra_tokens)
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(description="Run a hypothesis-verification pipeline and score it.")
+    p.add_argument("--release", type=Path, default=_REPO_ROOT / "data" / "release" / "v1")
+    p.add_argument("--stem", default="pilot_instances")
+    p.add_argument("--eval-db", type=Path, default=_REPO_ROOT / "data" / "medtempo_eval.db")
+    p.add_argument("--pipeline", choices=PIPELINES, required=True)
+    p.add_argument("--condition", choices=("given-group", "blind-group"), default="given-group")
+    p.add_argument("--procedure", choices=("blind", "given"), default="blind",
+                   help="blind: the model fills the HOW layer; given: the harness overrides it")
+    p.add_argument("--subset", default="all", help="all | eval_core | path to a subset json")
+    p.add_argument("--per-group", type=int, default=90, help="eval_core cap per group")
+    p.add_argument("--registers", default=None, help="comma list, e.g. original")
+    p.add_argument("--formats", default=None, help="comma list, e.g. question,claim")
+    p.add_argument("--groups", default=None, help="comma list of group ids")
+    p.add_argument("--limit", type=int, default=None, help="max records (after filtering)")
+    p.add_argument("--model", default=None, help="Ollama model tag for LLM stages")
+    p.add_argument("--sql-model", default=None, help="Ollama model tag for the SQL stage (defaults to --model)")
+    p.add_argument("--ollama-url", default="http://localhost:11434")
+    p.add_argument("--num-ctx", type=int, default=8192)
+    p.add_argument("--llm-timeout", type=float, default=300.0)
+    p.add_argument("--k-shot", type=int, default=3)
+    p.add_argument("--tier-hint", action="store_true",
+                   help="ablation: add the level->admissible-modes rule to the extraction prompt")
+    p.add_argument("--routing-hint", action="store_true",
+                   help="ablation: add the candidate-count->mode-family rule to the extraction prompt")
+    p.add_argument("--k-shot-per-mode", type=int, default=1)
+    p.add_argument("--cache-dir", type=Path, default=_REPO_ROOT / "results" / "cache")
+    p.add_argument("--seed", type=int, default=0)
+    p.add_argument("--no-ids", action="store_true", help="omit id lists from predictions.jsonl")
+    p.add_argument("--no-verify-sha", action="store_true")
+    p.add_argument("--out", type=Path, required=True)
+    args = p.parse_args()
+
+    t0 = time.time()
+    release = load_release(args.release, args.stem, verify_sha=not args.no_verify_sha)
+    print(f"release: {len(release.questions)} records / {len(release.answers)} instances")
+
+    subset_ids = None
+    if args.subset == "eval_core":
+        subset_path = _REPO_ROOT / "results" / "subsets" / f"eval_core_v1_pg{args.per_group}_s{args.seed}.json"
+        if subset_path.exists():
+            subset_ids = read_subset(subset_path)
+        else:
+            subset_ids = eval_core(release, per_group=args.per_group, seed=args.seed)
+            write_subset(subset_ids, subset_path,
+                         {"per_group": args.per_group, "seed": args.seed,
+                          "release_sha256": release_sha256s(args.release, args.stem)})
+        print(f"eval_core: {len(subset_ids)} instances ({subset_path})")
+    elif args.subset != "all":
+        subset_ids = read_subset(Path(args.subset))
+        print(f"subset: {len(subset_ids)} instances ({args.subset})")
+
+    records = _select_records(release, args, subset_ids)
+    print(f"records to run: {len(records)}")
+    args.out.mkdir(parents=True, exist_ok=True)
+
+    if args.pipeline == "trivial":
+        rows = (baselines.majority_per_group(records, release.answers)
+                + baselines.always_insufficient(records)
+                + baselines.options_index(records, 0)
+                + baselines.options_index(records, 2))
+        by_name: dict[str, list[dict]] = {}
+        for r in rows:
+            by_name.setdefault(r["pipeline"], []).append(r)
+        summary = {}
+        for name, rs in by_name.items():
+            m = evaluate(rs, release)
+            sub = args.out / name.replace("[", "_").replace("]", "")
+            write_report(m, sub, rows=rs, release=release)
+            summary[name] = {"verdict_acc": m["verdict"].get("accuracy"),
+                             "class_macro_f1": m["verdict"].get("class_macro_f1"),
+                             "group_macro_f1": (m["verdict"].get("group_macro") or {}).get("f1"),
+                             "answer_acc": m.get("choice", {}).get("answer_acc")}
+        (args.out / "summary.json").write_text(json.dumps(summary, indent=2), encoding="utf-8")
+        print(json.dumps(summary, indent=2))
+        return
+
+    if not args.eval_db.exists():
+        raise SystemExit(f"eval DB not found: {args.eval_db} -- run scripts/build_eval_db.py first")
+    executor = ReadOnlyExecutor(args.eval_db, log_path=args.out / "sql_log.jsonl")
+    vocabulary = vocabulary_from_db(open_eval_db(args.eval_db))
+    pipe = build_pipeline(args, release, subset_ids, executor, vocabulary)
+
+    config = {
+        "pipeline": args.pipeline, "condition": args.condition, "procedure": args.procedure,
+        "procedure_mode": pipe.procedure_mode, "model": args.model, "sql_model": args.sql_model,
+        "subset": args.subset, "per_group": args.per_group, "registers": args.registers,
+        "formats": args.formats, "groups": args.groups, "limit": args.limit,
+        "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "seed": args.seed, "num_ctx": args.num_ctx,
+        "n_records": len(records),
+        "release_sha256": release_sha256s(args.release, args.stem),
+        "eval_db_sha256": _sha256(args.eval_db),
+        "started": time.strftime("%Y-%m-%dT%H:%M:%S"),
+    }
+    (args.out / "config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
+
+    n = len(records)
+
+    def progress(i, row):
+        if (i + 1) % 200 == 0 or i + 1 == n:
+            el = time.time() - t0
+            print(f"  {i + 1}/{n}  {el:6.0f}s  last={row['prediction']['response'] if row['prediction'] else row['error']}",
+                  file=sys.stderr, flush=True)
+
+    rows = pipe.run(records, out_path=args.out / "predictions.jsonl", progress=progress)
+    metrics = evaluate(rows, release, seed=args.seed)
+    metrics["run_config"] = config      # evaluate() owns metrics["config"]
+    write_report(metrics, args.out, rows=rows, release=release)
+    v = metrics.get("verdict", {})
+    gm = v.get("group_macro") or {}
+    ex = metrics.get("extraction", {})
+    rt = metrics.get("retrieval", {}).get("denominator", {})
+    print(f"\nverdict acc={v.get('accuracy')}  class-macro-F1={v.get('class_macro_f1')}  "
+          f"group-macro-F1={gm.get('f1')} CI={gm.get('ci95')}  "
+          f"S1 claim_em={ex.get('claim_em')}  S2 den-F1={rt.get('f1')}  "
+          f"underdetermined={metrics.get('n', {}).get('underdetermined')}  "
+          f"({time.time() - t0:.0f}s)  -> {args.out}")
+
+
+if __name__ == "__main__":
+    main()
