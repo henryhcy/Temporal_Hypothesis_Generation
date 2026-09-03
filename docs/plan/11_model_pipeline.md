@@ -313,7 +313,7 @@ Provider adapter: `Provider.complete(messages, *, schema, model, temperature=0,
 max_tokens) -> Completion(text, prompt_tokens, completion_tokens, ms, cached)`.
 Local backend first — `OllamaClient` over stdlib `urllib` to
 `http://localhost:11434/api/chat` with `format` = the JSON schema and temperature 0;
-`anthropic` / `openai` adapters later behind the same protocol. Disk cache under
+`anthropic` / `openai` adapters **built 2026-09-02** behind the same protocol (`llm_client.client_for`; CLI `--provider` / `--sql-provider`, keys from `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`; structured output via forced tool call / `response_format=json_schema`). Disk cache under
 `results/cache/` keyed sha256(model + messages + schema), so a re-run is free and
 deterministic. **Runtime decision:** Ollama (`winget install Ollama.Ollama`),
 `qwen2.5:7b-instruct` (Q4_K_M, ~4.7 GB — fits the 16 GB GPU with headroom) for both
@@ -816,7 +816,7 @@ attribution separates them cleanly:
 
 M3 split + fine-tune (P0 / P1 / P2 table); M4 in-context B1, agent B2, single-pass
 B3, `model-computed` variant; M5 write-up hooks (tables for the Overleaf draft,
-issue 10). API provider adapters land with whichever of these first needs them.
+issue 10). ~~API provider adapters land with whichever of these first needs them.~~ **2026-09-02: built** (`--provider`/`--sql-provider`; run configs now record provider + Ollama model digests).
 
 ---
 

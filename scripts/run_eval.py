@@ -22,6 +22,7 @@ The pipeline never opens data/medtempo.db: retrieval runs against data/medtempo_
 from __future__ import annotations
 
 import argparse
+import os
 import hashlib
 import json
 import sys
@@ -78,17 +79,59 @@ def _fewshot_pairs(release, exclude_ids, k_per_mode, seed):
     return pairs
 
 
+_KEY_ENV = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
+
+
+def _make_client(provider, args, cache):
+    from temporal_hypo.framework.extract.llm_client import client_for
+
+    api_key = None
+    if provider in _KEY_ENV:
+        api_key = os.environ.get(_KEY_ENV[provider])
+        if not api_key:
+            raise SystemExit(f"--provider {provider} needs the {_KEY_ENV[provider]} "
+                             "environment variable")
+    return client_for(provider, api_key=api_key,
+                      base_url=args.ollama_url if provider == "ollama" else None,
+                      cache=cache, timeout_s=args.llm_timeout, num_ctx=args.num_ctx)
+
+
+def _model_provenance(args) -> dict:
+    """Pin what served the models: ollama digests + version, or the API provider."""
+    prov = {"provider": args.provider, "sql_provider": args.sql_provider or args.provider}
+    if "ollama" in (prov["provider"], prov["sql_provider"]):
+        try:
+            from temporal_hypo.framework.extract.llm_client import OllamaClient
+
+            oc = OllamaClient(args.ollama_url, timeout_s=5.0)
+            tags = oc._request("GET", "/api/tags", None).get("models", [])
+            digests = {m["name"]: m.get("digest") for m in tags if m.get("name")}
+            wanted = [m for m in dict.fromkeys((args.model, args.sql_model or args.model)) if m]
+            prov["ollama_digests"] = {m: digests.get(m) for m in wanted}
+            prov["ollama_version"] = oc._request("GET", "/api/version", None).get("version")
+        except Exception as exc:  # provenance must never kill a run
+            prov["ollama_digests_error"] = str(exc)[:200]
+    return prov
+
+
 def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
     procedure_mode = "gold" if args.pipeline == "oracle" else "honouring"
     procedure_given = args.procedure == "given"
     llm_client = None
-    if "llm" in args.pipeline:
-        from temporal_hypo.framework.extract.llm_client import CacheDir, OllamaClient
+    sql_client = None
+    needs_s1_llm = args.pipeline in ("llm-s1+compiler", "llm-s1+llm-sql")
+    needs_sql_llm = args.pipeline in ("rules+llm-sql", "llm-s1+llm-sql")
+    if needs_s1_llm or needs_sql_llm:
+        from temporal_hypo.framework.extract.llm_client import CacheDir
 
         if not args.model:
             raise SystemExit("--model is required for LLM pipelines")
-        llm_client = OllamaClient(base_url=args.ollama_url, cache=CacheDir(args.cache_dir),
-                                 timeout_s=args.llm_timeout, num_ctx=args.num_ctx)
+        cache = CacheDir(args.cache_dir)
+        sql_provider = args.sql_provider or args.provider
+        if needs_s1_llm:
+            llm_client = _make_client(args.provider, args, cache)
+        if needs_sql_llm:
+            sql_client = llm_client                 if (sql_provider == args.provider and llm_client is not None)                 else _make_client(sql_provider, args, cache)
 
     # S1
     if args.pipeline in ("oracle", "rules+compiler", "rules+llm-sql"):
@@ -108,10 +151,11 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
     else:
         from temporal_hypo.framework.sql.llm_sql import LLMSQLRetriever
 
-        retriever = LLMSQLRetriever(llm_client, args.sql_model or args.model, executor)
+        retriever = LLMSQLRetriever(sql_client or llm_client, args.sql_model or args.model,
+                                    executor)
 
-    tokens_of = (lambda ex: getattr(ex, "last_tokens", None)) if llm_client else None
-    extra_tokens = (lambda: getattr(retriever, "last_tokens", None)) if llm_client else None
+    tokens_of = (lambda ex: getattr(ex, "last_tokens", None)) if (llm_client or sql_client) else None
+    extra_tokens = (lambda: getattr(retriever, "last_tokens", None)) if (llm_client or sql_client) else None
     return Pipeline(name=args.pipeline, extractor=extractor, retriever=retriever,
                     procedure_mode=procedure_mode, condition=args.condition,
                     model=args.model, options_seed=args.seed, keep_ids=not args.no_ids,
@@ -136,6 +180,10 @@ def main() -> None:
     p.add_argument("--model", default=None, help="Ollama model tag for LLM stages")
     p.add_argument("--sql-model", default=None, help="Ollama model tag for the SQL stage (defaults to --model)")
     p.add_argument("--ollama-url", default="http://localhost:11434")
+    p.add_argument("--provider", choices=("ollama", "anthropic", "openai"), default="ollama",
+                   help="backend for the LLM stages (API keys read from ANTHROPIC_API_KEY / OPENAI_API_KEY)")
+    p.add_argument("--sql-provider", choices=("ollama", "anthropic", "openai"), default=None,
+                   help="backend for the SQL stage only (defaults to --provider)")
     p.add_argument("--num-ctx", type=int, default=8192)
     p.add_argument("--llm-timeout", type=float, default=300.0)
     p.add_argument("--k-shot", type=int, default=3)
@@ -203,11 +251,12 @@ def main() -> None:
 
     config = {
         "pipeline": args.pipeline, "condition": args.condition, "procedure": args.procedure,
-        "procedure_mode": pipe.procedure_mode, "model": args.model, "sql_model": args.sql_model,
+        "procedure_mode": pipe.procedure_mode, "model": args.model, "sql_model": args.sql_model or args.model,
         "subset": args.subset, "per_group": args.per_group, "registers": args.registers,
         "formats": args.formats, "groups": args.groups, "limit": args.limit,
         "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "seed": args.seed, "num_ctx": args.num_ctx,
         "n_records": len(records),
+        **(_model_provenance(args) if "llm" in args.pipeline else {}),
         "release_sha256": release_sha256s(args.release, args.stem),
         "eval_db_sha256": _sha256(args.eval_db),
         "started": time.strftime("%Y-%m-%dT%H:%M:%S"),

@@ -235,3 +235,219 @@ def test_live_ollama_structured_output(tmp_path):
                            schema={"type": "object", "properties": {"x": {"type": "integer"}},
                                    "required": ["x"]},
                            model=models[0], max_tokens=32).cached is True
+
+
+# ---------------------------------------------------------------------------
+# API backends (Anthropic / OpenAI) -- no network; urlopen is monkeypatched
+# ---------------------------------------------------------------------------
+
+from temporal_hypo.framework.extract.llm_client import (  # noqa: E402
+    AnthropicClient,
+    OpenAIClient,
+    client_for,
+)
+
+
+def test_anthropic_client_posts_forced_tool_and_parses_tool_use(monkeypatch):
+    seen = {}
+
+    def fake_urlopen(req, timeout=None):
+        seen["url"] = req.full_url
+        seen["key"] = req.get_header("X-api-key")
+        seen["version"] = req.get_header("Anthropic-version")
+        seen["payload"] = json.loads(req.data.decode("utf-8"))
+        reply = {"content": [{"type": "tool_use", "name": "structured_output",
+                              "input": {"x": 1}}],
+                 "usage": {"input_tokens": 10, "output_tokens": 5}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    out = AnthropicClient("k-test", timeout_s=5.0).complete(MSGS, schema=SCHEMA, model="claude-x")
+    assert seen["url"] == "https://api.anthropic.com/v1/messages"
+    assert seen["key"] == "k-test" and seen["version"] == "2023-06-01"
+    pl = seen["payload"]
+    assert pl["system"] == "s"
+    assert pl["messages"] == [{"role": "user", "content": "u"}]
+    assert pl["tools"][0]["input_schema"] == SCHEMA
+    assert pl["tool_choice"] == {"type": "tool", "name": "structured_output"}
+    assert pl["max_tokens"] == 8192  # API_MIN_MAX_TOKENS floor (thinking headroom)
+    assert json.loads(out.text) == {"x": 1}
+    assert out.prompt_tokens == 10 and out.completion_tokens == 5 and out.cached is False
+
+
+def test_anthropic_client_returns_text_blocks_without_schema(monkeypatch):
+    def fake_urlopen(req, timeout=None):
+        pl = json.loads(req.data.decode("utf-8"))
+        assert "tools" not in pl and "tool_choice" not in pl
+        reply = {"content": [{"type": "text", "text": '{"y": 2}'}], "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    out = AnthropicClient("k").complete(MSGS, schema=None, model="claude-x")
+    assert out.text == '{"y": 2}'
+
+
+def test_openai_client_posts_json_schema_and_parses_content(monkeypatch):
+    seen = {}
+
+    def fake_urlopen(req, timeout=None):
+        seen["url"] = req.full_url
+        seen["auth"] = req.get_header("Authorization")
+        seen["payload"] = json.loads(req.data.decode("utf-8"))
+        reply = {"choices": [{"message": {"content": '{"x": 3}'}}],
+                 "usage": {"prompt_tokens": 9, "completion_tokens": 4}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    out = OpenAIClient("sk-test").complete(MSGS, schema=SCHEMA, model="gpt-x")
+    assert seen["url"] == "https://api.openai.com/v1/chat/completions"
+    assert seen["auth"] == "Bearer sk-test"
+    pl = seen["payload"]
+    assert pl["response_format"]["type"] == "json_schema"
+    assert pl["response_format"]["json_schema"]["schema"] == SCHEMA
+    assert pl["response_format"]["json_schema"]["strict"] is False
+    assert pl["max_completion_tokens"] == 8192 and pl["temperature"] == 0.0  # floored
+    assert out.text == '{"x": 3}' and out.prompt_tokens == 9
+
+
+def test_openai_client_drops_rejected_temperature(monkeypatch):
+    calls = []
+
+    def fake_urlopen(req, timeout=None):
+        pl = json.loads(req.data.decode("utf-8"))
+        calls.append(pl)
+        if "temperature" in pl:
+            raise urllib.error.HTTPError(
+                req.full_url, 400, "bad", None,
+                io.BytesIO(b'{"error": {"message": "Unsupported parameter: temperature"}}'))
+        reply = {"choices": [{"message": {"content": "ok"}}], "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    out = OpenAIClient("sk").complete(MSGS, schema=None, model="o-x")
+    assert len(calls) == 2 and "temperature" not in calls[1]
+    assert out.text == "ok"
+
+
+def test_api_retry_on_429_then_success(monkeypatch):
+    events = []
+    monkeypatch.setattr(llm_client, "_sleep", lambda s: events.append(("slept", s)))
+
+    def fake_urlopen(req, timeout=None):
+        events.append("call")
+        if events.count("call") == 1:
+            raise urllib.error.HTTPError(req.full_url, 429, "rate", None,
+                                         io.BytesIO(b"slow down"))
+        reply = {"content": [{"type": "text", "text": "hi"}], "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    out = AnthropicClient("k").complete(MSGS, schema=None, model="claude-x")
+    assert out.text == "hi" and events.count("call") == 2 and ("slept", 1.0) in events
+
+
+def test_api_400_is_not_retried(monkeypatch):
+    calls = []
+
+    def fake_urlopen(req, timeout=None):
+        calls.append(1)
+        raise urllib.error.HTTPError(req.full_url, 400, "bad", None,
+                                     io.BytesIO(b'{"error": {"message": "bad schema"}}'))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    with pytest.raises(ProviderError, match="HTTP 400"):
+        AnthropicClient("k").complete(MSGS, schema=None, model="claude-x")
+    assert len(calls) == 1
+
+
+def test_api_client_uses_the_disk_cache(monkeypatch, tmp_path):
+    n = {"calls": 0}
+
+    def fake_urlopen(req, timeout=None):
+        n["calls"] += 1
+        reply = {"choices": [{"message": {"content": '{"x": 1}'}}], "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    c = OpenAIClient("sk", cache=CacheDir(tmp_path / "c"))
+    a = c.complete(MSGS, schema=SCHEMA, model="gpt-x")
+    b = c.complete(MSGS, schema=SCHEMA, model="gpt-x")
+    assert n["calls"] == 1 and a.cached is False and b.cached is True and b.text == a.text
+
+
+def test_client_for_builds_each_backend():
+    assert isinstance(client_for("ollama"), OllamaClient)
+    assert isinstance(client_for("anthropic", api_key="k"), AnthropicClient)
+    assert isinstance(client_for("openai", api_key="k"), OpenAIClient)
+    with pytest.raises(ProviderError, match="unknown provider"):
+        client_for("azure")
+    with pytest.raises(ProviderError, match="ANTHROPIC_API_KEY"):
+        client_for("anthropic")  # missing key fails fast, not at first call
+
+
+def test_anthropic_client_drops_rejected_temperature(monkeypatch):
+    calls = []
+
+    def fake_urlopen(req, timeout=None):
+        pl = json.loads(req.data.decode("utf-8"))
+        calls.append(pl)
+        if "temperature" in pl:
+            raise urllib.error.HTTPError(
+                req.full_url, 400, "bad", None,
+                io.BytesIO(b'{"error": {"message": "temperature is not supported"}}'))
+        reply = {"content": [{"type": "text", "text": "ok"}],
+                 "stop_reason": "end_turn", "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    out = AnthropicClient("k").complete(MSGS, schema=None, model="claude-x")
+    assert len(calls) == 2 and "temperature" not in calls[1] and out.text == "ok"
+
+
+def _no_cache_files(root):
+    return not root.exists() or not list(root.glob("*.json"))
+
+
+def test_anthropic_truncated_reply_raises_and_is_not_cached(monkeypatch, tmp_path):
+    def fake_urlopen(req, timeout=None):
+        reply = {"content": [{"type": "text", "text": "partial"}],
+                 "stop_reason": "max_tokens", "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    cache = CacheDir(tmp_path / "c")
+    with pytest.raises(ProviderError, match="max_tokens"):
+        AnthropicClient("k", cache=cache).complete(MSGS, schema=None, model="claude-x")
+    assert _no_cache_files(tmp_path / "c")
+
+
+def test_openai_truncated_reply_raises_and_is_not_cached(monkeypatch, tmp_path):
+    def fake_urlopen(req, timeout=None):
+        reply = {"choices": [{"message": {"content": ""}, "finish_reason": "length"}],
+                 "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    cache = CacheDir(tmp_path / "c")
+    with pytest.raises(ProviderError, match="length"):
+        OpenAIClient("sk", cache=cache).complete(MSGS, schema=SCHEMA, model="gpt-x")
+    assert _no_cache_files(tmp_path / "c")
+
+
+def test_openai_fallback_meta_records_what_was_sent(monkeypatch, tmp_path):
+    def fake_urlopen(req, timeout=None):
+        pl = json.loads(req.data.decode("utf-8"))
+        if "temperature" in pl:
+            raise urllib.error.HTTPError(
+                req.full_url, 400, "bad", None,
+                io.BytesIO(b'{"error": {"message": "Unsupported parameter: temperature"}}'))
+        reply = {"choices": [{"message": {"content": "ok"}, "finish_reason": "stop"}],
+                 "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    cache = CacheDir(tmp_path / "c")
+    OpenAIClient("sk", cache=cache).complete(MSGS, schema=None, model="o-x")
+    f = next((tmp_path / "c").glob("*.json"))
+    meta = json.loads(f.read_text(encoding="utf-8"))["meta"]
+    assert meta["temperature"] is None and meta["max_tokens"] == 8192

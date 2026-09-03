@@ -2448,3 +2448,8 @@ conditioning wrong on 41.5% of records — `11_model_pipeline.md` §10.3).
   0.918); this decision covers S2 only.
 - Supersedes the local-only scoping of 2026-09-01 for S2 alone; no API keys are
   in the environment yet, so nothing runs until they exist.
+- **Built the same day:** `AnthropicClient` / `OpenAIClient` in
+  `framework/extract/llm_client.py` (stdlib urllib, same cache, forced-tool /
+  json_schema structured output, backoff on 429/5xx), `client_for` factory,
+  `run_eval.py --provider/--sql-provider` (keys from env), and model provenance
+  (Ollama digest + version) recorded in every run's `config.json`.
