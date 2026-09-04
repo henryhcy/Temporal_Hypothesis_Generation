@@ -1,0 +1,597 @@
+{
+  "generated_from_commit": "fbbeb00",
+  "files": {
+    "questions": {
+      "path": "pilot_instances_questions.jsonl",
+      "bytes": 53021719,
+      "sha256": "3545ea9db53bc9a5f780a02a2ad9b79d83a57bf282c324d1d7dd4cab09c7049b"
+    },
+    "answers": {
+      "path": "pilot_instances_answers.jsonl",
+      "bytes": 51927469,
+      "sha256": "613149e14da44acd5c28be06b3a22d7188b5a81522314292c897aa6c9af3afdb"
+    }
+  },
+  "totals": {
+    "records": 147936,
+    "instances": 18492,
+    "groups": 20,
+    "registers": 4,
+    "formats": 2,
+    "distinct_cores": 11828,
+    "distinct_facts": 8964,
+    "supported": 6857,
+    "refuted": 6771,
+    "insufficient": 4864,
+    "insufficient_subtypes": {
+      "not_locatable": 1630,
+      "sparse": 1505,
+      "underpowered": 1729
+    },
+    "negated": 775,
+    "mirror_pairs": 6664,
+    "positional_coverage": 0.657
+  },
+  "distributions": {
+    "gold_n_all": {
+      "q25": 16.0,
+      "q50": 26.0,
+      "q75": 42.0,
+      "min": 1,
+      "max": 465
+    },
+    "ci_width": {
+      "q25": 0.3205,
+      "q50": 0.4106,
+      "q75": 0.4899,
+      "min": 0.0421,
+      "max": 0.811
+    },
+    "abs_effect_size_decisive": {
+      "q25": 0.5932,
+      "q50": 0.7746,
+      "q75": 0.9882,
+      "min": 0.1135,
+      "max": 2.5903
+    },
+    "p_claim_supported": {
+      "q25": 0.0008,
+      "q50": 0.0072,
+      "q75": 0.0233,
+      "min": 0.0,
+      "max": 0.05
+    }
+  },
+  "per_family": {
+    "first_last": {
+      "groups": 6,
+      "instances": 2142,
+      "supported": 1014,
+      "refuted": 1014,
+      "insufficient": 114
+    },
+    "pairwise": {
+      "groups": 11,
+      "instances": 15738,
+      "supported": 5539,
+      "refuted": 5453,
+      "insufficient": 4746
+    },
+    "sequence": {
+      "groups": 3,
+      "instances": 612,
+      "supported": 304,
+      "refuted": 304,
+      "insufficient": 4
+    }
+  },
+  "per_group": {
+    "C-R1": {
+      "level": "report",
+      "family": "pairwise",
+      "mode": "rep_sym_bool",
+      "answer_type": "BOOL",
+      "instances": 300,
+      "records": 2400,
+      "supported": 193,
+      "refuted": 107,
+      "insufficient": 0,
+      "insufficient_subtypes": {},
+      "negated": 0,
+      "reoriented": 0,
+      "distinct_cores": 300,
+      "distinct_facts": 300,
+      "decisive_distinct_facts": 300,
+      "gold_n": null,
+      "positional_coverage": 0.0
+    },
+    "C-V1": {
+      "level": "vaccine",
+      "family": "pairwise",
+      "mode": "sym_bool_cooccurs",
+      "answer_type": "BOOL",
+      "instances": 756,
+      "records": 6048,
+      "supported": 252,
+      "refuted": 252,
+      "insufficient": 252,
+      "insufficient_subtypes": {
+        "not_locatable": 84,
+        "sparse": 84,
+        "underpowered": 84
+      },
+      "negated": 252,
+      "reoriented": 0,
+      "distinct_cores": 504,
+      "distinct_facts": 504,
+      "decisive_distinct_facts": 252,
+      "gold_n": {
+        "q25": 13.0,
+        "q50": 21.0,
+        "q75": 34.0,
+        "min": 1,
+        "max": 204
+      },
+      "positional_coverage": 0.889
+    },
+    "C-V2": {
+      "level": "vaccine",
+      "family": "pairwise",
+      "mode": "assoc_bool",
+      "answer_type": "BOOL",
+      "instances": 1047,
+      "records": 8376,
+      "supported": 349,
+      "refuted": 349,
+      "insufficient": 349,
+      "insufficient_subtypes": {
+        "not_locatable": 120,
+        "underpowered": 229
+      },
+      "negated": 349,
+      "reoriented": 0,
+      "distinct_cores": 698,
+      "distinct_facts": 698,
+      "decisive_distinct_facts": 349,
+      "gold_n": {
+        "q25": 102.0,
+        "q50": 195.0,
+        "q75": 266.0,
+        "min": 56,
+        "max": 465
+      },
+      "positional_coverage": 0.0
+    },
+    "C-V3": {
+      "level": "vaccine",
+      "family": "pairwise",
+      "mode": "cooc_modal_bool",
+      "answer_type": "BOOL",
+      "instances": 522,
+      "records": 4176,
+      "supported": 174,
+      "refuted": 174,
+      "insufficient": 174,
+      "insufficient_subtypes": {
+        "not_locatable": 58,
+        "sparse": 58,
+        "underpowered": 58
+      },
+      "negated": 174,
+      "reoriented": 0,
+      "distinct_cores": 348,
+      "distinct_facts": 348,
+      "decisive_distinct_facts": 174,
+      "gold_n": {
+        "q25": 13.0,
+        "q50": 23.0,
+        "q75": 43.0,
+        "min": 1,
+        "max": 213
+      },
+      "positional_coverage": 0.889
+    },
+    "F-R1": {
+      "level": "report",
+      "family": "first_last",
+      "mode": "rep_first_choice",
+      "answer_type": "CHOICE",
+      "instances": 600,
+      "records": 4800,
+      "supported": 300,
+      "refuted": 300,
+      "insufficient": 0,
+      "insufficient_subtypes": {},
+      "negated": 0,
+      "reoriented": 300,
+      "distinct_cores": 300,
+      "distinct_facts": 300,
+      "decisive_distinct_facts": 300,
+      "gold_n": null,
+      "positional_coverage": 0.0
+    },
+    "F-R2": {
+      "level": "report",
+      "family": "first_last",
+      "mode": "rep_last_choice",
+      "answer_type": "CHOICE",
+      "instances": 600,
+      "records": 4800,
+      "supported": 300,
+      "refuted": 300,
+      "insufficient": 0,
+      "insufficient_subtypes": {},
+      "negated": 0,
+      "reoriented": 300,
+      "distinct_cores": 300,
+      "distinct_facts": 300,
+      "decisive_distinct_facts": 300,
+      "gold_n": null,
+      "positional_coverage": 0.0
+    },
+    "F-R3": {
+      "level": "report",
+      "family": "first_last",
+      "mode": "rep_first_bool",
+      "answer_type": "BOOL",
+      "instances": 600,
+      "records": 4800,
+      "supported": 300,
+      "refuted": 300,
+      "insufficient": 0,
+      "insufficient_subtypes": {},
+      "negated": 0,
+      "reoriented": 300,
+      "distinct_cores": 300,
+      "distinct_facts": 300,
+      "decisive_distinct_facts": 300,
+      "gold_n": null,
+      "positional_coverage": 0.0
+    },
+    "F-V1": {
+      "level": "vaccine",
+      "family": "first_last",
+      "mode": "first_choice",
+      "answer_type": "CHOICE",
+      "instances": 102,
+      "records": 816,
+      "supported": 34,
+      "refuted": 34,
+      "insufficient": 34,
+      "insufficient_subtypes": {
+        "not_locatable": 12,
+        "sparse": 11,
+        "underpowered": 11
+      },
+      "negated": 0,
+      "reoriented": 34,
+      "distinct_cores": 68,
+      "distinct_facts": 68,
+      "decisive_distinct_facts": 34,
+      "gold_n": {
+        "q25": 11.0,
+        "q50": 14.0,
+        "q75": 19.0,
+        "min": 1,
+        "max": 45
+      },
+      "positional_coverage": 0.912
+    },
+    "F-V2": {
+      "level": "vaccine",
+      "family": "first_last",
+      "mode": "last_choice",
+      "answer_type": "CHOICE",
+      "instances": 138,
+      "records": 1104,
+      "supported": 46,
+      "refuted": 46,
+      "insufficient": 46,
+      "insufficient_subtypes": {
+        "not_locatable": 16,
+        "sparse": 15,
+        "underpowered": 15
+      },
+      "negated": 0,
+      "reoriented": 46,
+      "distinct_cores": 92,
+      "distinct_facts": 92,
+      "decisive_distinct_facts": 46,
+      "gold_n": {
+        "q25": 12.0,
+        "q50": 14.0,
+        "q75": 21.75,
+        "min": 2,
+        "max": 55
+      },
+      "positional_coverage": 0.913
+    },
+    "F-V3": {
+      "level": "vaccine",
+      "family": "first_last",
+      "mode": "first_bool",
+      "answer_type": "BOOL",
+      "instances": 102,
+      "records": 816,
+      "supported": 34,
+      "refuted": 34,
+      "insufficient": 34,
+      "insufficient_subtypes": {
+        "not_locatable": 12,
+        "sparse": 11,
+        "underpowered": 11
+      },
+      "negated": 0,
+      "reoriented": 34,
+      "distinct_cores": 68,
+      "distinct_facts": 68,
+      "decisive_distinct_facts": 34,
+      "gold_n": {
+        "q25": 11.0,
+        "q50": 14.0,
+        "q75": 19.0,
+        "min": 1,
+        "max": 45
+      },
+      "positional_coverage": 0.912
+    },
+    "P-M2": {
+      "level": "multi",
+      "family": "pairwise",
+      "mode": "multi_dir_precedes",
+      "answer_type": "CHOICE",
+      "instances": 87,
+      "records": 696,
+      "supported": 29,
+      "refuted": 29,
+      "insufficient": 29,
+      "insufficient_subtypes": {
+        "not_locatable": 10,
+        "sparse": 10,
+        "underpowered": 9
+      },
+      "negated": 0,
+      "reoriented": 29,
+      "distinct_cores": 58,
+      "distinct_facts": 58,
+      "decisive_distinct_facts": 29,
+      "gold_n": {
+        "q25": 16.0,
+        "q50": 21.5,
+        "q75": 33.75,
+        "min": 1,
+        "max": 82
+      },
+      "positional_coverage": 0.897
+    },
+    "P-R1": {
+      "level": "report",
+      "family": "pairwise",
+      "mode": "rep_dir_bool",
+      "answer_type": "BOOL",
+      "instances": 600,
+      "records": 4800,
+      "supported": 300,
+      "refuted": 300,
+      "insufficient": 0,
+      "insufficient_subtypes": {},
+      "negated": 0,
+      "reoriented": 300,
+      "distinct_cores": 300,
+      "distinct_facts": 300,
+      "decisive_distinct_facts": 300,
+      "gold_n": null,
+      "positional_coverage": 0.0
+    },
+    "P-R2": {
+      "level": "report",
+      "family": "pairwise",
+      "mode": "rep_dir_choice",
+      "answer_type": "CHOICE",
+      "instances": 600,
+      "records": 4800,
+      "supported": 300,
+      "refuted": 300,
+      "insufficient": 0,
+      "insufficient_subtypes": {},
+      "negated": 0,
+      "reoriented": 300,
+      "distinct_cores": 300,
+      "distinct_facts": 300,
+      "decisive_distinct_facts": 300,
+      "gold_n": null,
+      "positional_coverage": 0.0
+    },
+    "P-V1": {
+      "level": "vaccine",
+      "family": "pairwise",
+      "mode": "dir_bool",
+      "answer_type": "BOOL",
+      "instances": 501,
+      "records": 4008,
+      "supported": 167,
+      "refuted": 167,
+      "insufficient": 167,
+      "insufficient_subtypes": {
+        "not_locatable": 56,
+        "sparse": 56,
+        "underpowered": 55
+      },
+      "negated": 0,
+      "reoriented": 167,
+      "distinct_cores": 334,
+      "distinct_facts": 334,
+      "decisive_distinct_facts": 167,
+      "gold_n": {
+        "q25": 12.0,
+        "q50": 17.0,
+        "q75": 27.0,
+        "min": 1,
+        "max": 120
+      },
+      "positional_coverage": 0.894
+    },
+    "P-V2": {
+      "level": "vaccine",
+      "family": "pairwise",
+      "mode": "antecedent_bool",
+      "answer_type": "BOOL",
+      "instances": 2253,
+      "records": 18024,
+      "supported": 751,
+      "refuted": 751,
+      "insufficient": 751,
+      "insufficient_subtypes": {
+        "not_locatable": 251,
+        "sparse": 250,
+        "underpowered": 250
+      },
+      "negated": 0,
+      "reoriented": 751,
+      "distinct_cores": 1502,
+      "distinct_facts": 1153,
+      "decisive_distinct_facts": 608,
+      "gold_n": {
+        "q25": 16.0,
+        "q50": 27.0,
+        "q75": 42.0,
+        "min": 1,
+        "max": 120
+      },
+      "positional_coverage": 0.899
+    },
+    "P-V3": {
+      "level": "vaccine",
+      "family": "pairwise",
+      "mode": "dir_choice",
+      "answer_type": "CHOICE",
+      "instances": 501,
+      "records": 4008,
+      "supported": 167,
+      "refuted": 167,
+      "insufficient": 167,
+      "insufficient_subtypes": {
+        "not_locatable": 56,
+        "sparse": 56,
+        "underpowered": 55
+      },
+      "negated": 0,
+      "reoriented": 167,
+      "distinct_cores": 334,
+      "distinct_facts": 334,
+      "decisive_distinct_facts": 167,
+      "gold_n": {
+        "q25": 12.0,
+        "q50": 17.0,
+        "q75": 27.0,
+        "min": 1,
+        "max": 120
+      },
+      "positional_coverage": 0.894
+    },
+    "P-V4": {
+      "level": "vaccine",
+      "family": "pairwise",
+      "mode": "pairpair_bool",
+      "answer_type": "BOOL",
+      "instances": 8571,
+      "records": 68568,
+      "supported": 2857,
+      "refuted": 2857,
+      "insufficient": 2857,
+      "insufficient_subtypes": {
+        "not_locatable": 953,
+        "sparse": 952,
+        "underpowered": 952
+      },
+      "negated": 0,
+      "reoriented": 2857,
+      "distinct_cores": 5714,
+      "distinct_facts": 4163,
+      "decisive_distinct_facts": 2022,
+      "gold_n": {
+        "q25": 16.0,
+        "q50": 25.0,
+        "q75": 35.0,
+        "min": 1,
+        "max": 120
+      },
+      "positional_coverage": 0.898
+    },
+    "S-R1": {
+      "level": "report",
+      "family": "sequence",
+      "mode": "rep_seq_bool",
+      "answer_type": "BOOL",
+      "instances": 600,
+      "records": 4800,
+      "supported": 300,
+      "refuted": 300,
+      "insufficient": 0,
+      "insufficient_subtypes": {},
+      "negated": 0,
+      "reoriented": 300,
+      "distinct_cores": 300,
+      "distinct_facts": 300,
+      "decisive_distinct_facts": 300,
+      "gold_n": null,
+      "positional_coverage": 0.0
+    },
+    "S-V1": {
+      "level": "vaccine",
+      "family": "sequence",
+      "mode": "seq_bool",
+      "answer_type": "BOOL",
+      "instances": 6,
+      "records": 48,
+      "supported": 2,
+      "refuted": 2,
+      "insufficient": 2,
+      "insufficient_subtypes": {
+        "not_locatable": 1,
+        "sparse": 1
+      },
+      "negated": 0,
+      "reoriented": 2,
+      "distinct_cores": 4,
+      "distinct_facts": 4,
+      "decisive_distinct_facts": 2,
+      "gold_n": {
+        "q25": 5.0,
+        "q50": 5.0,
+        "q75": 8.0,
+        "min": 3,
+        "max": 8
+      },
+      "positional_coverage": 1.0
+    },
+    "S-V3": {
+      "level": "vaccine",
+      "family": "sequence",
+      "mode": "modal_choice",
+      "answer_type": "CHOICE",
+      "instances": 6,
+      "records": 48,
+      "supported": 2,
+      "refuted": 2,
+      "insufficient": 2,
+      "insufficient_subtypes": {
+        "not_locatable": 1,
+        "sparse": 1
+      },
+      "negated": 0,
+      "reoriented": 2,
+      "distinct_cores": 4,
+      "distinct_facts": 4,
+      "decisive_distinct_facts": 2,
+      "gold_n": {
+        "q25": 5.0,
+        "q50": 5.0,
+        "q75": 8.0,
+        "min": 3,
+        "max": 8
+      },
+      "positional_coverage": 1.0
+    }
+  }
+}

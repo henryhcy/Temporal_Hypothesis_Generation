@@ -54,6 +54,11 @@ from temporal_hypo.generation.templates import Group, supports_negation
 from temporal_hypo.generation.vaccines import VACCINES, VACCINE_PAIRS
 
 # Provisional enumeration breadth (logged pilot knobs; see 04_corpus_survey).
+# Enumeration caps -- a DOCUMENTED sampling policy (decisions.md 2026-09-04,
+# issue 22): hypotheses are posed over each cohort's K most frequent event
+# terms, bounding the pair/triple combinatorics and favouring well-powered
+# common events. The release ships 17-97% of full-enumeration decisive supply
+# per group; changing K is a dataset-composition change, never a silent tweak.
 K_PAIR = 25
 K_TRIPLE = 16
 MAX_REPORT_CORES = 300
@@ -540,10 +545,19 @@ def _report_combo(tmap: dict, present: list, mode: str) -> tuple | None:
     return None
 
 
+REPORT_SAMPLE_SEED = 20260904  # issue 23 fix -- deterministic shuffle seed
+
+
 def _enum_report(index: CorpusIndex, group: Group, mode: str) -> list[ViableCore]:
     cores: list[ViableCore] = []
-    # iterate reports deterministically by id; bound total cores per group
-    for vid in sorted(index.report_terms):
+    # Issue 23 fix (2026-09-04): sample reports in a SEEDED SHUFFLED order
+    # instead of ascending id. sorted() took the 300 lowest VAERS ids -- a
+    # chronological window predating Janssen's authorisation (8.8% Janssen at
+    # the report tier vs 36.8% of the corpus). A seeded shuffle makes the cap's
+    # composition match the corpus in expectation and stays reproducible.
+    vids = sorted(index.report_terms)
+    random.Random(REPORT_SAMPLE_SEED).shuffle(vids)
+    for vid in vids:
         if len(cores) >= MAX_REPORT_CORES:
             break
         tmap = index.report_terms[vid]

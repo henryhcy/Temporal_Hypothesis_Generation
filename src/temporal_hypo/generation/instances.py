@@ -149,7 +149,9 @@ def build_records(
         # claim.
         "p_claim": _round(sig.p_claim, 6),
         "p_opposite": _round(sig.p_opposite, 6),
-        # the ASSERTED claim's verdict; must equal gold_verdict (asserted below)
+        # the ASSERTED claim's verdict; must equal gold_verdict (asserted below).
+        # Issue 25 fixed 2026-09-04: the report tier is now oriented too (v1
+        # carried the CANONICAL verdict there on 1,800 mirrored refuted rows).
         "test_verdict": sig.decision.verdict if sig.decision else None,
         "insufficient_subtype": sig.decision.subtype if sig.decision else None,
         # provenance: the CORE's canonical-orientation verdict, deliberately

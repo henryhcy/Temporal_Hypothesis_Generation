@@ -80,17 +80,30 @@ def _fewshot_pairs(release, exclude_ids, k_per_mode, seed):
 
 
 _KEY_ENV = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
+_ASKED_KEYS: dict = {}  # provider -> key typed at launch (never in env or history)
+
+
+def _resolve_api_key(provider, args):
+    if args.ask_api_key:
+        if provider not in _ASKED_KEYS:
+            import getpass
+
+            _ASKED_KEYS[provider] = getpass.getpass(f"{provider} API key (hidden): ").strip()
+            if not _ASKED_KEYS[provider]:
+                raise SystemExit("empty API key")
+        return _ASKED_KEYS[provider]
+    env = args.api_key_env or _KEY_ENV[provider]
+    key = os.environ.get(env)
+    if not key:
+        raise SystemExit(f"--provider {provider} needs the {env} environment variable "
+                         "(or pass --ask-api-key to type it at launch)")
+    return key
 
 
 def _make_client(provider, args, cache):
     from temporal_hypo.framework.extract.llm_client import client_for
 
-    api_key = None
-    if provider in _KEY_ENV:
-        api_key = os.environ.get(_KEY_ENV[provider])
-        if not api_key:
-            raise SystemExit(f"--provider {provider} needs the {_KEY_ENV[provider]} "
-                             "environment variable")
+    api_key = _resolve_api_key(provider, args) if provider in _KEY_ENV else None
     return client_for(provider, api_key=api_key,
                       base_url=args.ollama_url if provider == "ollama" else None,
                       cache=cache, timeout_s=args.llm_timeout, num_ctx=args.num_ctx)
@@ -184,6 +197,12 @@ def main() -> None:
                    help="backend for the LLM stages (API keys read from ANTHROPIC_API_KEY / OPENAI_API_KEY)")
     p.add_argument("--sql-provider", choices=("ollama", "anthropic", "openai"), default=None,
                    help="backend for the SQL stage only (defaults to --provider)")
+    p.add_argument("--ask-api-key", action="store_true",
+                   help="prompt for the API key at launch (hidden input; never touches env, "
+                        "shell history, or disk)")
+    p.add_argument("--api-key-env", default=None,
+                   help="read the API key from this env var instead of "
+                        "ANTHROPIC_API_KEY/OPENAI_API_KEY")
     p.add_argument("--num-ctx", type=int, default=8192)
     p.add_argument("--llm-timeout", type=float, default=300.0)
     p.add_argument("--k-shot", type=int, default=3)
@@ -205,7 +224,7 @@ def main() -> None:
 
     subset_ids = None
     if args.subset == "eval_core":
-        subset_path = _REPO_ROOT / "results" / "subsets" / f"eval_core_v1_pg{args.per_group}_s{args.seed}.json"
+        subset_path = _REPO_ROOT / "results" / "subsets" /             f"eval_core_{args.release.name}_pg{args.per_group}_s{args.seed}.json"
         if subset_path.exists():
             subset_ids = read_subset(subset_path)
         else:

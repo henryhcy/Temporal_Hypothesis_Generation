@@ -299,7 +299,18 @@ def oriented_significance(facts, *, alpha: float = sig.ALPHA) -> Significance:
     """
     core = facts.core
     if core.report_id is not None:
-        return core_significance(core, alpha=alpha)   # deterministic, no tails
+        s = core_significance(core, alpha=alpha)   # deterministic, no tails
+        # Issue 25 fix (2026-09-04): a report-tier instance that asserts the
+        # MIRROR of the observed relation (flip_kind direction/option/order)
+        # carries the mirrored verdict. The tier is two-class, so the mirror is
+        # exact; C-R1's plain-posed refuted rows (flip_kind None) are untouched.
+        mirrored = facts.flip_kind is not None or facts.negated
+        if mirrored and s.decision is not None and s.decision.verdict in (
+                vd.SUPPORTED if hasattr(vd, "SUPPORTED") else "supported",
+                "supported", "refuted"):
+            flip = {"supported": "refuted", "refuted": "supported"}
+            s.decision = vd.deterministic(flip[s.decision.verdict])
+        return s
 
     m = core.mode
     if m in _MODAL_RUNNER:

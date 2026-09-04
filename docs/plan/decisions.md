@@ -2453,3 +2453,45 @@ conditioning wrong on 41.5% of records — `11_model_pipeline.md` §10.3).
   json_schema structured output, backoff on 429/5xx), `client_for` factory,
   `run_eval.py --provider/--sql-provider` (keys from env), and model provenance
   (Ollama digest + version) recorded in every run's `config.json`.
+
+
+## DECIDED: enumeration caps are a documented design choice (issue 22, 2026-09-04)
+
+`K_PAIR = 25` / `K_TRIPLE = 16` (`generation/cores.py`) stay at their v1 values:
+hypotheses are posed over each cohort's 25 most frequent event terms (16 for
+triples). This is now a DOCUMENTED sampling policy, not a hidden knob: it bounds
+the enumeration combinatorially and biases the benchmark toward well-powered,
+clinically common events. The release therefore ships 17-97% of the decisive
+supply per group (measured 2026-08-31); full enumeration is revisited only with
+the post-pilot scale-up (Part A distribution report), never as a silent change.
+Decided at the 2026-09-04 dataset-stabilization review.
+
+
+## v1.1 REGENERATED: issues 23 and 25 fixed (2026-09-04)
+
+`data/release/v1.1` supersedes v1 as the working release; v1 stays committed and
+immutable. Same generator settings (seed 0, target 300), same totals — 18,492
+instances / 147,936 records / 8,964 facts — with two confined fixes:
+
+- **Issue 23 (report-tier vaccine skew): FIXED.** `_enum_report` samples reports
+  in a seeded-shuffle order (`REPORT_SAMPLE_SEED = 20260904`) instead of the 300
+  chronologically lowest VAERS ids. Measured on v1.1: Janssen 35.1% / Moderna
+  31.2% / Pfizer 33.8% of report-tier reports vs corpus 36.8/31.0/32.2 (v1 had
+  Janssen at 8.8%). 382 distinct reports; C-R1's natural split moved to 193/107.
+- **Issue 25 (`test_verdict` canonical at report tier): FIXED.**
+  `oriented_significance` now mirrors the deterministic verdict when the
+  instance asserts the flipped claim (`flip_kind` direction/option/order);
+  C-R1's plain-posed refuted rows are untouched, exactly matching the measured
+  v1 crosstab. Measured on v1.1: `test_verdict == gold_verdict` on ALL 18,492
+  rows (v1: 1,800 mismatches).
+
+Verification at regeneration: the artifact checks above, and **B0 oracle = exactly
+100% over all 147,936 v1.1 records** (verdict/class-macro/group-macro 1.0,
+retrieval EM 1.0, p-agreement 1.0, 2,292 underdetermined all expected, 466 s;
+`results/oracle_v1.1`). Exhaustive `validate_gold --sample 0` was still running
+at commit time; its result is appended below when it lands. Cohort-tier
+instances are unchanged from v1 (only report-tier ids moved: the v1.1 smoke
+slice shares 177/200 ids with v1's). Subset files are now release-versioned
+(`eval_core_v1.1_pg90_s0.json`, `smoke_200_v1.1_s0.json`); `run_eval.py` derives
+the subset filename from the release directory. Issue 24 (wording) is
+independent of this regeneration: a later reword is text-only and id-stable.

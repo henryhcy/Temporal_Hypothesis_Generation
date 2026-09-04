@@ -68,7 +68,9 @@ agent baselines (M3–M5) are NOT built. See
 `09_next_steps.md` for the priority order ~~and the one decision currently blocking
 the roster (the multi tier is P-M2 alone)~~ (**2026-09-01:** that decision was made
 on 2026-08-14 — P-M2 ships alone; the 20-group roster is FINAL and the v1 dataset is
-generated).
+generated). **2026-09-04: the working release is `data/release/v1.1`** — issues
+23 (report-tier vaccine skew) and 25 (`test_verdict`) fixed by regeneration;
+v1 stays committed and immutable; B0 re-verified at exactly 100% on v1.1.
 
 A core must actually exist in the data (the events genuinely co-occur and the
 denominator clears the min-n gate) before it can yield a hypothesis. Never build

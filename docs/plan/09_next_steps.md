@@ -24,7 +24,7 @@ record of current settings, pending work and known defects.
 |--:|---|---|---|---|
 | ~~1~~ | ~~Multi tier~~ | — | **DECIDED 2026-08-14: ship P-M2 alone** | `decisions.md` "Dataset-creation decision batch" |
 | ~~2~~ | ~~Roster migration A~~ | — | **CLOSED 2026-08-14: COMPLETE** — six groups removed; P-V2/P-V4/C-V2 shipped, all three cleared their 2000-round screens at p_perm 0.0005 | `decisions.md` "v1 DATASET GENERATED" |
-| 3 | Eval harness — architecture, metrics, baselines | build | **designed + M1/M2 BUILT 2026-09-01** (`11_model_pipeline.md`; branch `model-pipeline-design`): B0 oracle = exactly 100% over all 147,936 records, 2,292 underdetermined as expected; local 7B smoke runs scored (§10.3: extraction 0.740, text-to-SQL 0.545, full local 0.292 — S2 is the weak stage); M3–M5 (fine-tuned extractor + split, in-context/agent baselines, write-up hooks) not started | `11_model_pipeline.md` §10.3 |
+| 3 | Eval harness — architecture, metrics, baselines | build | **designed + M1/M2 BUILT 2026-09-01** (`11_model_pipeline.md`; branch `model-pipeline-design`): B0 oracle = exactly 100% over all 147,936 records, 2,292 underdetermined as expected; local 7B smoke runs scored (§10.3: extraction 0.740→0.928 with hints, text-to-SQL 0.545, full local 0.292); **2026-09-03: API adapters built, claude-opus-5 runs scored** — S2-only 0.975, mixed local-S1+API-S2 0.903 (S2 was a capability gap, not benchmark impossibility); M3–M5 not started; **experiment queue frozen 2026-09-04, see §1a below**, pending dataset stabilization (issues 22–25) | `11_model_pipeline.md` §10.3 |
 | ~~4~~ | ~~Confidence tag~~ | — | **CLOSED 2026-08-14 by removal**: tag + width fields leave the release; the Wilson CI stays | `decisions.md` batch 2 |
 | ~~5~~ | ~~not_locatable sourcing~~ | — | **CLOSED 2026-08-14: implemented** — `enumerate_false_cores` injects seeded zero-joint combinations at balance time, ceil(S/3)+3 per non-report group | `decisions.md` batch 2 |
 | ~~6~~ | ~~Report-level equal thirds~~ | — | **CLOSED 2026-08-14**: dissolved — report level is two-class by design, implemented with issue 7 | `decisions.md` batch 2 |
@@ -43,10 +43,10 @@ record of current settings, pending work and known defects.
 | 19 | Six candidate template families screened; 5 clear their nulls | **decision** | open — adopt R1/R3 + N2 + N1 + R5 (+N3/N4 narrowly)? Blocked behind issue 14 | `10_family_expansion.md` (branch `template-family-expansion`) |
 | 20 | Single-event position claims cannot use a 0.5 null | **known defect (new families only)** | measured — stage populations are uneven, structural rate 0.5327; the fix needs `_null_ref(mode, core)` | `10_family_expansion.md` §4.3, §4.5 |
 | 21 | Cross-cohort comparison of a single-event position is invalid | **method finding** | measured — the label-shuffle null cannot absorb per-core report geometry (37 of 124 cores carry a >5pp structural gap); affects T-V3, K-V5, X6, X7, M-H | `10_family_expansion.md` §4.5 |
-| 22 | Top-K enumeration ceiling (`K_PAIR`/`K_TRIPLE`) is an undocumented pilot knob; release ships 17–97% of available decisive supply | **decision** | open — regenerate with `--full`? needs a per-group cap decided jointly, since the surplus sits in the dominant groups | `open_questions.md` "Enumeration breadth" |
-| 23 | `MAX_REPORT_CORES` takes the 300 lowest report ids = a chronological prefix; Janssen is 8.8% of report-level instances vs 36.8% of corpus | **defect** | open — fix confined to `_enum_report` (stratify or shuffle); needs regeneration | `open_questions.md` "Enumeration breadth" |
-| 24 | P-V2/P-V4 wording says "more often" (count language) in the original/media/clinical registers while the statistic is a Fisher RATE comparison; count-order and rate-order disagree on **P-V2 273 / P-V4 2,194 instances** (C-V2 467 / P-M2 8 are rate-worded, so unaffected). Same defect class as issue 13 | **decision** | open 2026-09-01 — reword or accept as documented ambiguity. **Audit DONE 2026-09-01** (`11a_template_faithfulness_audit.md`, all 184 strings: 70 FAITHFUL / 65 NOTE / 38 AMBIGUOUS / 1 MISMATCH / 10 underdetermined-input; counts reproduced exactly; NEW: C-V2 clinical `question_negated` "unassociated" mismatch, 145 instances; P-V2 clinical "than {C}" second parse, 1,059; rewordings proposed in its §4) — the reword-vs-accept decision remains; confounds register-invariance on P-V2/P-V4 | `11a_template_faithfulness_audit.md`; `open_questions.md` "Framework" |
-| 25 | `test_verdict` equals the CANONICAL verdict at report tier (`oriented_significance` returns `core_significance` there), so it disagrees with `gold_verdict` on exactly **1,800 refuted report-level rows** (300 each in P-R1, P-R2, S-R1, F-R1, F-R2, F-R3). No gold label is wrong; the provenance field is | **defect** | open 2026-09-01 — fix confined to `answers.py::oriented_significance` report branch + `instances.py` comment; needs regeneration or a field patch; the harness never reads `test_verdict` | `decisions.md` "model pipeline / eval-harness architecture" (2026-09-01) |
+| 22 | Top-K enumeration ceiling (`K_PAIR`/`K_TRIPLE`) is an undocumented pilot knob; release ships 17–97% of available decisive supply | **decision** | **DECIDED 2026-09-04: keep v1 caps, document as design choice** (top-25/top-16 most frequent terms per cohort); full enumeration revisited only at post-pilot scale-up | `decisions.md` 2026-09-04 |
+| 23 | `MAX_REPORT_CORES` takes the 300 lowest report ids = a chronological prefix; Janssen is 8.8% of report-level instances vs 36.8% of corpus | **defect** | **FIXED 2026-09-04 in v1.1** — seeded shuffle (`REPORT_SAMPLE_SEED`); Janssen 8.8% → 35.1% at the report tier | `decisions.md` "v1.1 REGENERATED" |
+| 24 | P-V2/P-V4 wording says "more often" (count language) in the original/media/clinical registers while the statistic is a Fisher RATE comparison; count-order and rate-order disagree on **P-V2 273 / P-V4 2,194 instances** (C-V2 467 / P-M2 8 are rate-worded, so unaffected). Same defect class as issue 13 | **decision** | open 2026-09-01 — reword or accept as documented ambiguity. **Audit DONE 2026-09-01** (`11a_template_faithfulness_audit.md`, all 184 strings: 70 FAITHFUL / 65 NOTE / 38 AMBIGUOUS / 1 MISMATCH / 10 underdetermined-input; counts reproduced exactly; NEW: C-V2 clinical `question_negated` "unassociated" mismatch, 145 instances; P-V2 clinical "than {C}" second parse, 1,059; rewordings proposed in its §4) — the reword-vs-accept decision remains — **DEFERRED by user 2026-09-04 ("think more, come back later")**; confounds register-invariance on P-V2/P-V4. NOTE: a later reword is TEXT-ONLY (ids/labels survive), so it does not block the v1.1 regeneration for issues 23/25 | `11a_template_faithfulness_audit.md`; `open_questions.md` "Framework" |
+| 25 | `test_verdict` equals the CANONICAL verdict at report tier (`oriented_significance` returns `core_significance` there), so it disagrees with `gold_verdict` on exactly **1,800 refuted report-level rows** (300 each in P-R1, P-R2, S-R1, F-R1, F-R2, F-R3). No gold label is wrong; the provenance field is | **defect** | **FIXED 2026-09-04 in v1.1** — report branch now oriented; `test_verdict == gold_verdict` on all 18,492 v1.1 rows (v1 keeps its 1,800; harness still never reads the field) | `decisions.md` "v1.1 REGENERATED" |
 | 26 | P3 paraphrase probe: may an eval-only paraphrase set be LLM-authored (never released as benchmark text; `CLAUDE.md` "Mechanical generation only" governs benchmark text), hand-written, or skipped? | **decision** | open 2026-09-01 — user decision; P3 is the only protocol that evidences out-of-template generalization; nothing in M1/M2 depends on it | `open_questions.md` "Framework"; `11_model_pipeline.md` §4 |
 
 Items 1–12 contain no correctness bug in generated data: `validate_gold.py` clears
@@ -60,6 +60,23 @@ each other, so no invariant family covers "does the question the instance ASKS m
 the quantity it SCORES". That class of defect has now appeared three times (S-V1/F-V3
 on 07-13, F-V2/F-R2 on 08-12, C-V3 today) and is found only by reading a rendered
 instance beside its statistic. Worth a standing review step, not another invariant.
+
+## §1a Experiment queue (frozen 2026-09-04, run AFTER the dataset is stabilized)
+
+Priority order agreed at the 09-03/09-04 review; every strong number so far is on
+the SCAFFOLDED task (mode catalogue, DDL, conditioning prose, floors all given,
+in-distribution text) — these runs are what turn it into a paper:
+
+1. **Single-pass (B3) + in-context (B1) baselines with a frontier model** — the
+   motivating claim. If frontier fails without the decomposition, the framework
+   is the story; if it passes, the benchmark is too easy and we need to know.
+2. **P1 (register-holdout) and P2 (group-holdout) protocols** with the prompted
+   extractor (constrain the k-shot pool) — the only generalization evidence.
+3. **Frontier failure analysis** — categorize smoke-4/5 residuals (genuine
+   hardness vs issue-24 ambiguity) for the error-analysis section.
+4. Fill the model×stage grid: opus-S1-only and opus-both (~$20).
+5. Full `eval_core` runs for the paper table (~$40 at smoke-4 rates).
+6. M3 fine-tune only if the above leaves it a role.
 
 ## Where the code now stands
 

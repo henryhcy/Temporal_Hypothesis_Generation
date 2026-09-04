@@ -16,7 +16,8 @@ script in the harness needs the same ones, so they live here once:
 - the manifest ``dataset_statistics.json["files"]`` records the sha256 of the
   UNCOMPRESSED files; a run's provenance is those hashes, so loading verifies
   the bytes it actually parsed against them (streaming, one pass);
-- ``test_verdict`` is wrong on 1,800 report-tier refuted rows (issue 25). The
+- ``test_verdict`` is wrong on 1,800 report-tier refuted rows in v1 (issue 25;
+  FIXED in v1.1, where the count is 0). The
   harness's gold label is ``gold_verdict``; the loader counts the disagreement
   into ``Release.manifest["issue25_test_verdict_mismatch"]`` (informational) and
   then DROPS the field, so no downstream code can read it by accident.
