@@ -451,3 +451,27 @@ def test_openai_fallback_meta_records_what_was_sent(monkeypatch, tmp_path):
     f = next((tmp_path / "c").glob("*.json"))
     meta = json.loads(f.read_text(encoding="utf-8"))["meta"]
     assert meta["temperature"] is None and meta["max_tokens"] == 8192
+
+
+def test_temperature_rejection_is_remembered_per_model(monkeypatch):
+    posts = []
+
+    def fake_urlopen(req, timeout=None):
+        pl = json.loads(req.data.decode("utf-8"))
+        posts.append(pl)
+        if "temperature" in pl:
+            raise urllib.error.HTTPError(
+                req.full_url, 400, "bad", None,
+                io.BytesIO(b'{"error": {"message": "temperature is not supported"}}'))
+        reply = {"content": [{"type": "text", "text": "ok"}],
+                 "stop_reason": "end_turn", "usage": {}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    c = AnthropicClient("k")
+    c.complete(MSGS, schema=None, model="claude-x")
+    c.complete([{"role": "user", "content": "different"}], schema=None, model="claude-x")
+    # first call pays the 400 + retry; the second drops temperature up front
+    assert len(posts) == 3
+    assert "temperature" in posts[0] and "temperature" not in posts[1]
+    assert "temperature" not in posts[2]

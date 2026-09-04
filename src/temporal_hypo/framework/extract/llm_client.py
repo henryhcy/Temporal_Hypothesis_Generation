@@ -329,6 +329,7 @@ class AnthropicClient:
         self.cache = cache
         self.timeout_s = float(timeout_s)
         self.min_max_tokens = int(min_max_tokens)
+        self._sampling_rejected: set[str] = set()  # models that 400 on temperature
 
     def complete(self, messages: list[dict], *, schema: dict | None, model: str,
                  temperature: float = 0.0, max_tokens: int = 800) -> Completion:
@@ -352,6 +353,8 @@ class AnthropicClient:
             payload["tool_choice"] = {"type": "tool", "name": _STRUCTURED_TOOL}
         url = f"{self.base_url}/v1/messages"
         hdrs = {"x-api-key": self.api_key, "anthropic-version": _ANTHROPIC_VERSION}
+        if model in self._sampling_rejected:
+            payload.pop("temperature", None)
         t0 = time.perf_counter()
         try:
             d = _post_json(url, payload, hdrs, timeout_s=self.timeout_s, provider="Anthropic")
@@ -359,6 +362,7 @@ class AnthropicClient:
             # current Claude models reject sampling params outright (HTTP 400)
             if _rejected_param(exc, payload, "temperature"):
                 payload.pop("temperature")
+                self._sampling_rejected.add(model)
                 d = _post_json(url, payload, hdrs, timeout_s=self.timeout_s,
                                provider="Anthropic")
             else:
@@ -408,6 +412,7 @@ class OpenAIClient:
         self.cache = cache
         self.timeout_s = float(timeout_s)
         self.min_max_tokens = int(min_max_tokens)
+        self._sampling_rejected: set[str] = set()  # models that 400 on temperature
 
     def complete(self, messages: list[dict], *, schema: dict | None, model: str,
                  temperature: float = 0.0, max_tokens: int = 800) -> Completion:
@@ -428,12 +433,15 @@ class OpenAIClient:
             }
         url = f"{self.base_url}/v1/chat/completions"
         hdrs = {"Authorization": f"Bearer {self.api_key}"}
+        if model in self._sampling_rejected:
+            payload.pop("temperature", None)
         t0 = time.perf_counter()
         try:
             d = _post_json(url, payload, hdrs, timeout_s=self.timeout_s, provider="OpenAI")
         except ProviderError as exc:
             if _rejected_param(exc, payload, "temperature"):
                 payload.pop("temperature")
+                self._sampling_rejected.add(model)
                 d = _post_json(url, payload, hdrs, timeout_s=self.timeout_s, provider="OpenAI")
             else:
                 raise

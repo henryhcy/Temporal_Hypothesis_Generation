@@ -761,6 +761,8 @@ rows are placeholders. Verdict columns are over the answerable records of the ru
 | smoke-1b (`results/smoke200_llm-s1_compiler_tierhint`, 1,330 s) | `llm-s1+compiler` **+ `--tier-hint`** (one prompt line: `level` fixes the admissible modes) | blind-group | blind | same slice | 400 | **0.918** | 0.933 | 0.933 [0.894, 0.952] | 0.830 (mode 0.882) | 0.965 (EM 0.963; report_hit 0.848) | 0.000 | 0.000 | 0.924 (n=198) | 0.000 (166 pairs); twins 0.875 | 21, all unexpected → scored wrong |
 | smoke-1c (`results/smoke200_llm-s1_compiler_tierhint_routing`, 1,326 s) | `llm-s1+compiler` **+ `--tier-hint --routing-hint`** (adds the candidate-count → mode-family rule, 2026-09-02) | blind-group | blind | same slice | 400 | **0.928** | 0.926 | 0.935 [0.905, 0.956] | 0.878 (mode 0.905) | 0.947 (EM 0.944; report_hit 0.886) | 0.000 | 0.000 | 0.924 (n=198) | 0.006 (166 pairs); twins 0.917 | 12, all unexpected → scored wrong |
 | smoke-2 (`results/smoke200_rules_llm-sql`, 872 s) | `rules+llm-sql` (S1 = rules; S2 = qwen2.5-coder:7b) | blind-group | blind | same slice | 400 | **0.545** | 0.540 | 0.475 [0.446, 0.513] | 1.000 (mode 1.000) | 0.250 (EM 0.169; report_hit 1.000) | 0.071 (any 0.105) | 0.182 | 0.010 (n=198) | 0.012 (166 pairs); twins 0.833 | 0 |
+| smoke-4 (`results/smoke200_rules_api-sql`, ~36 min, ~$8.80: 1.02M in / 0.15M out) | `rules+llm-sql` (S1 = rules; **S2 = claude-opus-5** via `--sql-provider anthropic`, 2026-09-03) | blind-group | blind | same slice | 400 | **0.975** | 0.962 | 0.971 [0.936, 0.992] | 1.000 (mode 1.000) | 0.950 (EM 0.950; report_hit 0.987) | 0.000 | 0.000 | 0.960 (n=198) | 0.000 (166 pairs); twins 1.000 | 0 |
+| smoke-5 (`results/smoke200_local-s1_api-sql`, ~4 min — S1 and most SQL replayed from cache) | `llm-s1+llm-sql` **mixed: S1 = qwen2.5:7b-instruct + both hints, S2 = claude-opus-5** (2026-09-03) | blind-group | blind | same slice | 400 | **0.903** | 0.894 | 0.906 [0.867, 0.930] | 0.878 (mode 0.905) | 0.897 (EM 0.895; report_hit 0.880) | 0.000 | 0.000 | 0.874 (n=198) | 0.006 (166 pairs); twins 0.917 | 12, all unexpected → scored wrong |
 | smoke-3 (`results/smoke200_llm-s1_llm-sql`, 448 s — S1 cached from smoke-1) | `llm-s1+llm-sql` (the full local pipeline) | blind-group | blind | same slice | 400 | **0.292** | 0.300 | 0.250 [0.217, 0.286] | 0.675 (mode 0.718) | 0.228 (EM 0.149; report_hit 0.380) | 0.082 (any 0.116) | 0.227 | 0.010 (n=198) | 0.018 (166 pairs); twins 0.667 | 16, all unexpected → scored wrong |
 | full | `llm-s1+llm-sql` | blind-group | blind | eval_core (1,649 instances), original, question+claim | ≈3,300 | — | — | — | — | — | — | — | — | — | **deferred** (~2.5 h GPU; the smoke already localises the failure to S2). Run with: `PYTHONPATH=src python scripts/run_eval.py --pipeline llm-s1+llm-sql --model qwen2.5:7b-instruct --sql-model qwen2.5-coder:7b --subset eval_core --condition blind-group --procedure blind --registers original --formats question,claim --out results/full_local` (S1 replays from `results/cache/`) |
 
@@ -793,6 +795,23 @@ attribution separates them cleanly:
   to `dir_choice`), and the hint introduced a fresh regression, 7/20 P-M2 rows
   read as `rep_dir_choice` (multi tier 1.000 → 0.750). The residual S1 gap looks
   like few-shot/fine-tune territory, not more prompt rules.
+- **S2 was a model-capability gap, not benchmark impossibility** (smoke-4,
+  2026-09-03). The same text-to-SQL stage that scored 0.545 with the local 7B
+  scores **0.975** with `claude-opus-5` on identical inputs (gold claims,
+  identical prompts and executor): denominator F1 0.250 → **0.950**, invalid SQL
+  128/486 → **22/486**, conditioning wrong 41.5% → **2.5%**, `not_locatable`
+  fabrication 0.182 → **0.000**, coexist leak 0.105 → **0.000**, pair
+  contradiction 0.012 → 0.000, twins 0.833 → 1.000. The residual errors sit in
+  the same conditioning-heavy groups (F-V3/P-M2/C-V2/P-V2 at 0.90-0.91) — the
+  benchmark still discriminates at the top, but the headroom above frontier is
+  ~2.5 points, not 45. Cost ~$8.80 / 36 min for the 400-record smoke.
+- **The deployment config — local S1, frontier S2 — lands at 0.903** (smoke-5,
+  2026-09-03), almost exactly the independence product of its stages (smoke-1c
+  0.928 × smoke-4 0.975 = 0.904): at the frontier, stage errors neither compound
+  super-multiplicatively (the 7B story) nor cancel much. 37/400 verdicts were
+  "lucky" (right despite an upstream error, mostly S1 procedure fields that the
+  honoured test tolerated). The local-vs-API split costs one S1 point of
+  headroom and keeps extraction free and on-device.
 - **S2 (7B text-to-SQL) is the weak stage, two ways.** 128/486 statements fail
   outright (`sql_error`, dominated by an unqualified `vaers_id` in self-joins;
   4 `row_cap` cross-joins), and among statements that RUN, conditioning is wrong
