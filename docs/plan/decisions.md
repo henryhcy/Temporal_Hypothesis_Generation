@@ -2495,3 +2495,63 @@ slice shares 177/200 ids with v1's). Subset files are now release-versioned
 (`eval_core_v1.1_pg90_s0.json`, `smoke_200_v1.1_s0.json`); `run_eval.py` derives
 the subset filename from the release directory. Issue 24 (wording) is
 independent of this regeneration: a later reword is text-only and id-stable.
+
+---
+
+## Evidence for the issue-22 cap decision, and two environment findings (2026-09-05)
+
+### What `K_PAIR = 25` actually selects (recorded for the 2026-09-04 decision)
+Issue 22 was decided as "keep the caps and document them as a sampling policy".
+This is the measurement that documents them, because the policy is sharper than
+"the top 25 most frequent terms" makes it sound.
+
+Per cohort, the viable pair set (co-occurring >= 10) against what top-25 reaches:
+
+| cohort | viable pairs | reachable from top-25 | top-25 pairs that are NOT viable |
+|---|--:|--:|--:|
+| Pfizer | 247 | 158 (64%) | 142 / 300 |
+| Moderna | 293 | 169 (58%) | 131 / 300 |
+| Janssen | 419 | 192 (46%) | 108 / 300 |
+
+Two things follow, and both belong in any write-up of the sampling policy:
+
+1. **Roughly half of every cohort's top-25 pairs never co-occur enough to be
+   testable.** The cap does not spend its budget on 300 usable candidates; it
+   spends about 160 usable and 140 dead ones.
+2. **36-54% of the genuinely viable pairs involve a term ranked below #25**, so
+   they are unreachable at any budget under this policy.
+
+The mechanism is that FREQUENCY IS A POOR PROXY FOR TESTABILITY -- two common
+terms need not co-occur, and two mid-frequency terms often do. So the cap is not
+a neutral subsample of the fact space: it is a frequency prior on which questions
+get asked. That is defensible as a stated policy (common events are the
+clinically interesting ones), but it is not "we took a smaller sample".
+
+Janssen is the worst-covered cohort at 46%, and it is also the cohort with the
+most viable pairs -- the policy is least representative exactly where the corpus
+is richest.
+
+Related diagnostic, same measurement: for the sequence groups the default
+enumeration visits 1,680 triples and finds 2 decisive, while exhaustive
+enumeration visits 756 and finds 4. Enumerating twice the candidates for half the
+yield is the clearest single illustration of the point.
+
+### The eval harness needs SQLite >= 3.44 (issue 12, upgraded)
+The eval DB views use ORDER BY inside `group_concat`, which SQLite added in
+3.44.0. The committed `.venv` runs Python 3.9.6 linking SQLite 3.39.5, so all 108
+framework tests ERROR there while the 173 generation tests pass -- a split that
+looks like a code failure and is not. Fix on this machine:
+
+    python3.13 -m venv .venv313
+    .venv313/bin/pip install -e ".[dev]"
+
+gives Python 3.13.14 / SQLite 3.53.1, 527 passed + 5 skipped, and a working
+editable install (so `PYTHONPATH=src` is no longer required). `.gitignore` now
+covers `.venv*/`.
+
+### `sync_overleaf.py --push` can silently skip the push
+It checks for changes AFTER `git add`, so when a commit already exists but has
+not been pushed -- exactly the state the documented review-then-push workflow
+produces -- it reports "no changes to sync" and exits 0 without pushing. Hit on
+2026-08-20; worked around by pushing from the clone. Fix is to check
+`@{u}..HEAD` before returning.
