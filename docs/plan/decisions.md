@@ -2488,8 +2488,11 @@ instances / 147,936 records / 8,964 facts — with two confined fixes:
 Verification at regeneration: the artifact checks above, and **B0 oracle = exactly
 100% over all 147,936 v1.1 records** (verdict/class-macro/group-macro 1.0,
 retrieval EM 1.0, p-agreement 1.0, 2,292 underdetermined all expected, 466 s;
-`results/oracle_v1.1`). Exhaustive `validate_gold --sample 0` was still running
-at commit time; its result is appended below when it lands. Cohort-tier
+`results/oracle_v1.1`). **Exhaustive `validate_gold --sample 0` landed clean:
+43,618 realized instances, ALL CHECKS PASSED across the six invariant families
+(A evidence arithmetic, B set algebra, C conditioning, D direction, E verdict,
+F independent recompute). The dataset is FROZEN; the §1a experiment queue in
+`09_next_steps.md` is unblocked.** Cohort-tier
 instances are unchanged from v1 (only report-tier ids moved: the v1.1 smoke
 slice shares 177/200 ids with v1's). Subset files are now release-versioned
 (`eval_core_v1.1_pg90_s0.json`, `smoke_200_v1.1_s0.json`); `run_eval.py` derives
