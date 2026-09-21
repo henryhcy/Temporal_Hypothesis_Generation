@@ -1,4 +1,4 @@
-# Next Steps — as of 2026-08-14 (dataset build day)
+# Next Steps — as of 2026-09-21 (v1.1 frozen; experiment queue open)
 
 > **Doc audit completed 2026-08-12.** Every plan doc was scanned against the code
 > and against `decisions.md`. Seed docs 01–06 had drifted badly — 02 alone
@@ -82,7 +82,7 @@ in-distribution text) — these runs are what turn it into a paper:
 
 | | |
 |---|---|
-| Roster as coded | **20 groups** = 7 report-level + 12 single-cohort + P-M2 (migration A COMPLETE 2026-08-14; P-V2/P-V4/C-V2 pending their screens) |
+| Roster as coded | **20 groups** = 7 report-level + 12 single-cohort + P-M2 (migration A COMPLETE 2026-08-14; P-V2/P-V4/C-V2 all cleared their 2000-round screens at p_perm 0.0005 — roster FINAL) |
 | Cohort groups that ship a verdict | **all 13** — the non-directional groups are gone; every cohort mode has a directional alternative |
 | Report-level classes | **two** (supported/refuted, 50/50): order questions are not posed on tied reports; `insufficient` does not exist at report level |
 | Min-n gate | 10, sequence 5 (`core/min_n.py`) |
@@ -93,7 +93,7 @@ in-distribution text) — these runs are what turn it into a paper:
 | Insufficient sub-types | all populated: underpowered 3,246 / sparse 4,941 / not_locatable 118 (re-measured 08-12) |
 | Sampler | equal thirds **per group**, every decisive core posed **both ways**; ceil(S/3)+3 seeded FALSE combinations injected per non-report group for the not_locatable third |
 | Release format | `*_questions.jsonl` (input only) + `*_answers.jsonl` (gold), split enforced; answers now carry `fact_id` and the descriptive `positional` block |
-| Gold-label validation | six invariant families incl. per-arm DB recomputation for the new modes; last exhaustive run 17,341 instances (pre-additions), sampled clean at 20 groups |
+| Gold-label validation | six invariant families incl. per-arm DB recomputation for the new modes; **exhaustive run on v1.1 clean 2026-09-21** (`validate_gold --sample 0`, 43,618 realized instances, all six families) — dataset FROZEN, §1a queue unblocked |
 | Reported statistics | one-sided exact p-value, 95% Wilson CI (Wilson-Newcombe on the difference for every two-arm/two-cohort mode), Cohen's h against the test's own null — all oriented to the instance's asserted claim |
 | Confidence fields | Wilson CI only — the tag and width fields were REMOVED 2026-08-14 (issue 4 closed by removal) |
 
