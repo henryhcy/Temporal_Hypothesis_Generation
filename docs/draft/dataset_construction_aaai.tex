@@ -420,7 +420,7 @@ smoke-4 & retrieval (text-to-SQL) & rules / LLM / exact & Opus & 400 & 0.975 & 2
 counts-llm & the exact test itself & rules / compiler / \textbf{LLM} & Opus & 242 & 0.959 & \textbf{p-values agree only 66\%}; Fisher 52\% \\
 \midrule
 \multicolumn{7}{l}{\textit{Joint --- no structured intermediate}} \\
-e2e-sql & S1+S2 without the claim & \textbf{sentence} / LLM / exact & Opus & 400 & \textsc{[tbd]} & claim JSON, conditioning rule, arm plan all withheld \\
+e2e-sql & S1+S2 without the claim & \textbf{sentence} / LLM / exact & Opus & 400 & 0.860 & denominator F1 0.95$\rightarrow$0.67; see Table~\ref{tab:e2econd} \\
 \midrule
 \multicolumn{7}{l}{\textit{Full pipeline}} \\
 smoke-3 & end to end, local & LLM / LLM / exact & Qwen2.5-7B & 400 & 0.292 & errors compound multiplicatively \\
@@ -465,17 +465,51 @@ test every two-arm group uses, which is 58\% of the release. Notably the model
 correct in every configuration, and every error is a decisive gold labelled
 \emph{insufficient}.
 
-\paragraph{A methodological caution.} Two of the three counts-only iterations
-were defects in our own prompt rather than model failures, and both had
-plausible capability stories attached. The claim tail is already oriented for
-negation by the procedure derivation; a prompt line asking the model to flip it
-again produced exactly the complementary tail on every negated row, and
-negated-row accuracy of 0.385 --- which, reported unexamined, would have read as
-``frontier models cannot handle negation''. Separately, naming a
-project-specific test (\emph{modal-vs-runner-up}) without defining it led the
-model to a plain binomial on the wrong table. We therefore treat any
-underperforming baseline as a prompt defect until the prompt has been audited
-against the harness's own semantics.
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+Retrieval diagnostic & rule given & rule withheld \\
+\midrule
+Denominator set F1 & 0.950 & 0.673 \\
+\emph{co-exist} leak into a precedes denom. & 0.000 & 0.198 \\
+Fabricated evidence, \emph{not-locatable} & 0.000 & 0.273 \\
+\midrule
+Verdict accuracy & 0.975 & 0.860 \\
+\bottomrule
+\end{tabular}
+\caption{smoke-4 against e2e-sql: same model, executor, scorer and slice; the
+structured claim, the conditioning rule and the arm plan are the only
+differences. Stage 1 is gold-forced in both (\texttt{claim\_em} $=1.0$), so
+every difference is retrieval. The two leak rates are semantic rather than
+formatting errors, which is what identifies the loss as conditioning.}
+\label{tab:e2econd}
+\end{table}
+
+\paragraph{The conditioning rules are not recoverable from the claim text.}
+Withholding three prompt blocks --- the structured claim, the conditioning rule
+and the per-arm plan --- costs 0.115 verdict accuracy (0.975 $\rightarrow$
+0.860), and the retrieval diagnostics locate the loss precisely
+(Table~\ref{tab:e2econd}): the denominator set F1 falls from 0.950 to 0.673, the
+model leaks co-existing reports into a \emph{precedes} denominator on 19.8\% of
+records, and it fabricates evidence for \emph{not-locatable} claims --- whose
+gold denominator is empty --- on 27.3\%. Both leaks are semantic, so this is a
+conditioning failure and not a misread output contract.
+
+The loss is concentrated, and where it falls is the result. The report tier is
+almost untouched (0.981) and the \emph{precedes} family is untouched (1.00): the
+model derives that rule unaided, writing \texttt{la = lb} into \texttt{excluded}
+with nothing having told it to. What collapses is association (C-V2, 0.50),
+first/last (F-V2 0.36, F-V1 0.45) and sequence (S-V3 0.58). The pattern tracks
+how far each rule is \emph{entailed} by the wording. ``$A$ precedes $B$'' does
+imply that reports where the two co-occur cannot settle the question. But
+nothing in ``$A$ and $B$ occur together more often than if independent'' says to
+split the whole cohort on presence rather than condition on co-occurrence, and
+nothing in ``which event comes last'' says that tied reports leave the
+denominator entirely. Those are stipulations about what the statistic means for
+this corpus, not facts about the sentence --- they are what the structured claim
+carries, and a system without it cannot reconstruct them.
 
 \section{Limitations}
 \label{sec:limitations}
