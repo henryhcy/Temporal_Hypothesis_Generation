@@ -346,6 +346,137 @@ sequence cohort tier contributes six instances. Second, C-V2 ships no
 $n = 195$) and so essentially never falls below the floor; its insufficient third
 therefore spans two sub-types rather than three.
 
+\section{Baseline Investigation}
+\label{sec:baselines}
+
+The benchmark is accompanied by a harness that decomposes verification into
+three stages: \textbf{S1} reads the hypothesis and emits a structured claim,
+\textbf{S2} retrieves the reports the claim's statistic is computed over, and
+\textbf{S3} applies the exact test and the three-decision rule. Every stage can
+be replaced by its gold value, which is what makes the per-stage failure rates
+marginal rather than conditional on upstream success. Tables~\ref{tab:floors}
+and~\ref{tab:stagebaselines} report what we have measured.
+
+\subsection{No-reasoning floors}
+
+Table~\ref{tab:floors} establishes what a system scores with no temporal
+reasoning at all. The important observation is that the headline metric
+\emph{inverts} the ordering that accuracy suggests. Because balance is equal
+thirds per cohort group, always predicting a group's majority class scores
+0.371 accuracy --- but 0 F1 on the two classes it never predicts, so 0.235 on
+the group-macro. A tier-aware coin flip spreads its predictions across every
+class and scores \textbf{0.397}. Random, not majority, is therefore the honest
+floor; we report majority alongside it only to show what the metric punishes.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+Floor & Acc. & Class-F1 & \textbf{Grp-F1} \\
+\midrule
+Always \emph{insufficient} & 0.263 & 0.139 & 0.102 \\
+Majority per group & 0.371 & 0.180 & 0.235 \\
+Random, uniform 3-way & 0.333 & 0.331 & 0.360 \\
+\textbf{Random, tier-aware} & 0.368 & 0.364 & \textbf{0.397} \\
+\midrule
+B0 oracle (upper bound) & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} \\
+\bottomrule
+\end{tabular}
+\caption{No-reasoning floors and the deterministic upper bound, over all 18{,}492
+instances / 147{,}936 records. Grp-F1 is the headline: group-macro of
+class-macro-F1. Tier-aware random is a guesser that has noticed the visible
+\texttt{level} field --- report-tier rows are never \emph{insufficient} --- which
+costs no reasoning. B0 is the rules parser into the reference SQL compiler: it
+reproduces every gold label, which demonstrates that the harness is correct, not
+that the text entails the label.}
+\label{tab:floors}
+\end{table}
+
+\subsection{Stage isolation}
+
+Each run in Table~\ref{tab:stagebaselines} holds every stage but one at its gold
+value, so the score attributes to that stage alone. All model runs use the same
+200-instance stratified slice, \textsc{Original} register, question and claim
+formats, with the group label withheld and the procedure unspecified.
+
+\begin{table*}[t]
+\centering
+\small
+\begin{tabular}{llllrrl}
+\toprule
+Run & Aspect under test & Setting (S1 / S2 / S3) & Model & Recs & Acc. & Key diagnostic \\
+\midrule
+\multicolumn{7}{l}{\textit{Stage 1 --- hypothesis $\rightarrow$ structured claim}} \\
+smoke-1 & extraction, no hints & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.740 & tier confusion: report-tier acc.\ 0.414 \\
+smoke-1b & \quad + tier hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.918 & one prompt line; report-tier 0.414$\rightarrow$0.848 \\
+smoke-1c & \quad + routing hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.928 & +0.010, but redistributes errors \\
+\midrule
+\multicolumn{7}{l}{\textit{Stage 2 --- claim $\rightarrow$ conditioning-correct retrieval}} \\
+smoke-2 & retrieval (text-to-SQL) & rules / LLM / exact & Qwen2.5-7B & 400 & 0.545 & 128/486 invalid SQL; conditioning wrong 41.5\% \\
+smoke-4 & retrieval (text-to-SQL) & rules / LLM / exact & Opus & 400 & 0.975 & 22/486 invalid; \texttt{not\_loc} FPR 0.18$\rightarrow$0.00 \\
+\midrule
+\multicolumn{7}{l}{\textit{Stage 3 --- counts $\rightarrow$ verdict}} \\
+counts-llm & the exact test itself & rules / compiler / \textbf{LLM} & Opus & 242 & 0.959 & \textbf{p-values agree only 66\%}; Fisher 52\% \\
+\midrule
+\multicolumn{7}{l}{\textit{Joint --- no structured intermediate}} \\
+e2e-sql & S1+S2 without the claim & \textbf{sentence} / LLM / exact & Opus & 400 & \textsc{[tbd]} & claim JSON, conditioning rule, arm plan all withheld \\
+\midrule
+\multicolumn{7}{l}{\textit{Full pipeline}} \\
+smoke-3 & end to end, local & LLM / LLM / exact & Qwen2.5-7B & 400 & 0.292 & errors compound multiplicatively \\
+smoke-5 & end to end, mixed & LLM / LLM / exact & 7B + Opus & 400 & 0.903 & $\approx 0.928 \times 0.975$: stages independent \\
+\bottomrule
+\end{tabular}
+\caption{Stage-isolation baselines. ``Setting'' names what fills each stage:
+\emph{rules} is the exact reverse-template parser, \emph{compiler} the reference
+SQL, \emph{exact} the deterministic test; a stage in bold is the one under test.
+Every run is blind-group and procedure-blind on the same 200-instance slice.
+Accuracy is over answerable records; the counts-only run covers the 13
+cohort-tier groups, since the report tier is a single exact observation with no
+counts to reason from.}
+\label{tab:stagebaselines}
+\end{table*}
+
+Three findings carry beyond the individual numbers.
+
+\paragraph{The weak stage is model-dependent, not benchmark-imposed.} The same
+retrieval stage, on identical inputs, prompts and executor, scores 0.545 with a
+7B model and 0.975 with a frontier one. Invalid SQL falls from 128/486 to
+22/486, wrong conditioning from 41.5\% to 2.5\%, and fabricated evidence on
+\emph{not-locatable} claims from 0.18 to 0.00. What looked like benchmark
+difficulty was a capability gap.
+
+\paragraph{Errors compound at 7B and stay independent at the frontier.} The full
+local pipeline scores 0.292, far below either of its stages measured alone. The
+mixed configuration --- local extraction, frontier retrieval --- lands at 0.903,
+almost exactly the product of its two stages ($0.928 \times 0.975 = 0.904$).
+
+\paragraph{The model cannot compute the exact tests, even given the counts.}
+This is the result we did not expect. Handed the conditioned counts, the test,
+its definition, the null, the tail, the floor and $\alpha$ --- with no text and
+no retrieval --- a frontier model returns the right verdict 0.959 of the time
+but p-values that match the exact computation only \textbf{66\%} of the time,
+and only \textbf{52\%} for Fisher's exact test. Both figures are true at once
+because most cores sit far from $\alpha$, so a wrong $p$ still falls on the
+right side of it; the failures concentrate at the decision boundary (gold
+$p=0.0433$ against a reported 0.0555) and on the largest tables. Fisher is the
+test every two-arm group uses, which is 58\% of the release. Notably the model
+\emph{never} fabricated significance: all 54 gold-\emph{insufficient} rows are
+correct in every configuration, and every error is a decisive gold labelled
+\emph{insufficient}.
+
+\paragraph{A methodological caution.} Two of the three counts-only iterations
+were defects in our own prompt rather than model failures, and both had
+plausible capability stories attached. The claim tail is already oriented for
+negation by the procedure derivation; a prompt line asking the model to flip it
+again produced exactly the complementary tail on every negated row, and
+negated-row accuracy of 0.385 --- which, reported unexamined, would have read as
+``frontier models cannot handle negation''. Separately, naming a
+project-specific test (\emph{modal-vs-runner-up}) without defining it led the
+model to a plain binomial on the wrong table. We therefore treat any
+underperforming baseline as a prompt defect until the prompt has been audited
+against the harness's own semantics.
+
 \section{Limitations}
 \label{sec:limitations}
 
