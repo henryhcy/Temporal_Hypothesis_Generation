@@ -41,7 +41,7 @@ from temporal_hypo.framework.subsets import eval_core, fewshot_pool, read_subset
 _REPO_ROOT = Path(__file__).resolve().parent.parent
 
 PIPELINES = ("oracle", "rules+compiler", "llm-s1+compiler", "rules+llm-sql",
-             "llm-s1+llm-sql", "trivial")
+             "llm-s1+llm-sql", "e2e-llm-sql", "counts-llm", "trivial")
 
 
 def _sha256(path: Path) -> str | None:
@@ -133,7 +133,8 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
     llm_client = None
     sql_client = None
     needs_s1_llm = args.pipeline in ("llm-s1+compiler", "llm-s1+llm-sql")
-    needs_sql_llm = args.pipeline in ("rules+llm-sql", "llm-s1+llm-sql")
+    needs_sql_llm = args.pipeline in ("rules+llm-sql", "llm-s1+llm-sql",
+                                     "e2e-llm-sql", "counts-llm")
     if needs_s1_llm or needs_sql_llm:
         from temporal_hypo.framework.extract.llm_client import CacheDir
 
@@ -147,7 +148,8 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
             sql_client = llm_client                 if (sql_provider == args.provider and llm_client is not None)                 else _make_client(sql_provider, args, cache)
 
     # S1
-    if args.pipeline in ("oracle", "rules+compiler", "rules+llm-sql"):
+    if args.pipeline in ("oracle", "rules+compiler", "rules+llm-sql",
+                         "e2e-llm-sql", "counts-llm"):
         extractor = RulesExtractor(vocabulary=vocabulary)
     else:
         from temporal_hypo.framework.extract.llm import LLMExtractor
@@ -159,20 +161,33 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
                                  tier_hint=args.tier_hint, routing_hint=args.routing_hint)
 
     # S2
-    if args.pipeline in ("oracle", "rules+compiler", "llm-s1+compiler"):
+    if args.pipeline in ("oracle", "rules+compiler", "llm-s1+compiler", "counts-llm"):
+        # counts-llm gets GOLD retrieval on purpose: it is a stage-3 measurement.
         retriever = CompilerRetriever(executor)
+    elif args.pipeline == "e2e-llm-sql":
+        from temporal_hypo.framework.sql.e2e_sql import E2ESQLRetriever
+
+        retriever = E2ESQLRetriever(sql_client or llm_client, args.sql_model or args.model,
+                                    executor)
     else:
         from temporal_hypo.framework.sql.llm_sql import LLMSQLRetriever
 
         retriever = LLMSQLRetriever(sql_client or llm_client, args.sql_model or args.model,
                                     executor)
 
+    tester = None
+    if args.pipeline == "counts-llm":
+        from temporal_hypo.framework.counts_llm import CountsVerdictTester
+
+        tester = CountsVerdictTester(sql_client or llm_client, args.sql_model or args.model)
+
     tokens_of = (lambda ex: getattr(ex, "last_tokens", None)) if (llm_client or sql_client) else None
-    extra_tokens = (lambda: getattr(retriever, "last_tokens", None)) if (llm_client or sql_client) else None
+    token_src = tester if tester is not None else retriever
+    extra_tokens = (lambda: getattr(token_src, "last_tokens", None)) if (llm_client or sql_client) else None
     return Pipeline(name=args.pipeline, extractor=extractor, retriever=retriever,
                     procedure_mode=procedure_mode, condition=args.condition,
                     model=args.model, options_seed=args.seed, keep_ids=not args.no_ids,
-                    tokens_of=tokens_of, extra_tokens=extra_tokens)
+                    tokens_of=tokens_of, extra_tokens=extra_tokens, tester=tester)
 
 
 def main() -> None:

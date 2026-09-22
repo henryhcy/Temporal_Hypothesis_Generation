@@ -6,6 +6,19 @@ row in the schema ``framework.evaluate`` consumes (see ``11_model_pipeline.md``
 §7 and the field list in ``PREDICTION_FIELDS``). The pipeline is gold-blind: it
 sees only ``instances.INPUT_FIELDS`` and never opens the answers file.
 
+Two optional hooks keep the baseline pipelines from needing their own runner
+(both default to off, so every existing pipeline is unchanged):
+
+- a retriever may set ``wants_row = True`` and take ``retrieve(claim, row=...)``.
+  The END-TO-END text-to-SQL baseline needs the hypothesis SENTENCE, not the
+  structured claim, and the claim it is handed supplies only the output contract
+  (arm labels, ``cell_kind``) -- which is why that baseline is an S2 measurement
+  with S1 gold-forced, not a joint one.
+- ``tester`` replaces stage 3. ``run_test`` is the deterministic exact test; the
+  counts-only baseline swaps in a model that must produce the verdict from the
+  counts alone, which is what isolates "does it know the three-decision rule"
+  from "can it retrieve".
+
 Input conditions
 ----------------
 ``given-group`` passes the row as released; ``blind-group`` drops ``group_id``
@@ -133,6 +146,7 @@ class Pipeline:
     keep_ids: bool = True
     tokens_of: Callable[[Any], dict | None] | None = None   # extractor-specific token accounting
     extra_tokens: Callable[[], dict | None] | None = None   # retriever-specific token accounting
+    tester: Callable[..., Prediction] | None = None         # stage 3; None => run_test
 
     def __post_init__(self) -> None:
         if self.condition not in CONDITIONS:
@@ -170,10 +184,14 @@ class Pipeline:
                 out["claim"] = claim.to_dict()
                 out["claim_problems"] = validate(claim)
                 if claim.is_underdetermined:
-                    pred = run_test(claim, None, procedure_mode=self.procedure_mode)
+                    pred = (self.tester or run_test)(
+                        claim, None, procedure_mode=self.procedure_mode)
                 elif self.retriever is not None:
-                    retrieval = self.retriever.retrieve(claim)
-                    pred = run_test(claim, retrieval, procedure_mode=self.procedure_mode)
+                    retrieval = (self.retriever.retrieve(claim, row=visible)
+                                 if getattr(self.retriever, "wants_row", False)
+                                 else self.retriever.retrieve(claim))
+                    test = self.tester or run_test
+                    pred = test(claim, retrieval, procedure_mode=self.procedure_mode)
         except Exception as exc:  # noqa: BLE001 -- a run must survive one bad record
             out["error"] = f"{type(exc).__name__}: {exc}"
         # ids are always kept in memory (the scorer needs them); `keep_ids` only
