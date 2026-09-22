@@ -778,6 +778,7 @@ rows are placeholders. Verdict columns are over the answerable records of the ru
 | smoke-4 (`results/smoke200_rules_api-sql`, ~36 min, ~$8.80: 1.02M in / 0.15M out) | `rules+llm-sql` (S1 = rules; **S2 = claude-opus-5** via `--sql-provider anthropic`, 2026-09-03) | blind-group | blind | same slice | 400 | **0.975** | 0.962 | 0.971 [0.936, 0.992] | 1.000 (mode 1.000) | 0.950 (EM 0.950; report_hit 0.987) | 0.000 | 0.000 | 0.960 (n=198) | 0.000 (166 pairs); twins 1.000 | 0 |
 | smoke-5 (`results/smoke200_local-s1_api-sql`, ~4 min — S1 and most SQL replayed from cache) | `llm-s1+llm-sql` **mixed: S1 = qwen2.5:7b-instruct + both hints, S2 = claude-opus-5** (2026-09-03) | blind-group | blind | same slice | 400 | **0.903** | 0.894 | 0.906 [0.867, 0.930] | 0.878 (mode 0.905) | 0.897 (EM 0.895; report_hit 0.880) | 0.000 | 0.000 | 0.874 (n=198) | 0.006 (166 pairs); twins 0.917 | 12, all unexpected → scored wrong |
 | smoke-3 (`results/smoke200_llm-s1_llm-sql`, 448 s — S1 cached from smoke-1) | `llm-s1+llm-sql` (the full local pipeline) | blind-group | blind | same slice | 400 | **0.292** | 0.300 | 0.250 [0.217, 0.286] | 0.675 (mode 0.718) | 0.228 (EM 0.149; report_hit 0.380) | 0.082 (any 0.116) | 0.227 | 0.010 (n=198) | 0.018 (166 pairs); twins 0.667 | 16, all unexpected → scored wrong |
+| e2e-sql (`results/smoke200_e2e_sql`, 2,122 s, $9.19) | `e2e-llm-sql` — the SENTENCE straight to SQL (S1 gold-forced by rules; claim JSON, conditioning rule and arm plan ALL withheld) | blind-group | blind | same slice | 400 | **0.860** | 0.830 | — (no group >= 30 after the cohort split) | 1.000 (gold-forced) | **0.673** (EM 0.508) | **0.198** | **0.273** | — | — | 0 |
 | full | `llm-s1+llm-sql` | blind-group | blind | eval_core (1,649 instances), original, question+claim | ≈3,300 | — | — | — | — | — | — | — | — | — | **deferred** (~2.5 h GPU; the smoke already localises the failure to S2). Run with: `PYTHONPATH=src python scripts/run_eval.py --pipeline llm-s1+llm-sql --model qwen2.5:7b-instruct --sql-model qwen2.5-coder:7b --subset eval_core --condition blind-group --procedure blind --registers original --formats question,claim --out results/full_local` (S1 replays from `results/cache/`) |
 
 Model for every LLM row: `qwen2.5:7b-instruct` via Ollama unless noted; smoke rows
@@ -910,6 +911,85 @@ The general lesson for every baseline in this section: **when a baseline
 underperforms, check the prompt against the harness's own semantics before
 reporting a capability gap.** Two of the three iterations here were harness
 bugs, and both had plausible capability stories attached.
+
+### 10.3b End-to-end text-to-SQL (2026-09-22) — the conditioning rules are NOT recoverable from the text
+
+`e2e-llm-sql`, claude-opus-5, the full 400-record v1.1 smoke slice, 2,122 s,
+$9.19, zero row-level errors. Identical model, executor, scorer and slice to
+smoke-4; the prompt drops exactly three blocks — the claim JSON (so no mode), the
+CONDITIONING RULE prose, and the ARM PLAN. Stage 1 is gold-forced by the rules
+parser (`claim_em` 1.000), so **every** difference is retrieval.
+
+| diagnostic | smoke-4 (rule given) | e2e (rule withheld) |
+|---|--:|--:|
+| verdict accuracy | 0.975 | **0.860** |
+| denominator set F1 | 0.950 | **0.673** (EM 0.508) |
+| `coexist_leak` | 0.000 | **0.198** |
+| `not_locatable` FPR | 0.000 | **0.273** |
+
+Both leaks are SEMANTIC, not formatting — co-existing reports pulled into a
+*precedes* denominator, and evidence invented for claims whose gold denominator
+is empty. That is what identifies the loss as conditioning rather than a misread
+output contract, and it is the check that had to pass before any capability
+claim (cf. the two prompt bugs in §10.3a).
+
+**The loss is concentrated, and where it falls is the result.** Report tier
+0.981 and the *precedes* family 1.000 are untouched — the model derives that rule
+unaided, writing `la = lb` into `excluded` with nothing having told it to. What
+collapses: **C-V2 (association) 0.50**, **F-V2 0.36 / F-V1 0.45 (first/last)**,
+S-V3 0.58, C-V1 0.70. Per family: pairwise 0.907 (n=226), sequence 0.833 (n=48),
+first_last 0.786 (n=126).
+
+The pattern tracks how far each rule is ENTAILED by the wording. "A precedes B"
+does imply that co-occurring reports cannot settle the question. But nothing in
+"A and B occur together more often than if independent" says to split the whole
+cohort on presence rather than condition on co-occurrence, and nothing in "which
+event comes last" says tied reports leave the denominator entirely. Those are
+stipulations about what the statistic means for this corpus, not facts about the
+sentence — they are what the structured claim carries, and a system without it
+cannot reconstruct them.
+
+### 10.3c What smoke-1c and e2e-sql did NOT test: null and test selection
+
+Asked 2026-09-22, and the answer differs per run. Recorded because "procedure-
+blind" is easy to misread as "the model inferred the procedure".
+
+**e2e-sql: the procedure was GOLD and never in play.** Stage 1 is the rules
+parser, which calls `derive_procedure(mode)` for the reference test, null, tail,
+floor and arms. The model only ever wrote SQL — it never saw a test name, never
+chose a null, and its output carries no procedure fields. The 0.860 is purely
+retrieval, which is the intended scope, but it says NOTHING about null inference.
+
+**smoke-1c: the procedure was requested, but the answer was in the prompt.** In
+`procedure-blind` the model IS asked to emit `test / null_kind / p0 / claim_tail
+/ arms / conditioning / min_n_floor`. Two things hand it the answer:
+
+1. the instruction states the mapping outright — "binom_exact with null_kind
+   binomial p0=0.5 for the single-cohort proportion modes; modal_runner for the
+   argmax modes; fisher_exact with null_kind two_arm_equality for the two-arm
+   modes";
+2. `mode_catalogue()` is a 20-row lookup table whose columns are
+   `mode | tier/family/answer_type | events | conditioning | arms | test | null |
+   floor | rule | H0` — the null with its p0, the conditioning AND the H0, per mode.
+
+So once the model picks the mode, every procedure field is read off a row.
+**Procedure-blind means the model must EMIT the procedure, not INFER it.**
+smoke-1c's real task is mode classification, which is exactly what its confusion
+matrix reports and why one `--tier-hint` line moved it 0.740 -> 0.918.
+
+**Consequence for the null-inference direction.** Removing the catalogue today
+would not create a real task either: with only 3 cohort signatures (binom_exact
+p0=0.5; modal_runner p0=0.5; fisher_exact two_arm_equality) the mapping compresses
+into the three sentences above. Null selection becomes a genuine inference
+problem only once nulls are DIVERSE and some are DATA-DERIVED — and a p0 that must
+be computed from the cohort cannot be printed in a catalogue row at all. That is
+the structural reason the `NullSpec` change (issue 20) is a prerequisite rather
+than tidying.
+
+**Measurement gap.** smoke-1c and e2e-sql sit at opposite extremes — one is given
+everything in a table, the other nothing. Nobody has run the middle condition
+(mode given but conditioning withheld, or the reverse), which is where "knows
+which claim type this is" separates from "knows what that claim type requires".
 
 ### 10.4 M3–M5 — designed, not built
 
