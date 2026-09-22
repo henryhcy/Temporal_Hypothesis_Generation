@@ -578,6 +578,18 @@ parsing, conditioning, aggregation, null choice, test/tail, min-n gate) are
 
 ### 7.5 Baselines and models
 
+> **The no-reasoning FLOOR is random, not majority (2026-09-21).** On accuracy
+> the trivial strategies are within a few points of each other (0.26–0.37). On
+> the headline metric they span **0.10 to 0.40**, and the ordering inverts:
+> majority-per-group scores 0.235 because it predicts one class per group and
+> so gets F1 = 0 on the other two, while a tier-aware coin flip scores **0.397**
+> because it spreads predictions across every class. Report random-tier-aware
+> as the floor; keep majority alongside as the illustration of what the metric
+> punishes. Against 0.235 the smoke-4 result (0.971) reads as 74 points of
+> headroom; against the honest floor it is 57. A reviewer will compute random.
+> Tier-aware is the legitimate form: `level` is an input field, so knowing that
+> report-tier rows are never `insufficient` costs no reasoning.
+
 | id | pipeline | what it proves / measures |
 |---|---|---|
 | **B0 `template-table`** | rules → compiler → oracle | **must be exactly 100% on the 145,644 answerable records** — proves harness correctness, *not* that the text entails the label; issue 22 does not threaten it, issue 24 is the real caveat |
@@ -756,6 +768,8 @@ rows are placeholders. Verdict columns are over the answerable records of the ru
 | B0 (`results/oracle_v1`, 556 s) | `oracle` = rules → compiler → gold procedure | given-group | gold | all | 147,936 (145,644 scored) | **1.000** | **1.000** | **1.000** [1.000, 1.000] (S-V1, S-V3 excluded: 6 instances each) | 1.000 | 1.000 (set EM 1.000 on den/num/excl; n,k EM 1.000; report_hit 1.000) | 0.000 | 0.000 | 1.000 (n=89,874; None-agreement 1.000) | 0.000 (6,664 cores / 52,548 pairs); twins 1.000 (1,767 groups); register/format invariance 1.000 | **2,292** = expected by template, 0 unexpected |
 | B-triv (`results/trivial_v1`) | `majority_per_group` | — | — | all | 147,936 | 0.370 | 0.180 | 0.234 [0.229, 0.239] | — | — | — | — | — | 1.000 (by construction: both mirrors get the group majority) | — |
 | B-triv | `always_insufficient` | — | — | all | 147,936 | 0.263 | 0.139 | 0.102 [0.097, 0.106] | — | — | — | — | — | 0.000 | — |
+| B-triv (computed 2026-09-21 on v1.1 answers, 20 seeds) | `random_uniform` — uniform over the 3 verdicts | — | — | all | 18,492 inst. | 0.333 | 0.331 | **0.360** | — | — | — | — | — | ~0.33 (independent draws) | — |
+| B-triv (same) | `random_tier_aware` — uniform over {sup, ref} at the report tier (where `level` is visible and `insufficient` does not exist), 3-way elsewhere | — | — | all | 18,492 inst. | 0.368 | 0.364 | **0.397** | — | — | — | — | — | ~0.33 | — |
 | B-triv | `options[0]` / `options[2]` (CHOICE answer, **gold order**) | — | — | all (21,072 CHOICE records) | 147,936 | 0.370 | 0.180 | 0.234 | — | — | — | — | — | — | answer_acc **0.600** / **0.312** (F-R1 & P-R2 = 1.000 at index 0; F-R2 = 1.000 at index 2 — the position leak); **as presented after the seeded shuffle: 0.396 / 0.212** |
 | smoke-1 (`results/smoke200_llm-s1_compiler`, 1,322 s) | `llm-s1+compiler` (S1 = qwen2.5:7b-instruct, 3-shot; S2 = compiler) | blind-group | blind | `smoke_200_s0` (200 instances ⊂ eval_core, stratified), original, question+claim | 400 | **0.740** | 0.732 | 0.770 [0.748, 0.783] (20 groups, min 6) | 0.675 (mode 0.718) | 0.984 (EM 0.983; report_hit 0.380) | 0.000 (any 0.006) | 0.000 | 0.960 (n=198) | 0.000 (166 pairs); twins 0.750 | 16, all unexpected → scored wrong |
 | smoke-1b (`results/smoke200_llm-s1_compiler_tierhint`, 1,330 s) | `llm-s1+compiler` **+ `--tier-hint`** (one prompt line: `level` fixes the admissible modes) | blind-group | blind | same slice | 400 | **0.918** | 0.933 | 0.933 [0.894, 0.952] | 0.830 (mode 0.882) | 0.965 (EM 0.963; report_hit 0.848) | 0.000 | 0.000 | 0.924 (n=198) | 0.000 (166 pairs); twins 0.875 | 21, all unexpected → scored wrong |
