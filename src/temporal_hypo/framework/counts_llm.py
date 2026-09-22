@@ -91,13 +91,27 @@ def counts_messages(claim: StructuredClaim, core: Any) -> list[dict]:
         "",
         _RULE,
         "",
+        "THE TESTS (each is EXACT -- enumerate, do not approximate):",
+        "- binom_exact: one-sided exact binomial of k successes in n trials against p0.",
+        "- modal_runner: the claim names ONE cell of `cells` and asserts it is the most common. "
+        "The test is a one-sided exact binomial on a TWO-CELL table -- the named cell's count "
+        "against (named + the LARGEST OTHER cell), null 0.5. It is NOT a binomial on k out of n: "
+        "`n` is the whole conditioned denominator and is not the table the test runs on.",
+        "- fisher_exact: one-sided Fisher exact on the 2x2 [[k, n-k], [k2, n2-k2]], null that the "
+        "two rates are equal.",
+        "",
         "NOTES:",
         "- `k` of `n` is the count in the claim's asserted direction out of the conditioned "
         "denominator. For a two-arm test, arm 1 is the side the claim asserts is higher.",
         "- `p0` is the null proportion for a one-proportion test; for a two-arm test the null is "
         "that the two rates are equal.",
-        "- If `negated` is true the claim asserts the NEGATION, so the claim tail is the other "
-        "one.",
+        # `claim_tail` is ALREADY oriented for negation by `derive_procedure`
+        # ("less" when negated). Telling the model to flip it again made it compute
+        # the complementary tail on every negated row (p_model = 1 - p_gold), which
+        # cost 14 of 28 errors in the first 2026-09-22 run. State the field's
+        # meaning; never ask for a second flip.
+        "- `claim_tail` is the tail to test, already oriented for the claim as worded "
+        "(including `negated`). Use it as given; do not flip it.",
         "- Tests are EXACT (binomial / Fisher), not normal approximations.",
     ])
     user = ("HYPOTHESIS COUNTS (JSON):\n"
@@ -110,7 +124,7 @@ class CountsVerdictTester:
     """Stage 3 by model. Call it where ``run_test`` would go (``Pipeline.tester``)."""
 
     def __init__(self, client: Provider, model: str, *, temperature: float = 0.0,
-                 max_tokens: int = 300) -> None:
+                 max_tokens: int = 700) -> None:
         self.client = client
         self.model = model
         self.name = f"counts-llm:{model}"

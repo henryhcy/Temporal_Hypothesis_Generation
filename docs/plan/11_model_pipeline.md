@@ -845,6 +845,72 @@ attribution separates them cleanly:
   which is exactly the "empty result → claim insufficiency" signature the
   three-decision design punishes.
 
+### 10.3a Counts-only baseline (2026-09-22) — the model CANNOT compute the exact tests
+
+`counts-llm`, claude-opus-5, 242 cohort-tier records of the v1.1 smoke slice
+(the report tier has no counts and falls through to `run_test`). The model is
+given the counts, the test, its definition, the null, the tail, the floor and
+alpha; it returns the verdict. No text, no schema, no retrieval. ~1,440 prompt /
+90 completion tokens per record, ~$6.9 per run.
+
+| run | what changed | verdict acc | p-value agreement (tol 1e-3) |
+|---|---|--:|--:|
+| v1 | first attempt | 0.884 | 108/196 = 55% |
+| v2 | **prompt bug fixed** (below) | 0.950 | 120/198 = 61% |
+| v3 | + a one-line definition per test | **0.959** | **128/194 = 66%** |
+
+**The headline is the gap between those two columns.** Verdict accuracy is 0.959
+while the model's own p-values match the exact computation only **66%** of the
+time. Both are true because the two disagree mostly where it does not matter:
+most cores sit far from alpha, so a wrong p still lands on the right side of it.
+The failures concentrate exactly where they hurt — at the boundary and on the
+largest tables:
+
+| test | p agreement | note |
+|---|--:|---|
+| modal_runner | 52/68 = 76% | |
+| binom_exact | 34/46 = 74% | |
+| **fisher_exact** | **42/80 = 52%** | the 2x2 hypergeometric sum; all 6 verdict errors are here |
+
+Of the 10 remaining verdict errors, **6 are Fisher arithmetic** — P-M2 gold
+p = 0.0433 against the model's 0.0555 (a near-boundary miss that flips the
+verdict), and C-V2 gold 0.0331 against 0.175 on an 82-vs-937 table (not close).
+The other 4 are S-V1/S-V3 at n = 5, k = 0, where the model declined to report a
+p at all. Every error is decisive-gold → `insufficient`: the model under-calls
+significance and **never once fabricated it** (all 54 gold-`insufficient` rows
+correct, in every run).
+
+So this baseline answers its question in the framework's favour: a frontier
+model handed the numbers and told exactly which test to run still cannot do the
+arithmetic reliably, and it fails hardest on Fisher, which is the test the
+two-arm groups (P-V2, P-V4, C-V2, P-M2 — 58% of the release) all use. The
+deterministic stage 3 is not bookkeeping; it is doing the work precisely in the
+boundary cases that are statistically interesting.
+
+**Two prompt bugs found and fixed — both worth recording, because each looked
+like a model failure and neither was.**
+
+1. **Double-flipped tail on negated claims (v1 → v2).** `derive_procedure`
+   already returns `claim_tail="less"` when negated, so the payload's tail is
+   ALREADY oriented. The prompt additionally said "if `negated` is true the
+   claim tail is the other one", asking for a second flip. The model obeyed and
+   returned exactly the complementary tail (`p_model = 1 - p_gold`: gold 0.000977
+   against 1.0, gold 0.0262 against 0.9738). Negated-row accuracy was **0.385**;
+   after the fix, **0.923**. Presented as a finding this would have read as
+   "frontier models cannot handle negation", which is false.
+2. **A test named but never defined (v2 → v3).** `modal_runner` was passed as a
+   test name with the cells in the payload, but with no statement of what it
+   does. The model defaulted to a binomial on k-of-n (12 of 18 → p = 0.1189)
+   instead of the named cell against its largest competitor (12 of 16 →
+   p = 0.0384). Naming a project-specific test is not the same as specifying it;
+   the definition is scaffolding the framework would supply in deployment, so
+   withholding it measured the wrong thing.
+
+The general lesson for every baseline in this section: **when a baseline
+underperforms, check the prompt against the harness's own semantics before
+reporting a capability gap.** Two of the three iterations here were harness
+bugs, and both had plausible capability stories attached.
+
 ### 10.4 M3–M5 — designed, not built
 
 M3 split + fine-tune (P0 / P1 / P2 table); M4 in-context B1, agent B2, single-pass
