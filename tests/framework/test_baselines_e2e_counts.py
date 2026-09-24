@@ -155,3 +155,43 @@ def report_claim_and_retrieval(executor):
     cohort = {"level": "report", "vaccines": [], "report_id": 1001}
     claim = build_claim("rep_dir_bool", ("Headache", "Fatigue"), cohort, source="test")
     return claim, CompilerRetriever(executor).retrieve(claim)
+
+
+# -- the null/test-inference ablation (issue 27) ---------------------------
+# Four columns give the procedure away, not the two you would expect: `test`
+# names it and `null` prints p0, but `rule` also says "Fisher 2x2" and
+# "supported if frac>0.5", and `H0` states the null in words. These pin that
+# all four go, and that the output VOCABULARY stays (the model must still know
+# which strings are legal -- it just may not be told which one applies).
+
+def test_null_hints_on_is_the_shipped_behaviour():
+    from temporal_hypo.framework.extract.llm import system_prompt
+    sp = system_prompt(procedure_given=False, blind_group=True, null_hints=True)
+    for leak in ("binom_exact", "p0=0.5", "H0:", "frac>0.5", "Fisher 2x2"):
+        assert leak in sp
+
+
+def test_null_hints_off_removes_every_mapping_leak():
+    from temporal_hypo.framework.extract.llm import system_prompt
+    sp = system_prompt(procedure_given=False, blind_group=True, null_hints=False)
+    for leak in ("p0=0.5", "H0:", "frac>0.5", "Fisher 2x2", "modal-vs-runner-up"):
+        assert leak not in sp, leak
+    header = [l for l in sp.splitlines() if l.startswith("mode |")][0]
+    for col in ("test", "null", "floor", "rule", "H0"):
+        assert f"| {col}" not in header, col
+    assert "conditioning of the denominator" in header   # a different capability
+
+
+def test_null_hints_off_keeps_the_output_vocabulary():
+    """The model must know which strings are legal, just not which one applies."""
+    from temporal_hypo.framework.extract.llm import system_prompt
+    sp = system_prompt(procedure_given=False, blind_group=True, null_hints=False)
+    assert '"enum": ["binom_exact", "modal_runner", "fisher_exact", null]' in sp
+    assert "Work it out from what the claim asserts" in sp
+
+
+def test_extractor_records_the_ablation_in_its_name():
+    from temporal_hypo.framework.extract.llm import LLMExtractor
+    ex = LLMExtractor(None, "m", null_hints=False)
+    assert ex.name.endswith("+no-null-hints")
+    assert LLMExtractor(None, "m").name == "llm:m"

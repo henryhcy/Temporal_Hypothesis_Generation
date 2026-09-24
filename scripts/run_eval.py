@@ -158,7 +158,8 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
             if args.k_shot > 0 else []
         extractor = LLMExtractor(llm_client, args.model, procedure_given=procedure_given,
                                  fewshot=shots, k_shot=args.k_shot, vocabulary=vocabulary,
-                                 tier_hint=args.tier_hint, routing_hint=args.routing_hint)
+                                 tier_hint=args.tier_hint, routing_hint=args.routing_hint,
+                                 null_hints=not args.hide_null_hints)
 
     # S2
     if args.pipeline in ("oracle", "rules+compiler", "llm-s1+compiler", "counts-llm"):
@@ -223,6 +224,10 @@ def main() -> None:
     p.add_argument("--k-shot", type=int, default=3)
     p.add_argument("--tier-hint", action="store_true",
                    help="ablation: add the level->admissible-modes rule to the extraction prompt")
+    p.add_argument("--hide-null-hints", action="store_true",
+                   help="ablation (issue 27): strip the test/null/p0/floor/rule/H0 columns from "
+                        "the S1 mode catalogue and the sentence that states the mapping, so the "
+                        "model must INFER the procedure instead of reading it off a row")
     p.add_argument("--routing-hint", action="store_true",
                    help="ablation: add the candidate-count->mode-family rule to the extraction prompt")
     p.add_argument("--k-shot-per-mode", type=int, default=1)

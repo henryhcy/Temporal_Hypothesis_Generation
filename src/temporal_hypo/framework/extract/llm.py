@@ -139,15 +139,25 @@ def _mode_order() -> list[str]:
     return [MODE_BY_GROUP[g] for g in MODE_BY_GROUP if MODE_BY_GROUP[g] in MODE_SPEC]
 
 
-def mode_catalogue(*, show_groups: bool = True, include_procedure: bool = True) -> str:
-    """The 20-mode table shown to the model (compact, one line per mode)."""
+def mode_catalogue(*, show_groups: bool = True, include_procedure: bool = True,
+                   include_null_hints: bool = True) -> str:
+    """The 20-mode table shown to the model (compact, one line per mode).
+
+    ``include_null_hints=False`` is the null/test-inference ablation (issue 27).
+    Four columns give the answer away, not the two you would expect: ``test``
+    names it and ``null`` prints ``p0``, but ``rule`` also says "Fisher 2x2" and
+    "supported if frac>0.5", and ``H0`` states the null in words. All four drop
+    together, leaving mode, tier/family/answer_type, events and conditioning --
+    so the model must infer the procedure from the claim's structure.
+    """
     head = ["mode"]
     if show_groups:
         head.append("group")
     head += ["tier/family/answer_type", "events (roles)", "conditioning of the denominator"]
     if include_procedure:
         head += ["arms", "test", "null", "floor"]
-    head += ["rule", "H0"]
+    if include_null_hints:
+        head += ["rule", "H0"]
     lines = [" | ".join(head)]
     for mode in _mode_order():
         s = MODE_SPEC[mode]
@@ -160,7 +170,8 @@ def mode_catalogue(*, show_groups: bool = True, include_procedure: bool = True) 
             row += [str(s.arms), str(s.test), f"{s.null_kind}"
                     + (f" p0={proc.null.p0}" if proc.null.p0 is not None else ""),
                     str(proc.min_n_floor)]
-        row += [RULE_BY_MODE[mode], H0_BY_MODE[mode]]
+        if include_null_hints:
+            row += [RULE_BY_MODE[mode], H0_BY_MODE[mode]]
         lines.append(" | ".join(row))
     return "\n".join(lines)
 
@@ -211,7 +222,7 @@ ROUTING_HINT = (
 
 
 def system_prompt(*, procedure_given: bool, blind_group: bool, tier_hint: bool = False,
-                  routing_hint: bool = False) -> str:
+                  routing_hint: bool = False, null_hints: bool = True) -> str:
     """The system message: task, output contract, catalogue, statistical constants.
 
     ``tier_hint`` adds an explicit rule tying the admissible modes to the input's
@@ -253,7 +264,7 @@ def system_prompt(*, procedure_given: bool, blind_group: bool, tier_hint: bool =
     if procedure_given:
         parts.append("The statistical procedure (test, null, tail, floor, arms, conditioning) is "
                      "derived by the harness from the mode -- do NOT output procedure fields.")
-    else:
+    elif null_hints:
         parts += [
             "- test / null_kind / p0 / claim_tail / arms / conditioning / min_n_floor: the "
             "procedure the claim requires (see the catalogue): binom_exact with null_kind "
@@ -262,6 +273,17 @@ def system_prompt(*, procedure_given: bool, blind_group: bool, tier_hint: bool =
             "null_kind two_arm_equality (p0 null) for the two-arm modes; null test, null_kind "
             "'none', p0 null, min_n_floor null at the report tier. claim_tail is 'greater' for "
             "every plain claim and 'less' when negated.",
+        ]
+    else:
+        # The ablation: name the fields, state NOTHING about which value each takes.
+        parts += [
+            "- test / null_kind / p0 / claim_tail / arms / min_n_floor: the statistical procedure "
+            "this claim requires. Work it out from what the claim asserts -- what quantity is "
+            "being compared, against what baseline, and how many groups the comparison spans. "
+            "`test` is the exact test to run, `null_kind` and `p0` state the hypothesis it is run "
+            "against, `arms` is how many groups the statistic compares, and `claim_tail` is the "
+            "direction the claim asserts.",
+            "- conditioning: which reports the statistic is computed over (see the glossary).",
         ]
     parts += [
         "",
@@ -274,7 +296,11 @@ def system_prompt(*, procedure_given: bool, blind_group: bool, tier_hint: bool =
         CONDITIONING_GLOSS,
         "",
         "MODE CATALOGUE:",
-        mode_catalogue(show_groups=not blind_group, include_procedure=not procedure_given),
+        # include_procedure is ON in procedure-blind mode -- that is the point of the
+        # catalogue there, and it is exactly what the ablation removes.
+        mode_catalogue(show_groups=not blind_group,
+                       include_procedure=(not procedure_given) and null_hints,
+                       include_null_hints=null_hints),
     ]
     return "\n".join(parts)
 
@@ -436,13 +462,16 @@ class LLMExtractor:
                  fewshot: Sequence[Mapping[str, Any]] = (), k_shot: int = 3,
                  vocabulary: set[str] | None = None, temperature: float = 0.0,
                  max_tokens: int = 400, groups: Mapping[str, Any] | None = None,
-                 tier_hint: bool = False, routing_hint: bool = False) -> None:
+                 tier_hint: bool = False, routing_hint: bool = False,
+                 null_hints: bool = True) -> None:
         self.client = client
         self.model = model
         self.name = (f"llm:{model}" + ("+tier-hint" if tier_hint else "")
-                     + ("+routing-hint" if routing_hint else ""))
+                     + ("+routing-hint" if routing_hint else "")
+                     + ("" if null_hints else "+no-null-hints"))
         self.tier_hint = bool(tier_hint)
         self.routing_hint = bool(routing_hint)
+        self.null_hints = bool(null_hints)
         self.procedure_given = bool(procedure_given)
         self.fewshot = list(fewshot)
         self.k_shot = int(k_shot)
@@ -468,7 +497,7 @@ class LLMExtractor:
         if blind_group not in self._system:
             self._system[blind_group] = system_prompt(tier_hint=self.tier_hint,
                                                       routing_hint=self.routing_hint,
-                                                      procedure_given=self.procedure_given,
+                                                      procedure_given=self.procedure_given, null_hints=self.null_hints,
                                                       blind_group=blind_group)
         return self._system[blind_group]
 
