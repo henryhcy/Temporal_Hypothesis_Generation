@@ -1015,3 +1015,102 @@ issue 10). ~~API provider adapters land with whichever of these first needs them
 | 3 | Models to evaluate beyond the local 7B class: GPT-4.1 / Claude / Llama-3.3-70B / MedGemma-27B when budget exists; API budget itself | decision | `open_questions.md` "Evaluation" |
 | 17 | The provisional split location (`data/splits/`, §8) and whether the release ever ships a split | decision | `09_next_steps.md` row 17 |
 | 25 | `test_verdict` provenance defect (1,800 rows): regenerate or field-patch? Register only — the harness never reads the field | defect | `09_next_steps.md` row 25 |
+
+
+## 12 Related work (2026-09-29; four closest papers read in full, rest from abstracts)
+
+Positioning against the benchmarks and systems that overlap with VERITAS's task.
+The four closest were read end to end against one rubric (input/output, who
+formulates the null, who computes, temporal content, stage-level gold,
+portability); the others from abstracts. Update this section before submission.
+
+### 12.1 Statistical-analysis and hypothesis-testing benchmarks
+
+- **P-Bench / Fisher-R1** — Miao, Mu, Chen, Zou. *Fisher-R1: Training LLM Agents
+  for Reliable Hypothesis Testing.* arXiv:2608.07437 (Aug 2026).
+  425 tasks (economics, biology, medicine): research question + **explicit H0/H1**
+  + CSV in an R session + role-tagged glossary → p-value + reject/fail-to-reject.
+  The agent chooses the method (a "reference-method family" labels Easy/Hard but
+  is never scored); the model writes R that a sandbox runs; scoring is final-stage
+  only (decision, and |z(p̂)−z(p*)|<0.5 for "strict"). Row eligibility is applied
+  before the CSV is generated, so the denominator is not part of the task (except
+  adversarial NA/outlier rows in Hard). Best: GPT-5.4 Easy 92.9 raw / 64.7 strict,
+  Hard 58.3 / 30.5; Fisher-R1-7B (RL on 8,642 synthetic tasks) 87.0 / 65.7 Easy.
+  Authors' stated gap: multi-test pipelines, multiple-comparison correction,
+  explicit assumption justification.
+- **StatABench** — Zhu, Ding, Lai, Wang, Jing, Chen. arXiv:2606.22977 (Jun 2026).
+  404 closed questions over 18 topics + 30 open modelling tasks; practical items
+  require calling one of 35 fixed SAToolKit functions (ks_test, logrank, cox,
+  DiD, PSM, ...) with the right parameters — deterministic execution, single gold
+  tool. Whether H0 is stated in the question is not stated; the model selects a
+  TEST, it does not formulate a null. Final-answer scoring; tool choice analysed
+  only post hoc (50% of failures). No clinical/EHR, no event-order content.
+  Best: GPT-5.1 68.6.
+- **StatFormBench** — Wang, Zhao, Cong, Deng, Deng. *Benchmarking Language Models
+  for Statistical Problem Formulation.* arXiv:2609.01982, EMNLP 2026 main.
+  1,013 (background, request, data) triples → problem CATEGORY (20 coarse / 85
+  fine, e.g. "Proportion Test", "Independence Test") + variable set with roles.
+  The only benchmark whose target is formulation, but the output is a family
+  label, not a null statement, and nothing is computed. Few-shot / category
+  definitions add only +1.9–3.8. Best fine accuracy 72.0 (Gemini 3.1 Pro).
+- **StatQA** — Zhu et al. 2024, https://statqa.github.io/ — 11,623 items on
+  method applicability and variable selection for pre-formulated questions over
+  tables. **StatEval** (Lu et al., arXiv:2510.09517), **StatLLM** (Song et al.,
+  arXiv:2502.17657; SAS code), **QRData** (Liu et al. 2024): statistical reasoning
+  or code generation with the analysis target given or strongly implied.
+
+### 12.2 LLM-assisted hypothesis testing systems (clinical)
+
+- **LATCH** — Gim et al. *An LLM-assisted framework for accelerated and verifiable
+  clinical hypothesis testing from electronic health records.* medRxiv
+  10.64898/2026.02.10.26346008 (Feb 2026); PMC12919150; code
+  github.com/latch-project/LATCH. The closest ARCHITECTURE: an LLM semantic layer
+  (planner JSON, variable mapping, cohort SQL) over a deterministic statistics
+  engine (fixed R pipelines); the LLM never touches patient rows. Portable to
+  "any standardized structured health dataset" via a schema summary table. But
+  the user supplies **both the hypothesis and the method**; validation is
+  concordance with 20 published NHANES/AI-READI studies (cohort n, direction,
+  CI overlap), not an independent per-stage gold; data are cross-sectional
+  survey/registry tables, so no event-order claims.
+
+### 12.3 Data-driven discovery agents
+
+- **DiscoveryBench** — Majumder et al., ICLR 2025, arXiv:2407.01725. 264 tasks
+  from published workflows; open-ended hypothesis search + verification, no
+  prescribed statistics; peak 25%.
+- **BLADE** — Gu et al., arXiv:2408.09667. 12 datasets; scores the analysis
+  DECISIONS of agents against expert analyses.
+- **ProjectionBench** — arXiv:2605.30284: progressive disclosure from a research
+  question down to the classical null test.
+Discovery, not verification: open-ended, rubric- or expert-judged, no computable
+truth value per claim.
+
+### 12.4 Temporal reasoning over clinical records
+
+- **CRAFT** — arXiv:2608.12779: iterative LLM extraction of stage-by-stage symptom
+  timelines from narratives (this project's predecessor; MedTempo is its corpus).
+- **TIMER** — npj Digital Medicine 2025, arXiv:2503.04176: time-aware instruction
+  tuning over multi-visit EHRs.
+- **CliniCIRCA** — arXiv:2609.19585: date-resolved longitudinal patient journeys.
+These extract or reason over timelines; none poses statistical hypotheses over
+them or verifies a claim against a computed test.
+
+### 12.5 The gap, stated against the table
+
+| | null formulated by the model | deterministic execution | event-ORDER claims | clinical timelines | gold at every stage (incl. denominator) | dataset-in interface |
+|---|---|---|---|---|---|---|
+| P-Bench / Fisher-R1 | no (H0 given; test chosen, unscored) | no (model R in sandbox) | no | partly | no | no |
+| LATCH | no (hypothesis + method given) | **yes** | no | yes (survey/registry) | partial (vs published n / CI) | **yes** (schema summary) |
+| StatFormBench | family label only | nothing executed | no | textbook | formulation only | no |
+| StatABench | test selection, no null | yes (tool calls) | no | no | final answer only | no |
+| DiscoveryBench / BLADE | open-ended | agent code | no | no | rubric / expert | no |
+| **VERITAS** | **yes** (null form, p0, statistic, tail; toolbox frame, issue 29) | **yes** (`procedure-honouring`) | **yes** (precedes / co-occur / sequence / first-last) | **yes** (annotated VAERS timelines) | **yes** (claim, evidence set, counts, p, verdict) | task card (planned; LATCH's schema-summary pattern) |
+
+No prior work combines model-formulated nulls, deterministic execution, and
+per-stage gold; none poses event-order hypotheses within records; none scores
+the eligibility (denominator) rule as a stage — which e2e-sql (§10.3b) showed is
+where systems fail. Caveats to keep honest: null DIVERSITY is thin today (three
+cohort signatures; issue 20 is the fix); the portability claim needs at least one
+external dataset actually run (LATCH's interface is the precedent, not ours);
+arithmetic fragility is corroborated by P-Bench's strict metric (frontier 64.7%
+on Easy) and our counts-llm (66% p agreement).
