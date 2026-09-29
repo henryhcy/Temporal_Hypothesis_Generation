@@ -949,6 +949,13 @@ stipulations about what the statistic means for this corpus, not facts about the
 sentence — they are what the structured claim carries, and a system without it
 cannot reconstruct them.
 
+> **Re-reading (2026-09-29).** Those stipulations were withheld, so this run
+> measured convention-guessing, not temporal reasoning: the accurate statement
+> is "conditioning is unrecoverable when the conventions are hidden". The
+> protocol from here on states every convention (situation-phrased) and
+> withholds only the mode mapping -- `decisions.md` "state every stipulation,
+> withhold only the mapping"; the middle condition is issue 28/29.
+
 ### 10.3c What smoke-1c and e2e-sql did NOT test: null and test selection
 
 Asked 2026-09-22, and the answer differs per run. Recorded because "procedure-

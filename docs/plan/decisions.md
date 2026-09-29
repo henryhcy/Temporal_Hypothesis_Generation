@@ -2558,3 +2558,58 @@ not been pushed -- exactly the state the documented review-then-push workflow
 produces -- it reports "no changes to sync" and exits 0 without pushing. Hit on
 2026-08-20; worked around by pushing from the clone. Fix is to check
 `@{u}..HEAD` before returning.
+
+
+## PRINCIPLE: state every stipulation, withhold only the mapping (S1 framing, 2026-09-29)
+
+**Re-reading of e2e-sql (§10.3b).** The conditioning rules -- co-existence
+excluded from *precedes*, ties dropped from first/last, association split on
+presence over the whole cohort, first-mention positions, the floors, alpha --
+are DATASET STIPULATIONS decided at design time (02, decisions 08-11), not facts
+entailed by the sentences: the audit measured 176 of 501 P-V1 labels flipping
+under the equally coherent co-exist-inclusive reading. e2e-sql withheld those
+rules, so its C-V2 0.50 / first-last 0.36-0.45 measured the model GUESSING OUR
+CONVENTIONS, not a temporal-reasoning gap. Correct statement: conditioning is
+unrecoverable when the conventions are hidden -- a property of the experiment.
+
+**Principle.** Extend the floors decision (given in both modes, plan 11 §2) to
+every convention: state each one, phrased against the statistical SITUATION
+("when a claim asks which of several events is earliest, a report with two tied
+for earliest has no answer and is excluded"), never keyed to a mode label.
+Withhold only the 20-row mapping and the per-mode H0 -- the answer key. This is
+issue 28's middle condition and the S1 evaluation protocol from here on (the
+"toolbox" frame: task card + test definitions + conditioning primitives).
+
+**What the model does under the toolbox frame.** It COMPOSES the procedure --
+what is compared, which denominator primitive, how many arms, the null form,
+the test, the tail -- plus the events. The harness derives the mode by reverse
+lookup (`derive_mode(procedure)`, the inverse of `derive_procedure`) when S2/S3
+need it; scoring is on the procedure fields and event slots, as P2 already
+requires. Execution stays deterministic (`procedure-honouring`): counts-llm's
+66% p-value agreement (52% on Fisher) is why the model plans and the harness
+computes.
+
+**Roles that stay.** Classification-with-table is the `procedure-given` upper
+bound in every results table (what a model achieves handed the key); the rules
+parser is the deployed in-distribution classifier (100%, deterministic -- it
+dominates an LLM at that job; the only reason for an LLM in S1 is text the
+templates do not cover, where a table is useless).
+
+**Capability claim, reworded.** Not "models infer temporal semantics unaided"
+but "given the data representation and the analysis conventions, can a model
+translate a temporal claim into the correct procedure and execute it
+faithfully". Null/test selection is a secondary claim until nulls are diverse
+(issue 20): today three cohort signatures. Risk stated up front: if the middle
+condition scores near smoke-4's 0.975, S1+S2 is solved for frontier models under
+an honest protocol and the difficulty lives in statistics (real: counts-llm) and
+off-template generalization (P2).
+
+**S1 error structure (smoke-1c, 400 records, 54 errors).** 38 mode / 11
+asserted_option / 5 events; P-R2 alone 18 (75% of its records), P-V4 7, P-M2 7.
+(tier, answer_type, n_events) -- two of them GIVEN input fields -- pins a unique
+mode for 4 of 10 signatures, and 25 of the 38 mode errors sit on records where it
+pins the correct one (P-R2: picks the 3-event mode, then flags slot C
+underdetermined -- a detectable self-contradiction). Recorded as a SYSTEM lever
+(constrained decoding by signature), kept separate from the measurement ledger:
+it is legitimate scaffolding (uses the input, not the key) but a constrained S1
+cannot be reported as evidence that a model identifies claim types.
