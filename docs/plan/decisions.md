@@ -2658,9 +2658,10 @@ and silently mis-joined report-tier rows of v1.1 runs).
 
 ## FINDING: the compose gap is MODEL-TIER; frontier S1 is solved on seen templates without the mapping (2026-09-30)
 
-claude-opus-5 under the toolbox frame: 1.000 verdict / 1.000 plan EM on the v1.1
-smoke slice (0.985 before the two-candidate-extreme identity; the six misses were
-P-R2). Same frame, same slice, 7B: 0.64-0.68 (wording-sensitive). So the toolbox
+claude-opus-5 under the toolbox frame: 1.000 verdict / 1.000 claim EM on the v1.1
+smoke slice; plan EM 0.985 -- six P-R2 plans compose the two-candidate 'which came
+first' as extreme_of_set, the semantically equivalent form, folded by that identity
+(before it: 0.985 verdict). Same frame, same slice, 7B: 0.64-0.68 (wording-sensitive). So the toolbox
 protocol costs a strong model nothing and exposes the small model's
 situation-recognition failures; the catalogue was never what made S1 easy at
 the frontier. Remaining S1 difficulty must be sought in P2 group holdout and

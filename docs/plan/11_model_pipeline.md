@@ -780,7 +780,7 @@ rows are placeholders. Verdict columns are over the answerable records of the ru
 | ref-v1.1 (`results/v11_smoke200_catalogue_7b`) | `llm-s1+compiler`, catalogue + both hints (the LOOKUP; procedure-given-style upper bound), **v1.1 slice** | blind-group | blind | v1.1 smoke_200 | 400 | **0.918** | 0.929 | 0.928 | 0.865 (mode 0.897) | 0.963 (compiler) | 0.000 | 0.000 | — | twins 0.875 | 18 unexpected |
 | ref-v1.1-nonull (`results/v11_smoke200_catalogue_nonull_7b`) | same, `--hide-null-hints` (issue 27; catalogue keeps mode→conditioning) | blind-group | blind | v1.1 smoke_200 | 400 | 0.890 | 0.875 | 0.904 | 0.823 (mode 0.882) | — | — | — | test field 0.545 / null.kind 0.552 — un-runnable stated tests fall back to the reference in S3, so the verdict barely moves | twins 0.667 | 8 |
 | **T1-v3 toolbox** (`results/v11_smoke200_toolbox_v3_7b`, 2026-09-30) | `llm-s1+compiler --s1-frame toolbox`: NO catalogue; the model COMPOSES the plan (§11a) | blind-group | blind | v1.1 smoke_200 | 400 | **0.642** | 0.770 | 0.687 [0.640, 0.712] | 0.627 (mode 0.642; **125 plans match no mode**) | — | 0.000 | 0.000 | plan fields (n=275 folded): quantity 0.978, denominator 0.935, arms 0.916, extreme 1.000, tail 0.993, test_family 0.789, rule_valid 0.789, p0 0.796, null_kind 0.625; plan_em 0.556 | twins 0.625 | 0 |
-| **T1-Opus toolbox** (`results/v11_smoke200_toolbox_opus_v4`, 2026-09-30; ~$15.6: 2.36M in / 0.15M out) | `--s1-frame toolbox --provider anthropic --model claude-opus-5`: NO catalogue; composes the plan | blind-group | blind | v1.1 smoke_200 | 400 | **1.000** | 1.000 | 1.000 | **1.000** (mode 1.000; 0 no-shape) | — | 0.000 | 0.000 | every plan field 1.000; plan_em 1.000; rule_valid 1.000 (before the two-candidate normalization: 0.985 / 6 P-R2 plans as `extreme_of_set`) | twins 1.000 | 0 |
+| **T1-Opus toolbox** (`results/v11_smoke200_toolbox_opus_v4`, 2026-09-30; ~$15.6: 2.36M in / 0.15M out) | `--s1-frame toolbox --provider anthropic --model claude-opus-5`: NO catalogue; composes the plan | blind-group | blind | v1.1 smoke_200 | 400 | **1.000** | 1.000 | 1.000 | **1.000** (mode 1.000; 0 no-shape) | — | 0.000 | 0.000 | plan_em **0.985** -- 394/400 plans match the reference field-for-field; the other 6 (P-R2) compose the two-candidate 'which came first' as `extreme_of_set`, semantically the same claim, folded by the two-candidate identity; rule_valid 1.000 | twins 1.000 | 0 |
 | T1-Opus catalogue (`results/v11_smoke200_catalogue_opus`) | the LOOKUP with the catalogue + hints, Opus | blind-group | blind | v1.1 smoke_200 | 400 | **1.000** | 1.000 | 1.000 | 1.000 | — | 0.000 | 0.000 | — | twins 1.000 | 0 |
 | T1-v4 toolbox 7B (`results/v11_smoke200_toolbox_v4_7b`; v3 + argmax wording + two-candidate normalization) | same as T1-v3 | blind-group | blind | v1.1 smoke_200 | 400 | **0.680** | — | — | 0.667 (mode 0.68; 110 no-claim) | — | — | — | plan_em 0.497; rule_valid 0.631; null_kind 0.566; test_family 0.631 | — | — |
 | T1-v1 / T1-v2 toolbox (superseded harness versions) | same slice; v1 = strict reverse lookup, v2 = arms-carries-comparison | blind-group | blind | v1.1 smoke_200 | 400 | 0.390 / 0.525 | — | — | no-shape 232 / 170 — 3 of 4 failure classes were the HARNESS (§11a) | — | — | — | — | — | — |
@@ -836,8 +836,9 @@ attribution separates them cleanly:
   removing the escape, never by consulting the answer. Next: the same frame on
   claude-opus-5 decides whether the compose gap is model-tier or task.
 - **The compose gap is MODEL-TIER (T1-Opus, 2026-09-30).** On the same frame and
-  slice, claude-opus-5 composes the procedure at **1.000** — every plan field,
-  every rule, every verdict — against 1.000 with the catalogue. Before the last
+  slice, claude-opus-5 composes the procedure at **1.000** on verdicts and claim
+  EM (plan EM 0.985: six P-R2 plans are the semantically equivalent two-candidate
+  `extreme_of_set`) — against 1.000 with the catalogue. Before the last
   normalization it was 0.985, and all six misses were P-R2's two-candidate
   "which came first, A or B?" composed as `extreme_of_set`, which over two
   candidates IS a pair order (the earliest of {A, B} is the one that precedes) —
