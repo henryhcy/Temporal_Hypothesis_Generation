@@ -65,6 +65,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 from temporal_hypo.framework.claim_schema import (
     MODE_SPEC, MODES, UNDERDETERMINED, VERDICTS, Procedure, StructuredClaim, from_gold,
     derive_plan,
+    normalize_plan,
 )
 
 # ---------------------------------------------------------------------------
@@ -425,6 +426,7 @@ def _score_row(row: Mapping[str, Any], gold: Mapping[str, Any], *,
     rule_valid: bool | None = None
     pplan = pc.plan if pc is not None else None
     if pplan:
+        pplan = normalize_plan(pplan)
         ref_plan = derive_plan(gold_claim.mode, negated=gold_claim.negated)
         plan_ok = {}
         for f in PLAN_FIELDS:

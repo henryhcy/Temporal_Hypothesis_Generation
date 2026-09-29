@@ -1017,6 +1017,68 @@ issue 10). ~~API provider adapters land with whichever of these first needs them
 | 25 | `test_verdict` provenance defect (1,800 rows): regenerate or field-patch? Register only — the harness never reads the field | defect | `09_next_steps.md` row 25 |
 
 
+## 11a S1 toolbox frame — BUILT 2026-09-30 (branch `s1-toolbox`; issues 29/31)
+
+The evaluation protocol for S1 from decisions 2026-09-29 ("state every
+stipulation, withhold only the mapping"), as implemented. `--s1-frame toolbox`
+selects it; `catalogue` (the 20-row table) remains the procedure-given upper
+bound.
+
+**Prompt.** A **computed dataset card** (`extract/task_card.py`, from the eval
+DB: report count, cohort sizes, vocabulary size, mean events per stage — the
+geometry a model needs to see that 0.5 is not the chance rate for a single
+event's position), the conventions phrased by *situation*, the four null
+sources, the test toolbox with definitions, the six-step procedure (§13). No
+mode names, no group ids, no per-mode H0, no mapping sentence — a test asserts
+the prompt contains none of them. ~2.2K tokens against the catalogue's ~2.9K.
+
+**Output — the conditional plan** (`PLAN_JSON_SCHEMA`, schema-constrained):
+`events`, `negated`, `asserted_option`, **`quantity`** (what is measured:
+order_of_pair / co_occurrence_of_pair / dominant_relation_of_pair /
+ordering_of_triple / extreme_of_set), **`extreme`** (earliest | latest | none —
+a required string, never null: v2 lost 86/400 plans to a null escape),
+**`arms`** (1, or 2 when the quantity is COMPARED between two groups), the
+**denominator primitive**, the **null recipe** (kind ∈ symmetric_fixed /
+text_stated / data_derived / two_arm_equality / none, `p0`, `null_reference`),
+`tail`, **`test_family`** + **`test_rule`** (exact_always |
+exact_if_small_else_asymptotic), `min_n_floor`.
+
+**Folding.** `derive_mode` is the inverse of `derive_procedure`: the plan's
+`(tier, answer_type, n_events, arms, denominator, quantity, extreme)` maps to
+exactly one of the 20 modes (a test proves the round trip), with the tier taken
+from the input's `level`. `normalize_plan_shape` fills only what other fields
+already IMPLY — a presence split is two arms, the first/last denominators name
+their extreme, a single report has one arm, the legacy "rate_across_two_arms"
+means "the pair's quantity, compared across arms" — and nothing that would need
+the answer. A plan matching no mode is recorded as no-claim (the verdict is
+wrong by construction) but its fields are still scored.
+
+**Execution.** S2/S3 are unchanged. In `procedure-honouring`, S3 resolves the
+plan's `test_rule` on the retrieved 2x2 (guard: every expected cell >= 5) and
+runs either Fisher's exact or the one-sided two-proportion z
+(`core.significance.two_proportion_z_p`, the asymptotic branch); the branch
+taken is recorded in the prediction's notes. Fisher stays the gold test.
+
+**Scoring** (`extraction.plan`): every plan field against `derive_plan(gold)`,
+`plan_em`, and `rule_valid` (test family right AND the rule valid for that
+family, `VALID_RULES`). Mode accuracy stays as a diagnostic.
+
+**Few-shot as the leakage dial.** `--k-shot-exclude-groups` (P2: no example
+from a held-out group) and `--k-shot-registers` (P1: examples rendered only in
+the training registers). Under the toolbox frame a worked example IS a mapping
+row, so these are the measured hint settings.
+
+**Design lessons from the first two toolbox smokes (7B, v1.1 slice).** Three
+of the four largest failure classes in v1 (0.39) and v2 (0.525) were the
+reverse lookup being stricter than the semantics, not the model: a quantity
+that conflated "what" with "compared across arms", `arms=1` on a presence
+split, and the null escape on `extreme`. Each was fixed by normalization or by
+removing the escape, never by consulting the answer. What remains after v3 is
+the model's own composition: "A -> B -> C in this report" and "is A first of
+the three" composed as a pair order; "B follows A more often than it follows C"
+composed as one arm; the four-event contrast as a triple. Results: §10.3, rows
+T1-v1..v3.
+
 ## 12 Related work (2026-09-29; four closest papers read in full, rest from abstracts)
 
 Positioning against the benchmarks and systems that overlap with VERITAS's task.

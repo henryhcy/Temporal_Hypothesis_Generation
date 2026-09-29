@@ -342,8 +342,10 @@ CONVENTIONS_TEXT = (
 NULL_SOURCES_TEXT = (
     "HOW TO FORMULATE THE NULL (decide what 'chance' means for the quantity the claim compares):\n"
     "- symmetric_fixed: the claim orders two named events, or names one of k candidates -- "
-    "swapping the roles is a symmetry, so the null proportion is p0 = 0.5 (for a named "
-    "candidate vs its strongest competitor, 0.5 on those two cells).\n"
+    "swapping the roles is a symmetry, so the null proportion is p0 = 0.5: SET p0 = 0.5. For a "
+    "named candidate against its strongest competitor ('most common first/last', 'most common "
+    "ordering') the test family is named_vs_runner_up (0.5 on those two cells) -- NOT a plain "
+    "proportion and NOT data-derived.\n"
     "- text_stated: the wording carries a quantitative bar ('in at least two-thirds of "
     "reports') -- p0 is that bar.\n"
     "- data_derived: the claim is about ONE event's position relative to the report's "

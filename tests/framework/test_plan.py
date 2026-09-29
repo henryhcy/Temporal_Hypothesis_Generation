@@ -165,3 +165,11 @@ def test_extreme_has_no_null_escape_in_the_schema():
     assert spec["type"] == "string" and None not in spec["enum"] and "none" in spec["enum"]
     assert "extreme" in PLAN_JSON_SCHEMA["required"]
     assert derive_plan("dir_bool")["extreme"] == "none"
+
+
+def test_normalize_plan_fills_the_implied_p0_only():
+    from temporal_hypo.framework.claim_schema import normalize_plan
+    assert normalize_plan({"null_kind": "symmetric_fixed", "p0": None, "quantity": "order_of_pair"})["p0"] == 0.5
+    assert normalize_plan({"null_kind": "text_stated", "p0": None, "quantity": "order_of_pair"})["p0"] is None
+    assert normalize_plan({"null_kind": "data_derived", "p0": None, "quantity": "order_of_pair"})["p0"] is None
+    assert normalize_plan({"null_kind": "two_arm_equality", "p0": 0.5, "quantity": "order_of_pair"})["p0"] is None

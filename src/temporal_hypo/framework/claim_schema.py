@@ -688,6 +688,21 @@ def plan_from_claim(claim: StructuredClaim) -> dict:
     return plan
 
 
+def normalize_plan(plan: Mapping[str, Any]) -> dict:
+    """Fill plan VALUES other values imply (never the answer): a symmetric null is p0 = 0.5;
+    a comparison of two arms or a report observation has no p0; extreme 'none' -> None-like
+    stays the string form. Applied at extraction and again at scoring time.
+    """
+    p = dict(plan)
+    if p.get("null_kind") == "symmetric_fixed" and p.get("p0") is None:
+        p["p0"] = 0.5
+    if p.get("null_kind") in ("two_arm_equality", "none"):
+        p["p0"] = None
+    if p.get("quantity") != "extreme_of_set":
+        p["extreme"] = EXTREME_NONE
+    return p
+
+
 def claim_from_plan(plan: Mapping[str, Any], question_row: Mapping[str, Any], *,
                     source: str) -> StructuredClaim:
     """Fold a composed plan into a StructuredClaim via ``derive_mode``.
@@ -696,6 +711,7 @@ def claim_from_plan(plan: Mapping[str, Any], question_row: Mapping[str, Any], *,
     the plan's shape matches no mode -- the caller records it as no-claim; the
     plan itself is kept in ``raw`` so its fields can be scored independently.
     """
+    plan = normalize_plan(plan)
     tier = question_row.get("level")
     answer_type = question_row.get("answer_type")
     terms = [t for t in (plan.get("events") or [])]
