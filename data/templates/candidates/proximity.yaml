@@ -1,0 +1,168 @@
+family: proximity
+status: candidate
+description: 'How CLOSE two events are in the timeline, not merely which came first.'
+notes: 'THE GAP THIS FILLS. The shipped `precedes` primitive is distance-blind by
+  design: `sequence_fraction` documents that "gaps are fine: a<b<d<e<c still counts
+  as a<b<c". So A at stage 0 and B at stage 5 with four other stages between them is
+  recorded as exactly the same relation as A at stage 0 and B at stage 1. Clinically
+  those are different claims -- "the rash followed the fever immediately" is not
+  "the rash came somewhere after the fever" -- and the annotation already carries the
+  information needed to separate them. `corpus.pair_distances` computes level gaps
+  and is used only for retired rank diagnostics; nothing in the benchmark asks about
+  them.
+
+  TWO DIFFERENT NULLS, hence two shapes:
+
+  1. DIRECTION (Y-R1, Y-V1, Y-V2). Restrict to reports where A and B are in
+     CONSECUTIVE stages, then ask which came first. Symmetric, so the null is 0.5
+     exactly, like precedes -- but over a different, stricter denominator.
+  2. RATE (Y-V3). Ask whether A and B land in consecutive stages MORE OFTEN than
+     chance. Chance is not 0.5 and not constant: in a report with L occupied stages
+     there are L(L-1) ordered placements of a distinct pair and 2(L-1) of them are
+     adjacent, so the per-report chance is 2/L. It is 1.0 at L=2, 0.67 at L=3, 0.5 at
+     L=4. The core-level null is therefore the MEAN of 2/L over the reports in the
+     denominator -- a chance baseline, still principled, but a per-core number the
+     solver has to compute rather than a constant it can assume.
+
+  Y-V3 is the one shape in the whole benchmark whose null must be DERIVED from the
+  conditioned reports rather than read off the claim. That is a genuinely harder
+  inference and a good discriminator for an agentic solver, but note the cost: a
+  binomial against the mean of 2/L is slightly conservative relative to the exact
+  Poisson-binomial over the individual rates. Conservative in the safe direction --
+  it under-claims significance -- and it keeps the test one the model can run.'
+common:
+  registers: [original, research, media, clinical]
+groups:
+- id: Y-R1
+  primitive: immediate
+  level: report
+  answer_type: BOOL
+  slots: [A, B, r]
+  variants:
+    original:
+      question: In report {r}, did {A} occur in the stage immediately before {B}?
+      claim: In report {r}, {A} occurred in the stage immediately before {B}.
+    research:
+      question: In this report, does {A} occupy the stage directly preceding {B}?
+      claim: In this report, {A} occupies the stage directly preceding {B}.
+    media:
+      question: In this case, did {A} happen right before {B}, with nothing in between?
+      claim: In this case, {A} happened right before {B}, with nothing in between.
+    clinical:
+      question: In this patient, did {A} immediately precede {B} in the course?
+      claim: In this patient, {A} immediately preceded {B} in the course.
+- id: Y-R2
+  primitive: immediate
+  level: report
+  answer_type: CHOICE
+  slots: [A, B, C, r]
+  variants:
+    original:
+      question: In report {r}, which event occupies the stage immediately after {A},
+        {B} or {C}?
+      claim: In report {r}, {B} occupies the stage immediately after {A}.
+    research:
+      question: In this report, which of {B} and {C} directly follows {A}?
+      claim: In this report, {B} directly follows {A}.
+    media:
+      question: In this case, what came right after {A}, {B} or {C}?
+      claim: In this case, {B} came right after {A}.
+    clinical:
+      question: In this patient, which followed {A} immediately, {B} or {C}?
+      claim: In this patient, {B} followed {A} immediately.
+- id: Y-V1
+  primitive: immediate
+  level: vaccine
+  answer_type: BOOL
+  slots: [A, B, v]
+  variants:
+    original:
+      question: After {v}, when {A} and {B} fall in consecutive stages, does {A} usually
+        come first?
+      claim: After {v}, when {A} and {B} fall in consecutive stages, {A} usually comes
+        first.
+      question_negated: After {v}, when {A} and {B} fall in consecutive stages, is
+        it the case that {A} does NOT usually come first?
+      claim_negated: After {v}, when {A} and {B} fall in consecutive stages, {A} does
+        not usually come first.
+    research:
+      question: Among {v} reports where {A} and {B} occupy adjacent stages, does {A}
+        precede {B} in the majority of cases?
+      claim: Among {v} reports where {A} and {B} occupy adjacent stages, {A} precedes
+        {B} in the majority of cases.
+      question_negated: Among {v} reports where {A} and {B} occupy adjacent stages,
+        does {A} fail to precede {B} in the majority of cases?
+      claim_negated: Among {v} reports where {A} and {B} occupy adjacent stages, {A}
+        does not precede {B} in the majority of cases.
+    media:
+      question: After {v}, when {A} and {B} happen back to back, is {A} usually the
+        first of the two?
+      claim: After {v}, when {A} and {B} happen back to back, {A} is usually the first
+        of the two.
+      question_negated: After {v}, when {A} and {B} happen back to back, is {A} usually
+        NOT the first of the two?
+      claim_negated: After {v}, when {A} and {B} happen back to back, {A} is usually
+        not the first of the two.
+    clinical:
+      question: In {v} recipients with {A} and {B} in consecutive stages, does {A} usually
+        come first?
+      claim: In {v} recipients with {A} and {B} in consecutive stages, {A} usually comes
+        first.
+      question_negated: In {v} recipients with {A} and {B} in consecutive stages, does
+        {A} usually NOT come first?
+      claim_negated: In {v} recipients with {A} and {B} in consecutive stages, {A} does
+        not usually come first.
+- id: Y-V2
+  primitive: immediate
+  level: vaccine
+  answer_type: CHOICE
+  slots: [A, B, v]
+  variants:
+    original:
+      question: After {v}, in reports where {A} and {B} are in consecutive stages, which
+        comes first?
+      claim: After {v}, in reports where {A} and {B} are in consecutive stages, {A}
+        comes first more often.
+    research:
+      question: Among {v} reports with {A} and {B} in adjacent stages, which is the
+        earlier of the two more often?
+      claim: Among {v} reports with {A} and {B} in adjacent stages, {A} is the earlier
+        of the two more often.
+    media:
+      question: After {v}, when these two happen back to back, which comes first, {A}
+        or {B}?
+      claim: After {v}, when these two happen back to back, {A} comes first more often.
+    clinical:
+      question: In {v} recipients with {A} and {B} in consecutive stages, which is the
+        earlier, {A} or {B}?
+      claim: In {v} recipients with {A} and {B} in consecutive stages, {A} is the earlier
+        more often.
+- id: Y-V3
+  primitive: adjacency
+  level: vaccine
+  answer_type: BOOL
+  slots: [A, B, v]
+  notes: 'The null here is the mean per-report chance of adjacency (2/L), NOT 0.5.
+    A solver that assumes 0.5 will systematically over-report support, which is
+    exactly the failure this group is designed to expose.'
+  variants:
+    original:
+      question: After {v}, do {A} and {B} fall in consecutive stages more often than
+        chance would give?
+      claim: After {v}, {A} and {B} fall in consecutive stages more often than chance
+        would give.
+    research:
+      question: Among {v} reports where {A} and {B} occur at different stages, is their
+        adjacency rate above the rate expected from the timelines' stage counts?
+      claim: Among {v} reports where {A} and {B} occur at different stages, their adjacency
+        rate is above the rate expected from the timelines' stage counts.
+    media:
+      question: After {v}, do {A} and {B} follow each other more closely than you would
+        expect by chance?
+      claim: After {v}, {A} and {B} follow each other more closely than you would expect
+        by chance.
+    clinical:
+      question: In {v} recipients, are {A} and {B} adjacent in the course more often
+        than the timelines alone would predict?
+      claim: In {v} recipients, {A} and {B} are adjacent in the course more often than
+        the timelines alone would predict.

@@ -1,0 +1,178 @@
+family: threshold
+status: candidate
+description: 'Claims that name a STRENGTH bar -- "in at least two thirds", "at least
+  twice the chance rate" -- instead of a bare majority.'
+notes: 'THE GAP THIS FILLS. Every cohort-level group in the shipped roster tests
+  against the same two nulls: 0.5 (a bare majority) or modal-vs-runner-up (an
+  argmax). A solver therefore never has to READ a bar off the claim -- it can
+  hard-code 0.5 for BOOL groups and the runner-up cell for CHOICE groups and be
+  right every time. That is a real shortcut, and it means the benchmark never tests
+  whether a model can map a quantitative phrase in a hypothesis onto the parameter
+  of a test. Actual research hypotheses are usually stated with a strength bar, not
+  a bare majority, so this is also the most research-shaped family here.
+
+  WHY THIS IS NOT THE RETIRED PROP FAMILY. PROP was removed on 2026-07-13 because
+  it asserted a specific value ("in about {p}% of reports") graded by a +/-5pp
+  tolerance against the truth -- a point-estimate fact-check with no null. These
+  claims are ONE-SIDED tests against a bar fixed by the template text, anchored to
+  chance: 2/3 and 3/4 are stated multiples of the 0.5 chance rate, 1/3 is twice the
+  1/6 chance of one particular 3-event ordering, and 0.5 in H-V5 is 1.5x the 1/3
+  chance of being first among three. None is data-derived, so none leaks. This is
+  exactly menu item R7 ("multiple-of-chance threshold"), which the 07-13 session
+  listed as a valid replacement and nobody ever measured.
+
+  MEASURED PROBLEM -- READ BEFORE ADOPTING. Screening (2026-08-14) shows these
+  groups are severely verdict-IMBALANCED, and structurally so. Raising the bar to
+  2/3 makes `refuted` nearly free: a pair sitting at the 0.5 chance rate is
+  significantly BELOW a 2/3 bar as soon as n is moderate, so most cores refute
+  without any temporal signal. Pooled scope, floor 10: 2/3 gave 38 supported
+  against 356 refuted, and 3/4 gave 18 against 447. The permutation null confirms
+  it -- shuffled timelines produce MORE decisive cores than the real corpus does at
+  3/4, because refutation is driven by n rather than by signal.
+
+  Consequence, if adopted: equal thirds per group caps each of these at ~3x its
+  SUPPORTED count (roughly 114 items at 2/3, 54 at 3/4), and the `refuted` third
+  must be drawn deliberately rather than swept up, or the group teaches "threshold
+  wording -> answer refuted". Prefer the 2/3 bar over 3/4 on supply, and treat
+  p_sup as the only meaningful screen for the family.'
+common:
+  registers: [original, research, media, clinical]
+groups:
+- id: H-V1
+  primitive: precedes
+  level: vaccine
+  answer_type: BOOL
+  null_ref: 0.667
+  slots: [A, B, v]
+  variants:
+    original:
+      question: After {v}, does {A} precede {B} in at least two thirds of the reports
+        where their order is recorded?
+      claim: After {v}, {A} precedes {B} in at least two thirds of the reports where
+        their order is recorded.
+    research:
+      question: Among {v} reports with {A} and {B} at distinct stages, does {A} precede
+        {B} in at least two thirds of cases?
+      claim: Among {v} reports with {A} and {B} at distinct stages, {A} precedes {B}
+        in at least two thirds of cases.
+    media:
+      question: After {v}, does {A} come before {B} in at least two out of every three
+        cases?
+      claim: After {v}, {A} comes before {B} in at least two out of every three cases.
+    clinical:
+      question: In {v} recipients, does {A} precede {B} in two thirds or more of the
+        cases where the order is documented?
+      claim: In {v} recipients, {A} precedes {B} in two thirds or more of the cases
+        where the order is documented.
+- id: H-V2
+  primitive: precedes
+  level: vaccine
+  answer_type: BOOL
+  null_ref: 0.75
+  slots: [A, B, v]
+  variants:
+    original:
+      question: After {v}, does {A} precede {B} in at least three quarters of the reports
+        where their order is recorded?
+      claim: After {v}, {A} precedes {B} in at least three quarters of the reports where
+        their order is recorded.
+    research:
+      question: Among {v} reports with {A} and {B} at distinct stages, does {A} precede
+        {B} in at least 75% of cases?
+      claim: Among {v} reports with {A} and {B} at distinct stages, {A} precedes {B}
+        in at least 75% of cases.
+    media:
+      question: After {v}, does {A} come before {B} in at least three out of every four
+        cases?
+      claim: After {v}, {A} comes before {B} in at least three out of every four cases.
+    clinical:
+      question: In {v} recipients, is the {A}-then-{B} order documented in three quarters
+        or more of cases?
+      claim: In {v} recipients, the {A}-then-{B} order is documented in three quarters
+        or more of cases.
+- id: H-V3
+  primitive: co_occurs
+  level: vaccine
+  answer_type: BOOL
+  null_ref: 0.667
+  slots: [A, B, v]
+  variants:
+    original:
+      question: After {v}, do {A} and {B} co-occur in at least two thirds of the reports
+        containing both?
+      claim: After {v}, {A} and {B} co-occur in at least two thirds of the reports containing
+        both.
+    research:
+      question: Among {v} reports containing both {A} and {B}, are they recorded at the
+        same stage in at least two thirds of cases?
+      claim: Among {v} reports containing both {A} and {B}, they are recorded at the same
+        stage in at least two thirds of cases.
+    media:
+      question: After {v}, do {A} and {B} turn up together in at least two out of every
+        three cases where both appear?
+      claim: After {v}, {A} and {B} turn up together in at least two out of every three
+        cases where both appear.
+    clinical:
+      question: In {v} recipients with both features, are {A} and {B} simultaneous in
+        two thirds or more of cases?
+      claim: In {v} recipients with both features, {A} and {B} are simultaneous in two
+        thirds or more of cases.
+- id: H-V4
+  primitive: sequence
+  level: vaccine
+  answer_type: BOOL
+  null_ref: 0.333
+  slots: [A, B, C, v]
+  notes: 'The bar is 1/3 = twice the 1/6 chance of one particular ordering of three
+    events. Stated as "twice the chance rate" in the text so the number is derivable
+    from the claim rather than injected.'
+  variants:
+    original:
+      question: After {v}, does the order {A} then {B} then {C} occur at least twice
+        as often as chance would give?
+      claim: After {v}, the order {A} then {B} then {C} occurs at least twice as often
+        as chance would give.
+    research:
+      question: Among {v} reports with {A}, {B} and {C} at distinct stages, does the
+        ordering {A} < {B} < {C} exceed twice its chance rate of one in six?
+      claim: Among {v} reports with {A}, {B} and {C} at distinct stages, the ordering
+        {A} < {B} < {C} exceeds twice its chance rate of one in six.
+    media:
+      question: After {v}, does this particular order of {A}, {B} and {C} show up at
+        least twice as often as random chance would give?
+      claim: After {v}, this particular order of {A}, {B} and {C} shows up at least twice
+        as often as random chance would give.
+    clinical:
+      question: In {v} recipients, is the {A}-{B}-{C} sequence documented at least twice
+        as often as chance would predict?
+      claim: In {v} recipients, the {A}-{B}-{C} sequence is documented at least twice
+        as often as chance would predict.
+- id: H-V5
+  primitive: first_last
+  level: vaccine
+  answer_type: BOOL
+  null_ref: 0.5
+  slots: [A, B, C, v]
+  notes: 'The bar is 0.5 = 1.5x the 1/3 chance of being first among three. Distinct
+    from F-V3, which tests the NAMED cell against its runner-up (an argmax) rather
+    than against an absolute bar; the two can disagree, and that disagreement is a
+    useful discriminator.'
+  variants:
+    original:
+      question: After {v}, is {A} the first event in at least half of the reports containing
+        {A}, {B} and {C}?
+      claim: After {v}, {A} is the first event in at least half of the reports containing
+        {A}, {B} and {C}.
+    research:
+      question: Among {v} reports containing {A}, {B} and {C} at distinct stages, is
+        {A} earliest in at least 50% of cases?
+      claim: Among {v} reports containing {A}, {B} and {C} at distinct stages, {A} is
+        earliest in at least 50% of cases.
+    media:
+      question: After {v}, is {A} the first of these three in at least half of the cases?
+      claim: After {v}, {A} is the first of these three in at least half of the cases.
+    clinical:
+      question: In {v} recipients presenting all three, is {A} the initial feature in
+        half or more of cases?
+      claim: In {v} recipients presenting all three, {A} is the initial feature in half
+        or more of cases.

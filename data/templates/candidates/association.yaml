@@ -1,0 +1,187 @@
+family: association
+status: candidate
+description: 'Claims about which events go TOGETHER, and about how long a timeline is
+  -- presence structure rather than order.'
+notes: 'THE GAP THIS FILLS. Two distinct gaps, both about presence rather than order,
+  which is why they share a file and a null model.
+
+  1. ASSOCIATION (A-V1, A-V2, A-R1). The shipped `co_occurs` primitive means "recorded
+  at the SAME stage", conditioned on both events already being present. So the
+  benchmark never asks the plainer question: do these two events tend to appear in the
+  same report at all? That is menu item R5 from 07-13, adopted as C-V2 in the 07-28
+  roster decision, and it is one of the three groups the pending migration still owes
+  -- never coded, never measured. Its reference is independence, which is exactly what
+  a Fisher 2x2 on presence x presence tests, so the null is principled without any
+  stated bar.
+
+  2. TIMELINE BURDEN (A-V3, A-V4). The corpus records 2 to 14 stages per report and
+  nothing in the benchmark asks about that number. "Does this event turn up in
+  richer, longer courses or in short ones" is a temporal property of the event, it is
+  answerable from the annotation alone, and it needs no second named event.
+
+  THE NULL MODEL IS DIFFERENT FROM EVERY OTHER FAMILY HERE, and getting it wrong
+  produces nonsense. Both statistics depend only on PRESENCE, so the level shuffle --
+  the null used for every order and position family -- leaves them untouched. Measured
+  proof: run against a level-shuffle null, burden returned 3,881 decisive cores
+  against a null mean of 3,881.0, i.e. the null and the real corpus were identical by
+  construction. These families need a degree-preserving bipartite EDGE SWAP, which
+  rewires which report contains which term while holding both report size and term
+  prevalence fixed. Under that null burden reports 691 decisive of 1,770 against a
+  null mean of 134.
+
+  HONEST CAVEAT ON SCOPE. Neither of these is a claim about temporal ORDER, so
+  adopting them widens what the benchmark is about. A-V1 is defensible because the
+  roster already committed to it as C-V2; A-V3/A-V4 are a genuine scope decision, not
+  just a supply decision. Note also that association at pooled scope is confounded by
+  vaccine (a pair may co-occur because both are common in one cohort), so per-cohort
+  scope is the safer wording -- which is how these are written.'
+common:
+  registers: [original, research, media, clinical]
+groups:
+- id: A-R1
+  primitive: association
+  level: report
+  answer_type: BOOL
+  slots: [A, B, r]
+  variants:
+    original:
+      question: Does report {r} record both {A} and {B}?
+      claim: Report {r} records both {A} and {B}.
+    research:
+      question: Are {A} and {B} both present in this report?
+      claim: Both {A} and {B} are present in this report.
+    media:
+      question: In this case, did the person report both {A} and {B}?
+      claim: In this case, the person reported both {A} and {B}.
+    clinical:
+      question: Did this patient present with both {A} and {B}?
+      claim: This patient presented with both {A} and {B}.
+- id: A-V1
+  primitive: association
+  level: vaccine
+  answer_type: BOOL
+  slots: [A, B, v]
+  notes: 'This is R5 / C-V2 from the roster migration. The test is Fisher on
+    presence x presence: the rate of {B} among reports containing {A}, against its
+    rate among reports not containing {A}. A solver that instead computes the raw
+    co-occurrence count, with no reference to the marginals, will call almost every
+    common pair associated.'
+  variants:
+    original:
+      question: After {v}, do {A} and {B} occur together more often than their separate
+        rates would predict?
+      claim: After {v}, {A} and {B} occur together more often than their separate rates
+        would predict.
+      question_negated: After {v}, is it the case that {A} and {B} do NOT occur together
+        more often than their separate rates would predict?
+      claim_negated: After {v}, {A} and {B} do not occur together more often than their
+        separate rates would predict.
+    research:
+      question: Among {v} reports, is {B} more prevalent in reports containing {A} than
+        in reports without it?
+      claim: Among {v} reports, {B} is more prevalent in reports containing {A} than in
+        reports without it.
+      question_negated: Among {v} reports, is {B} no more prevalent in reports containing
+        {A} than in reports without it?
+      claim_negated: Among {v} reports, {B} is not more prevalent in reports containing
+        {A} than in reports without it.
+    media:
+      question: After {v}, do people who report {A} also report {B} more often than everyone
+        else does?
+      claim: After {v}, people who report {A} also report {B} more often than everyone
+        else does.
+      question_negated: After {v}, do people who report {A} report {B} no more often than
+        everyone else does?
+      claim_negated: After {v}, people who report {A} do not report {B} more often than
+        everyone else does.
+    clinical:
+      question: In {v} recipients, is {A} associated with {B} beyond what their individual
+        frequencies imply?
+      claim: In {v} recipients, {A} is associated with {B} beyond what their individual
+        frequencies imply.
+      question_negated: In {v} recipients, is {A} unassociated with {B} once their individual
+        frequencies are accounted for?
+      claim_negated: In {v} recipients, {A} is not associated with {B} beyond what their
+        individual frequencies imply.
+- id: A-V2
+  primitive: association
+  level: vaccine
+  answer_type: CHOICE
+  slots: [A, B, C, v]
+  variants:
+    original:
+      question: After {v}, which pairing is the more strongly associated, {A} with {B}
+        or {A} with {C}?
+      claim: After {v}, {A} is more strongly associated with {B} than with {C}.
+    research:
+      question: Among {v} reports, is {A} more strongly associated with {B} or with {C}?
+      claim: Among {v} reports, {A} is more strongly associated with {B}.
+    media:
+      question: After {v}, which goes with {A} more often, {B} or {C}?
+      claim: After {v}, {B} goes with {A} more often than {C} does.
+    clinical:
+      question: In {v} recipients, which co-presents with {A} more strongly, {B} or {C}?
+      claim: In {v} recipients, {B} co-presents with {A} more strongly than {C} does.
+- id: A-V3
+  primitive: burden
+  level: vaccine
+  answer_type: BOOL
+  slots: [A, B, v]
+  variants:
+    original:
+      question: After {v}, does {A} appear in reports with three or more distinct stages
+        more often than {B} does?
+      claim: After {v}, {A} appears in reports with three or more distinct stages more
+        often than {B} does.
+      question_negated: After {v}, does {A} appear in reports with three or more distinct
+        stages no more often than {B} does?
+      claim_negated: After {v}, {A} does not appear in reports with three or more distinct
+        stages more often than {B} does.
+    research:
+      question: Among {v} reports, is {A} more concentrated in multi-stage timelines than
+        {B} is?
+      claim: Among {v} reports, {A} is more concentrated in multi-stage timelines than
+        {B} is.
+      question_negated: Among {v} reports, is {A} no more concentrated in multi-stage timelines
+        than {B} is?
+      claim_negated: Among {v} reports, {A} is not more concentrated in multi-stage timelines
+        than {B} is.
+    media:
+      question: After {v}, does {A} show up more often in the more complicated cases than
+        {B} does?
+      claim: After {v}, {A} shows up more often in the more complicated cases than {B}
+        does.
+      question_negated: After {v}, does {A} show up in the more complicated cases no more
+        often than {B} does?
+      claim_negated: After {v}, {A} does not show up more often in the more complicated
+        cases than {B} does.
+    clinical:
+      question: In {v} recipients, is {A} more often part of a multi-stage course than {B}
+        is?
+      claim: In {v} recipients, {A} is more often part of a multi-stage course than {B}
+        is.
+      question_negated: In {v} recipients, is {A} no more often part of a multi-stage course
+        than {B} is?
+      claim_negated: In {v} recipients, {A} is not more often part of a multi-stage course
+        than {B} is.
+- id: A-V4
+  primitive: burden
+  level: vaccine
+  answer_type: CHOICE
+  slots: [A, B, v]
+  variants:
+    original:
+      question: After {v}, which appears more often in reports with three or more distinct
+        stages, {A} or {B}?
+      claim: After {v}, {A} appears more often in reports with three or more distinct stages.
+    research:
+      question: Among {v} reports, which is the more multi-stage-associated event, {A} or
+        {B}?
+      claim: Among {v} reports, {A} is the more multi-stage-associated event.
+    media:
+      question: After {v}, which one turns up more in the complicated cases, {A} or {B}?
+      claim: After {v}, {A} turns up more in the complicated cases.
+    clinical:
+      question: In {v} recipients, which is more often part of a multi-stage course, {A}
+        or {B}?
+      claim: In {v} recipients, {A} is more often part of a multi-stage course.

@@ -1,0 +1,209 @@
+family: position
+status: candidate
+description: 'Where a SINGLE event sits in a report''s timeline, without reference to
+  a second named event.'
+notes: 'THE GAP THIS FILLS. Every shipped cohort-level group conditions on two or
+  three named events co-occurring: precedes needs A and B ordered, co-occurs needs
+  both present, sequence needs three at distinct levels, first/last needs every
+  candidate present. So the benchmark cannot ask the simplest temporal question a
+  clinician actually asks -- "is this an early symptom or a late one?" -- and its
+  denominators are all co-occurrence-limited.
+
+  Conditioning on ONE event is what lifts n: a term''s denominator is every report
+  containing it (Headache: 1,063) instead of every report containing it alongside a
+  second named term (typically 20-60).
+
+  HOW POSITION IS MEASURED. As a rank among the report''s OCCUPIED stages, not as a
+  raw level index, so a report with levels {0, 2, 5} has three stages and its middle
+  stage is rank 1. A report with L occupied stages has midpoint (L-1)/2; an event is
+  "early" below it and "late" above it, and an event sitting exactly ON the midpoint
+  (possible only when L is odd) leaves the denominator, exactly as first/last
+  excludes ties. Raw level indices would break this: with gaps, "below half the
+  maximum index" is not symmetric.
+
+  THE NULL IS **NOT** 0.5 -- this was measured, and assuming 0.5 is a real bug.
+  The first draft of this family tested against 0.5 on a symmetry argument: each of
+  the L ranks is equally likely, so early and late are balanced. That argument is
+  wrong, because stages are not equally POPULATED. Measured mean stage sizes are
+  2.45 terms at rank 0, 2.21 at rank 1, 1.84 at rank 2 and ~1.74 from rank 3 on:
+  earlier stages hold more events. A term drawn at random from a report''s slots is
+  therefore more likely to be early, and the corpus-wide structural early rate is
+  **0.5327**, not 0.5.
+
+  Testing against 0.5 does not merely add noise, it manufactures SUPPORT. Measured
+  at pooled scope, floor 10, over the same 176 cores:
+
+    null 0.5         68 decisive (37 supported / 31 refuted), permutation null mean 26.7
+    null structural  59 decisive (22 supported / 37 refuted), permutation null mean  9.0
+
+  The 0.5 version''s null mean is 15% of cores against a nominal alpha of 5%, which
+  is the tell; the corrected version''s is 5.1%, i.e. exactly alpha. The correction
+  also makes the family''s evidence STRONGER, 6.6x its null instead of 2.5x, and it
+  moves 15 cores out of `supported`.
+
+  So the shipped null must be the per-core STRUCTURAL rate: the mean over that
+  core''s reports of (early slots)/(early slots + late slots). It is mechanically
+  computable from the annotation alone, so a solver can still run it -- but it must
+  DERIVE the null from the report geometry rather than read it off the claim, which
+  is the same requirement `proximity.yaml`''s Y-V3 imposes. Implementation note:
+  `core/answers.py::_null_ref` currently returns a hardcoded 0.5 for every mode and
+  would have to widen to accept the core.
+
+  PAIR-ORDER CLAIMS ARE UNAFFECTED. For `precedes`, swapping A and B is a symmetry
+  of the same shuffle, so its 0.5 null is exact. The bias is specific to claims
+  about ONE event''s position, which is why it had never surfaced before.'
+common:
+  registers: [original, research, media, clinical]
+groups:
+- id: T-R1
+  primitive: position
+  level: report
+  answer_type: BOOL
+  slots: [A, r]
+  variants:
+    original:
+      question: In report {r}, did {A} occur in the first half of the timeline?
+      claim: In report {r}, {A} occurred in the first half of the timeline.
+    research:
+      question: In this report, does {A} fall in the earlier half of the recorded stages?
+      claim: In this report, {A} falls in the earlier half of the recorded stages.
+    media:
+      question: In this case, did {A} show up early rather than late?
+      claim: In this case, {A} showed up early rather than late.
+    clinical:
+      question: In this patient, did {A} present in the early part of the course?
+      claim: In this patient, {A} presented in the early part of the course.
+- id: T-R2
+  primitive: position
+  level: report
+  answer_type: CHOICE
+  slots: [A, r]
+  variants:
+    original:
+      question: In report {r}, which half of the timeline does {A} fall in, the first
+        or the second?
+      claim: In report {r}, {A} falls in the first half of the timeline.
+    research:
+      question: In this report, is {A} in the earlier or the later half of the recorded
+        stages?
+      claim: In this report, {A} is in the earlier half of the recorded stages.
+    media:
+      question: In this case, was {A} an early or a late symptom?
+      claim: In this case, {A} was an early symptom.
+    clinical:
+      question: In this patient, did {A} fall in the early or the late part of the
+        course?
+      claim: In this patient, {A} fell in the early part of the course.
+- id: T-V1
+  primitive: position
+  level: vaccine
+  answer_type: BOOL
+  null_ref: structural
+  slots: [A, v]
+  notes: 'WORDING IS LOAD-BEARING. An earlier draft read "usually appears in the
+    earlier half" / "in the majority of cases", which asserts a 0.5 bar -- and the
+    test uses the structural rate (~0.53), so the claim and the statistic would have
+    answered different questions. That is the same defect that got S-V1 and F-V3
+    reworded on 07-13, F-V2/F-R2 on 08-12 and C-V3 flagged as issue 13. Every
+    register here therefore says "more often than chance would place it", never
+    "usually" and never "most".'
+  variants:
+    original:
+      question: After {v}, does {A} appear in the earlier half of the timeline more
+        often than chance would place it there?
+      claim: After {v}, {A} appears in the earlier half of the timeline more often than
+        chance would place it there.
+      question_negated: After {v}, is it the case that {A} does NOT appear in the earlier
+        half of the timeline more often than chance would place it there?
+      claim_negated: After {v}, {A} does not appear in the earlier half of the timeline
+        more often than chance would place it there.
+    research:
+      question: Among {v} reports, is {A}'s early-half rate above the rate expected
+        from the stage structure of the timelines it appears in?
+      claim: Among {v} reports, {A}'s early-half rate is above the rate expected from
+        the stage structure of the timelines it appears in.
+      question_negated: Among {v} reports, is {A}'s early-half rate no higher than the
+        rate expected from the stage structure of the timelines it appears in?
+      claim_negated: Among {v} reports, {A}'s early-half rate is not above the rate expected
+        from the stage structure of the timelines it appears in.
+    media:
+      question: After {v}, does {A} show up earlier in the course than you would expect
+        by chance?
+      claim: After {v}, {A} shows up earlier in the course than you would expect by chance.
+      question_negated: After {v}, does {A} show up no earlier in the course than you
+        would expect by chance?
+      claim_negated: After {v}, {A} does not show up earlier in the course than you would
+        expect by chance.
+    clinical:
+      question: In {v} recipients, does {A} present earlier in the course than the timelines
+        alone would predict?
+      claim: In {v} recipients, {A} presents earlier in the course than the timelines
+        alone would predict.
+      question_negated: In {v} recipients, does {A} present no earlier in the course than
+        the timelines alone would predict?
+      claim_negated: In {v} recipients, {A} does not present earlier in the course than
+        the timelines alone would predict.
+- id: T-V2
+  primitive: position
+  level: vaccine
+  answer_type: CHOICE
+  null_ref: structural
+  slots: [A, v]
+  notes: 'The CHOICE twin of T-V1: the same structural test, read as a direction
+    rather than a yes/no. "Earlier than chance" and "later than chance" are the two
+    options, NOT "early" and "late" -- an event can sit in the earlier half in most
+    reports and still be LATER than its timelines predict.'
+  variants:
+    original:
+      question: After {v}, relative to chance, is {A} an earlier-than-expected or a
+        later-than-expected event?
+      claim: After {v}, {A} is an earlier-than-expected event.
+    research:
+      question: Among {v} reports, does {A} sit earlier or later in the timeline than
+        the stage structure predicts?
+      claim: Among {v} reports, {A} sits earlier in the timeline than the stage structure
+        predicts.
+    media:
+      question: After {v}, does {A} tend to come earlier or later than you would expect
+        by chance?
+      claim: After {v}, {A} tends to come earlier than you would expect by chance.
+    clinical:
+      question: In {v} recipients, does {A} present earlier or later in the course than
+        the timelines would predict?
+      claim: In {v} recipients, {A} presents earlier in the course than the timelines
+        would predict.
+- id: T-V3
+  primitive: position
+  level: vaccine
+  answer_type: CHOICE
+  slots: [A, B, v]
+  notes: 'The one comparative shape in this family, and the only group anywhere in
+    the benchmark that compares two events WITHOUT requiring them to co-occur: each
+    event''s early-rate is measured over its own reports, then the two rates are
+    compared with a Fisher 2x2. That is what makes it worth a slot -- every shipped
+    pairwise group dies when A and B rarely appear together, and this one does not
+    care.
+
+    KNOWN CONFOUND, unresolved. Because the two rates come from two different report
+    sets, they carry two different structural baselines: an event appearing mostly in
+    two-stage reports has a higher chance early-rate than one appearing in six-stage
+    reports, so a significant Fisher result can reflect report GEOMETRY rather than
+    temporal position. The permutation null absorbs this at family level (the shuffle
+    preserves each term''s report set, so geometry-driven differences appear in the
+    null too), but individual cores can still be geometry artefacts. Fixing it needs
+    a test on the two structural-rate DIFFERENCES rather than a plain 2x2. Do not
+    ship T-V3 -- or K-V5, which has the identical problem -- before that is settled.'
+  variants:
+    original:
+      question: After {v}, which sits earlier in the timeline, {A} or {B}?
+      claim: After {v}, {A} sits earlier in the timeline than {B}.
+    research:
+      question: Among {v} reports, which event falls in the earlier half more often,
+        {A} or {B}?
+      claim: Among {v} reports, {A} falls in the earlier half more often than {B}.
+    media:
+      question: After {v}, which one shows up earlier, {A} or {B}?
+      claim: After {v}, {A} shows up earlier than {B}.
+    clinical:
+      question: In {v} recipients, which presents earlier in the course, {A} or {B}?
+      claim: In {v} recipients, {A} presents earlier in the course than {B}.

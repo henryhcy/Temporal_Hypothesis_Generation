@@ -1,0 +1,179 @@
+family: comparative
+status: candidate
+description: 'Two temporal proportions compared WITHIN one cohort -- is this relation
+  stronger than that one -- rather than one proportion against a chance bar.'
+notes: 'THE GAP THIS FILLS. The benchmark has exactly two ways to make a claim
+  testable: compare a proportion to chance (the V tier) or compare the SAME
+  proportion across two vaccine cohorts (the M tier). The M tier is the one in
+  trouble -- it is down to a single group (P-M2) after C-M2 and F-M3 failed their
+  nulls -- and the reason is cohort size: conditioning two named events on
+  co-presence inside a ~1,000-report cohort leaves n ~ 10-30 per side.
+
+  This family gets a two-sample contrast WITHOUT splitting the corpus. Both
+  proportions are measured on the same cohort, so each keeps the full denominator;
+  what varies is the event pair, not the patient group. It is the 07-13 replacement
+  menu items R1, R2 and R3, all three of which were listed as valid, shortlisted
+  (R1 and R3 were adopted as P-V4 and P-V2 in the 07-28 roster decision), and then
+  never coded or measured.
+
+  The reference is "another group in the data", which the 07-13 rule explicitly
+  allows alongside a chance baseline. The test is a Fisher 2x2 on two independent
+  proportions -- the same test the M tier uses, pointed at a different contrast.
+
+  WHAT THE SOLVER HAS TO GET RIGHT, and why it is a good discriminator: the two
+  denominators are DIFFERENT conditioned sets. K-V1 conditions one side on reports
+  ordering A and B and the other on reports ordering C and D; those sets overlap
+  arbitrarily. K-V3 shares the consequent, so the two sets overlap in every report
+  containing all of A, B and C. A solver that pools, or that reuses one denominator
+  for both arms, gets a wrong answer -- and that error is invisible in every shipped
+  group, because no shipped group has two denominators.
+
+  SCREENING CAVEAT: measured over the best-supplied pairs only (top 40 by ordered
+  denominator, giving ~500 disjoint and ~280 shared-consequent comparisons at pooled
+  scope). The full universe is O(pairs^2) and was not enumerated, so the decisive
+  COUNTS below are a floor on supply, not a census.'
+common:
+  registers: [original, research, media, clinical]
+groups:
+- id: K-V1
+  primitive: precedes
+  level: vaccine
+  answer_type: BOOL
+  contrast: pair_vs_pair
+  slots: [A, B, C, D, v]
+  variants:
+    original:
+      question: After {v}, does {A} precede {B} more often than {C} precedes {D}?
+      claim: After {v}, {A} precedes {B} more often than {C} precedes {D}.
+    research:
+      question: Among {v} reports, is the {A}-before-{B} rate higher than the {C}-before-{D}
+        rate?
+      claim: Among {v} reports, the {A}-before-{B} rate is higher than the {C}-before-{D}
+        rate.
+    media:
+      question: After {v}, is {A} followed by {B} more reliably than {C} is followed by
+        {D}?
+      claim: After {v}, {A} is followed by {B} more reliably than {C} is followed by {D}.
+    clinical:
+      question: In {v} recipients, is the {A}-then-{B} order more consistent than the
+        {C}-then-{D} order?
+      claim: In {v} recipients, the {A}-then-{B} order is more consistent than the {C}-then-{D}
+        order.
+- id: K-V2
+  primitive: precedes
+  level: vaccine
+  answer_type: CHOICE
+  contrast: pair_vs_pair
+  slots: [A, B, C, D, v]
+  variants:
+    original:
+      question: After {v}, which order holds more often, {A} before {B} or {C} before
+        {D}?
+      claim: After {v}, {A} before {B} holds more often than {C} before {D}.
+    research:
+      question: Among {v} reports, which precedence is the stronger, {A} < {B} or {C}
+        < {D}?
+      claim: Among {v} reports, {A} < {B} is the stronger precedence.
+    media:
+      question: After {v}, which pattern is more dependable, {A} then {B}, or {C} then
+        {D}?
+      claim: After {v}, {A} then {B} is the more dependable pattern.
+    clinical:
+      question: In {v} recipients, which ordering is better established, {A} before {B}
+        or {C} before {D}?
+      claim: In {v} recipients, {A} before {B} is the better established ordering.
+- id: K-V3
+  primitive: precedes
+  level: vaccine
+  answer_type: BOOL
+  contrast: shared_consequent
+  slots: [A, B, C, v]
+  variants:
+    original:
+      question: After {v}, does {B} follow {A} more often than it follows {C}?
+      claim: After {v}, {B} follows {A} more often than it follows {C}.
+      question_negated: After {v}, is it the case that {B} does NOT follow {A} more often
+        than it follows {C}?
+      claim_negated: After {v}, {B} does not follow {A} more often than it follows {C}.
+    research:
+      question: Among {v} reports, is {B} preceded by {A} at a higher rate than by {C}?
+      claim: Among {v} reports, {B} is preceded by {A} at a higher rate than by {C}.
+      question_negated: Among {v} reports, is {B} preceded by {A} at no higher a rate
+        than by {C}?
+      claim_negated: Among {v} reports, {B} is not preceded by {A} at a higher rate than
+        by {C}.
+    media:
+      question: After {v}, is {B} more often preceded by {A} than by {C}?
+      claim: After {v}, {B} is more often preceded by {A} than by {C}.
+      question_negated: After {v}, is {B} NOT more often preceded by {A} than by {C}?
+      claim_negated: After {v}, {B} is not more often preceded by {A} than by {C}.
+    clinical:
+      question: In {v} recipients, does {A} lead to {B} more often than {C} does?
+      claim: In {v} recipients, {A} precedes {B} more often than {C} does.
+      question_negated: In {v} recipients, does {A} NOT precede {B} more often than {C}
+        does?
+      claim_negated: In {v} recipients, {A} does not precede {B} more often than {C} does.
+- id: K-V4
+  primitive: precedes
+  level: vaccine
+  answer_type: CHOICE
+  contrast: shared_consequent
+  slots: [A, B, C, v]
+  variants:
+    original:
+      question: After {v}, which more often comes before {B}, {A} or {C}?
+      claim: After {v}, {A} more often comes before {B} than {C} does.
+    research:
+      question: Among {v} reports, which is the more frequent antecedent of {B}, {A} or
+        {C}?
+      claim: Among {v} reports, {A} is the more frequent antecedent of {B}.
+    media:
+      question: After {v}, what usually comes first before {B}, {A} or {C}?
+      claim: After {v}, {A} is what usually comes before {B}.
+    clinical:
+      question: In {v} recipients, which more commonly precedes {B}, {A} or {C}?
+      claim: In {v} recipients, {A} more commonly precedes {B}.
+- id: K-V5
+  primitive: first_last
+  level: vaccine
+  answer_type: BOOL
+  contrast: event_vs_event
+  slots: [A, B, v]
+  notes: 'R2 from the menu. Like T-V3 in `position.yaml`, this compares two events
+    without requiring them to co-occur -- each first-rate is measured over its own
+    reports. Watch the confound: an event appearing mostly in two-stage reports has
+    a higher chance of being first, and the permutation null absorbs that only
+    because it preserves each term''s report-length distribution. State the
+    denominator in the answer key.'
+  variants:
+    original:
+      question: After {v}, is {A} the first recorded event more often than {B} is?
+      claim: After {v}, {A} is the first recorded event more often than {B} is.
+      question_negated: After {v}, is it the case that {A} is NOT the first recorded event
+        more often than {B} is?
+      claim_negated: After {v}, {A} is not the first recorded event more often than {B}
+        is.
+    research:
+      question: Among {v} reports, is the rate at which {A} is earliest higher than the
+        rate for {B}?
+      claim: Among {v} reports, the rate at which {A} is earliest is higher than the rate
+        for {B}.
+      question_negated: Among {v} reports, is the rate at which {A} is earliest no higher
+        than the rate for {B}?
+      claim_negated: Among {v} reports, the rate at which {A} is earliest is not higher
+        than the rate for {B}.
+    media:
+      question: After {v}, which is more often the very first thing to appear, {A} or
+        {B}?
+      claim: After {v}, {A} is more often the very first thing to appear than {B} is.
+      question_negated: After {v}, is {A} NOT more often the very first thing to appear
+        than {B} is?
+      claim_negated: After {v}, {A} is not more often the very first thing to appear than
+        {B} is.
+    clinical:
+      question: In {v} recipients, is {A} the presenting feature more often than {B}?
+      claim: In {v} recipients, {A} is the presenting feature more often than {B}.
+      question_negated: In {v} recipients, is {A} NOT the presenting feature more often
+        than {B}?
+      claim_negated: In {v} recipients, {A} is not the presenting feature more often than
+        {B}.

@@ -1,0 +1,151 @@
+family: stratified
+status: candidate-REJECTED
+description: 'Two-cohort temporal contrasts where the cohorts are PATIENT strata --
+  age band, sex -- instead of vaccine brand.'
+notes: 'THE GAP THIS FILLS, in principle. The two-cohort tier is the weakest part of
+  the benchmark: it is down to one group (P-M2) because C-M2 and F-M3 failed their
+  permutation nulls and no substitute cleared. The stated diagnosis was cohort SIZE
+  -- conditioning two named events on co-presence inside a ~1,000-report vaccine
+  cohort leaves n ~ 10-30 a side. If that diagnosis were right, splitting on
+  something that divides the corpus more evenly should rescue the tier.
+
+  The VAERS csv carries age and sex for all 3,166 reports (the DB build dropped
+  both). Age at the median splits 1,501 / 1,536 -- more evenly than vaccine''s
+  1,164 / 1,019 / 983, and each band is larger than any vaccine cohort. Age also
+  needs ONE comparison per event pair where vaccine needs three, which removes the
+  core dependence that inflates the vaccine null. Sex splits 2,219 F / 921 M.
+
+  MEASURED RESULT: REJECTED. Seven shapes were screened (2026-08-14) and not one
+  clears its label-permutation null. See `docs/plan/10_family_expansion.md` for the
+  table. The finding is stronger than "underpowered": age-band position produced 2
+  supported against 15 refuted, and age-quartile extremes (<=35 vs >=63, the largest
+  contrast the corpus can make) produced 5 decisive cores of 59 against a null mean
+  of 3.8.
+
+  WHY THIS MATTERS EVEN THOUGH IT FAILED. It refutes the size diagnosis. Age at the
+  median gives MORE cores than vaccine does (211 vs 322-over-three-comparisons, so
+  ~2x per comparison) and still finds nothing, so the two-cohort tier is not thin
+  because the cohorts are small -- it is thin because SYMPTOM ORDER genuinely does
+  not vary much across patient strata. That reframes P-M2''s pass as a real and
+  fairly remarkable finding rather than the one survivor of a power problem, and it
+  closes off "split on something else" as a rescue route for issue 1.
+
+  These groups are recorded, not shipped. Do not adopt without a new measurement.'
+common:
+  registers: [original, research, media, clinical]
+groups:
+- id: G-A1
+  primitive: precedes
+  level: stratum
+  answer_type: BOOL
+  contrast: age_median
+  slots: [A, B]
+  screened: 'p_sup fails; see 10_family_expansion.md'
+  variants:
+    original:
+      question: Does {A} precede {B} more often in patients under 50 than in patients
+        50 and older?
+      claim: '{A} precedes {B} more often in patients under 50 than in patients
+        50 and older.'
+    research:
+      question: Is the {A}-before-{B} rate higher in the under-50 stratum than in the
+        50-and-over stratum?
+      claim: The {A}-before-{B} rate is higher in the under-50 stratum than in the 50-and-over
+        stratum.
+    media:
+      question: Do younger patients get {A} before {B} more often than older patients
+        do?
+      claim: Younger patients get {A} before {B} more often than older patients do.
+    clinical:
+      question: In patients under 50, does {A} precede {B} more often than in those 50
+        and over?
+      claim: In patients under 50, {A} precedes {B} more often than in those 50 and over.
+- id: G-A2
+  primitive: co_occurs
+  level: stratum
+  answer_type: BOOL
+  contrast: age_median
+  slots: [A, B]
+  screened: 'p_sup fails; see 10_family_expansion.md'
+  variants:
+    original:
+      question: Do {A} and {B} co-occur more often in patients under 50 than in patients
+        50 and older?
+      claim: '{A} and {B} co-occur more often in patients under 50 than in patients
+        50 and older.'
+    research:
+      question: Is the same-stage rate for {A} and {B} higher in the under-50 stratum?
+      claim: The same-stage rate for {A} and {B} is higher in the under-50 stratum.
+    media:
+      question: Do {A} and {B} turn up together more often in younger patients?
+      claim: '{A} and {B} turn up together more often in younger patients.'
+    clinical:
+      question: Are {A} and {B} simultaneous more often in patients under 50 than in those
+        50 and over?
+      claim: '{A} and {B} are simultaneous more often in patients under 50 than in
+        those 50 and over.'
+- id: G-A3
+  primitive: position
+  level: stratum
+  answer_type: BOOL
+  contrast: age_median
+  slots: [A]
+  screened: 'p_sup fails badly (2 supported vs 15 refuted); see 10_family_expansion.md'
+  notes: 'Conditions on ONE event, so unlike G-A1/G-A2 it keeps a large denominator
+    -- which is what makes its failure informative rather than ambiguous.'
+  variants:
+    original:
+      question: Does {A} appear earlier in the timeline for patients under 50 than for
+        patients 50 and older?
+      claim: '{A} appears earlier in the timeline for patients under 50 than for
+        patients 50 and older.'
+    research:
+      question: Is {A} in the earlier half of the timeline more often in the under-50
+        stratum?
+      claim: '{A} is in the earlier half of the timeline more often in the under-50 stratum.'
+    media:
+      question: Does {A} show up earlier in younger patients than in older ones?
+      claim: '{A} shows up earlier in younger patients than in older ones.'
+    clinical:
+      question: Does {A} present earlier in the course for patients under 50?
+      claim: '{A} presents earlier in the course for patients under 50.'
+- id: G-S1
+  primitive: precedes
+  level: stratum
+  answer_type: BOOL
+  contrast: sex
+  slots: [A, B]
+  screened: 'p_sup fails; see 10_family_expansion.md'
+  variants:
+    original:
+      question: Does {A} precede {B} more often in female than in male patients?
+      claim: '{A} precedes {B} more often in female than in male patients.'
+    research:
+      question: Is the {A}-before-{B} rate higher among female reports than male reports?
+      claim: The {A}-before-{B} rate is higher among female reports than male reports.
+    media:
+      question: Do women get {A} before {B} more often than men do?
+      claim: Women get {A} before {B} more often than men do.
+    clinical:
+      question: In female patients, does {A} precede {B} more often than in male patients?
+      claim: In female patients, {A} precedes {B} more often than in male patients.
+- id: G-S2
+  primitive: position
+  level: stratum
+  answer_type: BOOL
+  contrast: sex
+  slots: [A]
+  screened: 'p_sup fails; see 10_family_expansion.md'
+  variants:
+    original:
+      question: Does {A} appear earlier in the timeline for female than for male patients?
+      claim: '{A} appears earlier in the timeline for female than for male patients.'
+    research:
+      question: Is {A} in the earlier half of the timeline more often among female reports?
+      claim: '{A} is in the earlier half of the timeline more often among female reports.'
+    media:
+      question: Does {A} show up earlier in women than in men?
+      claim: '{A} shows up earlier in women than in men.'
+    clinical:
+      question: Does {A} present earlier in the course for female patients?
+      claim: '{A} presents earlier in the course for female patients.'
