@@ -19,6 +19,7 @@ from temporal_hypo.framework.claim_schema import (
     plan_from_claim,
 )
 from temporal_hypo.framework.extract.llm import toolbox_system_prompt
+from tests.framework.conftest import RELEASE_DIR, RELEASE_STEM, needs_release
 
 
 def _row_for(mode: str) -> dict:
@@ -95,9 +96,11 @@ def test_toolbox_prompt_leaks_no_mode_or_group_names():
 
 
 
-def test_fewshot_pool_excludes_held_out_groups(needs_release):
+@needs_release
+def test_fewshot_pool_excludes_held_out_groups():
+    from temporal_hypo.framework.io import load_release
     from temporal_hypo.framework.subsets import fewshot_pool
-    release = needs_release
+    release = load_release(RELEASE_DIR, RELEASE_STEM, verify_sha=False)
     pool = fewshot_pool(release, (), k_per_mode=1, seed=0, exclude_groups={"P-R2", "F-R1"})
     groups = {a["group_id"] for a in pool}
     assert "P-R2" not in groups and "F-R1" not in groups
@@ -131,13 +134,14 @@ def test_honouring_resolves_the_rule_on_the_counts():
     plan = plan_from_claim(gold)
     assert plan["test_rule"] == "exact_if_small_else_asymptotic"
     claim = claim_from_plan(plan, row, source="test")
-    big = _Ret([ArmCounts(n=200, k=120, counts=None, excluded=0),
-                ArmCounts(n=200, k=80, counts=None, excluded=0)])
+    def _ac(n, k):
+        return ArmCounts(n=n, k=k, denominator_ids=set(range(n)), numerator_ids=set(range(k)),
+                         excluded_ids=set())
+    big = _Ret([_ac(200, 120), _ac(200, 80)])
     pred = run_test(claim, big, procedure_mode="honouring")
     assert pred.test == "chi_square_1sided"
     assert any("resolved: asymptotic" in n for n in pred.notes)
-    small = _Ret([ArmCounts(n=12, k=8, counts=None, excluded=0),
-                  ArmCounts(n=12, k=3, counts=None, excluded=0)])
+    small = _Ret([_ac(10, 8), _ac(10, 1)])   # min expected cell 4.5 < 5 -> exact
     pred2 = run_test(claim, small, procedure_mode="honouring")
     assert pred2.test == "fisher_exact"
     assert any("resolved: exact" in n for n in pred2.notes)
