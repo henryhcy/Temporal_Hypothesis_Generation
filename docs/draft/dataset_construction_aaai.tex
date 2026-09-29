@@ -27,6 +27,9 @@
 
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \usepackage{amsmath}
 \usepackage{amssymb}
 
@@ -59,6 +62,9 @@
 \usepackage{graphicx}
 \usepackage{booktabs}
 \usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
 \usepackage{amsmath}
 \usepackage{amssymb}
 
@@ -639,25 +645,26 @@ whether intermediate stages have gold, and whether new datasets can be fed in.
 
 \begin{table*}[t]
 \centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lllllll}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}p{2.55cm} Y Y Y Y Y Y@{}}
 \toprule
-Work & Model formulates the null? & Statistic computed by & Event-order claims & Clinical timelines & Gold at intermediate stages & Dataset-in interface \\
+Work & Formulates the null? & Statistic computed by & Event-order claims & Clinical & Gold at intermediate stages & Dataset-in interface \\
 \midrule
-P-Bench / Fisher-R1 \cite{miao2026fisher} & no: $H_0$ given; test chosen, unscored & model-written R & no (survival only) & partly & no: final $p$ and decision & no (425 fixed tasks) \\
-LATCH \cite{gim2026latch} & no: hypothesis \emph{and} method given & deterministic R pipelines & no (cross-sectional) & yes (NHANES) & partial: cohort $n$, CI vs.\ paper & yes (schema summary) \\
+P-Bench / Fisher-R1 \cite{miao2026fisher} & no; $H_0$ given, test chosen but unscored & model-written R in a sandbox & no (survival only) & partly & no; final $p$ and decision & no; 425 fixed tasks \\
+LATCH \cite{gim2026latch} & no; hypothesis and method both given & deterministic R pipelines & no (cross-sectional) & yes (NHANES) & partial; cohort $n$, CI vs.\ the paper & yes; schema summary \\
 StatFormBench \cite{wang2026statformbench} & family label only & nothing computed & no & textbook & formulation only & no \\
 StatABench \cite{zhu2026statabench} & test selection, no null & fixed tool functions & no & no & final answer & no \\
 StatQA \cite{zhu2024statqa} & applicability only & nothing computed & no & no & final answer & no \\
 DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & open-ended hypothesis & agent code & no & no & rubric / expert & no \\
 EHRAgent / EHRSQL \cite{shi2024ehragent,lee2022ehrsql} & no (QA / SQL) & agent code / SQL & no & yes (EHR) & answer / execution & schema \\
-VERITAS \cite{veritas2026} & plans the analysis; four-label evidence classification & its own generated code + a deterministic classification operator & no & yes (imaging cohorts) & verdict vs.\ reference (64 hypotheses) & data + description \\
-CRAFT / TIMER \cite{craft2026,timer2025} & n/a (timeline extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
+VERITAS \cite{veritas2026} & plans the analysis & own code + deterministic classifier & no & yes (imaging) & verdict vs.\ reference & data + description \\
+CRAFT / TIMER \cite{craft2026,timer2025} & n/a (extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
 \midrule
-\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or its computation, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the model's stated rule with exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last & \textbf{yes}: expert-annotated VAERS timelines & \textbf{every stage}: claim, evidence set (denominator), counts, $p$, verdict & dataset card (one corpus so far) \\
+\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last & \textbf{yes}: annotated VAERS timelines & \textbf{every stage}: claim, evidence set (denominator), counts, $p$, verdict & dataset card (one corpus so far) \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Positioning against the closest benchmarks and systems. The four
 closest (P-Bench, LATCH, StatFormBench, StatABench) were read in full; the rest
 from abstracts. ``Gold at intermediate stages'' is what makes per-stage
