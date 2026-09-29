@@ -324,6 +324,7 @@ def _honour(core: ViableCore, claim: StructuredClaim, errors: list[str],
             notes: list[str]) -> Significance | None:
     """Run the CLAIM's stated procedure on the counts; None means "fall back to the reference"."""
     p = claim.procedure
+    test_name = p.test
     tail = p.claim_tail
     if tail not in TAILS:
         errors.append(f"claim_tail {tail!r} is not one of {TAILS}; reference procedure used")
@@ -373,10 +374,25 @@ def _honour(core: ViableCore, claim: StructuredClaim, errors: list[str],
             errors.append("fisher_exact needs two arms but the retrieval has one; reference procedure used")
             return None
         two_arm = True
+        # A composed plan (toolbox frame) states a RULE, resolved here on the
+        # actual table (11 §13.3/13.4): exact when any expected cell < 5, else
+        # the asymptotic branch if the rule allows it.
+        rule = (claim.plan or {}).get("test_rule") if claim.plan else None
+        min_exp = sig.min_expected_cell_2x2(k, n, k2, n2)
+        asymptotic = rule == "exact_if_small_else_asymptotic" and min_exp >= 5.0
+        if rule is not None:
+            notes.append(f"test_rule {rule} resolved: "
+                         f"{'asymptotic' if asymptotic else 'exact'} (min expected cell {min_exp:.1f})")
+        if asymptotic:
+            test_name = "chi_square_1sided"
 
-        def tails() -> tuple[float, float]:
-            return (sig.fisher_exact_2x2(k, n, k2, n2, alternative=tail),
-                    sig.fisher_exact_2x2(k, n, k2, n2, alternative=opp))
+            def tails() -> tuple[float | None, float | None]:
+                return (sig.two_proportion_z_p(k, n, k2, n2, alternative=tail),
+                        sig.two_proportion_z_p(k, n, k2, n2, alternative=opp))
+        else:
+            def tails() -> tuple[float, float]:
+                return (sig.fisher_exact_2x2(k, n, k2, n2, alternative=tail),
+                        sig.fisher_exact_2x2(k, n, k2, n2, alternative=opp))
 
     else:
         errors.append(f"test {p.test!r} cannot be run on a cohort-tier claim; reference procedure used")
@@ -392,7 +408,7 @@ def _honour(core: ViableCore, claim: StructuredClaim, errors: list[str],
         p_opp: float | None = None
     else:
         p_claim, p_opp = tails()
-    test_run = p.test if p_claim is not None else None
+    test_run = test_name if p_claim is not None else None
     s = Significance(p_claim, None, test_run,
                      {"null": p.null.p0, "alternative": tail, "gate_family": family},
                      p_claim=p_claim, p_opposite=p_opp)

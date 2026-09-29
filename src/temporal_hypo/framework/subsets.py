@@ -277,7 +277,8 @@ def describe_subset(release: Release, ids: Iterable[str]) -> dict:
 # ---------------------------------------------------------------------------
 
 def fewshot_pool(release: Release, exclude_instance_ids: Iterable[str], *,
-                 k_per_mode: int = 2, seed: int = 0) -> list[dict]:
+                 k_per_mode: int = 2, seed: int = 0,
+                 exclude_groups: Iterable[str] = ()) -> list[dict]:
     """Gold rows usable as in-context examples without leaking the excluded set.
 
     Eligible rows are outside ``exclude_instance_ids`` and share neither a
@@ -289,6 +290,9 @@ def fewshot_pool(release: Release, exclude_instance_ids: Iterable[str], *,
         raise ValueError(f"k_per_mode must be >= 0, got {k_per_mode}")
     answers = release.answers
     excluded = {i for i in exclude_instance_ids if i in answers}
+    # P2 (group holdout): no example may come from a held-out group -- under the
+    # toolbox frame a worked example IS a mapping row, so this is the leakage dial.
+    banned_groups = set(exclude_groups)
     banned_facts = {answers[i]["fact_id"] for i in excluded}
     banned_cores = {answers[i]["derived_from_core_id"] for i in excluded}
 
@@ -296,7 +300,8 @@ def fewshot_pool(release: Release, exclude_instance_ids: Iterable[str], *,
     for iid in sorted(answers):
         row = answers[iid]
         if iid in excluded or row["fact_id"] in banned_facts \
-                or row["derived_from_core_id"] in banned_cores:
+                or row["derived_from_core_id"] in banned_cores \
+                or row.get("group_id") in banned_groups:
             continue
         by_mode[row["mode"]].append(iid)
 

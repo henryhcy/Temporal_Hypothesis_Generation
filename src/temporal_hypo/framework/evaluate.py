@@ -64,6 +64,7 @@ from typing import Any, Callable, Iterable, Mapping, Sequence
 
 from temporal_hypo.framework.claim_schema import (
     MODE_SPEC, MODES, UNDERDETERMINED, VERDICTS, Procedure, StructuredClaim, from_gold,
+    derive_plan,
 )
 
 # ---------------------------------------------------------------------------
@@ -82,6 +83,14 @@ S3_STAGES = STAGES[4:]
 PROCEDURE_SUBBUCKETS = ("null", "test_tail", "gate", "other")
 PROCEDURE_FIELDS = ("test", "null.kind", "null.p0", "null.statistic", "claim_tail",
                     "alpha", "arms", "conditioning", "min_n_floor")
+# The composed plan (toolbox frame, 11 §13.3); the reference is derive_plan(gold mode).
+PLAN_FIELDS = ("quantity", "extreme", "denominator", "arms", "null_kind", "p0",
+               "tail", "test_family", "test_rule", "min_n_floor")
+# Test rules that are VALID for a family at every n it can meet (11 §13.4).
+VALID_RULES = {"two_proportions": {"exact_always", "exact_if_small_else_asymptotic"},
+               "proportion_vs_p0": {"exact_always"},
+               "named_vs_runner_up": {"exact_always"},
+               "none": {"exact_always", "exact_if_small_else_asymptotic"}}
 SET_NAMES = ("denominator", "numerator", "excluded")
 S1_FLAGS = ("mode_acc", "events_ordered_em", "events_set_em", "cohort_em",
             "negated_acc", "claim_em")
@@ -297,6 +306,9 @@ class _Rec:
     first_failure: str | None
     error: str | None
     procedure_errors: list[str] = field(default_factory=list)
+    plan_ok: dict[str, bool] | None = None      # toolbox frame only
+    plan_em: bool | None = None
+    rule_valid: bool | None = None               # family right AND rule valid for it
 
 
 def _sets(block: Mapping[str, Any]) -> dict[str, set[int]]:
@@ -408,6 +420,20 @@ def _score_row(row: Mapping[str, Any], gold: Mapping[str, Any], *,
         proc_ok = {f: False for f in PROCEDURE_FIELDS}
     procedure_em = all(proc_ok.values())
     procedure_bucket = None if procedure_em else (_procedure_bucket(proc_ok) if pc is not None else "other")
+    plan_ok: dict[str, bool] | None = None
+    plan_em: bool | None = None
+    rule_valid: bool | None = None
+    pplan = pc.plan if pc is not None else None
+    if pplan:
+        ref_plan = derive_plan(gold_claim.mode, negated=gold_claim.negated)
+        plan_ok = {}
+        for f in PLAN_FIELDS:
+            pv, gv = pplan.get(f), ref_plan.get(f)
+            plan_ok[f] = _num_eq(pv, gv) if f == "p0" else (pv == gv)
+        plan_em = all(plan_ok.values())
+        fam = pplan.get("test_family")
+        rule_valid = (fam == ref_plan["test_family"]
+                      and pplan.get("test_rule") in VALID_RULES.get(fam, set()))
 
     # --- S2 ---------------------------------------------------------------
     retrieval = row.get("retrieval") or {}
@@ -511,6 +537,7 @@ def _score_row(row: Mapping[str, Any], gold: Mapping[str, Any], *,
         pred_answer=pred.get("answer"), gold_options=gold_options, pred_options=pred_options,
         first_failure=first, error=row.get("error"),
         procedure_errors=list(pred.get("procedure_errors") or []),
+        plan_ok=plan_ok, plan_em=plan_em, rule_valid=rule_valid,
     )
 
 
@@ -660,6 +687,16 @@ def _extraction_block(recs: Sequence[_Rec]) -> dict:
         row = conf.setdefault(r.mode, {m: 0 for m in list(MODES) + ["none"]})
         row[p] = row.get(p, 0) + 1
     out["mode_confusion"] = conf
+    planned = [r for r in recs if r.plan_ok is not None]
+    if planned:
+        out["plan"] = {
+            "n": len(planned),
+            "fields": {f: _mean(r.plan_ok[f] for r in planned) for f in PLAN_FIELDS},
+            "plan_em": _mean(r.plan_em for r in planned),
+            "rule_valid": _mean(r.rule_valid for r in planned),
+            "n_no_shape": sum(1 for r in recs if r.pred_claim is None
+                              and r.error and "no mode for plan shape" in str(r.error)),
+        }
     return out
 
 

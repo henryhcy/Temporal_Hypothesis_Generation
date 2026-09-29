@@ -63,14 +63,25 @@ def _select_records(release, args, subset_ids):
                                      limit=args.limit))
 
 
-def _fewshot_pairs(release, exclude_ids, k_per_mode, seed):
-    """(question_row, answer_row) pairs for few-shot prompting, disjoint from the eval set."""
-    pool = fewshot_pool(release, set(exclude_ids or ()), k_per_mode=k_per_mode, seed=seed)
+def _fewshot_pairs(release, exclude_ids, k_per_mode, seed, *,
+                   exclude_groups=(), registers=None):
+    """(question_row, answer_row) pairs for few-shot prompting, disjoint from the eval set.
+
+    ``exclude_groups`` is the P2 dial (no example from a held-out group);
+    ``registers`` is the P1 dial (examples rendered only in the given registers,
+    so the test register's wording is never shown).
+    """
+    pool = fewshot_pool(release, set(exclude_ids or ()), k_per_mode=k_per_mode, seed=seed,
+                        exclude_groups=exclude_groups)
+    want = list(registers) if registers else ["original"]
     pairs = []
     for ans in pool:
-        # the original/question rendering is the canonical surface form
-        hid = next((h for h in ans["hypothesis_ids"] if h.endswith("-original-question")),
-                   ans["hypothesis_ids"][0])
+        # the canonical surface form is <register>-question; first allowed register wins
+        hid = next((h for reg in want for h in ans["hypothesis_ids"]
+                    if h.endswith(f"-{reg}-question")), None)
+        if hid is None:
+            hid = next((h for reg in want for h in ans["hypothesis_ids"] if f"-{reg}-" in h),
+                       ans["hypothesis_ids"][0])
         q = release.question_for(hid) if hasattr(release, "question_for") else None
         if q is None:
             q = next((r for r in release.questions if r["hypothesis_id"] == hid), None)
@@ -154,8 +165,11 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
     else:
         from temporal_hypo.framework.extract.llm import LLMExtractor
 
-        shots = _fewshot_pairs(release, subset_ids, args.k_shot_per_mode, args.seed) \
-            if args.k_shot > 0 else []
+        shots = _fewshot_pairs(
+            release, subset_ids, args.k_shot_per_mode, args.seed,
+            exclude_groups=(args.k_shot_exclude_groups.split(",") if args.k_shot_exclude_groups else ()),
+            registers=(args.k_shot_registers.split(",") if args.k_shot_registers else None),
+        ) if args.k_shot > 0 else []
         card = None
         if args.s1_frame == "toolbox":
             from temporal_hypo.framework.extract.task_card import dataset_card
@@ -241,6 +255,11 @@ def main() -> None:
     p.add_argument("--routing-hint", action="store_true",
                    help="ablation: add the candidate-count->mode-family rule to the extraction prompt")
     p.add_argument("--k-shot-per-mode", type=int, default=1)
+    p.add_argument("--k-shot-exclude-groups", default=None,
+                   help="P2 dial: comma list of group ids no few-shot example may come from")
+    p.add_argument("--k-shot-registers", default=None,
+                   help="P1 dial: comma list of registers few-shot examples are rendered in "
+                        "(default original); omit the test register to hold it out")
     p.add_argument("--cache-dir", type=Path, default=_REPO_ROOT / "results" / "cache")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--no-ids", action="store_true", help="omit id lists from predictions.jsonl")
@@ -303,7 +322,8 @@ def main() -> None:
         "procedure_mode": pipe.procedure_mode, "model": args.model, "sql_model": args.sql_model or args.model,
         "subset": args.subset, "per_group": args.per_group, "registers": args.registers,
         "formats": args.formats, "groups": args.groups, "limit": args.limit,
-        "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "s1_frame": args.s1_frame, "seed": args.seed, "num_ctx": args.num_ctx,
+        "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "s1_frame": args.s1_frame,
+        "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx,
         "n_records": len(records),
         **(_model_provenance(args) if "llm" in args.pipeline else {}),
         "release_sha256": release_sha256s(args.release, args.stem),

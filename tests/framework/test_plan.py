@@ -92,3 +92,52 @@ def test_toolbox_prompt_leaks_no_mode_or_group_names():
                    "STAGE POPULATION", "PROCEDURE"):
         assert needle in text, needle
     json.loads(text.split("no code fences):\n", 1)[1].split("\n\nFIELD RULES", 1)[0])
+
+
+
+def test_fewshot_pool_excludes_held_out_groups(needs_release):
+    from temporal_hypo.framework.subsets import fewshot_pool
+    release = needs_release
+    pool = fewshot_pool(release, (), k_per_mode=1, seed=0, exclude_groups={"P-R2", "F-R1"})
+    groups = {a["group_id"] for a in pool}
+    assert "P-R2" not in groups and "F-R1" not in groups
+    assert len(groups) == 18
+
+
+
+def test_two_proportion_z_matches_fisher_direction_and_is_valid_only_when_cells_large():
+    from temporal_hypo.core import significance as sig
+    # big balanced table: z and Fisher agree on the side of alpha
+    pz = sig.two_proportion_z_p(60, 100, 40, 100, alternative="greater")
+    pf = sig.fisher_exact_2x2(60, 100, 40, 100, alternative="greater")
+    assert pz < 0.05 and pf < 0.05 and abs(pz - pf) < 0.01
+    assert sig.min_expected_cell_2x2(60, 100, 40, 100) >= 5
+    # tiny table: the guard says exact only
+    assert sig.min_expected_cell_2x2(3, 10, 1, 10) < 5
+
+
+def test_honouring_resolves_the_rule_on_the_counts():
+    from temporal_hypo.framework.run_test import run_test
+    from temporal_hypo.framework.sql.aggregate import ArmCounts
+
+    class _Ret:
+        def __init__(self, arms):
+            self.arms = arms
+            self.levels = None
+            self.ok = True
+
+    row, terms = _row_for("assoc_bool")
+    gold = build_claim("assoc_bool", terms, row["cohort"], source="gold")
+    plan = plan_from_claim(gold)
+    assert plan["test_rule"] == "exact_if_small_else_asymptotic"
+    claim = claim_from_plan(plan, row, source="test")
+    big = _Ret([ArmCounts(n=200, k=120, counts=None, excluded=0),
+                ArmCounts(n=200, k=80, counts=None, excluded=0)])
+    pred = run_test(claim, big, procedure_mode="honouring")
+    assert pred.test == "chi_square_1sided"
+    assert any("resolved: asymptotic" in n for n in pred.notes)
+    small = _Ret([ArmCounts(n=12, k=8, counts=None, excluded=0),
+                  ArmCounts(n=12, k=3, counts=None, excluded=0)])
+    pred2 = run_test(claim, small, procedure_mode="honouring")
+    assert pred2.test == "fisher_exact"
+    assert any("resolved: exact" in n for n in pred2.notes)

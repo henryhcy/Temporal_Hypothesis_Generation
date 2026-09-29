@@ -184,6 +184,38 @@ def fisher_exact_2x2(k1: int, n1: int, k2: int, n2: int,
 # (Numerical Recipes gser / gcf), so no scipy dependency.
 # ---------------------------------------------------------------------------
 
+def two_proportion_z_p(k1: int, n1: int, k2: int, n2: int,
+                       alternative: str = "greater") -> float | None:
+    """One-sided pooled two-proportion z-test p-value (the signed root of the 2x2 chi-square).
+
+    The ASYMPTOTIC branch of a two-proportions test rule (11 §13.4): valid only when
+    every expected cell is >= 5, which the caller checks. Never a gold-producing
+    test on this corpus; it exists so a model's stated rule can be honoured.
+    """
+    import math
+    if n1 <= 0 or n2 <= 0:
+        return None
+    p1, p2 = k1 / n1, k2 / n2
+    pooled = (k1 + k2) / (n1 + n2)
+    se = math.sqrt(pooled * (1.0 - pooled) * (1.0 / n1 + 1.0 / n2))
+    if se == 0.0:
+        return 1.0 if ((p1 <= p2) if alternative == "greater" else (p1 >= p2)) else 0.0
+    z = (p1 - p2) / se
+    if alternative == "less":
+        z = -z
+    return 0.5 * math.erfc(z / math.sqrt(2.0))
+
+
+def min_expected_cell_2x2(k1: int, n1: int, k2: int, n2: int) -> float:
+    """The smallest expected count of the 2x2 table under independence."""
+    total = n1 + n2
+    if total == 0:
+        return 0.0
+    c1 = k1 + k2
+    c2 = total - c1
+    return min(n1 * c1, n1 * c2, n2 * c1, n2 * c2) / total
+
+
 def _gser(s: float, x: float) -> float:
     """Regularized lower incomplete gamma P(s, x) by series (for x < s+1)."""
     if x <= 0.0:
