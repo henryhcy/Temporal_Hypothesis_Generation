@@ -1052,6 +1052,39 @@ everything in a table, the other nothing. Nobody has run the middle condition
 (mode given but conditioning withheld, or the reverse), which is where "knows
 which claim type this is" separates from "knows what that claim type requires".
 
+### 10.3d External published systems on MedTempo (2026-09-24 → 09-29; local models only, GPU box)
+
+Four published systems run on the v1.1 smoke slice / its cohort-tier subset with
+`qwen2.5-coder:32b` via Ollama (no API). Code lives OUTSIDE this repo in sibling
+dirs on the GPU box (`~/ehragent_baseline`, `~/ehrsql_baseline`,
+`~/statqa_baseline`, `~/veritas_baseline` A/B, `~/veritas_adapted` C); summaries
+in `~/ehragent_baseline/RESULTS_32B.md`, `~/PART2_perphase_results.md`. Verdict
+accuracy on cohort+multi tiers; chance ≈ 0.33.
+
+| system | stage | model | n | acc | where it fails |
+|---|---|---|---|---:|---|
+| EHRAgent, variant A (e2e code agent over the eval DB) | S1–S3 | 7B / **32B** | 400 | 0.103 / **0.417** (overall incl. report 0.150 / 0.527) | 7B: 72% no answer; 32B: retrieval — variant B (retrieval→oracle S3) 0.446 |
+| EHRSQL protocol (one SQL per hypothesis, counts→gold test) | S2 | 32B | 242 | 0.384 | counts exactly gold on **2.9%**; 27% abstain; verdict lands because cores sit far from α |
+| StatQA-style test selection (gold counts + hypothesis → test) | S3 | 32B | 242 | 0.364 (selection acc) | χ² where Fisher is required (56/86); StatQA taxonomy has no modal-runner equivalent (0/98) |
+| VERITAS A (own test contract) | S1–S3 | 32B, 16k ctx | 39 | 0.333 primary / 0.179 strict | no one-sample plan type → planning loops; 14/39 hit the 40-min cap; gold-test match 0.00 |
+| VERITAS B (+ our exact-test pool advertised) | S1–S3 | 32B | 39 | 0.308 / 0.179 | adopts our tests 33%; denominator = whole cohort (n=1,164 vs gold 6) |
+| VERITAS C (contract extended with one-sample/modal types + validator) | S1–S3 | — | — | **not run** (built; one smoke, timed out while sharing a GPU) | — |
+
+Readings: (1) every system fails at the DENOMINATOR, corroborating §10.3b from
+outside our harness; (2) supplying the test pool changes which test is picked,
+not accuracy (VERITAS B, StatQA) — supports the conditional-plan + guards design
+over "hand the agent the tests"; (3) the EHRAgent 7B→32B gain is retrieval.
+Caveats for the paper: all at 32B local while our frontier rows are Opus (the
+compose gap is model-tier, decisions 09-30), and each system got the schema plus
+a short data note, NOT the situation-phrased conventions of the toolbox card —
+so these are a conventions-withheld condition in the §10.3b sense. Operational
+notes: the Ollama OpenAI-compat endpoint defaults `num_ctx` to 2048 and
+truncates from the START (EHRAgent 7B/32B-A runs were affected; `-8k` Modelfile
+variants built, re-runs started and stopped at 8/400); my 40-min VERITAS cap was
+tighter than the authors' 3600 s (`experiments/run_experiments.py`) and cost 64%
+of A's GPU-hours to runs with no verdict. All runs STOPPED 2026-09-29; results
+kept as-is. Draft: `docs/draft/dataset_construction.tex` "External systems".
+
 ### 10.4 M3–M5 — designed, not built
 
 M3 split + fine-tune (P0 / P1 / P2 table); M4 in-context B1, agent B2, single-pass

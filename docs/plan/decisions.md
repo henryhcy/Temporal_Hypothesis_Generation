@@ -2684,3 +2684,21 @@ diversity (issue 32) is the critical path**: it is the only change that makes
 null formulation a real inference (a data-derived p0 cannot be looked up).
 Operational: the lab Anthropic key is stored in the gitignored `.env` and loaded
 by `run_eval.py` (never `--ask-api-key` again on this machine).
+
+
+## RECORDED: external-system baselines measured at 32B and stopped; re-run only commensurate, after v1.2 (2026-09-29)
+
+EHRAgent (7B 0.103 / 32B 0.417 cohort+multi), EHRSQL-protocol S2 (0.384; counts
+exact 2.9%), StatQA-style S3 (0.364; χ² for Fisher, no modal-runner), VERITAS A/B
+(0.333 / 0.308, chance) — 11 §10.3d, issue 34. Every system fails at the
+denominator, which corroborates §10.3b from outside our harness and is the
+argument for scoring the denominator as a stage. Two confounds make these
+non-headline numbers: model tier (32B vs Opus; the compose gap is model-tier)
+and conventions (each system saw the schema + a short note, not the toolbox
+card — a conventions-withheld condition by our own 09-29 principle). Decision:
+stop all runs now (VERITAS C unrun; EHRAgent 8k re-runs at 8/400), keep the
+numbers as a "where systems fail" table with both caveats stated, and re-run
+only once v1.2 exists — every system given the same task card, matched model
+tiers, VERITAS at its authors' 3600 s cap with the timeout rate reported.
+Draft updated: `docs/draft/dataset_construction.tex`, tables `tab:toolbox` and
+`tab:external`.

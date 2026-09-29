@@ -495,6 +495,99 @@ denominator entirely. Those are stipulations about what the statistic means for
 this corpus, not facts about the sentence --- they are what the structured claim
 carries, and a system without it cannot reconstruct them.
 
+\subsection{Composing the procedure without the mapping}
+
+The Stage-1 runs above hand the model a catalogue: the 20 claim types with
+their null, test and conditioning rule, so extraction reduces to classification
+and lookup. The \emph{toolbox} frame withholds exactly that mapping and nothing
+else. Every convention is stated, phrased by situation rather than keyed to a
+type (``a report with two events tied for earliest has no answer and is
+excluded''), together with a computed dataset card and the test definitions;
+the model then composes a conditional plan --- quantity, denominator, arms,
+null recipe, tail, test family and a selection rule that S3 resolves on the
+retrieved counts --- and the harness derives the claim type from the plan by
+reverse lookup. Table~\ref{tab:toolbox} compares the two frames on the same
+slice.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+S1 condition & Qwen2.5-7B & Opus \\
+\midrule
+Catalogue + hints (lookup; upper bound) & 0.918 & 1.000 \\
+Toolbox, 3 worked plans & 0.64--0.68 & 1.000 \\
+\textbf{Toolbox, zero-shot} & --- & \textbf{0.958} \\
+\bottomrule
+\end{tabular}
+\caption{Verdict accuracy when the claim-type mapping is withheld. Same
+200-instance slice (400 records), blind-group, procedure-blind; S2 and S3 at
+gold. The 7B compose number is wording-sensitive across prompt revisions; the
+zero-shot 7B run was pending at the time of writing.}
+\label{tab:toolbox}
+\end{table}
+
+The gap is model-tier, not task ambiguity. Withholding the mapping costs the 7B
+model 25--30 points, almost all of it whole-shape misreads (110--125 of 400
+plans match no claim type), while the composed fields that do land are right
+(quantity 0.978, denominator 0.935, tail 0.993). It costs the frontier model
+nothing with three worked examples and 0.042 without them; the difference shows
+that a worked plan is itself a mapping row, so zero-shot is the honest headline
+and few-shot a reported dial. Under it, all 36 frontier errors are two shapes
+(association composed as plain co-occurrence; antecedent composed as the
+four-event contrast). Stage 1 on the released shapes is therefore near-solved
+at the frontier without the catalogue; remaining S1 difficulty has to come from
+nulls that cannot be looked up, which is the v1.2 expansion.
+
+\subsection{External systems}
+
+We also ran three published systems on the same data, all with a local 32B
+model (Qwen2.5-Coder-32B) and no API access: EHRAgent
+(end-to-end code agent over the eval DB, 400 records), the EHRSQL
+protocol (one text-to-SQL query per hypothesis, executed and
+scored against the gold counts; 242 cohort-tier records), a StatQA-style test
+selector (the gold counts and hypothesis, pick the test; 242
+records), and VERITAS (multi-agent plan / statistics /
+interpretation, 39 balanced hypotheses, once with its own test pool and once
+with ours). Table~\ref{tab:external} reports them.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrl}
+\toprule
+System & Stage & Acc. & Where it fails \\
+\midrule
+EHRAgent, 7B & S1--S3 & 0.103 & 72\% no answer \\
+EHRAgent, 32B & S1--S3 & 0.417 & retrieval; oracle S3 lifts to 0.446 \\
+EHRSQL protocol, 32B & S2 & 0.384 & counts exact on 2.9\%; 27\% abstain \\
+StatQA-style, 32B & S3 & 0.364 & $\chi^2$ where Fisher is required; no argmax test \\
+VERITAS, own tests & S1--S3 & 0.333 & no one-sample test; 14/39 time out \\
+VERITAS, our tests & S1--S3 & 0.308 & picks our test 33\%; denominator wrong \\
+\bottomrule
+\end{tabular}
+\caption{Published systems on the cohort and multi tiers, verdict accuracy
+(chance $\approx 0.33$). EHRAgent and EHRSQL over the 200-instance slice;
+StatQA-style over its cohort-tier subset; VERITAS over 3 hypotheses per group,
+balanced over verdicts, with a 40-minute cap per run. Each system received the
+schema and a short data description, not the situation-phrased conventions of
+the toolbox frame.}
+\label{tab:external}
+\end{table}
+
+None of them clears chance by much, and they fail in the same place. The
+EHRSQL query returns the gold counts on 2.9\% of records although its verdict
+is right 38\% of the time, because most cores sit far from $\alpha$; EHRAgent's
+gain from a 7B to a 32B model is retrieval, not statistics; and VERITAS, given
+our exact tests, adopts them a third of the time without gaining accuracy,
+since its plan conditions on the whole cohort ($n = 1{,}164$) where the gold
+denominator has six reports. The denominator is where systems fail, which is
+why it is a scored stage here. Two caveats are stated rather than hidden: these
+runs are at 32B while our own frontier rows are Opus, and the conventions were
+not supplied to them in the toolbox form, so the numbers are a
+conventions-withheld condition in the sense of Table~\ref{tab:e2econd}.
+
 \section{Limitations}
 \label{sec:limitations}
 
