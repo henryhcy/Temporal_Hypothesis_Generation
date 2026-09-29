@@ -605,6 +605,13 @@ def normalize_plan_shape(tier: str, answer_type: str, n_events: int, arms: int |
     if quantity == "extreme_of_set" and extreme is None:
         extreme = {"all_present_unique_first": "earliest",
                    "all_present_unique_last": "latest"}.get(conditioning or "")
+    # The earliest (latest) of TWO candidates is the one that precedes (follows):
+    # a two-candidate extreme IS a pair order. The events' order is fixed by the
+    # caller (claim_from_plan reverses them for "latest").
+    if quantity == "extreme_of_set" and int(n_events) == 2:
+        quantity = "order_of_pair"
+        if conditioning in ("all_present_unique_first", "all_present_unique_last"):
+            conditioning = "ordered_pair"
     if quantity != "extreme_of_set":
         extreme = None
     return plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme)
@@ -715,6 +722,8 @@ def claim_from_plan(plan: Mapping[str, Any], question_row: Mapping[str, Any], *,
     tier = question_row.get("level")
     answer_type = question_row.get("answer_type")
     terms = [t for t in (plan.get("events") or [])]
+    if plan.get("quantity") == "extreme_of_set" and len(terms) == 2 and plan.get("extreme") == "latest":
+        terms = terms[::-1]   # "A is the latest of {A, B}" asserts B precedes A
     mode = derive_mode(tier, answer_type, len(terms), plan.get("arms"),
                        plan.get("denominator"), plan.get("quantity"), plan.get("extreme"))
     if mode is None:

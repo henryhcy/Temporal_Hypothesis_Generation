@@ -72,9 +72,9 @@ def test_plan_schema_is_self_consistent():
 
 
 def test_plan_with_no_matching_shape_raises():
-    row, terms = _row_for("dir_bool")
-    plan = dict(derive_plan("dir_bool"), events=terms, negated=False,
-                quantity="extreme_of_set", extreme="earliest")   # 2 events cannot be a set extreme
+    row, terms = _row_for("seq_bool")
+    plan = dict(derive_plan("seq_bool"), events=terms, negated=False,
+                quantity="order_of_pair", arms=1)   # three events composed as ONE pair order: no such mode
     with pytest.raises(ValueError, match="no mode for plan shape"):
         claim_from_plan(plan, row, source="test")
 
@@ -173,3 +173,14 @@ def test_normalize_plan_fills_the_implied_p0_only():
     assert normalize_plan({"null_kind": "text_stated", "p0": None, "quantity": "order_of_pair"})["p0"] is None
     assert normalize_plan({"null_kind": "data_derived", "p0": None, "quantity": "order_of_pair"})["p0"] is None
     assert normalize_plan({"null_kind": "two_arm_equality", "p0": 0.5, "quantity": "order_of_pair"})["p0"] is None
+
+
+def test_two_candidate_extreme_is_a_pair_order():
+    # P-R2: "which came first in report r, A or B?" composed as extreme_of_set over two candidates
+    assert derive_mode("report", "CHOICE", 2, 1, "single_report", "extreme_of_set", "earliest") == "rep_dir_choice"
+    assert derive_mode("vaccine", "CHOICE", 2, 1, "all_present_unique_first", "extreme_of_set", "earliest") == "dir_choice"
+    row, terms = _row_for("rep_dir_choice")
+    plan = dict(derive_plan("rep_dir_choice"), events=terms, negated=False,
+                quantity="extreme_of_set", extreme="latest", asserted_option=terms[0])
+    back = claim_from_plan(plan, row, source="test")
+    assert back.mode == "rep_dir_choice" and back.terms == tuple(terms[::-1])
