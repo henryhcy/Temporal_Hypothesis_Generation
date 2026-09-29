@@ -2654,3 +2654,16 @@ presence split is two arms; the first/last denominators name their extreme; a
 symmetric null is p0 = 0.5; a report has one arm) -- never the answer.
 `rescore.py` now reads the release from the run's config (it defaulted to v1
 and silently mis-joined report-tier rows of v1.1 runs).
+
+
+## FINDING: the compose gap is MODEL-TIER; frontier S1 is solved on seen templates without the mapping (2026-09-30)
+
+claude-opus-5 under the toolbox frame: 1.000 verdict / 1.000 plan EM on the v1.1
+smoke slice (0.985 before the two-candidate-extreme identity; the six misses were
+P-R2). Same frame, same slice, 7B: 0.64-0.68 (wording-sensitive). So the toolbox
+protocol costs a strong model nothing and exposes the small model's
+situation-recognition failures; the catalogue was never what made S1 easy at
+the frontier. Remaining S1 difficulty must be sought in P2 group holdout and
+null diversity (v1.2), not in prompt design. Normalization rule extended with
+one more IMPLIED identity: an extreme over two candidates is a pair order
+("latest" reverses the pair).

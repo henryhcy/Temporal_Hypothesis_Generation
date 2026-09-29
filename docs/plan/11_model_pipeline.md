@@ -850,6 +850,11 @@ attribution separates them cleanly:
   diversity (v1.2) — the catalogue was never what made S1 easy for a strong
   model. Cost note: the toolbox prompt + 3 few-shot plans is ~5.9K tokens per
   call (2.36M input for 400 records, ~$15.6), 2.5x the earlier $6 estimate.
+  The 7B under the same v4 prompt moved 0.642 -> 0.680 on verdicts while its
+  composed test_family / rule_valid FELL (0.789 -> 0.631): the sharper argmax
+  wording redistributed its errors rather than removing them -- the same
+  prompt-saturation pattern as the catalogue hints. Report the 7B compose
+  number as 0.64-0.68 (wording-sensitive), the frontier as 1.000 (not).
 - **S2 was a model-capability gap, not benchmark impossibility** (smoke-4,
   2026-09-03). The same text-to-SQL stage that scored 0.545 with the local 7B
   scores **0.975** with `claude-opus-5` on identical inputs (gold claims,
