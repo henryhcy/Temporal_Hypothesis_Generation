@@ -10,7 +10,7 @@
 % standalone reference document -- the same pattern as Findings_and_Templates.tex
 % already in the project. To fold it into a submission, paste the body in.
 %
-% Every number is measured from data/release/v1/dataset_statistics.json,
+% Every number is measured from data/release/v1.1/dataset_statistics.json,
 % run_summary.json, or the committed permutation screens; none is estimated.
 % Regenerate the figures with: python scripts/dataset_stats.py
 
@@ -26,6 +26,7 @@
 \setcounter{secnumdepth}{2}          % section + subsection numbers
 
 \usepackage{booktabs}
+\usepackage{multirow}
 \usepackage{amsmath}
 \usepackage{amssymb}
 
@@ -39,6 +40,29 @@
 \title{Dataset Construction}
 \author{}
 \affiliations{Project working note\\\today}
+
+\begin{document}
+\maketitle lines.
+%
+% Every number below is measured from data/release/v1/dataset_statistics.json,
+% run_summary.json, or the committed permutation screens. None is estimated.
+% Regenerate with: python scripts/dataset_stats.py --release data/release/v1
+
+\documentclass[11pt]{article}
+
+\usepackage[review]{acl}      % use \usepackage[]{acl} for camera-ready
+\usepackage{times}
+\usepackage{latexsym}
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath}
+\usepackage{amssymb}
+
+\title{Dataset Construction}
 
 \begin{document}
 \maketitle
@@ -268,7 +292,7 @@ wrong-event claim wording --- which is the argument for running it continuously.
 
 Table~\ref{tab:totals} reports aggregate composition and
 Table~\ref{tab:pergroup} the per-group breakdown. Verdict balance is near-exact
-in aggregate (6{,}845 / 6{,}783 / 4{,}864) and exact within every cohort-level
+in aggregate (6{,}857 / 6{,}771 / 4{,}864) and exact within every cohort-level
 group by construction.
 
 \begin{table}[t]
@@ -282,7 +306,7 @@ Groups & 20 \\
 Distinct cores & 11{,}828 \\
 Distinct facts (split key) & 8{,}964 \\
 \midrule
-Supported / refuted / insufficient & 6{,}845 / 6{,}783 / 4{,}864 \\
+Supported / refuted / insufficient & 6{,}857 / 6{,}771 / 4{,}864 \\
 \quad underpowered & 1{,}729 \\
 \quad sparse & 1{,}505 \\
 \quad not-locatable & 1{,}630 \\
@@ -295,7 +319,7 @@ $|$Cohen's $h|$ on decisive, median & 0.77 \\
 $p$ on supported claims, median & 0.007 \\
 \bottomrule
 \end{tabular}
-\caption{Aggregate statistics for the v1 release.}
+\caption{Aggregate statistics for the v1.1 release.}
 \label{tab:totals}
 \end{table}
 
@@ -312,7 +336,7 @@ F-R3 & R & first & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
 P-R1 & R & precedes & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
 P-R2 & R & precedes & \textsc{Cho} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
 S-R1 & R & sequence & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
-C-R1 & R & co-occurs & \textsc{Boo} & 300 & 300 & 181 & 119 & 0 & --- & 300 & --- \\
+C-R1 & R & co-occurs & \textsc{Boo} & 300 & 300 & 193 & 107 & 0 & --- & 300 & --- \\
 \midrule
 P-V4 & C & pair-vs-pair & \textsc{Boo} & 2{,}857 & 8{,}571 & 2{,}857 & 2{,}857 & 2{,}857 & 952/952/953 & 4{,}163 & 25 \\
 P-V2 & C & antecedent & \textsc{Boo} & 751 & 2{,}253 & 751 & 751 & 751 & 250/250/251 & 1{,}153 & 27 \\
@@ -511,6 +535,162 @@ denominator entirely. Those are stipulations about what the statistic means for
 this corpus, not facts about the sentence --- they are what the structured claim
 carries, and a system without it cannot reconstruct them.
 
+\subsection{Composing the procedure without the mapping}
+
+The Stage-1 runs above hand the model a catalogue: the 20 claim types with
+their null, test and conditioning rule, so extraction reduces to classification
+and lookup. The \emph{toolbox} frame withholds exactly that mapping and nothing
+else. Every convention is stated, phrased by situation rather than keyed to a
+type (``a report with two events tied for earliest has no answer and is
+excluded''), together with a computed dataset card and the test definitions;
+the model then composes a conditional plan --- quantity, denominator, arms,
+null recipe, tail, test family and a selection rule that S3 resolves on the
+retrieved counts --- and the harness derives the claim type from the plan by
+reverse lookup. Table~\ref{tab:toolbox} compares the two frames on the same
+slice.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrr}
+\toprule
+S1 condition & Qwen2.5-7B & Opus \\
+\midrule
+Catalogue + hints (lookup; upper bound) & 0.918 & 1.000 \\
+Toolbox, 3 worked plans & 0.64--0.68 & 1.000 \\
+\textbf{Toolbox, zero-shot} & 0.490 & \textbf{0.958} \\
+\bottomrule
+\end{tabular}
+\caption{Verdict accuracy when the claim-type mapping is withheld. Same
+200-instance slice (400 records), blind-group, procedure-blind; S2 and S3 at
+gold. The 7B few-shot number is wording-sensitive across prompt revisions.}
+\label{tab:toolbox}
+\end{table}
+
+The gap is model-tier, not task ambiguity. Withholding the mapping costs the 7B
+model 25--30 points, almost all of it whole-shape misreads (110--125 of 400
+plans match no claim type), while the composed fields that do land are right
+(quantity 0.978, denominator 0.935, tail 0.993). It costs the frontier model
+nothing with three worked examples and 0.042 without them, while the 7B model
+falls to 0.490 (179 of 400 plans match no type); the examples were propping up
+both. A worked plan is itself a mapping row, so zero-shot is the honest headline
+and few-shot a reported dial. Under it, all 36 frontier errors are two shapes
+(association composed as plain co-occurrence; antecedent composed as the
+four-event contrast). Stage 1 on the released shapes is therefore near-solved
+at the frontier without the catalogue; remaining S1 difficulty has to come from
+nulls that cannot be looked up, which is the v1.2 expansion.
+
+\subsection{External systems}
+
+We also ran three published systems on the same data, all with a local 32B
+model (Qwen2.5-Coder-32B) and no API access: EHRAgent
+(end-to-end code agent over the eval DB, 400 records), the EHRSQL
+protocol (one text-to-SQL query per hypothesis, executed and
+scored against the gold counts; 242 cohort-tier records), a StatQA-style test
+selector (the gold counts and hypothesis, pick the test; 242
+records), and VERITAS (multi-agent plan / statistics /
+interpretation, 39 balanced hypotheses, once with its own test pool and once
+with ours). Table~\ref{tab:external} reports them.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llrl}
+\toprule
+System & Stage & Acc. & Where it fails \\
+\midrule
+EHRAgent, 7B & S1--S3 & 0.103 & 72\% no answer \\
+EHRAgent, 32B & S1--S3 & 0.417 & retrieval; oracle S3 lifts to 0.446 \\
+EHRSQL protocol, 32B & S2 & 0.384 & counts exact on 2.9\%; 27\% abstain \\
+StatQA-style, 32B & S3 & 0.364 & $\chi^2$ where Fisher is required; no argmax test \\
+VERITAS, own tests & S1--S3 & 0.333 & no one-sample test; 14/39 time out \\
+VERITAS, our tests & S1--S3 & 0.308 & picks our test 33\%; denominator wrong \\
+\bottomrule
+\end{tabular}
+\caption{Published systems on the cohort and multi tiers, verdict accuracy
+(chance $\approx 0.33$). EHRAgent and EHRSQL over the 200-instance slice;
+StatQA-style over its cohort-tier subset; VERITAS over 3 hypotheses per group,
+balanced over verdicts, with a 40-minute cap per run. Each system received the
+schema and a short data description, not the situation-phrased conventions of
+the toolbox frame.}
+\label{tab:external}
+\end{table}
+
+None of them clears chance by much, and they fail in the same place. The
+EHRSQL query returns the gold counts on 2.9\% of records although its verdict
+is right 38\% of the time, because most cores sit far from $\alpha$; EHRAgent's
+gain from a 7B to a 32B model is retrieval, not statistics; and VERITAS, given
+our exact tests, adopts them a third of the time without gaining accuracy,
+since its plan conditions on the whole cohort ($n = 1{,}164$) where the gold
+denominator has six reports. The denominator is where systems fail, which is
+why it is a scored stage here. Two caveats are stated rather than hidden: these
+runs are at 32B while our own frontier rows are Opus, and the conventions were
+not supplied to them in the toolbox form, so the numbers are a
+conventions-withheld condition in the sense of Table~\ref{tab:e2econd}.
+
+\section{Related Work and Positioning}
+\label{sec:related}
+
+Table~\ref{tab:related} places the benchmark against the systems and benchmarks
+it overlaps with, on the dimensions that decide what it can claim. The four
+closest works were read against one rubric --- what the model is given, what it
+must formulate, who computes the statistic, whether the data carry event order,
+whether intermediate stages have gold, and whether new datasets can be fed in.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lllllll}
+\toprule
+Work & Model formulates the null? & Statistic computed by & Event-order claims & Clinical timelines & Gold at intermediate stages & Dataset-in interface \\
+\midrule
+P-Bench / Fisher-R1 \cite{miao2026fisher} & no: $H_0$ given; test chosen, unscored & model-written R & no (survival only) & partly & no: final $p$ and decision & no (425 fixed tasks) \\
+LATCH \cite{gim2026latch} & no: hypothesis \emph{and} method given & deterministic R pipelines & no (cross-sectional) & yes (NHANES) & partial: cohort $n$, CI vs.\ paper & yes (schema summary) \\
+StatFormBench \cite{wang2026statformbench} & family label only & nothing computed & no & textbook & formulation only & no \\
+StatABench \cite{zhu2026statabench} & test selection, no null & fixed tool functions & no & no & final answer & no \\
+StatQA \cite{zhu2024statqa} & applicability only & nothing computed & no & no & final answer & no \\
+DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & open-ended hypothesis & agent code & no & no & rubric / expert & no \\
+EHRAgent / EHRSQL \cite{shi2024ehragent,lee2022ehrsql} & no (QA / SQL) & agent code / SQL & no & yes (EHR) & answer / execution & schema \\
+VERITAS \cite{veritas2026} & plans the analysis; four-label evidence classification & its own generated code + a deterministic classification operator & no & yes (imaging cohorts) & verdict vs.\ reference (64 hypotheses) & data + description \\
+CRAFT / TIMER \cite{craft2026,timer2025} & n/a (timeline extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
+\midrule
+\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or its computation, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the model's stated rule with exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last & \textbf{yes}: expert-annotated VAERS timelines & \textbf{every stage}: claim, evidence set (denominator), counts, $p$, verdict & dataset card (one corpus so far) \\
+\bottomrule
+\end{tabular}
+\caption{Positioning against the closest benchmarks and systems. The four
+closest (P-Bench, LATCH, StatFormBench, StatABench) were read in full; the rest
+from abstracts. ``Gold at intermediate stages'' is what makes per-stage
+attribution possible; ``event-order claims'' means hypotheses about the order or
+timing of events within a record.}
+\label{tab:related}
+\end{table*}
+
+\paragraph{What is not new.} A plan-then-execute loop with a deterministic
+statistics layer is the LATCH architecture, on clinical data, with a schema
+interface, seven months earlier; and ``hypothesis plus dataset in, method choice
+and $p$ out'' is P-Bench. Our harness is the reference implementation that the
+instrument evaluates, not the contribution. Nor is Stage~1 hard for a frontier
+model on the released claim types: with the mapping withheld and every
+convention stated, a frontier model composes the procedure at 0.958 zero-shot
+(Table~\ref{tab:toolbox}); the difficulty at Stage~1 is a small-model gap.
+
+\paragraph{What is.} No prior work combines a model-formulated null that is then
+executed deterministically with gold at every stage; none scores the
+eligibility rule --- which reports the statistic is computed over --- and that is
+where systems fail (Tables~\ref{tab:e2econd} and~\ref{tab:external}); and none
+poses hypotheses about the order of events within patient timelines, with the
+conditioning semantics (first mention, co-existence, ties) those hypotheses
+carry. The findings that follow from the instrument are correspondingly about
+retrieval and arithmetic rather than reading: a frontier model handed the exact
+counts reproduces the exact $p$-value only 66\% of the time
+(Table~\ref{tab:stagebaselines}), and the denominator, not the test, is what
+external systems get wrong. Two caveats are stated with the claim. Null
+diversity is thin in this release (three cohort-tier null signatures), so
+``formulates the null'' is a modest inference until the data-derived nulls of
+the next expansion; and portability rests on one corpus until the benchmark is
+run on an external hypothesis set with its stated null hidden.
+
 \section{Limitations}
 \label{sec:limitations}
 
@@ -559,19 +739,18 @@ figure should macro-average over groups.
 \paragraph{Report level has no insufficient class.} Seven groups and 3{,}900
 instances (16\% of the release) are two-class by design, so that fraction of the
 benchmark cannot exercise indeterminacy. Six of the seven sit at exactly 300/300
-by enumeration cap rather than by data; C-R1 ships 181/119 because its symmetric
+by enumeration cap rather than by data; C-R1 ships 193/107 because its symmetric
 claim admits no orientation operator and no negated wording was authored for it.
 
-\paragraph{Report-level vaccine coverage is skewed.} The report tier is bounded
-at 300 cores per group so that seven report groups do not outweigh the cohort
-tier. In this release that bound is applied by taking the lowest report
-identifiers, and because identifiers are chronological the resulting window
-predates one vaccine's authorisation. Janssen accordingly supplies 8.8\% of
-report-level instances against 36.8\% of the corpus (Moderna 55.1\% against
-31.0\%; Pfizer 36.1\% against 32.2\%). The bound itself is sound --- a
-stratified or seeded-random draw of the same size removes the skew --- so this is
-a property of the present artifact rather than of the design, and it does not
-affect the cohort-level tier, whose denominators are whole cohorts.
+\paragraph{Report-level vaccine coverage.} The report tier is bounded at 300
+cores per group so that seven report groups do not outweigh the cohort tier. In
+v1 that bound was applied by taking the lowest report identifiers, and because
+identifiers are chronological the window predated one vaccine's authorisation
+(Janssen supplied 8.8\% of report-level instances against 36.8\% of the
+corpus). v1.1 draws the same bound by a seeded shuffle: Janssen 35.1\%, Moderna
+31.2\%, Pfizer 33.8\% against corpus shares of 36.8 / 31.0 / 32.2. Cohort-level
+instances are unchanged between the two releases; every number in this paper is
+measured on v1.1.
 
 \paragraph{No lexical variation.} Slot fillers are raw MedDRA terms; a synonym
 table is future work, so surface variation comes entirely from the register and

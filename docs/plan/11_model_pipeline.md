@@ -1168,7 +1168,7 @@ T1-v1..v3.
 
 ## 12 Related work (2026-09-29; four closest papers read in full, rest from abstracts)
 
-Positioning against the benchmarks and systems that overlap with VERITAS's task.
+Positioning against the benchmarks and systems that overlap with this benchmark's task. (NOTE 2026-09-30: VERITAS is an EXTERNAL system run as a baseline in §10.3 -- not our name; an earlier version of this section mislabelled our row.)
 The four closest were read end to end against one rubric (input/output, who
 formulates the null, who computes, temporal content, stage-level gold,
 portability); the others from abstracts. Update this section before submission.
@@ -1253,7 +1253,7 @@ them or verifies a claim against a computed test.
 | StatFormBench | family label only | nothing executed | no | textbook | formulation only | no |
 | StatABench | test selection, no null | yes (tool calls) | no | no | final answer only | no |
 | DiscoveryBench / BLADE | open-ended | agent code | no | no | rubric / expert | no |
-| **VERITAS** | **yes** (null form, p0, statistic, tail; toolbox frame, issue 29) | **yes** (`procedure-honouring`) | **yes** (precedes / co-occur / sequence / first-last) | **yes** (annotated VAERS timelines) | **yes** (claim, evidence set, counts, p, verdict) | task card (planned; LATCH's schema-summary pattern) |
+| **This work** | **yes** (null recipe: kind, p0 or its computation, reference population; toolbox frame, issue 29) | **yes** (`procedure-honouring`) | **yes** (precedes / co-occur / sequence / first-last) | **yes** (annotated VAERS timelines) | **yes** (claim, evidence set, counts, p, verdict) | task card (planned; LATCH's schema-summary pattern) |
 
 No prior work combines model-formulated nulls, deterministic execution, and
 per-stage gold; none poses event-order hypotheses within records; none scores
