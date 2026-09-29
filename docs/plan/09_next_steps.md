@@ -68,11 +68,82 @@ the quantity it SCORES". That class of defect has now appeared three times (S-V1
 on 07-13, F-V2/F-R2 on 08-12, C-V3 today) and is found only by reading a rendered
 instance beside its statistic. Worth a standing review step, not another invariant.
 
+## Session summary 2026-09-29/30 — S1 reframed, toolbox built and measured (branch `s1-toolbox`)
+
+**Where the discussion went.** Starting question: how to do better on S1. The
+error taxonomy of the best catalogue run (7B, 54 errors / 400) showed one group
+(P-R2) carrying a third of them and 25/38 mode errors sitting on records whose
+GIVEN fields already pinned the mode — a lever for the *system*, but then the
+harder point: the catalogue prompt hands the model the answer (test, null, H0,
+conditioning per mode), so S1 "accuracy" was mode classification + lookup, not
+formulation. That led to the reframing now in `decisions.md` (2026-09-29):
+
+1. **State every stipulation, withhold only the mapping.** Conventions
+   (co-exist exclusion, tie drop, presence split, first mention, floors, alpha)
+   are dataset stipulations, not entailed by sentences — the audit's 176/501
+   P-V1 label flips under the alternative reading prove it — so they are stated
+   (phrased by situation), and only the 20-row mode mapping is withheld. e2e-sql
+   (§10.3b) is re-read accordingly: it measured convention-guessing.
+2. **S1 output is a conditional plan**: quantity / denominator primitive / arms
+   / null RECIPE (symmetric-fixed, text-stated, data-derived, two-arm equality)
+   / tail / test FAMILY + selection RULE resolved by S3 on the retrieved counts
+   / gate. "Exact tests only" becomes "every gold-producing test must be valid at
+   the instance's n" (guards, 11 §13.4). `answer_type` stays an input field.
+3. **Null diversity is the dataset expansion** (issue 32 → v1.2): N1 position
+   with the data-derived structural null (the one null that cannot be looked
+   up), N3/N4 text bars, N2 succession — doc 10's candidates, screens done.
+4. The related-work read (11 §12): P-Bench/Fisher-R1, LATCH, StatFormBench,
+   StatABench, DiscoveryBench/BLADE. None combines model-formulated nulls +
+   deterministic execution + per-stage gold; none poses event-ORDER claims; none
+   scores the denominator. The system loop itself is not the novelty — the
+   grounded instrument is. P-Bench with H0 hidden is the external validation.
+
+**Built (11 §11a; 604 tests).** `--s1-frame toolbox`: computed dataset card
+(`extract/task_card.py`), catalogue-free prompt (a test proves no mode/group/H0
+leaks), `PLAN_JSON_SCHEMA`, `derive_mode` reverse lookup (unique after adding
+`extreme`), `normalize_plan_shape` / `normalize_plan` filling only IMPLIED
+fields, rule resolution in S3 (Fisher vs one-sided two-proportion z, guard
+min expected cell >= 5), plan scoring + `rule_valid`, few-shot as the P1/P2
+dial, `.env` key loading, `rescore` reading the release from the run config.
+
+**Measured (v1.1 smoke slice, 400 records, blind-group, procedure-blind).**
+
+| S1 condition | 7B | claude-opus-5 |
+|---|--:|--:|
+| catalogue + hints (lookup; upper bound) | 0.918 | 1.000 |
+| toolbox, 3 few-shot plans | 0.64–0.68 (wording-sensitive) | 1.000 (claim EM 1.000; plan EM 0.985) |
+| **toolbox, zero-shot (the headline condition)** | pending (running at summary time; `results/v11_smoke200_toolbox_7b_zeroshot`) | **0.958** (claim EM 0.910; plan EM 0.812; rule_valid 0.943) — all 36 mode errors are two shapes: C-V2 association composed as plain co-occurrence (22; arms 1 / both_present — the family e2e-sql found unrecoverable from the sentence) and P-V2 antecedent composed as the four-event pair-vs-pair (14). Both are exactly the shapes the 3 few-shot plans had covered (assoc_bool, antecedent_bool), which is why removing them cost 4 points |
+
+Readings: the compose gap is model-tier (7B loses 25–30 points, Opus ~0);
+three worked examples were worth ~4 verdict / ~9 claim-EM points to Opus, i.e.
+few-shot DOES leak the mapping, so zero-shot is the headline and few-shot a
+reported dial; P2 group-holdout is downgraded (with zero-shot no group has an
+example); v1.2 null diversity is the critical path for any remaining S1
+difficulty at the frontier. Harness lessons: two toolbox versions lost 232/170
+records to a reverse lookup stricter than the semantics and a schema null
+escape — fixed by implied-field normalization, never by consulting the answer.
+
+**Operational.** Branches cleaned to `main` = `model-pipeline-design` (frozen
+paper line) + `s1-toolbox` (next-step work); candidate templates + screening
+harness committed to the main line; the lab Anthropic key lives in the
+gitignored `.env` (loaded by `run_eval.py`); VERITAS baselines on the other
+machine kept for the record (rule: S2/S3 and upper-bound rows stay valid;
+catalogue-S1 capability claims are superseded).
+
+**Next, in order.** (1) 7B zero-shot lands → record; (2) **v1.2 build** (issue
+32; doc 10 §7.2 order: N1 structural null → N3/N4 bars → N2) + B0 re-cert;
+(3) zero-shot toolbox on v1.2 (7B + Opus); (4) P-Bench external validation
+(issue 33); (5) full `eval_core` under zero-shot toolbox for the paper table.
+
 ## §1a Experiment queue (frozen 2026-09-04, run AFTER the dataset is stabilized)
 
 Priority order agreed at the 09-03/09-04 review; every strong number so far is on
 the SCAFFOLDED task (mode catalogue, DDL, conditioning prose, floors all given,
 in-distribution text) — these runs are what turn it into a paper:
+
+> **Reordered 2026-09-30** (see the session summary above): zero-shot toolbox is
+> the S1 headline; v1.2 null diversity is the critical path; P2 folds are
+> downgraded. Items below keep their original numbering.
 
 1. **Single-pass (B3) + in-context (B1) baselines with a frontier model** — the
    motivating claim. If frontier fails without the decomposition, the framework

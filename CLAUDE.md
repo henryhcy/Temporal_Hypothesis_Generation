@@ -39,6 +39,9 @@ wrong.
 - `docs/plan/08_multi_tier_inventory.md` — two-cohort screening evidence; read its banner, parts are superseded
 - `docs/plan/09_next_steps.md`     — **current state, the live issue register, and priority order**
 - `docs/plan/11_model_pipeline.md` — **the eval harness / model pipeline design (2026-09-01)**: stage contract, `StructuredClaim`, narrative-free eval DB, metrics, leakage protocols, milestones, results (§10.3); M1+M2 BUILT on branch `model-pipeline-design`; `11a_template_faithfulness_audit.md` audits all 184 template strings (issue 24)
+- **`s1-toolbox` branch (2026-09-30):** S1 is evaluated under the TOOLBOX frame (`--s1-frame toolbox`,
+  11 §11a/§13): conventions stated, mode mapping withheld, the model composes a conditional plan;
+  the catalogue frame is the upper bound. Headline condition is zero-shot. API keys: gitignored `.env`.
 - `docs/plan/decisions.md`        — locked decisions, **chronological and append-only**: read newest-first, and never quote one entry as current without checking for a later one on the same topic
 - `docs/plan/open_questions.md`   — items still under discussion (do not assume). Cleaned 08-12; every entry is genuinely open and carries its issue number
 

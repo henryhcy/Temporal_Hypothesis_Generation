@@ -2668,3 +2668,19 @@ the frontier. Remaining S1 difficulty must be sought in P2 group holdout and
 null diversity (v1.2), not in prompt design. Normalization rule extended with
 one more IMPLIED identity: an extreme over two candidates is a pair order
 ("latest" reverses the pair).
+
+
+## DECIDED: zero-shot is the headline S1 condition; few-shot is a reported dial; P2 downgraded; v1.2 is the critical path (2026-09-30)
+
+Under the toolbox frame a worked example is a mapping row. Measured: Opus 1.000
+with 3 few-shot plans → **0.958** zero-shot (claim EM 1.000 → 0.910), so the
+examples leaked ~4 verdict points. The headline S1 number is therefore
+`--k-shot 0`; `--k-shot k` is reported as a dial. With no examples, P2 group
+holdout loses its purpose (every group is example-free), so the 4-fold T2 run is
+dropped from the plan. The remaining disclosed channel is the conventions text
+itself (written for these 20 shapes) — stated in the paper, by design. Because
+frontier S1 on the current shapes is near-solved even zero-shot, **v1.2 null
+diversity (issue 32) is the critical path**: it is the only change that makes
+null formulation a real inference (a data-derived p0 cannot be looked up).
+Operational: the lab Anthropic key is stored in the gitignored `.env` and loaded
+by `run_eval.py` (never `--ask-api-key` again on this machine).
