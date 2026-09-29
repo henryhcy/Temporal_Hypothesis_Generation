@@ -85,6 +85,63 @@ in-distribution text) — these runs are what turn it into a paper:
 5. Full `eval_core` runs for the paper table (~$40 at smoke-4 rates).
 6. M3 fine-tune only if the above leaves it a role.
 
+## §1b Server run plan (2026-09-29) — what to run on the multi-GPU box, and how
+
+Branches: `model-pipeline-design` = the frozen line every number in 11 §10.3
+comes from (also `main`, fast-forwarded 2026-09-29). `s1-toolbox` = next-step
+work (issues 29, 31, 32, 33). Run paper numbers from `model-pipeline-design`;
+run toolbox experiments from `s1-toolbox` once it has code.
+
+### Environment (once per machine)
+```
+git clone <repo> && cd Temporal_Hypothesis_Generation && git checkout model-pipeline-design
+python3.13 -m venv .venv313 && .venv313/bin/pip install -e ".[dev]"   # SQLite >= 3.44 required (issue 12)
+.venv313/bin/pytest -q -m "not slow"                                   # expect ~530 passed
+python scripts/build_eval_db.py                                        # -> data/medtempo_eval.db (narrative-free)
+# local models (Ollama; one server per GPU for parallel runs):
+ollama pull qwen2.5:7b-instruct && ollama pull qwen2.5-coder:7b
+CUDA_VISIBLE_DEVICES=0 OLLAMA_HOST=127.0.0.1:11434 ollama serve &
+CUDA_VISIBLE_DEVICES=1 OLLAMA_HOST=127.0.0.1:11435 ollama serve &      # ... pass --ollama-url per run
+# API models: export ANTHROPIC_API_KEY / OPENAI_API_KEY, or pass --ask-api-key (hidden prompt)
+```
+Release = `data/release/v1.1`; subsets `results/subsets/eval_core_v1.1_pg90_s0.json`
+(1,649 instances) and `smoke_200_v1.1_s0.json` (200). Every run writes
+`config.json` (model digests, shas), `predictions.jsonl`, `metrics.json`,
+`report.md`; re-score with `scripts/rescore.py --run <dir> --min-group-size 6`
+(smokes) or default 30 (eval_core). Responses are cached under `results/cache/`
+keyed on (model, prompt) -- reruns and mixed-provider runs replay for free.
+Measured rates: 7B ≈ 3.3 s/record on one GPU (400 records ≈ 22 min); Opus-5 SQL
+≈ $9 / 400 records; Opus-5 S1 ≈ $6 / 400 records.
+
+Common tail for every run below (blind-group, model fills the procedure):
+`--condition blind-group --procedure blind --registers original --formats question,claim`
+(drop `--registers original` for all four registers = 4x the records).
+
+### Runnable NOW (no new code)
+| id | command (add the common tail) | needs | time / cost | reports |
+|---|---|---|---|---|
+| R1 upper bound, paper scale | `run_eval.py --pipeline llm-s1+compiler --model qwen2.5:7b-instruct --tier-hint --routing-hint --subset eval_core --out results/ec_s1_7b` | 1 GPU | ~3 h (original) / ~12 h (all registers; split by `--registers` across GPUs) | the `procedure-given`-style ceiling row at 1,649 instances (catalogue S1; see decisions 09-29 -- NOT a capability number) |
+| R2 S2 ceiling, paper scale | `run_eval.py --pipeline rules+llm-sql --sql-provider anthropic --model claude-opus-5 --subset eval_core --out results/ec_rules_opus-sql` | API | ~$75, ~2 h | smoke-4 at scale |
+| R3 deployment mix, paper scale | `... --pipeline llm-s1+llm-sql --provider ollama --sql-provider anthropic --model qwen2.5:7b-instruct --sql-model claude-opus-5 --tier-hint --routing-hint --subset eval_core` | 1 GPU + API | S1 replays from R1's cache; ~$75 | smoke-5 at scale |
+| R4 grid cells | opus S1-only: `--pipeline llm-s1+compiler --provider anthropic --model claude-opus-5 --subset results/subsets/smoke_200_v1.1_s0.json`; opus both: `--pipeline llm-s1+llm-sql --provider anthropic --model claude-opus-5 ...` | API | ~$6 + ~$15 | completes the model x stage grid (11 §10.3) |
+| R5 null-hints ablation | R1/R4 commands `+ --hide-null-hints` | GPU / API | as above | issue 27 -- NOTE 11 §10.3c: still leaks conditioning per mode; the toolbox frame (issue 29) is the real condition |
+| R6 P1 register holdout | R1 with `--registers research` (and media, clinical) and the k-shot pool restricted to the other registers (`--k-shot-registers`, small flag if absent) | 1 GPU each | ~3 h per register | paraphrase robustness (11 §4 P1) |
+
+### After the toolbox frame lands (branch `s1-toolbox`)
+| id | what | needs | notes |
+|---|---|---|---|
+| T1 | toolbox S1 smoke, 7B and Opus (`--s1-frame toolbox`, flag name TBD) | GPU + API | the eval protocol; compare against R1/R4 ceilings; expect a drop -- report both |
+| T2 | P2 group holdout under toolbox (k-shot pool excludes the held-out group; 20 folds) | GPU | the only fair S1 head-to-head vs classification (which is at 0 on held-out groups) |
+| T3 | P-Bench external: hide H0, score the formulated null; Fisher-family subset through our executor | API | issue 33; needs a P-Bench loader (small) |
+| T4 | single-pass frontier baseline (B3): hypothesis + cohort dump -> verdict | API | queue item 1; needs the cohort-dump exporter (11 §5 `docs.py`) |
+| T5 | v1.2 (issue 32) regeneration + B0 re-certification (`--pipeline oracle --subset all`, ~9 min CPU) before any T-run on it | CPU | existing groups' instances unchanged; new groups only |
+
+What stays valid across the reframing: every S2/S3 number (R2, R3's SQL side)
+and every ceiling row; what gets superseded: S1 capability claims made from the
+catalogue prompt (they become upper-bound rows). Kill in-flight runs only if they
+are catalogue-S1 *capability* measurements (P2 with the catalogue, local 7B
+single-pass, classifier fine-tunes).
+
 ## Where the code now stands
 
 | | |
