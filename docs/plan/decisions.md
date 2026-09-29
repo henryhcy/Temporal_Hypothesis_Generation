@@ -2613,3 +2613,30 @@ underdetermined -- a detectable self-contradiction). Recorded as a SYSTEM lever
 (constrained decoding by signature), kept separate from the measurement ledger:
 it is legitimate scaffolding (uses the input, not the key) but a constrained S1
 cannot be reported as evidence that a model identifies claim types.
+
+
+## DECIDED: S1 emits a conditional plan; null diversity is the expansion; exact-only becomes a guard (2026-09-29)
+
+- **S1 output is a conditional plan** (11 §13.3): claim shape, denominator
+  primitive, null as a RECIPE (kind / statistic / reference population / p0 or
+  its computation), tail, a test SELECTION RULE over data facts, the gate. S3
+  resolves the rule on the retrieved counts (`procedure-honouring` runs the
+  stated rule). Scored as family / rule validity / resolution.
+- **Null diversity is the next dataset expansion** (reopens issue 19 in this
+  order): N1 single-event position with the DATA-DERIVED structural null (issue
+  20, `NullSpec` + `_null_ref(mode, core)`), N3/N4 text-stated bars, N2 immediate
+  succession -> v1.2 (adds groups; existing groups' instances unchanged). This is
+  what turns "the model formulates the null" from framing into a measured
+  capability: four null sources (11 §13.1), one of which cannot be looked up.
+- **"Exact tests only" is restated** as "every gold-producing test must be valid
+  at the instance's n" (11 §13.4); the model's toolbox may be wide, method
+  choice is adjudicated by equivalence classes with guards, and the
+  normal-approximation rank tests stay descriptive unless replaced by exact
+  enumeration. `answer_type` STAYS an input field: the null-from-answer-type
+  shortcut is a property of having two nulls, not of the field, and the field
+  does legitimate work (form of answer; structural constraint).
+- **External validation queued**: P-Bench with its stated H0 HIDDEN, scoring
+  the model's formulated null against P-Bench's own; plus its Fisher-family
+  subset through our executor. Hypotheses authored by others, no new gold.
+- The S1 expert content (how a statistician infers each null kind, the card
+  the dataset must carry) lives in 11 §13 and is the source for the task card.

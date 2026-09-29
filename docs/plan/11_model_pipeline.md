@@ -1114,3 +1114,102 @@ cohort signatures; issue 20 is the fix); the portability claim needs at least on
 external dataset actually run (LATCH's interface is the precedent, not ours);
 arithmetic fragility is corroborated by P-Bench's strict metric (frontier 64.7%
 on Easy) and our counts-llm (66% p agreement).
+
+
+## 13 S1 expert knowledge: formulating the null and the test plan (2026-09-29)
+
+The content the toolbox task card must carry -- what a statistician knows that a
+catalogue row hides. Written to be lifted into the S1 prompt (issue 29) and into
+the paper's method section. Nothing here is keyed to a mode label.
+
+### 13.1 Four sources of null, and which one a claim needs
+
+| source | when | the null | example |
+|---|---|---|---|
+| **symmetric-fixed** | the claim orders TWO named events, or names one of k candidates | p0 = 0.5 by swap symmetry (exact); argmax: named cell vs its largest competitor at 0.5 | "A precedes B" -> P(A before B) = 0.5 over reports with both at distinct stages |
+| **text-stated** | the wording carries a quantitative bar | p0 = the bar | "in at least two-thirds of reports" -> p0 = 0.667 (families N3/N4) |
+| **data-derived** | the claim is about ONE event's position relative to the report's timeline | p0 = the structural rate of the reference population, computed from the data | "is A typically early?" -> p0 = fraction of slots in the early half over the reports the claim conditions on (0.5327 corpus-wide; per-core) |
+| **two-arm equality** | the claim compares a rate between two groups | p1 = p2 -- a comparison, not a number (Fisher conditions on the margins) | "B follows A more often than it follows C"; "after v1 more than after v2" |
+
+**Why the data-derived null exists (doc 10 §4.3).** The symmetry argument for
+0.5 -- "each stage rank is equally likely" -- fails because stages are not
+equally populated (mean 2.45 events at stage 0, 2.21 at 1, 1.84 at 2, ~1.74
+after). A random slot is more likely to be early, so the corpus-wide structural
+early rate is 0.5327 and varies per cohort and core. Testing against 0.5
+manufactures support: permutation-null mean 15.2% of cores decisive against
+alpha = 5% (37 supported / 31 refuted); against the structural rate 5.3%
+(22 / 37). Pair-order claims are unaffected -- swapping A and B is a symmetry of
+the same shuffle -- which is why the bias never surfaced in the shipped roster.
+Boundary: comparing ONE event's position ACROSS cohorts is invalid (issue 21).
+
+### 13.2 The statistician's procedure (to be phrased in the task card)
+
+1. **Identify the claim shape**: what quantity is asserted; how many named
+   events; how many arms; one named report or a population.
+2. **Decide what "chance" means for that quantity**: a swap symmetry -> 0.5; a
+   stated bar -> that bar; no symmetry (a single position against the timeline's
+   geometry) -> a rate that must be COMPUTED from the data; two arms -> equality.
+3. **Name the reference population of the null** -- which reports the rate is
+   computed over. This is a denominator choice of its own and is scored.
+4. **Write the null as a recipe**: kind, statistic, reference population, p0 or
+   the computation that yields it; the tail from the claim's direction.
+5. **Choose the test FAMILY and a selection RULE** conditional on the data facts
+   that arrive only after retrieval (n, expected cells) -- never a single fixed
+   test.
+6. **State the gate**: the min-n floor and that below it the verdict is
+   `insufficient`.
+
+Division of labour: S1 states the recipe and the rule; S2 retrieves the
+denominator (and the reference population for a data-derived p0); S3 computes
+p0 where needed, resolves the rule on the actual counts, runs the branch.
+
+### 13.3 The conditional plan -- S1's output
+
+The procedure is planned before retrieval but test validity depends on n, which
+exists only after it. Pre-registration solves this: the plan is a decision rule
+over data facts, resolved by S3. Example for an association claim:
+
+```
+events: [Fatigue, Headache]        compare: rate of B across two arms
+denominator: presence_split(A) over the whole cohort
+null: {kind: two_arm_equality}     tail: greater
+test_rule: fisher_exact if min expected cell < 5 else chi_square
+gate: floor 10 per arm -> insufficient below
+```
+
+The min-n gate already works this way (stated up front, resolved after
+retrieval); `procedure-honouring` now runs the model's stated RULE. Scored in
+three layers: the family (right comparison), the rule (selects a valid test at
+every n it could meet -- §13.4), the resolution (S3's branch matches the counts).
+A stricter method score than P-Bench, which never grades the method.
+
+### 13.4 Method adjudication as guards (replaces "exact tests only" as a slogan)
+
+Principle: **every gold-producing test must be valid at the instance's n.** The
+2026-08-11 exact-only lock is the small-n branch of this rule, not a separate
+constraint. Equivalence classes, to be completed when the toolbox is widened:
+
+| claim family | valid members | guard |
+|---|---|---|
+| single proportion vs p0 | `binom_exact` | always |
+| | normal approximation | n*p0*(1-p0) large enough -- never at our floors |
+| two proportions | `fisher_exact` | always |
+| | `chi_square` | every expected cell >= 5 (asymptotic) |
+| named cell vs competitor (argmax) | `modal_runner` (exact binomial on the two cells) | always |
+| k-category distribution | exact multinomial / Fisher-Freeman-Halton | always |
+| magnitude / rank ("how much earlier") | exact conditional permutation distribution (enumerated, ties conditioned) | only as exact enumeration; the normal-approximation rank tests stay descriptive (issue 16) |
+
+On this corpus every guard resolves to the exact branch; on a large external
+dataset (P-Bench, NHANES) the asymptotic branches fire -- the same plan is
+scored the same way, which is what makes the S1 output portable.
+
+### 13.5 What the dataset card must carry for the inference to be possible
+
+Representation (leveled orders; a term's position is its first mention; cohort
+= vaccine, report = VAERS id); the **stage-population summary** (mean slots per
+stage -- without it a model cannot know the symmetry fails; alternatively the
+agent variant queries it); cohort sizes and typical counts per claim shape (so
+the regime of the test rule is anticipated); the vocabulary; the conventions,
+situation-phrased (decisions "state every stipulation"); the toolbox with
+definitions (§13.4). This is LATCH's schema-summary pattern applied to a
+timeline corpus.
