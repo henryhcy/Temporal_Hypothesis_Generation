@@ -151,9 +151,17 @@ def test_honouring_resolves_the_rule_on_the_counts():
     (("vaccine", "BOOL", 3, 2, "ordered_pair", "rate_across_two_arms", None), "antecedent_bool"),
     (("multi", "CHOICE", 2, 2, "ordered_pair", "order_of_pair", None), "multi_dir_precedes"),
     (("vaccine", "BOOL", 2, 1, "presence_split", "co_occurrence_of_pair", None), "assoc_bool"),
-    (("vaccine", "CHOICE", 3, 1, "all_present_unique_last", "extreme_of_set", None), "last_choice"),
+    (("vaccine", "CHOICE", 3, 1, "all_present_unique_last", "extreme_of_set", "none"), "last_choice"),
+    (("report", "CHOICE", 3, 1, "single_report", "extreme_of_set", "latest"), "rep_last_choice"),
     (("report", "BOOL", 2, 2, "single_report", "order_of_pair", None), "rep_dir_bool"),
     (("report", "CHOICE", 3, 1, "single_report", "extreme_of_set", None), None),
 ])
 def test_normalization_fills_only_implied_fields(shape, expected):
     assert derive_mode(*shape) == expected
+
+
+def test_extreme_has_no_null_escape_in_the_schema():
+    spec = PLAN_JSON_SCHEMA["properties"]["extreme"]
+    assert spec["type"] == "string" and None not in spec["enum"] and "none" in spec["enum"]
+    assert "extreme" in PLAN_JSON_SCHEMA["required"]
+    assert derive_plan("dir_bool")["extreme"] == "none"

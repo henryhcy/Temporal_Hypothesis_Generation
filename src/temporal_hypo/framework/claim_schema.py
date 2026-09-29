@@ -530,6 +530,10 @@ QUANTITIES = (
 )
 _LEGACY_QUANTITY = "rate_across_two_arms"
 EXTREMES = ("earliest", "latest")
+# The schema value for "not an extreme claim": a string, not null, so schema-
+# constrained decoding cannot leave the field empty on extreme_of_set plans
+# (v3, 2026-09-30: 86/400 v2 plans came back with extreme null and no repair).
+EXTREME_NONE = "none"
 PLAN_NULL_KINDS = ("symmetric_fixed", "text_stated", "data_derived",
                    "two_arm_equality", "none")
 TEST_FAMILIES = ("proportion_vs_p0", "named_vs_runner_up", "two_proportions", "none")
@@ -589,6 +593,8 @@ def normalize_plan_shape(tier: str, answer_type: str, n_events: int, arms: int |
     compared across two arms". Everything not implied stays as emitted.
     """
     arms = int(arms) if arms is not None else 1
+    if extreme == EXTREME_NONE:
+        extreme = None
     if quantity == _LEGACY_QUANTITY:
         arms = 2
         quantity = "co_occurrence_of_pair" if conditioning == "presence_split" else "order_of_pair"
@@ -626,7 +632,7 @@ def derive_plan(mode: str, *, negated: bool = False) -> dict:
     fam = _TEST_TO_FAMILY[proc.test]
     return {
         "quantity": q,
-        "extreme": x,
+        "extreme": x if x is not None else EXTREME_NONE,
         "arms": s.arms,
         "denominator": s.conditioning,
         "null_kind": null_kind,
@@ -648,8 +654,8 @@ PLAN_JSON_SCHEMA: dict = {
         "asserted_option": FLAT_JSON_SCHEMA["properties"]["asserted_option"],
         "quantity": {"type": "string", "enum": list(QUANTITIES),
                      "description": "WHAT is measured (the arms field says whether it is compared across two groups)."},
-        "extreme": {"type": ["string", "null"], "enum": list(EXTREMES) + [None],
-                    "description": "REQUIRED when quantity is extreme_of_set: earliest or latest. null for every other quantity."},
+        "extreme": {"type": "string", "enum": list(EXTREMES) + [EXTREME_NONE],
+                    "description": "earliest or latest when quantity is extreme_of_set ('first'/'earliest' -> earliest, 'last'/'latest' -> latest); the string 'none' for every other quantity."},
         "arms": {"type": "integer", "enum": [1, 2],
                  "description": "1 = one population (or one report); 2 = the quantity is COMPARED between two groups: two vaccine cohorts, reports with vs without an event, or two event pairs."},
         "denominator": {"type": "string", "enum": list(CONDITIONINGS),
@@ -665,7 +671,7 @@ PLAN_JSON_SCHEMA: dict = {
                       "description": "How the concrete test is chosen once n is known."},
         "min_n_floor": {"type": ["integer", "null"]},
     },
-    "required": ["events", "negated", "quantity", "arms", "denominator", "null_kind",
+    "required": ["events", "negated", "quantity", "extreme", "arms", "denominator", "null_kind",
                  "tail", "test_family", "test_rule"],
     "additionalProperties": False,
 }

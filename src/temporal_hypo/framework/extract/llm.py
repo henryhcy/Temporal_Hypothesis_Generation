@@ -698,10 +698,13 @@ class LLMExtractor:
         if self.frame == "toolbox":
             if flat.get("quantity") not in QUANTITIES:
                 return f"unknown quantity {flat.get('quantity')!r}"
-            if (flat.get("quantity") == "extreme_of_set" and not flat.get("extreme")
+            if (flat.get("quantity") == "extreme_of_set"
+                    and flat.get("extreme") not in ("earliest", "latest")
                     and flat.get("denominator") not in ("all_present_unique_first",
                                                         "all_present_unique_last")):
-                return "extreme is required for extreme_of_set: 'earliest' or 'latest'"
+                return ("quantity is extreme_of_set but extreme is not set: reply with the same "
+                        "plan and extreme = 'earliest' (the claim is about the first/earliest "
+                        "event) or 'latest' (the last/latest event)")
         else:
             mode = flat.get("mode")
             if mode not in MODE_SPEC:
@@ -716,6 +719,7 @@ class LLMExtractor:
         first = self._complete(messages)
         try:
             flat = parse_json_object(first.text)
+            self.last_flat = dict(flat)          # kept even if the checks below reject it
             problem = self._check_flat(flat)
             if problem:
                 raise ValueError(problem)
@@ -725,11 +729,13 @@ class LLMExtractor:
         self.last_notes.append(f"repair retry: {err}")
         repair = messages + [
             {"role": "assistant", "content": first.text},
-            {"role": "user", "content": _REPAIR_INSTRUCTION.format(
+            {"role": "user", "content": (err + ". " if self.frame == "toolbox" else "")
+             + _REPAIR_INSTRUCTION.format(
                 error=err, modes=", ".join(QUANTITIES if self.frame == "toolbox" else MODES))},
         ]
         second = self._complete(repair)
         flat = parse_json_object(second.text)          # raises -> caller records None
+        self.last_flat = dict(flat)
         problem = self._check_flat(flat)
         if problem:
             raise ValueError(problem)
