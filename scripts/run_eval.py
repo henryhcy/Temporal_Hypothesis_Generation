@@ -94,6 +94,18 @@ _KEY_ENV = {"anthropic": "ANTHROPIC_API_KEY", "openai": "OPENAI_API_KEY"}
 _ASKED_KEYS: dict = {}  # provider -> key typed at launch (never in env or history)
 
 
+def _dotenv_value(name: str) -> str | None:
+    """``NAME=value`` from the repo's gitignored ``.env`` (local secrets; never committed)."""
+    path = _REPO_ROOT / ".env"
+    if not path.exists():
+        return None
+    for line in path.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if line.startswith(f"{name}=") :
+            return line.split("=", 1)[1].strip().strip("'\"") or None
+    return None
+
+
 def _resolve_api_key(provider, args):
     if args.ask_api_key:
         if provider not in _ASKED_KEYS:
@@ -104,10 +116,11 @@ def _resolve_api_key(provider, args):
                 raise SystemExit("empty API key")
         return _ASKED_KEYS[provider]
     env = args.api_key_env or _KEY_ENV[provider]
-    key = os.environ.get(env)
+    key = os.environ.get(env) or _dotenv_value(env)
     if not key:
-        raise SystemExit(f"--provider {provider} needs the {env} environment variable "
-                         "(or pass --ask-api-key to type it at launch)")
+        raise SystemExit(f"--provider {provider} needs the {env} environment variable, "
+                         f"a `{env}=...` line in {_REPO_ROOT / '.env'} (gitignored), "
+                         "or --ask-api-key to type it at launch")
     return key
 
 

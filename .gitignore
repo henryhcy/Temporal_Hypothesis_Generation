@@ -51,3 +51,6 @@ results/*
 !results/subsets/
 data/medtempo_eval.db
 *.db-journal
+
+# local secrets (API keys); loaded by scripts/run_eval.py, never committed
+.env
