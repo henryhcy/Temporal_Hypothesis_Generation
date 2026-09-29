@@ -27,7 +27,9 @@ _REPO_ROOT = Path(__file__).resolve().parent.parent
 def main() -> None:
     p = argparse.ArgumentParser(description="Re-score a run directory from its predictions.jsonl.")
     p.add_argument("--run", type=Path, required=True, help="run directory containing predictions.jsonl")
-    p.add_argument("--release", type=Path, default=_REPO_ROOT / "data" / "release" / "v1")
+    p.add_argument("--release", type=Path, default=None,
+                   help="defaults to the release recorded in the run's config.json "
+                        "(falls back to data/release/v1 for runs made before it was recorded)")
     p.add_argument("--stem", default="pilot_instances")
     p.add_argument("--seed", type=int, default=None, help="defaults to the run's config seed")
     p.add_argument("--min-group-size", type=int, default=30,
@@ -36,9 +38,12 @@ def main() -> None:
 
     t0 = time.time()
     rows = load_predictions(args.run / "predictions.jsonl")
-    release = load_release(args.release, args.stem, verify_sha=False)
     cfg_path = args.run / "config.json"
     run_config = json.loads(cfg_path.read_text(encoding="utf-8")) if cfg_path.exists() else {}
+    release_dir = args.release or Path(run_config.get("release")
+                                       or (_REPO_ROOT / "data" / "release" / "v1"))
+    print(f"release: {release_dir}")
+    release = load_release(release_dir, args.stem, verify_sha=False)
     seed = args.seed if args.seed is not None else int(run_config.get("seed", 0))
     metrics = evaluate(rows, release, options_seed=seed, seed=seed,
                        min_group_size=args.min_group_size)

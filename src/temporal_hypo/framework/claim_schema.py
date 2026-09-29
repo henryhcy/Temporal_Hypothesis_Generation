@@ -518,14 +518,17 @@ def claim_from_flat(flat: Mapping[str, Any], question_row: Mapping[str, Any], *,
 # is keyed on -- the inverse of ``derive_procedure``. The tier is taken from
 # the input row's ``level`` (a GIVEN field), never inferred.
 
+# The quantity is WHAT is measured; ``arms`` says whether it is compared across
+# two groups (v2, 2026-09-30: "rate_across_two_arms" conflated the two and was
+# the largest source of no-shape plans in the first toolbox smoke).
 QUANTITIES = (
     "order_of_pair",              # is A before B (one direction of an ordered pair)
-    "co_occurrence_of_pair",      # do A and B fall at the same level
+    "co_occurrence_of_pair",      # do A and B occur together (same level / same report)
     "dominant_relation_of_pair",  # is co-existence the most common relation of A,B
     "ordering_of_triple",         # is A->B->C the most common strict ordering
     "extreme_of_set",             # is the named candidate most often the earliest/latest
-    "rate_across_two_arms",       # a rate in arm 1 vs the same rate in arm 2
 )
+_LEGACY_QUANTITY = "rate_across_two_arms"
 EXTREMES = ("earliest", "latest")
 PLAN_NULL_KINDS = ("symmetric_fixed", "text_stated", "data_derived",
                    "two_arm_equality", "none")
@@ -545,10 +548,10 @@ PLAN_BY_MODE: dict[str, tuple[str, str | None]] = {
     "rep_first_bool": ("extreme_of_set", "earliest"),
     "first_choice": ("extreme_of_set", "earliest"), "first_bool": ("extreme_of_set", "earliest"),
     "rep_last_choice": ("extreme_of_set", "latest"), "last_choice": ("extreme_of_set", "latest"),
-    "antecedent_bool": ("rate_across_two_arms", None),
-    "pairpair_bool": ("rate_across_two_arms", None),
-    "assoc_bool": ("rate_across_two_arms", None),
-    "multi_dir_precedes": ("rate_across_two_arms", None),
+    "antecedent_bool": ("order_of_pair", None),      # arms 2
+    "pairpair_bool": ("order_of_pair", None),        # arms 2
+    "assoc_bool": ("co_occurrence_of_pair", None),   # arms 2, presence_split
+    "multi_dir_precedes": ("order_of_pair", None),   # arms 2, tier multi
 }
 assert set(PLAN_BY_MODE) == set(MODES), sorted(set(PLAN_BY_MODE) ^ set(MODES))
 
@@ -575,11 +578,38 @@ def _build_mode_by_signature() -> dict[tuple, str]:
 MODE_BY_SIGNATURE: dict[tuple, str] = _build_mode_by_signature()
 
 
-def derive_mode(tier: str, answer_type: str, n_events: int, arms: int,
-                conditioning: str, quantity: str, extreme: str | None = None) -> str | None:
+def normalize_plan_shape(tier: str, answer_type: str, n_events: int, arms: int | None,
+                         conditioning: str | None, quantity: str | None,
+                         extreme: str | None) -> tuple:
+    """Fill plan fields that other plan fields (or the given tier) already IMPLY.
+
+    Nothing here consults the answer: a presence split is two arms by definition,
+    the first/last denominators name their extreme, a single report has one arm,
+    and the legacy quantity "rate_across_two_arms" is "the pair's quantity,
+    compared across two arms". Everything not implied stays as emitted.
+    """
+    arms = int(arms) if arms is not None else 1
+    if quantity == _LEGACY_QUANTITY:
+        arms = 2
+        quantity = "co_occurrence_of_pair" if conditioning == "presence_split" else "order_of_pair"
+    if conditioning == "presence_split":
+        arms = 2
+    if tier == "report":
+        arms = 1
+    if quantity == "extreme_of_set" and extreme is None:
+        extreme = {"all_present_unique_first": "earliest",
+                   "all_present_unique_last": "latest"}.get(conditioning or "")
+    if quantity != "extreme_of_set":
+        extreme = None
+    return plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme)
+
+
+def derive_mode(tier: str, answer_type: str, n_events: int, arms: int | None,
+                conditioning: str | None, quantity: str | None,
+                extreme: str | None = None) -> str | None:
     """The mode a composed plan corresponds to, or None if no mode has that shape."""
     return MODE_BY_SIGNATURE.get(
-        plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme))
+        normalize_plan_shape(tier, answer_type, n_events, arms, conditioning, quantity, extreme))
 
 
 def derive_plan(mode: str, *, negated: bool = False) -> dict:
@@ -617,11 +647,11 @@ PLAN_JSON_SCHEMA: dict = {
         "negated": FLAT_JSON_SCHEMA["properties"]["negated"],
         "asserted_option": FLAT_JSON_SCHEMA["properties"]["asserted_option"],
         "quantity": {"type": "string", "enum": list(QUANTITIES),
-                     "description": "What the claim compares."},
+                     "description": "WHAT is measured (the arms field says whether it is compared across two groups)."},
         "extreme": {"type": ["string", "null"], "enum": list(EXTREMES) + [None],
-                    "description": "For extreme_of_set: which extreme the claim is about; null otherwise."},
+                    "description": "REQUIRED when quantity is extreme_of_set: earliest or latest. null for every other quantity."},
         "arms": {"type": "integer", "enum": [1, 2],
-                 "description": "How many groups the statistic compares."},
+                 "description": "1 = one population (or one report); 2 = the quantity is COMPARED between two groups: two vaccine cohorts, reports with vs without an event, or two event pairs."},
         "denominator": {"type": "string", "enum": list(CONDITIONINGS),
                         "description": "Which reports the statistic is computed over (a primitive from the conventions)."},
         "null_kind": {"type": "string", "enum": list(PLAN_NULL_KINDS)},
@@ -663,7 +693,7 @@ def claim_from_plan(plan: Mapping[str, Any], question_row: Mapping[str, Any], *,
     tier = question_row.get("level")
     answer_type = question_row.get("answer_type")
     terms = [t for t in (plan.get("events") or [])]
-    mode = derive_mode(tier, answer_type, len(terms), int(plan.get("arms") or 1),
+    mode = derive_mode(tier, answer_type, len(terms), plan.get("arms"),
                        plan.get("denominator"), plan.get("quantity"), plan.get("extreme"))
     if mode is None:
         raise ValueError(

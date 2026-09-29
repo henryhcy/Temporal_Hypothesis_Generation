@@ -145,3 +145,15 @@ def test_honouring_resolves_the_rule_on_the_counts():
     pred2 = run_test(claim, small, procedure_mode="honouring")
     assert pred2.test == "fisher_exact"
     assert any("resolved: exact" in n for n in pred2.notes)
+
+
+@pytest.mark.parametrize("shape,expected", [
+    (("vaccine", "BOOL", 3, 2, "ordered_pair", "rate_across_two_arms", None), "antecedent_bool"),
+    (("multi", "CHOICE", 2, 2, "ordered_pair", "order_of_pair", None), "multi_dir_precedes"),
+    (("vaccine", "BOOL", 2, 1, "presence_split", "co_occurrence_of_pair", None), "assoc_bool"),
+    (("vaccine", "CHOICE", 3, 1, "all_present_unique_last", "extreme_of_set", None), "last_choice"),
+    (("report", "BOOL", 2, 2, "single_report", "order_of_pair", None), "rep_dir_bool"),
+    (("report", "CHOICE", 3, 1, "single_report", "extreme_of_set", None), None),
+])
+def test_normalization_fills_only_implied_fields(shape, expected):
+    assert derive_mode(*shape) == expected

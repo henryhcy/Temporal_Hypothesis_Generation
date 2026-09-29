@@ -326,6 +326,7 @@ def main() -> None:
         "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx,
         "n_records": len(records),
         **(_model_provenance(args) if "llm" in args.pipeline else {}),
+        "release": str(args.release),
         "release_sha256": release_sha256s(args.release, args.stem),
         "eval_db_sha256": _sha256(args.eval_db),
         "started": time.strftime("%Y-%m-%dT%H:%M:%S"),

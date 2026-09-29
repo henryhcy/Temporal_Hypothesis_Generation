@@ -430,7 +430,12 @@ def toolbox_system_prompt(*, dataset_card: str, blind_group: bool = True) -> str
         "co-occur', 'no more often than'). Plain claims and neutral questions are false.",
         "- asserted_option: for CHOICE items, the option string the text asserts; null when "
         "the text is a neutral question. Always null for BOOL.",
-        "- extreme: only for extreme_of_set (earliest | latest); null otherwise.",
+        "- quantity is WHAT is measured; arms is 2 whenever that quantity is COMPARED between "
+        "two groups (two vaccine cohorts; reports with vs without an event -- denominator "
+        "presence_split; or one event pair against another). A three-event claim of the form "
+        "'B follows A more often than it follows C' compares two pairs: arms = 2.",
+        "- extreme: REQUIRED for extreme_of_set -- earliest ('first', 'earliest') or latest "
+        "('last', 'latest'); null for every other quantity.",
     ]
     return "\n".join(parts)
 
@@ -693,6 +698,10 @@ class LLMExtractor:
         if self.frame == "toolbox":
             if flat.get("quantity") not in QUANTITIES:
                 return f"unknown quantity {flat.get('quantity')!r}"
+            if (flat.get("quantity") == "extreme_of_set" and not flat.get("extreme")
+                    and flat.get("denominator") not in ("all_present_unique_first",
+                                                        "all_present_unique_last")):
+                return "extreme is required for extreme_of_set: 'earliest' or 'latest'"
         else:
             mode = flat.get("mode")
             if mode not in MODE_SPEC:
@@ -741,6 +750,7 @@ class LLMExtractor:
             if oov:
                 self.last_notes.append("out-of-vocabulary terms: " + ", ".join(repr(t) for t in oov))
             flat = dict(flat, events=terms)
+            self.last_flat = dict(flat)
             if self.frame == "toolbox":
                 claim = claim_from_plan(flat, question_row, source=self.name)
             else:
