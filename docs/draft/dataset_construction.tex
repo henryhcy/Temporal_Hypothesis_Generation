@@ -518,13 +518,12 @@ S1 condition & Qwen2.5-7B & Opus \\
 \midrule
 Catalogue + hints (lookup; upper bound) & 0.918 & 1.000 \\
 Toolbox, 3 worked plans & 0.64--0.68 & 1.000 \\
-\textbf{Toolbox, zero-shot} & --- & \textbf{0.958} \\
+\textbf{Toolbox, zero-shot} & 0.490 & \textbf{0.958} \\
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy when the claim-type mapping is withheld. Same
 200-instance slice (400 records), blind-group, procedure-blind; S2 and S3 at
-gold. The 7B compose number is wording-sensitive across prompt revisions; the
-zero-shot 7B run was pending at the time of writing.}
+gold. The 7B few-shot number is wording-sensitive across prompt revisions.}
 \label{tab:toolbox}
 \end{table}
 
@@ -532,8 +531,9 @@ The gap is model-tier, not task ambiguity. Withholding the mapping costs the 7B
 model 25--30 points, almost all of it whole-shape misreads (110--125 of 400
 plans match no claim type), while the composed fields that do land are right
 (quantity 0.978, denominator 0.935, tail 0.993). It costs the frontier model
-nothing with three worked examples and 0.042 without them; the difference shows
-that a worked plan is itself a mapping row, so zero-shot is the honest headline
+nothing with three worked examples and 0.042 without them, while the 7B model
+falls to 0.490 (179 of 400 plans match no type); the examples were propping up
+both. A worked plan is itself a mapping row, so zero-shot is the honest headline
 and few-shot a reported dial. Under it, all 36 frontier errors are two shapes
 (association composed as plain co-occurrence; antecedent composed as the
 four-event contrast). Stage 1 on the released shapes is therefore near-solved
