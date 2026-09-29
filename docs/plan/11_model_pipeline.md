@@ -777,6 +777,10 @@ rows are placeholders. Verdict columns are over the answerable records of the ru
 | smoke-2 (`results/smoke200_rules_llm-sql`, 872 s) | `rules+llm-sql` (S1 = rules; S2 = qwen2.5-coder:7b) | blind-group | blind | same slice | 400 | **0.545** | 0.540 | 0.475 [0.446, 0.513] | 1.000 (mode 1.000) | 0.250 (EM 0.169; report_hit 1.000) | 0.071 (any 0.105) | 0.182 | 0.010 (n=198) | 0.012 (166 pairs); twins 0.833 | 0 |
 | smoke-4 (`results/smoke200_rules_api-sql`, ~36 min, ~$8.80: 1.02M in / 0.15M out) | `rules+llm-sql` (S1 = rules; **S2 = claude-opus-5** via `--sql-provider anthropic`, 2026-09-03) | blind-group | blind | same slice | 400 | **0.975** | 0.962 | 0.971 [0.936, 0.992] | 1.000 (mode 1.000) | 0.950 (EM 0.950; report_hit 0.987) | 0.000 | 0.000 | 0.960 (n=198) | 0.000 (166 pairs); twins 1.000 | 0 |
 | smoke-5 (`results/smoke200_local-s1_api-sql`, ~4 min — S1 and most SQL replayed from cache) | `llm-s1+llm-sql` **mixed: S1 = qwen2.5:7b-instruct + both hints, S2 = claude-opus-5** (2026-09-03) | blind-group | blind | same slice | 400 | **0.903** | 0.894 | 0.906 [0.867, 0.930] | 0.878 (mode 0.905) | 0.897 (EM 0.895; report_hit 0.880) | 0.000 | 0.000 | 0.874 (n=198) | 0.006 (166 pairs); twins 0.917 | 12, all unexpected → scored wrong |
+| ref-v1.1 (`results/v11_smoke200_catalogue_7b`) | `llm-s1+compiler`, catalogue + both hints (the LOOKUP; procedure-given-style upper bound), **v1.1 slice** | blind-group | blind | v1.1 smoke_200 | 400 | **0.918** | 0.929 | 0.928 | 0.865 (mode 0.897) | 0.963 (compiler) | 0.000 | 0.000 | — | twins 0.875 | 18 unexpected |
+| ref-v1.1-nonull (`results/v11_smoke200_catalogue_nonull_7b`) | same, `--hide-null-hints` (issue 27; catalogue keeps mode→conditioning) | blind-group | blind | v1.1 smoke_200 | 400 | 0.890 | 0.875 | 0.904 | 0.823 (mode 0.882) | — | — | — | test field 0.545 / null.kind 0.552 — un-runnable stated tests fall back to the reference in S3, so the verdict barely moves | twins 0.667 | 8 |
+| **T1-v3 toolbox** (`results/v11_smoke200_toolbox_v3_7b`, 2026-09-30) | `llm-s1+compiler --s1-frame toolbox`: NO catalogue; the model COMPOSES the plan (§11a) | blind-group | blind | v1.1 smoke_200 | 400 | **0.642** | 0.770 | 0.687 [0.640, 0.712] | 0.627 (mode 0.642; **125 plans match no mode**) | — | 0.000 | 0.000 | plan fields (n=275 folded): quantity 0.978, denominator 0.935, arms 0.916, extreme 1.000, tail 0.993, test_family 0.789, rule_valid 0.789, p0 0.796, null_kind 0.625; plan_em 0.556 | twins 0.625 | 0 |
+| T1-v1 / T1-v2 toolbox (superseded harness versions) | same slice; v1 = strict reverse lookup, v2 = arms-carries-comparison | blind-group | blind | v1.1 smoke_200 | 400 | 0.390 / 0.525 | — | — | no-shape 232 / 170 — 3 of 4 failure classes were the HARNESS (§11a) | — | — | — | — | — | — |
 | smoke-3 (`results/smoke200_llm-s1_llm-sql`, 448 s — S1 cached from smoke-1) | `llm-s1+llm-sql` (the full local pipeline) | blind-group | blind | same slice | 400 | **0.292** | 0.300 | 0.250 [0.217, 0.286] | 0.675 (mode 0.718) | 0.228 (EM 0.149; report_hit 0.380) | 0.082 (any 0.116) | 0.227 | 0.010 (n=198) | 0.018 (166 pairs); twins 0.667 | 16, all unexpected → scored wrong |
 | e2e-sql (`results/smoke200_e2e_sql`, 2,122 s, $9.19) | `e2e-llm-sql` — the SENTENCE straight to SQL (S1 gold-forced by rules; claim JSON, conditioning rule and arm plan ALL withheld) | blind-group | blind | same slice | 400 | **0.860** | 0.830 | — (no group >= 30 after the cohort split) | 1.000 (gold-forced) | **0.673** (EM 0.508) | **0.198** | **0.273** | — | — | 0 |
 | full | `llm-s1+llm-sql` | blind-group | blind | eval_core (1,649 instances), original, question+claim | ≈3,300 | — | — | — | — | — | — | — | — | — | **deferred** (~2.5 h GPU; the smoke already localises the failure to S2). Run with: `PYTHONPATH=src python scripts/run_eval.py --pipeline llm-s1+llm-sql --model qwen2.5:7b-instruct --sql-model qwen2.5-coder:7b --subset eval_core --condition blind-group --procedure blind --registers original --formats question,claim --out results/full_local` (S1 replays from `results/cache/`) |
@@ -810,6 +814,24 @@ attribution separates them cleanly:
   to `dir_choice`), and the hint introduced a fresh regression, 7/20 P-M2 rows
   read as `rep_dir_choice` (multi tier 1.000 → 0.750). The residual S1 gap looks
   like few-shot/fine-tune territory, not more prompt rules.
+- **Compose vs look up, first measurement (T1-v3, 2026-09-30).** With the catalogue
+  withheld and every convention stated, the same 7B drops from **0.918 (lookup)
+  to 0.642 (compose)** on identical inputs. The gap is NOT in the fields: when a
+  plan matches a mode, the model gets the quantity right 97.8%, the denominator
+  93.5%, the arms 91.6%, the tail 99.3%; the gap is **125/400 plans whose shape
+  matches no mode** — compositions that are wrong as a whole: "is A first of the
+  three" and "A → B → C in this report" composed as a PAIR order (43); "B follows
+  A more often than it follows C" as ONE arm (22); "which of A, B, C occurs
+  first" over a cohort given a SINGLE-REPORT denominator (20); the four-event
+  contrast as a triple (10); association as plain co-occurrence (12). Those are
+  exactly the situation-recognition failures the frame exists to surface, and
+  the weakest composed fields are the null kind (0.625 — the argmax family is
+  called data-derived or a plain proportion) and the test family (0.789). Two
+  harness lessons recorded in §11a: the first two toolbox versions lost 232 and
+  170 records to a reverse lookup stricter than the semantics and to a schema
+  null-escape on `extreme` — fixed by normalization of IMPLIED fields and by
+  removing the escape, never by consulting the answer. Next: the same frame on
+  claude-opus-5 decides whether the compose gap is model-tier or task.
 - **S2 was a model-capability gap, not benchmark impossibility** (smoke-4,
   2026-09-03). The same text-to-SQL stage that scored 0.545 with the local 7B
   scores **0.975** with `claude-opus-5` on identical inputs (gold claims,

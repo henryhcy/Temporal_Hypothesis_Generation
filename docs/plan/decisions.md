@@ -2640,3 +2640,17 @@ cannot be reported as evidence that a model identifies claim types.
   subset through our executor. Hypotheses authored by others, no new gold.
 - The S1 expert content (how a statistician infers each null kind, the card
   the dataset must carry) lives in 11 §13 and is the source for the task card.
+
+
+## BUILT: the toolbox S1 frame is the evaluation protocol; first compose-vs-lookup number (2026-09-30)
+
+Branch `s1-toolbox` (issues 29/31; 11 §11a). `--s1-frame toolbox` withholds
+the catalogue and the model composes a conditional plan; `catalogue` is the
+procedure-given upper bound. Measured on the v1.1 smoke slice with the same 7B:
+**0.918 lookup -> 0.642 compose**. Composed FIELDS are mostly right (quantity
+0.978, denominator 0.935); the loss is whole-shape misreads (125/400 plans match
+no mode). Rule: normalization may fill only fields other fields IMPLY (a
+presence split is two arms; the first/last denominators name their extreme; a
+symmetric null is p0 = 0.5; a report has one arm) -- never the answer.
+`rescore.py` now reads the release from the run's config (it defaulted to v1
+and silently mis-joined report-tier rows of v1.1 runs).
