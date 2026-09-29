@@ -41,9 +41,13 @@ from temporal_hypo.framework.claim_schema import (
     GROUP_BY_MODE,
     MODE_SPEC,
     MODES,
+    PLAN_JSON_SCHEMA,
+    QUANTITIES,
     StructuredClaim,
     claim_from_flat,
+    claim_from_plan,
     derive_procedure,
+    plan_from_claim,
 )
 from temporal_hypo.framework.extract import visible_fields
 from temporal_hypo.framework.extract.llm_client import Completion, Provider, parse_json_object
@@ -306,6 +310,132 @@ def system_prompt(*, procedure_given: bool, blind_group: bool, tier_hint: bool =
 
 
 # ---------------------------------------------------------------------------
+# the TOOLBOX frame (11 §13, issues 29/31): task card + primitives, NO catalogue
+# ---------------------------------------------------------------------------
+
+CONVENTIONS_TEXT = (
+    "CONVENTIONS OF THIS DATASET (stipulations, stated once; phrased by situation, apply them):\n"
+    "- A term's position in a report is its FIRST mention; terms at the same stage co-exist.\n"
+    "- When a claim orders two events (A before B), a report where they co-exist cannot "
+    "witness the order: the denominator is reports with both present at DISTINCT stages "
+    "(primitive ordered_pair). When a claim is about co-occurrence itself, co-existing "
+    "reports are the numerator over reports with both present (both_present).\n"
+    "- When a claim orders three events, the denominator is reports with all three at "
+    "pairwise-distinct stages (orderable_triple).\n"
+    "- When a claim asks which of several candidates is earliest (or latest), a report "
+    "where two candidates tie for that extreme has no answer and is dropped: the denominator "
+    "is reports with all candidates present and a unique extreme "
+    "(all_present_unique_first / all_present_unique_last).\n"
+    "- When a claim compares an event's rate between reports that do and do not contain "
+    "another event, the WHOLE cohort is split on presence of that event (presence_split); "
+    "nothing is conditioned on co-occurrence.\n"
+    "- When a claim compares two vaccine cohorts, each cohort is its own arm with the "
+    "same denominator rule applied inside it.\n"
+    "- A claim about ONE named report is a single deterministic observation over that "
+    "report's first-mention levels (single_report): no test, no floor.\n"
+    "- Population claims: alpha = " + "ALPHA_TEXT_PLACEHOLDER" + "; minimum-n floors: "
+    "FLOORS_PLACEHOLDER; below the floor the verdict is insufficient. Verdicts are "
+    "supported / refuted / insufficient; refuted requires significance in the OPPOSITE "
+    "direction, never merely a failure to reach significance."
+)
+
+NULL_SOURCES_TEXT = (
+    "HOW TO FORMULATE THE NULL (decide what 'chance' means for the quantity the claim compares):\n"
+    "- symmetric_fixed: the claim orders two named events, or names one of k candidates -- "
+    "swapping the roles is a symmetry, so the null proportion is p0 = 0.5 (for a named "
+    "candidate vs its strongest competitor, 0.5 on those two cells).\n"
+    "- text_stated: the wording carries a quantitative bar ('in at least two-thirds of "
+    "reports') -- p0 is that bar.\n"
+    "- data_derived: the claim is about ONE event's position relative to the report's "
+    "timeline and no symmetry applies -- the null proportion is the structural rate of the "
+    "reference population, computed from the data (see STAGE POPULATION); state the "
+    "reference population in null_reference and leave p0 null.\n"
+    "- two_arm_equality: the claim compares a rate between two groups -- the null is that "
+    "the two rates are equal (a comparison, not a number).\n"
+    "- none: a single named report is observed, not tested."
+)
+
+TOOLBOX_TEXT = (
+    "TEST TOOLBOX (families; the concrete test is chosen by the rule once n is known):\n"
+    "- proportion_vs_p0: k successes of n against a fixed p0 -- exact binomial "
+    "(P(X>=k) or P(X<=k) in the claim's direction); valid at any n.\n"
+    "- named_vs_runner_up: the named cell against its largest competitor -- exact binomial "
+    "at 0.5 on those two cells; valid at any n.\n"
+    "- two_proportions: a 2x2 table -- Fisher's exact test (one-sided, conditions on the "
+    "margins), valid at any n; a chi-square test is an asymptotic alternative valid only "
+    "when every expected cell is >= 5.\n"
+    "- none: report-tier observation.\n"
+    "test_rule: exact_always, or exact_if_small_else_asymptotic (exact when any expected "
+    "cell < 5, asymptotic otherwise)."
+)
+
+PROCEDURE_TEXT = (
+    "PROCEDURE (work through these in order):\n"
+    "1. Identify the claim shape: what quantity is asserted (quantity), how many named "
+    "events, how many groups (arms), whether it is about one named report or a population "
+    "(the input's level says which).\n"
+    "2. Decide what chance means for that quantity (null_kind, p0 / null_reference).\n"
+    "3. Name the reports the statistic is computed over (denominator) using the primitives "
+    "in the conventions.\n"
+    "4. State the direction the claim asserts (tail: greater for a plain claim, less when the "
+    "wording is negated).\n"
+    "5. Choose the test family and the selection rule.\n"
+    "6. State the gate (min_n_floor: the floor for this kind of claim; null for one report)."
+)
+
+
+def toolbox_system_prompt(*, dataset_card: str, blind_group: bool = True) -> str:
+    """The toolbox frame: task card + conventions + null sources + test toolbox + procedure.
+
+    Contains NO mode names, NO template-group ids, NO per-mode H0 and NO
+    mapping sentence -- the model composes the procedure from primitives
+    (decisions 2026-09-29 "state every stipulation, withhold only the mapping").
+    """
+    conv = (CONVENTIONS_TEXT
+            .replace("ALPHA_TEXT_PLACEHOLDER", ALPHA_TEXT)
+            .replace("FLOORS_PLACEHOLDER",
+                     f"{PAIRWISE_FLOOR} per arm for claims about pairs, first/last and "
+                     f"co-occurrence, {SEQUENCE_FLOOR} for three-event orderings"))
+    parts = [
+        "You are the statistician for a dataset of annotated adverse-event timelines. Given a "
+        "natural-language hypothesis, you formulate the exact statistical procedure that "
+        "verifies it: what is compared, over which reports, against which null hypothesis, "
+        "with which test. The harness then retrieves the reports and runs your plan.",
+        "",
+        "INPUT: a JSON object with fields level (report|vaccine|multi), answer_type "
+        "(BOOL|CHOICE), register, format (question|claim), text, options (CHOICE only), "
+        "cohort {level, vaccines[], report_id}"
+        + ("" if blind_group else ", and group_id")
+        + ". The cohort is given: do not re-derive vaccines or the report id.",
+        "",
+        dataset_card,
+        "",
+        conv,
+        "",
+        NULL_SOURCES_TEXT,
+        "",
+        TOOLBOX_TEXT,
+        "",
+        PROCEDURE_TEXT,
+        "",
+        "OUTPUT: exactly one JSON object matching this schema (no prose, no code fences):",
+        json.dumps(PLAN_JSON_SCHEMA, ensure_ascii=False),
+        "",
+        "FIELD RULES:",
+        "- events: copy each event term VERBATIM from the text (exact spelling and case) and "
+        "list them IN THE ORDER THE CLAIM ASSERTS (the event whose position/precedence is "
+        "asserted first; for a two-arm comparison, arm 1's events before arm 2's). For a "
+        "CHOICE question that asserts nothing, list them in the order the text names them.",
+        "- negated: true ONLY when the wording asserts the negation ('do not typically "
+        "co-occur', 'no more often than'). Plain claims and neutral questions are false.",
+        "- asserted_option: for CHOICE items, the option string the text asserts; null when "
+        "the text is a neutral question. Always null for BOOL.",
+        "- extreme: only for extreme_of_set (earliest | latest); null otherwise.",
+    ]
+    return "\n".join(parts)
+
+
+# ---------------------------------------------------------------------------
 # flat <-> claim (few-shot rendering is the inverse of claim_from_flat)
 # ---------------------------------------------------------------------------
 
@@ -449,7 +579,7 @@ def fewshot_pairs(examples: Sequence[FewshotItem], *, k: int,
 
 _REPAIR_INSTRUCTION = (
     "Your previous reply could not be used ({error}). Reply again with ONLY one JSON object "
-    "that matches the schema exactly: 'mode' must be one of {modes}; 'events' must be a list "
+    "that matches the schema exactly: the category field must be one of {modes}; 'events' must be a list "
     "of the verbatim event terms in the asserted order; 'negated' must be a boolean. "
     "No prose, no code fences."
 )
@@ -463,12 +593,20 @@ class LLMExtractor:
                  vocabulary: set[str] | None = None, temperature: float = 0.0,
                  max_tokens: int = 400, groups: Mapping[str, Any] | None = None,
                  tier_hint: bool = False, routing_hint: bool = False,
-                 null_hints: bool = True) -> None:
+                 null_hints: bool = True, frame: str = "catalogue",
+                 dataset_card: str | None = None) -> None:
+        if frame not in ("catalogue", "toolbox"):
+            raise ValueError(f"frame must be 'catalogue' or 'toolbox', got {frame!r}")
+        if frame == "toolbox" and not dataset_card:
+            raise ValueError("the toolbox frame needs a dataset_card (task_card.dataset_card)")
+        self.frame = frame
+        self.dataset_card = dataset_card
         self.client = client
         self.model = model
         self.name = (f"llm:{model}" + ("+tier-hint" if tier_hint else "")
                      + ("+routing-hint" if routing_hint else "")
-                     + ("" if null_hints else "+no-null-hints"))
+                     + ("" if null_hints else "+no-null-hints")
+                     + ("+toolbox" if frame == "toolbox" else ""))
         self.tier_hint = bool(tier_hint)
         self.routing_hint = bool(routing_hint)
         self.null_hints = bool(null_hints)
@@ -491,9 +629,16 @@ class LLMExtractor:
 
     @property
     def schema(self) -> dict:
+        if self.frame == "toolbox":
+            return PLAN_JSON_SCHEMA
         return WHAT_JSON_SCHEMA if self.procedure_given else FLAT_JSON_SCHEMA
 
     def _system_message(self, blind_group: bool) -> str:
+        if self.frame == "toolbox":
+            if blind_group not in self._system:
+                self._system[blind_group] = toolbox_system_prompt(
+                    dataset_card=self.dataset_card or "", blind_group=blind_group)
+            return self._system[blind_group]
         if blind_group not in self._system:
             self._system[blind_group] = system_prompt(tier_hint=self.tier_hint,
                                                       routing_hint=self.routing_hint,
@@ -515,7 +660,11 @@ class LLMExtractor:
     def _assistant_turn(self, question_row: Mapping[str, Any], answer_row: Mapping[str, Any]) -> str:
         from temporal_hypo.framework.claim_schema import from_gold
 
-        flat = flat_from_claim(from_gold(answer_row), include_procedure=not self.procedure_given)
+        gold = from_gold(answer_row)
+        if self.frame == "toolbox":
+            flat = plan_from_claim(gold)
+        else:
+            flat = flat_from_claim(gold, include_procedure=not self.procedure_given)
         # a neutral question asserts no option; keep the target coherent with the rule
         if question_row.get("format") == "question" and flat.get("asserted_option") is not None:
             flat["asserted_option"] = None
@@ -539,12 +688,15 @@ class LLMExtractor:
         self.last_completions.append(c)
         return c
 
-    @staticmethod
-    def _check_flat(flat: Mapping[str, Any]) -> str | None:
+    def _check_flat(self, flat: Mapping[str, Any]) -> str | None:
         """A schema-level problem worth a repair retry, or None."""
-        mode = flat.get("mode")
-        if mode not in MODE_SPEC:
-            return f"unknown mode {mode!r}"
+        if self.frame == "toolbox":
+            if flat.get("quantity") not in QUANTITIES:
+                return f"unknown quantity {flat.get('quantity')!r}"
+        else:
+            mode = flat.get("mode")
+            if mode not in MODE_SPEC:
+                return f"unknown mode {mode!r}"
         ev = flat.get("events")
         if not isinstance(ev, list) or not ev or not all(isinstance(t, str) for t in ev):
             return "events must be a non-empty list of strings"
@@ -565,7 +717,7 @@ class LLMExtractor:
         repair = messages + [
             {"role": "assistant", "content": first.text},
             {"role": "user", "content": _REPAIR_INSTRUCTION.format(
-                error=err, modes=", ".join(MODES))},
+                error=err, modes=", ".join(QUANTITIES if self.frame == "toolbox" else MODES))},
         ]
         second = self._complete(repair)
         flat = parse_json_object(second.text)          # raises -> caller records None
@@ -589,8 +741,11 @@ class LLMExtractor:
             if oov:
                 self.last_notes.append("out-of-vocabulary terms: " + ", ".join(repr(t) for t in oov))
             flat = dict(flat, events=terms)
-            claim = claim_from_flat(flat, question_row, source=self.name,
-                                    procedure_given=self.procedure_given)
+            if self.frame == "toolbox":
+                claim = claim_from_plan(flat, question_row, source=self.name)
+            else:
+                claim = claim_from_flat(flat, question_row, source=self.name,
+                                        procedure_given=self.procedure_given)
             if self.last_notes:
                 claim = replace(claim, raw=dict(claim.raw or {}, notes=list(self.last_notes)))
             return claim

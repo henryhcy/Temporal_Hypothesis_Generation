@@ -156,10 +156,16 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
 
         shots = _fewshot_pairs(release, subset_ids, args.k_shot_per_mode, args.seed) \
             if args.k_shot > 0 else []
+        card = None
+        if args.s1_frame == "toolbox":
+            from temporal_hypo.framework.extract.task_card import dataset_card
+
+            card = dataset_card(open_eval_db(args.eval_db))
         extractor = LLMExtractor(llm_client, args.model, procedure_given=procedure_given,
                                  fewshot=shots, k_shot=args.k_shot, vocabulary=vocabulary,
                                  tier_hint=args.tier_hint, routing_hint=args.routing_hint,
-                                 null_hints=not args.hide_null_hints)
+                                 null_hints=not args.hide_null_hints,
+                                 frame=args.s1_frame, dataset_card=card)
 
     # S2
     if args.pipeline in ("oracle", "rules+compiler", "llm-s1+compiler", "counts-llm"):
@@ -224,6 +230,10 @@ def main() -> None:
     p.add_argument("--k-shot", type=int, default=3)
     p.add_argument("--tier-hint", action="store_true",
                    help="ablation: add the level->admissible-modes rule to the extraction prompt")
+    p.add_argument("--s1-frame", choices=("catalogue", "toolbox"), default="catalogue",
+                   help="S1 prompt frame: 'catalogue' (the 20-mode table; the procedure-given "
+                        "upper bound) or 'toolbox' (task card + primitives, no catalogue; the "
+                        "model composes a conditional plan -- issues 29/31)")
     p.add_argument("--hide-null-hints", action="store_true",
                    help="ablation (issue 27): strip the test/null/p0/floor/rule/H0 columns from "
                         "the S1 mode catalogue and the sentence that states the mapping, so the "
@@ -293,7 +303,7 @@ def main() -> None:
         "procedure_mode": pipe.procedure_mode, "model": args.model, "sql_model": args.sql_model or args.model,
         "subset": args.subset, "per_group": args.per_group, "registers": args.registers,
         "formats": args.formats, "groups": args.groups, "limit": args.limit,
-        "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "seed": args.seed, "num_ctx": args.num_ctx,
+        "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "s1_frame": args.s1_frame, "seed": args.seed, "num_ctx": args.num_ctx,
         "n_records": len(records),
         **(_model_provenance(args) if "llm" in args.pipeline else {}),
         "release_sha256": release_sha256s(args.release, args.stem),

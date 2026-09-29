@@ -224,6 +224,7 @@ class StructuredClaim:
     underdetermined: tuple[str, ...] = ()  # roles whose term the input does not determine
     confidence: float | None = None
     raw: dict | None = field(default=None, compare=False)   # extractor's raw output
+    plan: dict | None = field(default=None, compare=False)  # toolbox frame: the composed plan (serialized; scored separately)
 
     # -- derived views -------------------------------------------------------
 
@@ -297,6 +298,7 @@ class StructuredClaim:
             source=d.get("source", "unknown"),
             underdetermined=tuple(d.get("underdetermined", ())),
             confidence=d.get("confidence"),
+            plan=d.get("plan"),
         )
 
     @classmethod
@@ -501,4 +503,198 @@ def claim_from_flat(flat: Mapping[str, Any], question_row: Mapping[str, Any], *,
                         procedure=proc, raw=dict(flat))
     if flat.get("asserted_option") is not None and s.answer_type == "CHOICE":
         claim = replace(claim, asserted_option=flat["asserted_option"])
+    return claim
+
+
+# ---------------------------------------------------------------------------
+# the PLAN -- S1's output under the toolbox frame (11 §13.3, issues 29/31)
+# ---------------------------------------------------------------------------
+#
+# Under the toolbox frame the model never sees a mode name. It COMPOSES the
+# procedure from primitives: what quantity the claim compares, over which
+# denominator, against which null (as a recipe), with which test family and
+# selection rule. ``derive_mode`` is the reverse lookup that turns a composed
+# plan back into the mode the rest of the pipeline (S2 compiler, S3 oracle)
+# is keyed on -- the inverse of ``derive_procedure``. The tier is taken from
+# the input row's ``level`` (a GIVEN field), never inferred.
+
+QUANTITIES = (
+    "order_of_pair",              # is A before B (one direction of an ordered pair)
+    "co_occurrence_of_pair",      # do A and B fall at the same level
+    "dominant_relation_of_pair",  # is co-existence the most common relation of A,B
+    "ordering_of_triple",         # is A->B->C the most common strict ordering
+    "extreme_of_set",             # is the named candidate most often the earliest/latest
+    "rate_across_two_arms",       # a rate in arm 1 vs the same rate in arm 2
+)
+EXTREMES = ("earliest", "latest")
+PLAN_NULL_KINDS = ("symmetric_fixed", "text_stated", "data_derived",
+                   "two_arm_equality", "none")
+TEST_FAMILIES = ("proportion_vs_p0", "named_vs_runner_up", "two_proportions", "none")
+TEST_RULES = ("exact_always", "exact_if_small_else_asymptotic")
+
+# (quantity, extreme) per mode -- the two plan fields the structural spec lacks.
+PLAN_BY_MODE: dict[str, tuple[str, str | None]] = {
+    "rep_dir_bool": ("order_of_pair", None), "rep_dir_choice": ("order_of_pair", None),
+    "dir_bool": ("order_of_pair", None), "dir_choice": ("order_of_pair", None),
+    "rep_sym_bool": ("co_occurrence_of_pair", None),
+    "sym_bool_cooccurs": ("co_occurrence_of_pair", None),
+    "cooc_modal_bool": ("dominant_relation_of_pair", None),
+    "rep_seq_bool": ("ordering_of_triple", None), "seq_bool": ("ordering_of_triple", None),
+    "modal_choice": ("ordering_of_triple", None),
+    "rep_first_choice": ("extreme_of_set", "earliest"),
+    "rep_first_bool": ("extreme_of_set", "earliest"),
+    "first_choice": ("extreme_of_set", "earliest"), "first_bool": ("extreme_of_set", "earliest"),
+    "rep_last_choice": ("extreme_of_set", "latest"), "last_choice": ("extreme_of_set", "latest"),
+    "antecedent_bool": ("rate_across_two_arms", None),
+    "pairpair_bool": ("rate_across_two_arms", None),
+    "assoc_bool": ("rate_across_two_arms", None),
+    "multi_dir_precedes": ("rate_across_two_arms", None),
+}
+assert set(PLAN_BY_MODE) == set(MODES), sorted(set(PLAN_BY_MODE) ^ set(MODES))
+
+_TEST_TO_FAMILY = {"binom_exact": "proportion_vs_p0", "modal_runner": "named_vs_runner_up",
+                   "fisher_exact": "two_proportions", None: "none"}
+_FAMILY_TO_TEST = {v: k for k, v in _TEST_TO_FAMILY.items()}
+
+
+def plan_signature(tier: str, answer_type: str, n_events: int, arms: int,
+                   conditioning: str, quantity: str, extreme: str | None) -> tuple:
+    return (tier, answer_type, int(n_events), int(arms), conditioning, quantity, extreme)
+
+
+def _build_mode_by_signature() -> dict[tuple, str]:
+    table: dict[tuple, str] = {}
+    for m, s in MODE_SPEC.items():
+        q, x = PLAN_BY_MODE[m]
+        key = plan_signature(s.tier, s.answer_type, s.n_events, s.arms, s.conditioning, q, x)
+        assert key not in table, f"plan signature clash: {table[key]} / {m}"
+        table[key] = m
+    return table
+
+
+MODE_BY_SIGNATURE: dict[tuple, str] = _build_mode_by_signature()
+
+
+def derive_mode(tier: str, answer_type: str, n_events: int, arms: int,
+                conditioning: str, quantity: str, extreme: str | None = None) -> str | None:
+    """The mode a composed plan corresponds to, or None if no mode has that shape."""
+    return MODE_BY_SIGNATURE.get(
+        plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme))
+
+
+def derive_plan(mode: str, *, negated: bool = False) -> dict:
+    """The reference plan for a mode (few-shot targets; inverse of ``derive_mode``)."""
+    s = MODE_SPEC[mode]
+    proc = derive_procedure(mode, negated=negated)
+    q, x = PLAN_BY_MODE[mode]
+    if s.is_report:
+        null_kind = "none"
+    elif s.null_kind == "two_arm_equality":
+        null_kind = "two_arm_equality"
+    else:
+        null_kind = "symmetric_fixed"
+    fam = _TEST_TO_FAMILY[proc.test]
+    return {
+        "quantity": q,
+        "extreme": x,
+        "arms": s.arms,
+        "denominator": s.conditioning,
+        "null_kind": null_kind,
+        "p0": proc.null.p0,
+        "null_reference": None,
+        "tail": proc.claim_tail,
+        "test_family": fam,
+        "test_rule": ("exact_if_small_else_asymptotic" if fam == "two_proportions"
+                      else "exact_always"),
+        "min_n_floor": proc.min_n_floor,
+    }
+
+
+PLAN_JSON_SCHEMA: dict = {
+    "type": "object",
+    "properties": {
+        "events": FLAT_JSON_SCHEMA["properties"]["events"],
+        "negated": FLAT_JSON_SCHEMA["properties"]["negated"],
+        "asserted_option": FLAT_JSON_SCHEMA["properties"]["asserted_option"],
+        "quantity": {"type": "string", "enum": list(QUANTITIES),
+                     "description": "What the claim compares."},
+        "extreme": {"type": ["string", "null"], "enum": list(EXTREMES) + [None],
+                    "description": "For extreme_of_set: which extreme the claim is about; null otherwise."},
+        "arms": {"type": "integer", "enum": [1, 2],
+                 "description": "How many groups the statistic compares."},
+        "denominator": {"type": "string", "enum": list(CONDITIONINGS),
+                        "description": "Which reports the statistic is computed over (a primitive from the conventions)."},
+        "null_kind": {"type": "string", "enum": list(PLAN_NULL_KINDS)},
+        "p0": {"type": ["number", "null"],
+               "description": "The null proportion when it is a fixed number (symmetric or stated in the text); null when computed from the data or not a proportion."},
+        "null_reference": {"type": ["string", "null"],
+                           "description": "For a data-derived null: the population the reference rate is computed over."},
+        "tail": {"type": "string", "enum": list(TAILS)},
+        "test_family": {"type": "string", "enum": list(TEST_FAMILIES)},
+        "test_rule": {"type": "string", "enum": list(TEST_RULES),
+                      "description": "How the concrete test is chosen once n is known."},
+        "min_n_floor": {"type": ["integer", "null"]},
+    },
+    "required": ["events", "negated", "quantity", "arms", "denominator", "null_kind",
+                 "tail", "test_family", "test_rule"],
+    "additionalProperties": False,
+}
+
+
+def plan_from_claim(claim: StructuredClaim) -> dict:
+    """The plan JSON the toolbox frame asks for, rendered from a claim (few-shot targets)."""
+    plan = {
+        "events": [t for t in claim.terms],
+        "negated": bool(claim.negated),
+        "asserted_option": claim.asserted_option if claim.answer_type == "CHOICE" else None,
+    }
+    plan.update(derive_plan(claim.mode, negated=claim.negated))
+    return plan
+
+
+def claim_from_plan(plan: Mapping[str, Any], question_row: Mapping[str, Any], *,
+                    source: str) -> StructuredClaim:
+    """Fold a composed plan into a StructuredClaim via ``derive_mode``.
+
+    The tier comes from the row's ``level`` (given). Raises ``ValueError`` when
+    the plan's shape matches no mode -- the caller records it as no-claim; the
+    plan itself is kept in ``raw`` so its fields can be scored independently.
+    """
+    tier = question_row.get("level")
+    answer_type = question_row.get("answer_type")
+    terms = [t for t in (plan.get("events") or [])]
+    mode = derive_mode(tier, answer_type, len(terms), int(plan.get("arms") or 1),
+                       plan.get("denominator"), plan.get("quantity"), plan.get("extreme"))
+    if mode is None:
+        raise ValueError(
+            f"no mode for plan shape tier={tier} answer_type={answer_type} n_events={len(terms)} "
+            f"arms={plan.get('arms')} denominator={plan.get('denominator')} "
+            f"quantity={plan.get('quantity')} extreme={plan.get('extreme')}")
+    s = MODE_SPEC[mode]
+    negated = bool(plan.get("negated", False))
+    ref = derive_procedure(mode, negated=negated)
+    fam = plan.get("test_family")
+    test = _FAMILY_TO_TEST.get(fam, ref.test)
+    nk = plan.get("null_kind")
+    if nk in ("symmetric_fixed", "text_stated", "data_derived"):
+        null = NullSpec("binomial", plan.get("p0"), ref.null.statistic)
+    elif nk == "two_arm_equality":
+        null = NullSpec("two_arm_equality", None, ref.null.statistic)
+    elif nk == "none":
+        null = NullSpec("none", None, ref.null.statistic)
+    else:
+        null = ref.null
+    proc = Procedure(
+        test=test, null=null,
+        claim_tail=plan.get("tail") or ref.claim_tail, alpha=ALPHA,
+        min_n_floor=plan.get("min_n_floor", ref.min_n_floor),
+        arms=int(plan.get("arms") or ref.arms),
+        conditioning=plan.get("denominator") or ref.conditioning,
+    )
+    claim = build_claim(mode, terms, question_row["cohort"], negated=negated,
+                        options=question_row.get("options"), source=source,
+                        procedure=proc, raw=dict(plan))
+    claim = replace(claim, plan=dict(plan))
+    if plan.get("asserted_option") is not None and s.answer_type == "CHOICE":
+        claim = replace(claim, asserted_option=plan["asserted_option"])
     return claim
