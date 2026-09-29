@@ -112,7 +112,7 @@ dial, `.env` key loading, `rescore` reading the release from the run config.
 |---|--:|--:|
 | catalogue + hints (lookup; upper bound) | 0.918 | 1.000 |
 | toolbox, 3 few-shot plans | 0.64–0.68 (wording-sensitive) | 1.000 (claim EM 1.000; plan EM 0.985) |
-| **toolbox, zero-shot (the headline condition)** | pending (running at summary time; `results/v11_smoke200_toolbox_7b_zeroshot`) | **0.958** (claim EM 0.910; plan EM 0.812; rule_valid 0.943) — all 36 mode errors are two shapes: C-V2 association composed as plain co-occurrence (22; arms 1 / both_present — the family e2e-sql found unrecoverable from the sentence) and P-V2 antecedent composed as the four-event pair-vs-pair (14). Both are exactly the shapes the 3 few-shot plans had covered (assoc_bool, antecedent_bool), which is why removing them cost 4 points |
+| **toolbox, zero-shot (the headline condition)** | **0.490** (claim EM 0.487; plan EM 0.122; 179 plans match no mode) — few-shot was propping the 7B up too (0.64–0.68 → 0.49); zero-shot it composes almost nothing (rule_valid 0.258) | **0.958** (claim EM 0.910; plan EM 0.812; rule_valid 0.943) — all 36 mode errors are two shapes: C-V2 association composed as plain co-occurrence (22; arms 1 / both_present — the family e2e-sql found unrecoverable from the sentence) and P-V2 antecedent composed as the four-event pair-vs-pair (14). Both are exactly the shapes the 3 few-shot plans had covered (assoc_bool, antecedent_bool), which is why removing them cost 4 points |
 
 Readings: the compose gap is model-tier (7B loses 25–30 points, Opus ~0);
 three worked examples were worth ~4 verdict / ~9 claim-EM points to Opus, i.e.
@@ -130,7 +130,7 @@ gitignored `.env` (loaded by `run_eval.py`); VERITAS baselines on the other
 machine kept for the record (rule: S2/S3 and upper-bound rows stay valid;
 catalogue-S1 capability claims are superseded).
 
-**Next, in order.** (1) 7B zero-shot lands → record; (2) **v1.2 build** (issue
+**Next, in order.** (1) 7B zero-shot recorded (0.490); (2) **v1.2 build** (issue
 32; doc 10 §7.2 order: N1 structural null → N3/N4 bars → N2) + B0 re-cert;
 (3) zero-shot toolbox on v1.2 (7B + Opus); (4) P-Bench external validation
 (issue 33); (5) full `eval_core` under zero-shot toolbox for the paper table.

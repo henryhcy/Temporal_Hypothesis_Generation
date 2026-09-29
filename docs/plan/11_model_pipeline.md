@@ -783,6 +783,8 @@ rows are placeholders. Verdict columns are over the answerable records of the ru
 | **T1-Opus toolbox** (`results/v11_smoke200_toolbox_opus_v4`, 2026-09-30; ~$15.6: 2.36M in / 0.15M out) | `--s1-frame toolbox --provider anthropic --model claude-opus-5`: NO catalogue; composes the plan | blind-group | blind | v1.1 smoke_200 | 400 | **1.000** | 1.000 | 1.000 | **1.000** (mode 1.000; 0 no-shape) | — | 0.000 | 0.000 | plan_em **0.985** -- 394/400 plans match the reference field-for-field; the other 6 (P-R2) compose the two-candidate 'which came first' as `extreme_of_set`, semantically the same claim, folded by the two-candidate identity; rule_valid 1.000 | twins 1.000 | 0 |
 | T1-Opus catalogue (`results/v11_smoke200_catalogue_opus`) | the LOOKUP with the catalogue + hints, Opus | blind-group | blind | v1.1 smoke_200 | 400 | **1.000** | 1.000 | 1.000 | 1.000 | — | 0.000 | 0.000 | — | twins 1.000 | 0 |
 | T1-v4 toolbox 7B (`results/v11_smoke200_toolbox_v4_7b`; v3 + argmax wording + two-candidate normalization) | same as T1-v3 | blind-group | blind | v1.1 smoke_200 | 400 | **0.680** | — | — | 0.667 (mode 0.68; 110 no-claim) | — | — | — | plan_em 0.497; rule_valid 0.631; null_kind 0.566; test_family 0.631 | — | — |
+| **T1-Opus toolbox ZERO-SHOT** (`results/v11_smoke200_toolbox_opus_zeroshot`, 2026-09-30, ~$6) | `--s1-frame toolbox --k-shot 0`, claude-opus-5 — **the headline S1 condition** | blind-group | blind | v1.1 smoke_200 | 400 | **0.958** | — | — | 0.910 (mode 0.910; 0 no-shape) | — | — | — | plan_em 0.812; rule_valid 0.943; the 36 mode errors are two shapes: C-V2 association → plain co-occurrence (22), P-V2 antecedent → pair-vs-pair (14) — exactly the shapes the 3 few-shot plans had covered | — | 0 |
+| T1-7B toolbox ZERO-SHOT (`results/v11_smoke200_toolbox_7b_zeroshot`) | same, qwen2.5:7b-instruct | blind-group | blind | v1.1 smoke_200 | 400 | **0.490** | — | 0.558 [0.515, 0.591] | 0.487 (mode 0.502; **179 no-shape**) | — | — | — | plan_em 0.122; rule_valid 0.258 — without worked examples the 7B composes almost nothing | — | 0 |
 | T1-v1 / T1-v2 toolbox (superseded harness versions) | same slice; v1 = strict reverse lookup, v2 = arms-carries-comparison | blind-group | blind | v1.1 smoke_200 | 400 | 0.390 / 0.525 | — | — | no-shape 232 / 170 — 3 of 4 failure classes were the HARNESS (§11a) | — | — | — | — | — | — |
 | smoke-3 (`results/smoke200_llm-s1_llm-sql`, 448 s — S1 cached from smoke-1) | `llm-s1+llm-sql` (the full local pipeline) | blind-group | blind | same slice | 400 | **0.292** | 0.300 | 0.250 [0.217, 0.286] | 0.675 (mode 0.718) | 0.228 (EM 0.149; report_hit 0.380) | 0.082 (any 0.116) | 0.227 | 0.010 (n=198) | 0.018 (166 pairs); twins 0.667 | 16, all unexpected → scored wrong |
 | e2e-sql (`results/smoke200_e2e_sql`, 2,122 s, $9.19) | `e2e-llm-sql` — the SENTENCE straight to SQL (S1 gold-forced by rules; claim JSON, conditioning rule and arm plan ALL withheld) | blind-group | blind | same slice | 400 | **0.860** | 0.830 | — (no group >= 30 after the cohort split) | 1.000 (gold-forced) | **0.673** (EM 0.508) | **0.198** | **0.273** | — | — | 0 |
@@ -856,6 +858,12 @@ attribution separates them cleanly:
   wording redistributed its errors rather than removing them -- the same
   prompt-saturation pattern as the catalogue hints. Report the 7B compose
   number as 0.64-0.68 (wording-sensitive), the frontier as 1.000 (not).
+- **Zero-shot is the headline (2026-09-30).** A worked example is a mapping row, so
+  `--k-shot 0` is the honest condition: Opus 1.000 → **0.958** (the 3 examples
+  covered exactly the two shapes it now misses, C-V2 association and P-V2
+  antecedent); 7B 0.64-0.68 → **0.490** (179/400 no-shape; rule_valid 0.258).
+  Few-shot stays as a reported dial; P2 group holdout is downgraded (no group
+  has an example); the remaining disclosed channel is the conventions text.
 - **S2 was a model-capability gap, not benchmark impossibility** (smoke-4,
   2026-09-03). The same text-to-SQL stage that scored 0.545 with the local 7B
   scores **0.975** with `claude-opus-5` on identical inputs (gold claims,
