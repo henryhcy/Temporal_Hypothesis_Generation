@@ -1108,7 +1108,7 @@ Chance ≈ 0.33 on verdicts. Per-tier = report / vaccine / multi (158 / 222 / 20
 | **toolbox zs** | llm-s1+compiler / toolbox | **qwen2.5:32b-instruct** | **0.887** | 0.870 | 25 (all vaccine; 0 report-tier) | 0.611 | 0.789 | **1.00** / 0.80 / 1.00 | — |
 | toolbox 3-shot | same, `--k-shot 3` | qwen2.5:32b-instruct | 0.915 | 0.912 | 32 (all report, cohort denominators) | 0.845 | 0.932 | 0.80 / 0.99 / 1.00 | — |
 | **e2e toolbox zs, mixed** | llm-s1+llm-sql / toolbox | **S1 qwen2.5:32b-instruct + SQL qwen2.5-coder:32b** | **0.762** | 0.870 | 25 | — | — | 1.00 / 0.58 / 0.90 | 0.554 |
-| catalogue + hints (lookup) | llm-s1+compiler / catalogue | qwen2.5:32b-instruct | queued | | | | | | |
+| catalogue + hints (lookup) | llm-s1+compiler / catalogue | qwen2.5:32b-instruct | 0.990 | 0.980 | 0 | — | — | 0.99 / 0.99 / 1.00 | — |
 | register: research / media / clinical | toolbox zs | qwen2.5-coder:7b | 0.500 / 0.287 / 0.455 | | | | | (original 0.400) | |
 | register: research / media / clinical | toolbox zs | qwen2.5-coder:32b | 0.357 / 0.335 / 0.395 | | | | | (original 0.410; all carry the report-tier 0) | |
 
