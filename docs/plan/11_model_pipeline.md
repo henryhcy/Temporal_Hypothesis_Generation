@@ -1109,6 +1109,8 @@ Chance ≈ 0.33 on verdicts. Per-tier = report / vaccine / multi (158 / 222 / 20
 | toolbox 3-shot | same, `--k-shot 3` | qwen2.5:32b-instruct | 0.915 | 0.912 | 32 (all report, cohort denominators) | 0.845 | 0.932 | 0.80 / 0.99 / 1.00 | — |
 | **e2e toolbox zs, mixed** | llm-s1+llm-sql / toolbox | **S1 qwen2.5:32b-instruct + SQL qwen2.5-coder:32b** | **0.762** | 0.870 | 25 | — | — | 1.00 / 0.58 / 0.90 | 0.554 |
 | catalogue + hints (lookup) | llm-s1+compiler / catalogue | qwen2.5:32b-instruct | 0.990 | 0.980 | 0 | — | — | 0.99 / 0.99 / 1.00 | — |
+| S2 isolation | rules+llm-sql | qwen2.5:32b-instruct | 0.830 | 1.0 | — | — | — | 1.00 / 0.76 / 0.30 | 0.705 (all-sets EM 0.41; co-exist leak any 0.23; not-loc FPR 0.00) |
+| register: research / media / clinical | toolbox zs | **qwen2.5:32b-instruct** | **0.772 / 0.855 / 0.840** | claim EM 0.728 / 0.818 / 0.795 | no-shape 55 / 52 / 26 | | | (original 0.887; report tier 0.93 / 0.87 / 0.94, cohort 0.67 / 0.85 / 0.77) | |
 | register: research / media / clinical | toolbox zs | qwen2.5-coder:7b | 0.500 / 0.287 / 0.455 | | | | | (original 0.400) | |
 | register: research / media / clinical | toolbox zs | qwen2.5-coder:32b | 0.357 / 0.335 / 0.395 | | | | | (original 0.410; all carry the report-tier 0) | |
 
@@ -1151,6 +1153,14 @@ Chance ≈ 0.33 on verdicts. Per-tier = report / vaccine / multi (158 / 222 / 20
    end-to-end 0.762 ≈ 0.887 × 0.875 (stages independent again; denominator F1 0.55).
    Curiously the instruct-32B's 32 three-shot no-shapes are ALL report-tier cohort
    denominators — the worked plans (all cohort-shaped) pull it toward the coder's error.
+9. **SQL stays with the coder; registers cost the instruct-32B 0.03–0.12 (added 17:20).**
+   instruct-32B on `rules+llm-sql`: 0.830 vs coder-32B 0.875 — the coder leaks more
+   co-exist reports (37% vs 23%) but wins the two-cohort tier (0.90 vs 0.30), so the
+   mixed configuration (instruct S1 + coder SQL) stands. Register sensitivity at the
+   headline model: research 0.772 (claim EM 0.728, no-shape 55), media 0.855,
+   clinical 0.840 against original 0.887; the loss is on the cohort tiers, where the
+   register rewrites the statistical situation, not the event names. The 7B's ±0.11
+   swings are noise around a low mean. Draft: `tab:registers`.
 
 ### 10.4 M3–M5 — designed, not built
 

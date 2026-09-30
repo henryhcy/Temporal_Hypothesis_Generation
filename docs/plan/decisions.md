@@ -2728,3 +2728,11 @@ end-to-end with coder-32B on SQL **0.762** ≈ 0.887 × 0.875. The coder-32B
 report-tier failure is model-specific, so issue 35 is a scoring-policy question,
 not a frame defect. Local headline configuration from here: **instruct for S1,
 coder for SQL**; the compose gap to Opus at 32B is 0.07, not 0.55.
+
+**Addendum 17:20 — SQL stage and registers at instruct-32B.** `rules+llm-sql`
+with qwen2.5:32b-instruct: 0.830 (den-F1 0.705, leak 23%, two-cohort tier 0.30)
+vs coder-32B 0.875 (0.695, 37%, 0.90) — coder keeps the SQL stage; the mixed
+configuration stands. Registers, toolbox zero-shot, instruct-32B: original
+0.887 / research 0.772 / media 0.855 / clinical 0.840 (claim EM 0.870 → 0.728
+on research; no-shape 25 → 55). Draft: `tab:registers` + a paraphrase-sensitivity
+paragraph; Table 7 row s2-32b-inst.

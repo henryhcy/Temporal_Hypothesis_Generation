@@ -446,6 +446,7 @@ smoke-1c & \quad + routing hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.
 smoke-2 & retrieval (text-to-SQL) & rules / LLM / exact & Qwen2.5-7B & 400 & 0.545 & 128/486 invalid SQL; conditioning wrong 41.5\% \\
 smoke-4 & retrieval (text-to-SQL) & rules / LLM / exact & Opus & 400 & 0.975 & 22/486 invalid; \texttt{not\_loc} FPR 0.18$\rightarrow$0.00 \\
 s2-32b & retrieval (text-to-SQL) & rules / LLM / exact & Coder-32B & 400 & 0.875 & denominator F1 0.695; \emph{co-exist} leak on 37\% of \emph{precedes} records \\
+s2-32b-inst & retrieval (text-to-SQL) & rules / LLM / exact & 32B-Inst. & 400 & 0.830 & denominator F1 0.705; leak 23\%; two-cohort tier 0.30 (coder 0.90) \\
 \midrule
 \multicolumn{7}{l}{\textit{Stage 3 --- counts $\rightarrow$ verdict}} \\
 counts-llm & the exact test itself & rules / compiler / \textbf{LLM} & Opus & 242 & 0.959 & \textbf{p-values agree only 66\%}; Fisher 52\% \\
@@ -611,6 +612,36 @@ to Opus: the few-shot leak is largest where composition is weakest. Downstream, 
 the right verdict at 0.875 with the wrong denominator (set F1 0.695; co-exist
 leak on 37\% of \emph{precedes} records) and, handed the counts, matches the
 exact $p$-value on 2\% of records (Table~\ref{tab:stagebaselines}).
+
+\paragraph{Paraphrase sensitivity.} Every instance ships in four templated
+registers, so the same claims can be posed in research, media and clinical
+wording with the gold unchanged. Table~\ref{tab:registers} re-runs the zero-shot
+toolbox condition on each register.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+S1, toolbox zero-shot & Original & Research & Media & Clinical \\
+\midrule
+Coder-7B & 0.400 & 0.500 & 0.287 & 0.455 \\
+32B-Instruct & 0.887 & 0.772 & 0.855 & 0.840 \\
+\bottomrule
+\end{tabular}
+\caption{Verdict accuracy by register; same 200 instances, S2 and S3 at gold,
+mapping withheld, no worked examples.}
+\label{tab:registers}
+\end{table}
+
+The 32B model loses 0.03--0.12 to a change of wording, most on the research
+register (claim EM 0.870 $\rightarrow$ 0.728; no-shape plans 25 $\rightarrow$
+55), and the loss sits on the cohort tiers, where the register rewrites the
+statistical situation rather than the event names. The 7B swings by $\pm$0.11
+in both directions, which is noise around a low mean rather than sensitivity.
+Templated paraphrase is therefore a real but bounded perturbation for a capable
+model, and the release's four registers make it a standard row rather than a
+separate study.
 
 \subsection{External systems}
 
