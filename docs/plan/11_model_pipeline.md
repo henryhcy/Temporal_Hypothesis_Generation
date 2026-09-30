@@ -1085,6 +1085,59 @@ tighter than the authors' 3600 s (`experiments/run_experiments.py`) and cost 64%
 of A's GPU-hours to runs with no verdict. All runs STOPPED 2026-09-29; results
 kept as-is. Draft: `docs/draft/dataset_construction.tex` "External systems".
 
+### 10.3e Local coder models under the toolbox frame (2026-09-30, GPU box; branch `s1-toolbox`)
+
+Same slice, flags and scorer as the T1 rows (v1.1 `smoke_200`, 400 records,
+blind-group, procedure-blind, `--k-shot 0` unless stated); Ollama native API,
+`num_ctx` 8192; run dirs `results/v11_smoke200_*` on the GPU box (gitignored).
+Chance ≈ 0.33 on verdicts. Per-tier = report / vaccine / multi (158 / 222 / 20).
+
+| run | pipeline / S1 frame | model | acc | claim EM | no-shape | plan EM | rule_valid | per tier | den-F1 |
+|---|---|---|---:|---:|---:|---:|---:|---|---:|
+| toolbox zs (cross-machine replicate) | llm-s1+compiler / toolbox | qwen2.5:7b-instruct | **0.482** | 0.468 | 187 | 0.061 | 0.254 | 0.40 / 0.55 / 0.45 | — |
+| toolbox zs | same | qwen2.5-coder:7b | 0.400 | 0.410 | 226 | 0.149 | 0.621 | 0.65 / 0.26 / 0.05 | — |
+| toolbox zs | same | qwen2.5-coder:32b | **0.410** | 0.390 | 218 | 0.302 | 0.797 | **0.00** / 0.65 / 1.00 | — |
+| toolbox 3-shot | same, `--k-shot 3` | qwen2.5-coder:32b | 0.580 | 0.575 | 163 | 0.578 | 0.726 | **0.00** / 0.955 / 1.00 | — |
+| catalogue + hints (lookup) | llm-s1+compiler / catalogue | qwen2.5-coder:32b | 0.993 | 0.935 | 0 | — | — | 1.00 / 0.99 / 1.00 | — |
+| e2e toolbox zs | llm-s1+llm-sql / toolbox | qwen2.5-coder:7b | 0.320 | 0.410 | 226 | — | — | 0.65 / 0.11 / 0.05 | 0.172 |
+| e2e toolbox zs | same | qwen2.5-coder:32b | 0.302 | 0.390 | 218 | — | — | 0.00 / 0.46 / 0.90 | 0.435 |
+| S2 isolation | rules+llm-sql | qwen2.5-coder:7b | 0.540 | 1.0 | — | — | — | 1.00 / 0.24 / 0.20 | 0.229 (all-sets EM 0.05) |
+| S2 isolation | rules+llm-sql | qwen2.5-coder:32b | **0.875** | 1.0 | — | — | — | 1.00 / 0.78 / 0.90 | **0.695** (all-sets EM 0.40; co-exist leak any 0.37, mean 0.37; not-loc FPR 0.00) |
+| S3 counts-llm (242) | counts-llm | qwen2.5-coder:7b | 0.655 | — | — | — | — | — | p agree **0.000** (n=198) |
+| S3 counts-llm (242) | counts-llm | qwen2.5-coder:32b | 0.725 | — | — | — | — | — | p agree **0.020** (n=198) |
+| register: research / media / clinical | toolbox zs | qwen2.5-coder:7b | 0.500 / 0.287 / 0.455 | | | | | (original 0.400) | |
+| register: research / media / clinical | toolbox zs | qwen2.5-coder:32b | 0.357 / 0.335 / 0.395 | | | | | (original 0.410; all carry the report-tier 0) | |
+
+**Readings.**
+1. **The 32B compose failure is ONE shape.** All 158 report-tier plans (39.5% of
+   the slice) carry a cohort denominator (`ordered_pair` 48, `all_present_unique_first`
+   48, `orderable_triple` 24, `all_present_unique_last` 24, `both_present` 14) with
+   `arms=1` and the right quantity/extreme; `derive_mode` finds no report mode and
+   the record scores wrong. Identical under 3-shot (158/158). The prompt defines
+   `single_report` (`extract/llm.py:190`). On the cohort tiers the 32B composes at
+   0.678 zero-shot and 0.959 with three plans (lookup 0.987). **Issue 35**: decide
+   whether `tier=report ⇒ denominator=single_report` is an IMPLIED fold (tier is an
+   input field; "a single report has one arm" is already folded) or a genuine
+   situation-recognition failure to report as such. Not folded here — the
+   normalization set is the branch owner's call. If folded, 32B zero-shot ≈ 0.8.
+2. **The few-shot leak grows as capability falls**: three worked plans are worth
+   +0.17 to the 32B (0.41 → 0.58; cohort tier 0.68 → 0.96) against +0.04 to Opus.
+3. **Instruct beats coder at S1 at 7B** (0.482 vs 0.400 zero-shot); the instruct-7B
+   number replicates the other machine's 0.490 within 0.008 (187 vs 179 no-shape).
+   `qwen2.5:32b-instruct` S1 runs are queued (zs, 3-shot, and e2e with coder-32B SQL).
+4. **S2 at 32B: right verdict, wrong denominator.** 0.875 verdict with set F1 0.695
+   and a co-exist leak on 37% of *precedes* records — the EHRSQL pattern (§10.3d):
+   cores far from α forgive the denominator. Opus: 0.975 / 0.950 / 0.00. S2 is
+   model-tier like S1, but its residual at 32B is conditioning, not syntax.
+5. **Local models cannot compute the exact test at all**: p-value agreement 0.000
+   (7B) and 0.020 (32B) with verdicts 0.655 / 0.725 — the verdict comes from the
+   direction of the counts, not from the test. Opus: 0.66 agreement. Strongest
+   support yet for "the model plans, the harness computes".
+6. **End-to-end local** 0.320 (7B) / 0.302 (32B; report tier zeroed). The
+   multiplicative picture holds on the cohort tiers (32B: 0.65 S1 × 0.78 S2 ≈ 0.51
+   vs 0.46 measured).
+7. **Registers**: the 7B swings by ±0.11 across registers; the 32B stays within 0.08.
+
 ### 10.4 M3–M5 — designed, not built
 
 M3 split + fine-tune (P0 / P1 / P2 table); M4 in-context B1, agent B2, single-pass

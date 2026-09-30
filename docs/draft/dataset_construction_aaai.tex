@@ -445,16 +445,21 @@ smoke-1c & \quad + routing hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.
 \multicolumn{7}{l}{\textit{Stage 2 --- claim $\rightarrow$ conditioning-correct retrieval}} \\
 smoke-2 & retrieval (text-to-SQL) & rules / LLM / exact & Qwen2.5-7B & 400 & 0.545 & 128/486 invalid SQL; conditioning wrong 41.5\% \\
 smoke-4 & retrieval (text-to-SQL) & rules / LLM / exact & Opus & 400 & 0.975 & 22/486 invalid; \texttt{not\_loc} FPR 0.18$\rightarrow$0.00 \\
+s2-32b & retrieval (text-to-SQL) & rules / LLM / exact & Coder-32B & 400 & 0.875 & denominator F1 0.695; \emph{co-exist} leak on 37\% of \emph{precedes} records \\
 \midrule
 \multicolumn{7}{l}{\textit{Stage 3 --- counts $\rightarrow$ verdict}} \\
 counts-llm & the exact test itself & rules / compiler / \textbf{LLM} & Opus & 242 & 0.959 & \textbf{p-values agree only 66\%}; Fisher 52\% \\
+counts-32b & the exact test itself & rules / compiler / \textbf{LLM} & Coder-32B & 242 & 0.725 & p-values agree \textbf{2\%} (7B: 0\%); verdicts from direction alone \\
 \midrule
 \multicolumn{7}{l}{\textit{Joint --- no structured intermediate}} \\
 e2e-sql & S1+S2 without the claim & \textbf{sentence} / LLM / exact & Opus & 400 & 0.860 & denominator F1 0.95$\rightarrow$0.67; see Table~\ref{tab:e2econd} \\
 \midrule
-\multicolumn{7}{l}{\textit{Full pipeline, catalogue-given S1 (upper bound; toolbox re-runs pending)}} \\
+\multicolumn{7}{l}{\textit{Full pipeline, catalogue-given S1 (upper bound)}} \\
 smoke-3 & end to end, local & LLM / LLM / exact & Qwen2.5-7B & 400 & 0.292 & errors compound multiplicatively \\
 smoke-5 & end to end, mixed & LLM / LLM / exact & 7B + Opus & 400 & 0.903 & $\approx 0.928 \times 0.975$: stages independent \\
+\multicolumn{7}{l}{\textit{Full pipeline, toolbox zero-shot S1 (mapping withheld; local only)}} \\
+tb-e2e-7b & end to end, local & LLM / LLM / exact & Coder-7B & 400 & 0.320 & S1 0.400 $\times$ S2 0.540; denominator F1 0.17 \\
+tb-e2e-32b & end to end, local & LLM / LLM / exact & Coder-32B & 400 & 0.302 & report tier 0.00 (Table~\ref{tab:toolbox}); cohort tiers 0.46 / 0.90 \\
 \bottomrule
 \end{tabular}
 \caption{Stage-isolation baselines. ``Setting'' names what fills each stage:
@@ -562,18 +567,23 @@ slice.
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lrr}
+\begin{tabular}{lrrrr}
 \toprule
-S1 condition & Qwen2.5-7B & Opus \\
+S1 condition & 7B-Instruct & Coder-7B & Coder-32B & Opus \\
 \midrule
-Catalogue + hints (lookup; upper bound) & 0.918 & 1.000 \\
-Toolbox, 3 worked plans & 0.64--0.68 & 1.000 \\
-\textbf{Toolbox, zero-shot} & 0.490 & \textbf{0.958} \\
+Catalogue + hints (lookup; upper bound) & 0.918 & --- & 0.993 & 1.000 \\
+Toolbox, 3 worked plans & 0.64--0.68 & --- & 0.580 & 1.000 \\
+\textbf{Toolbox, zero-shot} & 0.490 & 0.400 & 0.410 & \textbf{0.958} \\
+\quad cohort tiers only ($n=242$) & 0.537 & 0.240 & 0.678 & --- \\
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy when the claim-type mapping is withheld. Same
 200-instance slice (400 records), blind-group, procedure-blind; S2 and S3 at
-gold. The 7B few-shot number is wording-sensitive across prompt revisions.}
+gold. The 7B few-shot number is wording-sensitive across prompt revisions. The
+Coder-32B compose rows score 0 on the report tier (158 records, 39.5\%):
+every report-level plan names a cohort denominator, so the harness derives no
+claim type; its cohort-tier compose accuracy is 0.678 zero-shot and 0.959 with
+three worked plans (lookup 0.987).}
 \label{tab:toolbox}
 \end{table}
 
@@ -589,6 +599,15 @@ and few-shot a reported dial. Under it, all 36 frontier errors are two shapes
 four-event contrast). Stage 1 on the released shapes is therefore near-solved
 at the frontier without the catalogue; remaining S1 difficulty has to come from
 nulls that cannot be looked up, which is the v1.2 expansion.
+A local 32B model sits in between in a specific way: on cohort claims it composes
+the procedure at 0.678 zero-shot and 0.959 given three worked plans, close to
+its own lookup ceiling, but it never selects the single-report denominator for a
+report-level claim, which zeroes 39.5\% of the slice (Table~\ref{tab:toolbox}).
+The three examples are worth 0.17 to the 32B model against 0.04 to Opus, so the
+few-shot leak grows as capability falls. Downstream, the same model retrieves
+the right verdict at 0.875 with the wrong denominator (set F1 0.695; co-exist
+leak on 37\% of \emph{precedes} records) and, handed the counts, matches the
+exact $p$-value on 2\% of records (Table~\ref{tab:stagebaselines}).
 
 \subsection{External systems}
 

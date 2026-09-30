@@ -2702,3 +2702,22 @@ only once v1.2 exists — every system given the same task card, matched model
 tiers, VERITAS at its authors' 3600 s cap with the timeout rate reported.
 Draft updated: `docs/draft/dataset_construction.tex`, tables `tab:toolbox` and
 `tab:external`.
+
+
+## FINDING: local coder models under the toolbox frame — one systematic shape, a growing few-shot leak, and no exact-test arithmetic (2026-09-30)
+
+Same slice and scorer as the T1 rows, GPU box (11 §10.3e). Toolbox zero-shot
+S1: instruct-7B 0.482 (replicates 0.490), coder-7B 0.400, coder-32B 0.410,
+coder-32B lookup 0.993. The 32B's whole loss is the report tier: 158/158
+report-level plans carry a cohort denominator, so no mode derives; on cohort
+claims it composes at 0.678 zero-shot and 0.959 with three plans. Recorded as
+issue 35 (fold or failure?) — NOT folded in this record. Three worked plans are
+worth +0.17 to the 32B against +0.04 to Opus: the few-shot leak grows as
+capability falls, which strengthens zero-shot as the headline. S2 at 32B is
+0.875 on verdicts with denominator F1 0.695 and a 37% co-exist leak (right
+verdict, wrong denominator — the EHRSQL pattern). counts-llm: p-value agreement
+0.000 (7B) / 0.020 (32B) with verdicts 0.655 / 0.725 — local models do not
+compute the exact test at all. Instruct beats coder at S1 at 7B, so
+qwen2.5:32b-instruct S1 runs are queued; coder stays the SQL model. Draft:
+Table 9 gains Coder-7B / Coder-32B columns and a cohort-tier row; Table 7 gains
+s2-32b, counts-32b and the toolbox end-to-end rows.
