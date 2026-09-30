@@ -417,6 +417,7 @@ smoke-5 & end to end, mixed & LLM / LLM / exact & 7B + Opus & 400 & 0.903 & $\ap
 \multicolumn{7}{l}{\textit{Full pipeline, toolbox zero-shot S1 (mapping withheld; local only)}} \\
 tb-e2e-7b & end to end, local & LLM / LLM / exact & Coder-7B & 400 & 0.320 & S1 0.400 $\times$ S2 0.540; denominator F1 0.17 \\
 tb-e2e-32b & end to end, local & LLM / LLM / exact & Coder-32B & 400 & 0.302 & report tier 0.00 (Table~\ref{tab:toolbox}); cohort tiers 0.46 / 0.90 \\
+tb-e2e-32b-mix & end to end, local & LLM / LLM / exact & 32B-Inst.\,+\,Coder-32B & 400 & \textbf{0.762} & $\approx 0.887 \times 0.875$; denominator F1 0.55 \\
 \bottomrule
 \end{tabular}
 \caption{Stage-isolation baselines. ``Setting'' names what fills each stage:
@@ -524,14 +525,14 @@ slice.
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrrrr}
 \toprule
-S1 condition & 7B-Instruct & Coder-7B & Coder-32B & Opus \\
+S1 condition & 7B-Inst. & Coder-7B & Coder-32B & \textbf{32B-Inst.} & Opus \\
 \midrule
-Catalogue + hints (lookup; upper bound) & 0.918 & --- & 0.993 & 1.000 \\
-Toolbox, 3 worked plans & 0.64--0.68 & --- & 0.580 & 1.000 \\
-\textbf{Toolbox, zero-shot} & 0.490 & 0.400 & 0.410 & \textbf{0.958} \\
-\quad cohort tiers only ($n=242$) & 0.537 & 0.240 & 0.678 & --- \\
+Catalogue + hints (lookup; upper bound) & 0.918 & --- & 0.993 & (pending) & 1.000 \\
+Toolbox, 3 worked plans & 0.64--0.68 & --- & 0.580 & 0.915 & 1.000 \\
+\textbf{Toolbox, zero-shot} & 0.490 & 0.400 & 0.410 & \textbf{0.887} & \textbf{0.958} \\
+\quad cohort tiers only ($n=242$) & 0.537 & 0.240 & 0.678 & 0.814 & --- \\
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy when the claim-type mapping is withheld. Same
@@ -540,7 +541,8 @@ gold. The 7B few-shot number is wording-sensitive across prompt revisions. The
 Coder-32B compose rows score 0 on the report tier (158 records, 39.5\%):
 every report-level plan names a cohort denominator, so the harness derives no
 claim type; its cohort-tier compose accuracy is 0.678 zero-shot and 0.959 with
-three worked plans (lookup 0.987).}
+three worked plans (lookup 0.987). The instruct variant of the same 32B never
+makes that error zero-shot (report tier 1.000).}
 \label{tab:toolbox}
 \end{table}
 
@@ -556,12 +558,13 @@ and few-shot a reported dial. Under it, all 36 frontier errors are two shapes
 four-event contrast). Stage 1 on the released shapes is therefore near-solved
 at the frontier without the catalogue; remaining S1 difficulty has to come from
 nulls that cannot be looked up, which is the v1.2 expansion.
-A local 32B model sits in between in a specific way: on cohort claims it composes
-the procedure at 0.678 zero-shot and 0.959 given three worked plans, close to
-its own lookup ceiling, but it never selects the single-report denominator for a
-report-level claim, which zeroes 39.5\% of the slice (Table~\ref{tab:toolbox}).
-The three examples are worth 0.17 to the 32B model against 0.04 to Opus, so the
-few-shot leak grows as capability falls. Downstream, the same model retrieves
+A local 32B model sits in between, and which 32B matters: the instruct
+variant composes at 0.887 zero-shot (report tier 1.000, cohort tiers 0.814),
+0.07 below Opus, while the coder variant of the same size reaches 0.678 on
+cohort claims but never selects the single-report denominator for a report-level
+claim, which zeroes 39.5\% of the slice (Table~\ref{tab:toolbox}). Three worked
+examples are worth 0.03 to the instruct model, 0.17 to the coder model and 0.04
+to Opus: the few-shot leak is largest where composition is weakest. Downstream, the same model retrieves
 the right verdict at 0.875 with the wrong denominator (set F1 0.695; co-exist
 leak on 37\% of \emph{precedes} records) and, handed the counts, matches the
 exact $p$-value on 2\% of records (Table~\ref{tab:stagebaselines}).

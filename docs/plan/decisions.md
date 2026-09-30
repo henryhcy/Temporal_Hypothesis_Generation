@@ -2721,3 +2721,10 @@ compute the exact test at all. Instruct beats coder at S1 at 7B, so
 qwen2.5:32b-instruct S1 runs are queued; coder stays the SQL model. Draft:
 Table 9 gains Coder-7B / Coder-32B columns and a cohort-tier row; Table 7 gains
 s2-32b, counts-32b and the toolbox end-to-end rows.
+
+**Addendum 06:00 — which 32B.** `qwen2.5:32b-instruct` under the same frame:
+zero-shot **0.887** (report tier 1.000, cohort 0.814, 25 no-shape), 3-shot 0.915;
+end-to-end with coder-32B on SQL **0.762** ≈ 0.887 × 0.875. The coder-32B
+report-tier failure is model-specific, so issue 35 is a scoring-policy question,
+not a frame defect. Local headline configuration from here: **instruct for S1,
+coder for SQL**; the compose gap to Opus at 32B is 0.07, not 0.55.

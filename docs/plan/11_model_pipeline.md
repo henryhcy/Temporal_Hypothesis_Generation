@@ -1105,6 +1105,10 @@ Chance ≈ 0.33 on verdicts. Per-tier = report / vaccine / multi (158 / 222 / 20
 | S2 isolation | rules+llm-sql | qwen2.5-coder:32b | **0.875** | 1.0 | — | — | — | 1.00 / 0.78 / 0.90 | **0.695** (all-sets EM 0.40; co-exist leak any 0.37, mean 0.37; not-loc FPR 0.00) |
 | S3 counts-llm (242) | counts-llm | qwen2.5-coder:7b | 0.655 | — | — | — | — | — | p agree **0.000** (n=198) |
 | S3 counts-llm (242) | counts-llm | qwen2.5-coder:32b | 0.725 | — | — | — | — | — | p agree **0.020** (n=198) |
+| **toolbox zs** | llm-s1+compiler / toolbox | **qwen2.5:32b-instruct** | **0.887** | 0.870 | 25 (all vaccine; 0 report-tier) | 0.611 | 0.789 | **1.00** / 0.80 / 1.00 | — |
+| toolbox 3-shot | same, `--k-shot 3` | qwen2.5:32b-instruct | 0.915 | 0.912 | 32 (all report, cohort denominators) | 0.845 | 0.932 | 0.80 / 0.99 / 1.00 | — |
+| **e2e toolbox zs, mixed** | llm-s1+llm-sql / toolbox | **S1 qwen2.5:32b-instruct + SQL qwen2.5-coder:32b** | **0.762** | 0.870 | 25 | — | — | 1.00 / 0.58 / 0.90 | 0.554 |
+| catalogue + hints (lookup) | llm-s1+compiler / catalogue | qwen2.5:32b-instruct | queued | | | | | | |
 | register: research / media / clinical | toolbox zs | qwen2.5-coder:7b | 0.500 / 0.287 / 0.455 | | | | | (original 0.400) | |
 | register: research / media / clinical | toolbox zs | qwen2.5-coder:32b | 0.357 / 0.335 / 0.395 | | | | | (original 0.410; all carry the report-tier 0) | |
 
@@ -1137,6 +1141,16 @@ Chance ≈ 0.33 on verdicts. Per-tier = report / vaccine / multi (158 / 222 / 20
    multiplicative picture holds on the cohort tiers (32B: 0.65 S1 × 0.78 S2 ≈ 0.51
    vs 0.46 measured).
 7. **Registers**: the 7B swings by ±0.11 across registers; the 32B stays within 0.08.
+8. **Which 32B matters (added 06:00).** `qwen2.5:32b-instruct` composes at **0.887**
+   zero-shot (claim EM 0.870; report tier 1.000, cohort 0.814; 25 no-shape, none on
+   the report tier) and 0.915 with three plans — 0.07 below Opus. So the coder-32B
+   report-tier failure (reading 1) is model-specific, not a property of the frame;
+   issue 35 stays open only as a scoring-policy question. The few-shot leak ranks
+   inversely with composition strength: +0.03 (instruct-32B), +0.04 (Opus), +0.17
+   (coder-32B). **Local headline configuration = instruct for S1, coder for SQL**:
+   end-to-end 0.762 ≈ 0.887 × 0.875 (stages independent again; denominator F1 0.55).
+   Curiously the instruct-32B's 32 three-shot no-shapes are ALL report-tier cohort
+   denominators — the worked plans (all cohort-shaped) pull it toward the coder's error.
 
 ### 10.4 M3–M5 — designed, not built
 
