@@ -394,8 +394,8 @@ formats, with the group label withheld and the procedure unspecified.
 \toprule
 Run & Aspect under test & Setting (S1 / S2 / S3) & Model & Recs & Acc. & Key diagnostic \\
 \midrule
-\multicolumn{7}{l}{\textit{Stage 1 --- hypothesis $\rightarrow$ structured claim}} \\
-smoke-1 & extraction, no hints & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.740 & tier confusion: report-tier acc.\ 0.414 \\
+\multicolumn{7}{l}{\textit{Stage 1 --- hypothesis $\rightarrow$ structured claim, \textbf{catalogue given} (procedure-given upper bound; capability rows in Table~\ref{tab:toolbox})}} \\
+smoke-1 & lookup, no hints & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.740 & tier confusion: report-tier acc.\ 0.414 \\
 smoke-1b & \quad + tier hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.918 & one prompt line; report-tier 0.414$\rightarrow$0.848 \\
 smoke-1c & \quad + routing hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.928 & +0.010, but redistributes errors \\
 \midrule
@@ -409,7 +409,7 @@ counts-llm & the exact test itself & rules / compiler / \textbf{LLM} & Opus & 24
 \multicolumn{7}{l}{\textit{Joint --- no structured intermediate}} \\
 e2e-sql & S1+S2 without the claim & \textbf{sentence} / LLM / exact & Opus & 400 & 0.860 & denominator F1 0.95$\rightarrow$0.67; see Table~\ref{tab:e2econd} \\
 \midrule
-\multicolumn{7}{l}{\textit{Full pipeline}} \\
+\multicolumn{7}{l}{\textit{Full pipeline, catalogue-given S1 (upper bound; toolbox re-runs pending)}} \\
 smoke-3 & end to end, local & LLM / LLM / exact & Qwen2.5-7B & 400 & 0.292 & errors compound multiplicatively \\
 smoke-5 & end to end, mixed & LLM / LLM / exact & 7B + Opus & 400 & 0.903 & $\approx 0.928 \times 0.975$: stages independent \\
 \bottomrule
@@ -418,6 +418,10 @@ smoke-5 & end to end, mixed & LLM / LLM / exact & 7B + Opus & 400 & 0.903 & $\ap
 \emph{rules} is the exact reverse-template parser, \emph{compiler} the reference
 SQL, \emph{exact} the deterministic test; a stage in bold is the one under test.
 Every run is blind-group and procedure-blind on the same 200-instance slice.
+The Stage-1 and full-pipeline rows use the \emph{catalogue} prompt, which hands
+the model the claim-type table with its null, test and conditioning rule, so
+they measure classification and lookup; the honest Stage-1 numbers, with that
+mapping withheld, are in Table~\ref{tab:toolbox}.
 Accuracy is over answerable records; the counts-only run covers the 13
 cohort-tier groups, since the report tier is a single exact observation with no
 counts to reason from.}
