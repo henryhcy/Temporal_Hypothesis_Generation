@@ -617,7 +617,7 @@ StatQA \cite{zhu2024statqa} & applicability only & nothing computed & no & no & 
 DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & open-ended hypothesis & agent code & no & no & rubric / expert & no \\
 EHRAgent / EHRSQL \cite{shi2024ehragent,lee2022ehrsql} & no (QA / SQL) & agent code / SQL & no & yes (EHR) & answer / execution & schema \\
 VERITAS \cite{veritas2026} & plans the analysis & own code + deterministic classifier & no & yes (imaging) & verdict vs.\ reference & data + description \\
-CRAFT / TIMER \cite{craft2026,timer2025} & n/a (extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
+CRAFT / TIMER \cite{timer2025} & n/a (extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
 \midrule
 \textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last & \textbf{yes}: annotated VAERS timelines & \textbf{every stage}: claim, evidence set (denominator), counts, $p$, verdict & dataset card (one corpus so far) \\
 \bottomrule
