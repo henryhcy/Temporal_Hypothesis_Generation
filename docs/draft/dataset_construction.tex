@@ -389,38 +389,39 @@ formats, with the group label withheld and the procedure unspecified.
 
 \begin{table*}[t]
 \centering
-\small
-\begin{tabular}{llllrrl}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}l p{2.5cm} l l r r Y@{}}
 \toprule
 Run & Aspect under test & Setting (S1 / S2 / S3) & Model & Recs & Acc. & Key diagnostic \\
 \midrule
-\multicolumn{7}{l}{\textit{Stage 1 --- hypothesis $\rightarrow$ structured claim, \textbf{catalogue given} (procedure-given upper bound; capability rows in Table~\ref{tab:toolbox})}} \\
+\multicolumn{7}{@{}l}{\textit{Stage 1 --- hypothesis $\rightarrow$ structured claim, \textbf{catalogue given} (upper bound; capability rows in Table~\ref{tab:toolbox})}} \\
 smoke-1 & lookup, no hints & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.740 & tier confusion: report-tier acc.\ 0.414 \\
 smoke-1b & \quad + tier hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.918 & one prompt line; report-tier 0.414$\rightarrow$0.848 \\
 smoke-1c & \quad + routing hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.928 & +0.010, but redistributes errors \\
 \midrule
-\multicolumn{7}{l}{\textit{Stage 2 --- claim $\rightarrow$ conditioning-correct retrieval}} \\
+\multicolumn{7}{@{}l}{\textit{Stage 2 --- claim $\rightarrow$ conditioning-correct retrieval}} \\
 smoke-2 & retrieval (text-to-SQL) & rules / LLM / exact & Qwen2.5-7B & 400 & 0.545 & 128/486 invalid SQL; conditioning wrong 41.5\% \\
 smoke-4 & retrieval (text-to-SQL) & rules / LLM / exact & Opus & 400 & 0.975 & 22/486 invalid; \texttt{not\_loc} FPR 0.18$\rightarrow$0.00 \\
 s2-32b & retrieval (text-to-SQL) & rules / LLM / exact & Coder-32B & 400 & 0.875 & denominator F1 0.695; \emph{co-exist} leak on 37\% of \emph{precedes} records \\
 s2-32b-inst & retrieval (text-to-SQL) & rules / LLM / exact & 32B-Inst. & 400 & 0.830 & denominator F1 0.705; leak 23\%; two-cohort tier 0.30 (coder 0.90) \\
 \midrule
-\multicolumn{7}{l}{\textit{Stage 3 --- counts $\rightarrow$ verdict}} \\
+\multicolumn{7}{@{}l}{\textit{Stage 3 --- counts $\rightarrow$ verdict}} \\
 counts-llm & the exact test itself & rules / compiler / \textbf{LLM} & Opus & 242 & 0.959 & \textbf{p-values agree only 66\%}; Fisher 52\% \\
 counts-32b & the exact test itself & rules / compiler / \textbf{LLM} & Coder-32B & 242 & 0.725 & p-values agree \textbf{2\%} (7B: 0\%); verdicts from direction alone \\
 \midrule
-\multicolumn{7}{l}{\textit{Joint --- no structured intermediate}} \\
+\multicolumn{7}{@{}l}{\textit{Joint --- no structured intermediate}} \\
 e2e-sql & S1+S2 without the claim & \textbf{sentence} / LLM / exact & Opus & 400 & 0.860 & denominator F1 0.95$\rightarrow$0.67; see Table~\ref{tab:e2econd} \\
 \midrule
-\multicolumn{7}{l}{\textit{Full pipeline, catalogue-given S1 (upper bound)}} \\
+\multicolumn{7}{@{}l}{\textit{Full pipeline, catalogue-given S1 (upper bound)}} \\
 smoke-3 & end to end, local & LLM / LLM / exact & Qwen2.5-7B & 400 & 0.292 & errors compound multiplicatively \\
 smoke-5 & end to end, mixed & LLM / LLM / exact & 7B + Opus & 400 & 0.903 & $\approx 0.928 \times 0.975$: stages independent \\
-\multicolumn{7}{l}{\textit{Full pipeline, toolbox zero-shot S1 (mapping withheld; local only)}} \\
+\multicolumn{7}{@{}l}{\textit{Full pipeline, toolbox zero-shot S1 (mapping withheld; local only)}} \\
 tb-e2e-7b & end to end, local & LLM / LLM / exact & Coder-7B & 400 & 0.320 & S1 0.400 $\times$ S2 0.540; denominator F1 0.17 \\
 tb-e2e-32b & end to end, local & LLM / LLM / exact & Coder-32B & 400 & 0.302 & report tier 0.00 (Table~\ref{tab:toolbox}); cohort tiers 0.46 / 0.90 \\
 tb-e2e-32b-mix & end to end, local & LLM / LLM / exact & 32B-Inst.\,+\,Coder-32B & 400 & \textbf{0.762} & $\approx 0.887 \times 0.875$; denominator F1 0.55 \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Stage-isolation baselines. ``Setting'' names what fills each stage:
 \emph{rules} is the exact reverse-template parser, \emph{compiler} the reference
 SQL, \emph{exact} the deterministic test; a stage in bold is the one under test.
@@ -523,7 +524,7 @@ retrieved counts --- and the harness derives the claim type from the plan by
 reverse lookup. Table~\ref{tab:toolbox} compares the two frames on the same
 slice.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
 \begin{tabular}{lrrrrr}
@@ -545,7 +546,7 @@ claim type; its cohort-tier compose accuracy is 0.678 zero-shot and 0.959 with
 three worked plans (lookup 0.987). The instruct variant of the same 32B never
 makes that error zero-shot (report tier 1.000).}
 \label{tab:toolbox}
-\end{table}
+\end{table*}
 
 The gap is model-tier, not task ambiguity. Withholding the mapping costs the 7B
 model 25--30 points, almost all of it whole-shape misreads (110--125 of 400
@@ -612,10 +613,10 @@ records), and VERITAS (multi-agent plan / statistics /
 interpretation, 39 balanced hypotheses, once with its own test pool and once
 with ours). Table~\ref{tab:external} reports them.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \small
-\begin{tabular}{llrl}
+\begin{tabularx}{\textwidth}{@{}l l r Y@{}}
 \toprule
 System & Stage & Acc. & Where it fails \\
 \midrule
@@ -626,7 +627,7 @@ StatQA-style, 32B & S3 & 0.364 & $\chi^2$ where Fisher is required; no argmax te
 VERITAS, own tests & S1--S3 & 0.333 & no one-sample test; 14/39 time out \\
 VERITAS, our tests & S1--S3 & 0.308 & picks our test 33\%; denominator wrong \\
 \bottomrule
-\end{tabular}
+\end{tabularx}
 \caption{Published systems on the cohort and multi tiers, verdict accuracy
 (chance $\approx 0.33$). EHRAgent and EHRSQL over the 200-instance slice;
 StatQA-style over its cohort-tier subset; VERITAS over 3 hypotheses per group,
@@ -634,7 +635,7 @@ balanced over verdicts, with a 40-minute cap per run. Each system received the
 schema and a short data description, not the situation-phrased conventions of
 the toolbox frame.}
 \label{tab:external}
-\end{table}
+\end{table*}
 
 None of them clears chance by much, and they fail in the same place. The
 EHRSQL query returns the gold counts on 2.9\% of records although its verdict
