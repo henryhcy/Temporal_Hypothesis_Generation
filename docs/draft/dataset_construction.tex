@@ -601,6 +601,48 @@ Templated paraphrase is therefore a real but bounded perturbation for a capable
 model, and the release's four registers make it a standard row rather than a
 separate study.
 
+\subsection{Where retrieval fails: attribution and faithfulness}
+
+Every prediction records the report ids it placed in each denominator, and the
+compiler gives the gold ids for the same record, so each wrongly included or
+dropped report can be checked against the claim's own rule in the database and
+named. Table~\ref{tab:attribution} does this for the local S2 runs. The largest
+named cause had been invisible to every aggregate metric: the query defines the
+eligible set as the supporting set (\texttt{in\_denominator} as $a.\mathit{level} <
+b.\mathit{level}$), so $n = k$ and the claim is supported for free. The last row
+is the \emph{faithfulness} score, $P(\text{denominator exact} \mid \text{verdict
+right})$: between a third and a half of the correct verdicts rest on a wrong
+denominator, which is the quantity verdict accuracy cannot see.
+
+\begin{table}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrr}
+\toprule
+S2 failure cause (242 cohort records) & Coder-7B & Coder-32B & 32B-Inst. & E2E mix \\
+\midrule
+no valid SQL & 0 & 0 & 0 & 25 \\
+denominator $=$ numerator ($n=k$) & 34 & 24 & 40 & 44 \\
+event absent from report & 14 & 46 & 42 & 19 \\
+\emph{co-exist} leak into \emph{precedes} & 4 & 14 & 6 & 10 \\
+wrong cohort & 0 & 10 & 2 & 10 \\
+split narrowed to co-occurrence & 10 & 2 & 2 & 0 \\
+\emph{co-exist} wrongly dropped & 4 & 0 & 2 & 0 \\
+other omission & 138 & 40 & 28 & 42 \\
+\midrule
+wrong denominators & 204 & 136 & 122 & 150 \\
+\quad of which verdict still right & 32 & 86 & 54 & 58 \\
+\textbf{faithfulness} $P(\text{den.\ exact} \mid \text{verdict right})$ & 0.45 & 0.55 & 0.69 & 0.61 \\
+\bottomrule
+\end{tabular}
+\caption{Attribution of denominator failures to the conditioning rule violated,
+and the faithfulness score. S1 at gold except the end-to-end column (32B-Inst.\
+S1, Coder-32B SQL, toolbox zero-shot). A record takes its dominant cause;
+``other omission'' is under-inclusion not yet matched to a rule.}
+\label{tab:attribution}
+\end{table}
+
 \subsection{External systems}
 
 We also ran three published systems on the same data, all with a local 32B

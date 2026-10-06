@@ -2755,3 +2755,34 @@ inflates, and which failure is architectural (arithmetic). Confirmed today for
 analysis: the faithfulness score P(all stages right | verdict right). Pending
 decisions: S2 stipulation-attribution profile, power-aware abstention metric,
 P-Bench disclosure audit + arithmetic-by-architecture, v1.2 scope.
+
+
+## DECIDED: stage attribution and faithfulness are headline diagnostics; abstention is scored; v1.2 = N1–N4; P-Bench held (2026-10-06)
+
+- **S2 stipulation-attribution profile** (`scripts/s2_attribution.py`): every
+  wrong denominator is attributed to a named rule by set difference against the
+  compiler's gold ids, checked in the eval DB. First measurement (v1.1 smoke,
+  242 cohort records): coder-7B 204 wrong, coder-32B 136, instruct-32B 122, e2e
+  instruct+coder 150. The dominant local cause is **denominator = numerator**
+  (the query defines the eligible set as the supporting set, n = k, so the claim
+  is supported for free): 40 of instruct-32B's 122, 44 of the mixed e2e's 150. Faithfulness P(denominator exact | verdict right): coder-7B 0.45, coder-32B 0.55, instruct-32B 0.69, e2e mix 0.61. Others: event absent, co-exist
+  leak, wrong cohort, tie leak, association split narrowed to co-occurrence.
+- **Faithfulness score** P(all scored stages right | verdict right), reported
+  beside accuracy for every system; the "lucky" rate is its complement.
+- **Abstention metrics**: false-decisiveness rate (supported/refuted on
+  gold-insufficient), over-abstention rate (insufficient on decisive gold), and
+  insufficient-subtype accuracy (not_locatable / sparse / underpowered).
+- **v1.2 families confirmed**: N1 position with the structural null (T-R1/R2,
+  T-V1/V2), N2 immediate succession (Y-R1/R2, Y-V1/V2), N3 adjacency vs chance
+  (Y-V3), N4 text-stated bars at ≥ 2/3 and ≥ 1/2 (H-V1, H-V3, H-V5; H-V4 to
+  screen; H-V2 ≥ 3/4 dropped). Composition layer (caps, report-tier third class,
+  C-R1 balance) still to be decided.
+- **P-Bench held**: direction (our pipeline on their data vs their pipelines on
+  our data) undecided.
+- **New line of inquiry — pretraining knowledge of VAERS**: VAERS narratives are
+  public, so a frontier model may answer from priors rather than from the data.
+  Experiments to design: closed-book verdicts (no DB) across model vintages
+  (2023 → 2026), a counterfactual control (same claims over label-flipped or
+  synthetic timelines), report-id recall (VAERS id present vs masked), and the
+  data-minus-closed-book gain. Mitigation to consider: pseudonymised report ids
+  in the release.
