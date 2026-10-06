@@ -2736,3 +2736,22 @@ configuration stands. Registers, toolbox zero-shot, instruct-32B: original
 0.887 / research 0.772 / media 0.855 / clinical 0.840 (claim EM 0.870 → 0.728
 on research; no-shape 25 → 55). Draft: `tab:registers` + a paraphrase-sensitivity
 paragraph; Table 7 row s2-32b-inst.
+
+
+## RECORDED, NOT APPLIED: reframing as statistical claim verification against public data (2026-10-06)
+
+Candidate framing for the WWW 2027 submission, recorded on request and held
+until the dataset and pipeline work is settled. The instances are claims about
+VAERS — the most-cited and most-misused public health dataset on the web — each
+with a computable truth value; the task is then *statistical claim verification
+over structured public data*, adjacent to fact verification over tables (FEVER,
+TabFact, FEVEROUS, SciFact, QuanTemp's numerical claims), where no benchmark
+carries stage-level gold or a statistical test. This supplies the Web-relevance
+statement WWW requires and drops the "temporal reasoning" overclaim ("event-order
+claims over annotated timelines" instead). Companion thesis (also recorded, not
+yet adopted): verdict accuracy is not evidence of verification; a stage-gold
+instrument shows where pipelines fail (the denominator), what prompt disclosure
+inflates, and which failure is architectural (arithmetic). Confirmed today for
+analysis: the faithfulness score P(all stages right | verdict right). Pending
+decisions: S2 stipulation-attribution profile, power-aware abstention metric,
+P-Bench disclosure audit + arithmetic-by-architecture, v1.2 scope.
