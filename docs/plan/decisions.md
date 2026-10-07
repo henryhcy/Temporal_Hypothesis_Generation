@@ -2908,3 +2908,38 @@ counts raw `level_terms`, not first-mention ranks (cosmetic; the model-facing
 numbers differ slightly from the null the harness computes). (4) `run_eval.py
 --release` still defaults to v1. **v1.2 is NOT the working release until the
 review and the screen are done.**
+
+**Pilot on the v1.2 smoke slice (instruct-32B, same evening).** Catalogue
+(lookup) **0.990**: every new group at or near 1.0 when the mapping is given, so
+the compiler, procedures and both computed nulls work for a model end to end.
+Toolbox zero-shot, three scoring/prompt variants on the same 200 instances:
+
+| | v1.1 slice | v1.2 slice |
+|---|---|---|
+| conventions v1 (09-30 text) | 0.887 | 0.767 |
+| conventions v2, strict null-kind signature | 0.843 | 0.777 |
+| **conventions v2, with the two implied folds** | **0.890** | **0.863** |
+
+Conventions v2 (`extract/llm.py`, commit 304e903) states that order words are
+distance-blind and only adjacency wording conditions on consecutive ranks; the
+v1 text had every comparative-precedes group (P-V2/P-V4/P-M2, H-V1) composed as
+immediate succession. Under the strict signature a wrong null KIND made a whole
+plan unmappable (C-V1/F-V1/S-V3 labelled `data_derived`); the two folds (commit
+f2a0526) fix that without touching the answer: consecutive_pair + order_of_pair
+=> immediate order; a derived/stated null on a shape with no such twin keeps
+its shape and the null kind is scored as a plan field. With both, the v1.1 slice
+is back at 0.890 (= the 09-30 number), so v1.1 rows stay comparable.
+New groups under the folded scoring (n = 96): mean **0.823** -- T-V1 1.0
+(**the data-derived null is formulated zero-shot**), Y-V1/Y-V2 1.0, H-V1 1.0,
+H-V3 1.0, S-V3 0.83, Y-V3 0.75, Y-R1 0.62, H-V5 0.62, T-R1 0.0 (report-tier
+position composed with the cohort denominator -- issue 35, NOT folded).
+Still open on v1.1 groups: P-V2 0.0 (antecedent composed as immediate order
+over ordered_pair) and C-V2 0.0 (association as plain co-occurrence), both
+known from the 09-30 runs.
+
+**Review items (decide before v1.2 becomes the working release):** (1) adopt the
+v2 conventions text as the v1.2 task card and report the v1-vs-v2 sensitivity
+(0.887/0.843/0.890 on v1.1) as the wording dial; (2) keep the two folds (they
+are implied-field folds in the 09-30 sense; the report-tier fold of issue 35 is
+not among them); (3) H-V3 (12 instances) in or out of the headline set; (4) the
+composition layer; (5) the four deferred groups.
