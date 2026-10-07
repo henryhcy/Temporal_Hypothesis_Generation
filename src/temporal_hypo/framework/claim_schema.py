@@ -683,6 +683,10 @@ def normalize_plan_shape(tier: str, answer_type: str, n_events: int, arms: int |
             conditioning = "ordered_pair"
     if quantity != "extreme_of_set":
         extreme = None
+    # v1.2 implied fold: the consecutive-pair denominator already says the order
+    # is IMMEDIATE ("when A and B are at consecutive stages, A comes first").
+    if conditioning == "consecutive_pair" and quantity == "order_of_pair":
+        quantity = "immediate_order_of_pair"
     # v1.2: the null kind is IMPLIED for every shape but a bar / derived claim:
     # a report is observed (none), two arms test equality, a quantity with no
     # stated bar and no derived reference is symmetric. Only text_stated and
@@ -693,8 +697,20 @@ def normalize_plan_shape(tier: str, answer_type: str, n_events: int, arms: int |
         null_kind = "two_arm_equality"
     elif null_kind not in ("text_stated", "data_derived"):
         null_kind = "symmetric_fixed"
-    return plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme,
-                          null_kind)
+    key = plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme,
+                         null_kind)
+    # v1.2 implied fold: the conventions say which quantities carry a derived
+    # null (one event's position; adjacency) and the text says when a bar is
+    # stated. A plan whose shape has no such twin keeps its SHAPE and its null
+    # kind is scored as a wrong plan field (null_kind / p0) rather than making
+    # the whole plan unmappable. Uses the plan's own fields and the mode table,
+    # never the instance's answer.
+    if key not in MODE_BY_SIGNATURE and null_kind in ("text_stated", "data_derived"):
+        alt = plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme,
+                             "symmetric_fixed")
+        if alt in MODE_BY_SIGNATURE:
+            return alt
+    return key
 
 
 def derive_mode(tier: str, answer_type: str, n_events: int, arms: int | None,

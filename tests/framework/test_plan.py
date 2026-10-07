@@ -184,3 +184,24 @@ def test_two_candidate_extreme_is_a_pair_order():
                 quantity="extreme_of_set", extreme="latest", asserted_option=terms[0])
     back = claim_from_plan(plan, row, source="test")
     assert back.mode == "rep_dir_choice" and back.terms == tuple(terms[::-1])
+
+
+def test_v12_implied_folds():
+    """v1.2 (decisions.md 2026-10-07): two folds that use only the plan's own fields."""
+    # the consecutive-pair denominator implies the immediate order quantity
+    assert derive_mode("vaccine", "BOOL", 2, 1, "consecutive_pair", "order_of_pair") == "imm_bool"
+    assert derive_mode("vaccine", "CHOICE", 2, 1, "consecutive_pair", "order_of_pair") == "imm_choice"
+    # a derived / stated null on a shape that has no such twin keeps its shape
+    assert derive_mode("vaccine", "BOOL", 2, 1, "both_present", "co_occurrence_of_pair",
+                       None, "data_derived") == "sym_bool_cooccurs"
+    assert derive_mode("vaccine", "CHOICE", 3, 1, "all_present_unique_first", "extreme_of_set",
+                       "earliest", "data_derived") == "first_choice"
+    # ... but a bar twin that EXISTS is selected by the null kind, never folded away
+    assert derive_mode("vaccine", "BOOL", 2, 1, "ordered_pair", "order_of_pair", None,
+                       "text_stated") == "precedes_bar"
+    assert derive_mode("vaccine", "BOOL", 2, 1, "ordered_pair", "order_of_pair", None,
+                       "symmetric_fixed") == "dir_bool"
+    assert derive_mode("vaccine", "BOOL", 1, 1, "present_offmid", "position_of_event", None,
+                       "symmetric_fixed") is None          # position has no 0.5 twin
+    # the report tier is NOT folded (issue 35 is the user's decision)
+    assert derive_mode("report", "BOOL", 1, 1, "present_offmid", "position_of_event") is None
