@@ -201,3 +201,25 @@ than trusting this list to be complete:
 
 See `open_questions.md` for items that are still under discussion (e.g.,
 sequence with internal co-occurrence, exact synonym table contents).
+
+### v1.2 additions to the locked rules (2026-10-07, decisions.md BUILT v1.2)
+
+11. **Stages are first-mention RANKS.** A report's stages are its occupied
+    first-mention levels, ranked 0, 1, 2, ... from the earliest (dense; levels
+    can have gaps). Two events are at *consecutive* stages when their ranks
+    differ by exactly one.
+12. **Denominator for `immediate(A, B)`**: reports with A and B at consecutive
+    ranks; co-existing and gapped pairs leave the denominator. Null 0.5
+    (slot-orientable, like precedes).
+13. **Denominator for `position(A)`** ("A in the earlier half"): reports
+    containing A with at least two stages whose A is not on the exact middle
+    rank. The null is NOT 0.5: it is the mean over the denominator of each
+    report's early-slot share (the structural early-rate; doc 10 §4.3),
+    computed from the data. Orientation by negation.
+14. **`adjacency(A, B)`** ("consecutive more often than chance"): the
+    ordered-pair denominator, numerator = adjacent, null = the mean of 2/L
+    over the denominator (L = the report's stage count). Orientation by negation.
+15. **Text-stated bars** ("in at least two thirds", "in at least half"): the
+    existing statistic against the bar read off the text; supported =
+    significantly above, refuted = significantly below; each orientation is
+    its own instance (no mirror pairs).

@@ -87,9 +87,14 @@ level.~~ **SUPERSEDED 2026-08-11**: tie reports leave the DENOMINATOR entirely
 | sequence  | 1      | 2       | 2     |  5    | `sequence.yaml`   |
 | first/last| 3      | 3       | 2     |  8    | `first_last.yaml` |
 | **Total** | **7**  | **9**   | **7** | **23** |                  |
+| position (v1.2) | 1 | 1 | 0 | 2 | `position.yaml` |
+| proximity (v1.2) | 1 | 3 | 0 | 4 | `proximity.yaml` |
+| threshold (v1.2) | 0 | 3 | 0 | 3 | `threshold.yaml` |
 
 (pairwise covers both `precedes` and `co_occurs`, which is why its count is
-higher than the others.)
+higher than the others.) **2026-10-07: the three v1.2 files add nine groups; the
+shipping roster is 29.** A group may carry `null_ref` (a number for a text-stated
+bar, `structural` for a data-derived null); see decisions.md BUILT v1.2.
 
 **Read this table as a snapshot, not a spec** — it is regenerable with
 `grep -c '^- id: ' data/templates/*.yaml`, and it has been wrong before. The

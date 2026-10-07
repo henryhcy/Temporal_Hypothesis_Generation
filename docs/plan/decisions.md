@@ -2830,3 +2830,81 @@ A read-only audit of prompts, run configs and the draft against the question
 (six runs, ≈ $60 + 1 GPU-hour; prompt variants to add: `--e2e-conventions`,
 `--s2-frame toolbox`, `--s2-replan`) to claim the architecture, or drop the
 architecture claim and state the information result.
+
+
+## BUILT: v1.2 families -- position, proximity, threshold (branch `v1.2`, 2026-10-07; issue 32)
+
+Nine groups from the 08-14 candidate families, shipped as three new template
+files (`data/templates/position.yaml`, `proximity.yaml`, `threshold.yaml`); the
+20 v1.1 groups regenerate unchanged. Release `data/release/v1.2`: **158,624
+records / 19,828 instances / 29 groups / 9,890 distinct facts** (v1.1: 147,936 /
+18,492 / 20 / 8,964). Seed 0, target 300, same generator settings.
+
+| group | mode | claim (original) | denominator | null | S/R/I | n (median) |
+|---|---|---|---|---|---|---|
+| T-V1 | `early_bool` | A in the earlier half more often than chance | `present_offmid` (A present, >= 2 stages, A off the middle rank) | **data-derived**: p0 = mean per-report early-slot share over the denominator | 34/34/34 | 145 |
+| T-R1 | `rep_early_bool` | in report r, A occurred in the first half | single_report (whole report) | none | 131/131/0 | -- |
+| Y-V1 / Y-V2 | `imm_bool` / `imm_choice` | when A and B are at consecutive stages, A comes first | `consecutive_pair` (|rank(A) - rank(B)| = 1) | symmetric 0.5 | 68/68/68 each | 17 |
+| Y-R1 | `rep_imm_bool` | in report r, A at the stage directly before B | single_report (whole report) | none | 181/181/0 | -- |
+| Y-V3 | `adj_rate_bool` | A and B at consecutive stages more often than chance | `ordered_pair`; numerator = adjacent | **data-derived**: p0 = mean 2/L over the denominator | 35/35/35 | 26 |
+| H-V1 | `precedes_bar` | A precedes B in >= 2/3 of ordered reports | `ordered_pair` | **text-stated** 0.667 | 35/35/35 | 16 |
+| H-V3 | `cooc_bar` | A and B co-occur in >= 2/3 of both-present reports | `both_present` | text-stated 0.667 | **4/4/4** | 26.5 |
+| H-V5 | `first_bar` | A is first in >= 1/2 of reports containing A, B, C | `all_present_unique_first`; k = named cell | text-stated 0.5 | 22/22/22 | 13.5 |
+
+**Design decisions (the build's own).**
+- Geometry is on first-mention RANKS (dense rank of a report's occupied
+  first-mention levels), via `corpus.rank_map` / `report_half` and a new eval-DB
+  view `first_mention_rank(vaers_id, vaccine, term, level, rank, n_ranks)`;
+  `reports.num_stages` disagrees with the rank count on one report and is not
+  used. The view is in the executor's read allow-list and the DDL models see.
+- `_null_ref(mode, core)` (issue 20): the effect size is measured against the
+  bar for threshold modes and against the core's computed p0 for the
+  data-derived modes; both travel on `core.extra["p0"]`.
+- **Bars are tested per orientation, not as mirror pairs**: "A before B in >=
+  2/3" and "B before A in >= 2/3" are separate cores with independent verdicts
+  (both can be refuted); H-V5 names each candidate in turn. The balancer now
+  caps equal thirds by the smaller feasible class pool (no change for v1.1
+  groups, where both pools equal S). Position and adjacency orient by
+  negation; immediate succession is slot-orientable like precedes.
+- In the harness a data-derived null is computed by S3 from the DATA behind the
+  retrieved denominator (`retrieve.derived_null_chance_sum`, 11 §13.2), so the
+  SQL row contract is unchanged and a model only has to retrieve the right
+  reports. The plan signature gains a null-kind axis (a bar claim has the same
+  shape as its 0.5 twin); `derive_plan` emits `text_stated` / `data_derived`.
+- Report-tier rank claims read the WHOLE report (`WHOLE_REPORT_MODES`): ranks
+  depend on every stage, not only on the claim's events.
+- Templates fixed on adoption: H-V5 now names A, B and C in every register and
+  no register says "distinct stages"; Y-V3 gained negated wording (four
+  registers, both formats) so it can supply both classes. Y-R1 pairs the
+  earliest event with a seeded choice among later events, so plain-posed
+  instances are not all adjacent.
+
+**Deferred (not in v1.2):** T-R2 / T-V2 (CHOICE position: no surface form for
+the "late" option), Y-R2 (A missing from its options), H-V4 (sequence >= 2x
+chance, unscreened), H-V2 (>= 3/4, dropped per doc 10), N5 burden (advisor
+scope call), the composition layer (per-group cap, report-tier third class,
+C-R1 balance, pseudonymised ids -- advisor decisions pending).
+
+**Certification.** `validate_gold --sample 0`: **55,119 instances, ALL CHECKS
+PASSED** (A-F; C/D extended for consecutive pairs, the off-middle denominator,
+the adjacency numerator and the recomputed data-derived nulls). **B0 oracle =
+exactly 100% over all 156,332 answerable records** (verdict / class-macro /
+group-macro 1.0, claim EM 1.0, denominator EM 1.0, p-agreement 1.0; 2,292
+underdetermined all expected; 1,123 s; `results/oracle_v1.2`). Compiler +
+gold procedure reproduce the generator on every oriented instance of the nine
+groups on real data. 652 tests pass (roster pins moved 20 -> 29; 280 template
+strings; 48 negated). Permutation screen (`scripts/screen_v12_groups.py`,
+level shuffle at the shipping universe, 2,000 rounds): RUNNING at write time;
+the 2-round probe clears every cohort group, H-V3 on `p_sup` only (the
+threshold-family pattern of doc 10 s4.2). Subsets:
+`results/subsets/eval_core_v1.2_pg90_s0.json` (2,369 instances) and
+`smoke_200_v1.2_s0.json` (200 over all 29 groups).
+
+**Flags for review.** (1) H-V3 has four supported cores in the whole
+top-25 universe: 12 instances; keep out of headline metrics or drop. (2) The
+new groups add 1,422 instances; the release stays dominated by P-V4 (8,571)
+until the composition layer lands. (3) `task_card.stage_population` still
+counts raw `level_terms`, not first-mention ranks (cosmetic; the model-facing
+numbers differ slightly from the null the harness computes). (4) `run_eval.py
+--release` still defaults to v1. **v1.2 is NOT the working release until the
+review and the screen are done.**

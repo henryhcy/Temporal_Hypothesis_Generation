@@ -42,6 +42,9 @@ wrong.
 - **`s1-toolbox` branch (2026-09-30):** S1 is evaluated under the TOOLBOX frame (`--s1-frame toolbox`,
   11 §11a/§13): conventions stated, mode mapping withheld, the model composes a conditional plan;
   the catalogue frame is the upper bound. Headline condition is zero-shot. API keys: gitignored `.env`.
+- **`v1.2` branch (2026-10-07):** nine new groups (position / proximity / threshold; data-derived
+  and text-stated nulls) in `data/release/v1.2`, validated and B0-certified, UNDER REVIEW; v1.1 stays
+  the working release until the review and the composition layer land. See decisions.md BUILT v1.2.
 - `docs/plan/decisions.md`        — locked decisions, **chronological and append-only**: read newest-first, and never quote one entry as current without checking for a later one on the same topic
 - `docs/plan/open_questions.md`   — items still under discussion (do not assume). Cleaned 08-12; every entry is genuinely open and carries its issue number
 

@@ -1,0 +1,947 @@
+{
+  "n_instances": 158624,
+  "n_groups": 29,
+  "part_b": {
+    "P-R1": {
+      "S": 300,
+      "counts": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 300
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 300,
+      "mirror_pairs": 300
+    },
+    "P-R2": {
+      "S": 300,
+      "counts": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 300
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 300,
+      "mirror_pairs": 300
+    },
+    "P-V1": {
+      "S": 167,
+      "counts": {
+        "supported": 167,
+        "refuted": 167,
+        "insufficient": 167
+      },
+      "targets": {
+        "supported": 167,
+        "refuted": 167,
+        "insufficient": 167
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 167,
+        "refuted": 167,
+        "insufficient": 792
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 56,
+        "sparse": 56,
+        "underpowered": 55
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 258,
+        "sparse": 448,
+        "not_locatable": 86
+      },
+      "reoriented": 167,
+      "mirror_pairs": 167
+    },
+    "P-V2": {
+      "S": 751,
+      "counts": {
+        "supported": 751,
+        "refuted": 751,
+        "insufficient": 751
+      },
+      "targets": {
+        "supported": 751,
+        "refuted": 751,
+        "insufficient": 751
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 751,
+        "refuted": 751,
+        "insufficient": 4543
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 251,
+        "sparse": 250,
+        "underpowered": 250
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 2264,
+        "sparse": 1969,
+        "not_locatable": 310
+      },
+      "reoriented": 751,
+      "mirror_pairs": 751
+    },
+    "P-V3": {
+      "S": 167,
+      "counts": {
+        "supported": 167,
+        "refuted": 167,
+        "insufficient": 167
+      },
+      "targets": {
+        "supported": 167,
+        "refuted": 167,
+        "insufficient": 167
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 167,
+        "refuted": 167,
+        "insufficient": 792
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 56,
+        "sparse": 56,
+        "underpowered": 55
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 258,
+        "sparse": 448,
+        "not_locatable": 86
+      },
+      "reoriented": 167,
+      "mirror_pairs": 167
+    },
+    "P-V4": {
+      "S": 2857,
+      "counts": {
+        "supported": 2857,
+        "refuted": 2857,
+        "insufficient": 2857
+      },
+      "targets": {
+        "supported": 2857,
+        "refuted": 2857,
+        "insufficient": 2857
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 2857,
+        "refuted": 2857,
+        "insufficient": 14479
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 953,
+        "sparse": 952,
+        "underpowered": 952
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 6210,
+        "sparse": 7132,
+        "not_locatable": 1137
+      },
+      "reoriented": 2857,
+      "mirror_pairs": 2857
+    },
+    "P-M2": {
+      "S": 29,
+      "counts": {
+        "supported": 29,
+        "refuted": 29,
+        "insufficient": 29
+      },
+      "targets": {
+        "supported": 29,
+        "refuted": 29,
+        "insufficient": 29
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 29,
+        "refuted": 29,
+        "insufficient": 518
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 10,
+        "sparse": 10,
+        "underpowered": 9
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 241,
+        "sparse": 251,
+        "not_locatable": 26
+      },
+      "reoriented": 29,
+      "mirror_pairs": 29
+    },
+    "C-R1": {
+      "S": 300,
+      "counts": {
+        "supported": 107,
+        "refuted": 107,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 107,
+        "refuted": 107,
+        "insufficient": 107
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 193,
+        "refuted": 107,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 0,
+      "mirror_pairs": 107
+    },
+    "C-V1": {
+      "S": 252,
+      "counts": {
+        "supported": 252,
+        "refuted": 252,
+        "insufficient": 252
+      },
+      "targets": {
+        "supported": 252,
+        "refuted": 252,
+        "insufficient": 252
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 252,
+        "refuted": 252,
+        "insufficient": 735
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 84,
+        "sparse": 84,
+        "underpowered": 84
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 267,
+        "sparse": 358,
+        "not_locatable": 110
+      },
+      "reoriented": 252,
+      "mirror_pairs": 252
+    },
+    "C-V2": {
+      "S": 349,
+      "counts": {
+        "supported": 349,
+        "refuted": 349,
+        "insufficient": 349
+      },
+      "targets": {
+        "supported": 349,
+        "refuted": 349,
+        "insufficient": 349
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 349,
+        "refuted": 349,
+        "insufficient": 671
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 120,
+        "underpowered": 229
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 551,
+        "not_locatable": 120
+      },
+      "reoriented": 349,
+      "mirror_pairs": 349
+    },
+    "C-V3": {
+      "S": 174,
+      "counts": {
+        "supported": 174,
+        "refuted": 174,
+        "insufficient": 174
+      },
+      "targets": {
+        "supported": 174,
+        "refuted": 174,
+        "insufficient": 174
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 174,
+        "refuted": 174,
+        "insufficient": 787
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 58,
+        "sparse": 58,
+        "underpowered": 58
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 345,
+        "sparse": 358,
+        "not_locatable": 84
+      },
+      "reoriented": 174,
+      "mirror_pairs": 174
+    },
+    "S-R1": {
+      "S": 300,
+      "counts": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 300
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 300,
+      "mirror_pairs": 300
+    },
+    "S-V1": {
+      "S": 2,
+      "counts": {
+        "supported": 2,
+        "refuted": 2,
+        "insufficient": 2
+      },
+      "targets": {
+        "supported": 2,
+        "refuted": 2,
+        "insufficient": 2
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 2,
+        "refuted": 2,
+        "insufficient": 1682
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 1,
+        "sparse": 1,
+        "underpowered": 0
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 233,
+        "sparse": 959,
+        "not_locatable": 490
+      },
+      "reoriented": 2,
+      "mirror_pairs": 2
+    },
+    "S-V3": {
+      "S": 2,
+      "counts": {
+        "supported": 2,
+        "refuted": 2,
+        "insufficient": 2
+      },
+      "targets": {
+        "supported": 2,
+        "refuted": 2,
+        "insufficient": 2
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 2,
+        "refuted": 2,
+        "insufficient": 1682
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 1,
+        "sparse": 1,
+        "underpowered": 0
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 233,
+        "sparse": 959,
+        "not_locatable": 490
+      },
+      "reoriented": 2,
+      "mirror_pairs": 2
+    },
+    "F-R1": {
+      "S": 300,
+      "counts": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 300
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 300,
+      "mirror_pairs": 300
+    },
+    "F-R2": {
+      "S": 300,
+      "counts": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 300
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 300,
+      "mirror_pairs": 300
+    },
+    "F-R3": {
+      "S": 300,
+      "counts": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 300
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 300,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 300,
+      "mirror_pairs": 300
+    },
+    "F-V1": {
+      "S": 34,
+      "counts": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 34
+      },
+      "targets": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 34
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 1661
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 12,
+        "sparse": 11,
+        "underpowered": 11
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 144,
+        "sparse": 1193,
+        "not_locatable": 324
+      },
+      "reoriented": 34,
+      "mirror_pairs": 34
+    },
+    "F-V2": {
+      "S": 46,
+      "counts": {
+        "supported": 46,
+        "refuted": 46,
+        "insufficient": 46
+      },
+      "targets": {
+        "supported": 46,
+        "refuted": 46,
+        "insufficient": 46
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 46,
+        "refuted": 46,
+        "insufficient": 1653
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 16,
+        "sparse": 15,
+        "underpowered": 15
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 172,
+        "sparse": 1212,
+        "not_locatable": 269
+      },
+      "reoriented": 46,
+      "mirror_pairs": 46
+    },
+    "F-V3": {
+      "S": 34,
+      "counts": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 34
+      },
+      "targets": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 34
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 1661
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 12,
+        "sparse": 11,
+        "underpowered": 11
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 144,
+        "sparse": 1193,
+        "not_locatable": 324
+      },
+      "reoriented": 34,
+      "mirror_pairs": 34
+    },
+    "T-R1": {
+      "S": 300,
+      "counts": {
+        "supported": 131,
+        "refuted": 131,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 131,
+        "refuted": 131,
+        "insufficient": 131
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 169,
+        "refuted": 131,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 0,
+      "mirror_pairs": 131
+    },
+    "T-V1": {
+      "S": 34,
+      "counts": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 34
+      },
+      "targets": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 34
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 34,
+        "refuted": 34,
+        "insufficient": 56
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 15,
+        "underpowered": 19
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 41,
+        "not_locatable": 15
+      },
+      "reoriented": 34,
+      "mirror_pairs": 34
+    },
+    "Y-R1": {
+      "S": 300,
+      "counts": {
+        "supported": 181,
+        "refuted": 181,
+        "insufficient": 0
+      },
+      "targets": {
+        "supported": 181,
+        "refuted": 181,
+        "insufficient": 181
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": true
+      },
+      "pool_sizes": {
+        "supported": 181,
+        "refuted": 300,
+        "insufficient": 0
+      },
+      "insufficient_subtypes": {},
+      "insufficient_subtype_pools": {},
+      "reoriented": 62,
+      "mirror_pairs": 181
+    },
+    "Y-V1": {
+      "S": 68,
+      "counts": {
+        "supported": 68,
+        "refuted": 68,
+        "insufficient": 68
+      },
+      "targets": {
+        "supported": 68,
+        "refuted": 68,
+        "insufficient": 68
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 68,
+        "refuted": 68,
+        "insufficient": 858
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 23,
+        "sparse": 23,
+        "underpowered": 22
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 155,
+        "sparse": 596,
+        "not_locatable": 107
+      },
+      "reoriented": 68,
+      "mirror_pairs": 68
+    },
+    "Y-V2": {
+      "S": 68,
+      "counts": {
+        "supported": 68,
+        "refuted": 68,
+        "insufficient": 68
+      },
+      "targets": {
+        "supported": 68,
+        "refuted": 68,
+        "insufficient": 68
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 68,
+        "refuted": 68,
+        "insufficient": 858
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 23,
+        "sparse": 23,
+        "underpowered": 22
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 155,
+        "sparse": 596,
+        "not_locatable": 107
+      },
+      "reoriented": 68,
+      "mirror_pairs": 68
+    },
+    "Y-V3": {
+      "S": 35,
+      "counts": {
+        "supported": 35,
+        "refuted": 35,
+        "insufficient": 35
+      },
+      "targets": {
+        "supported": 35,
+        "refuted": 35,
+        "insufficient": 35
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 35,
+        "refuted": 35,
+        "insufficient": 880
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 12,
+        "sparse": 12,
+        "underpowered": 11
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 390,
+        "sparse": 448,
+        "not_locatable": 42
+      },
+      "reoriented": 35,
+      "mirror_pairs": 35
+    },
+    "H-V1": {
+      "S": 402,
+      "counts": {
+        "supported": 35,
+        "refuted": 35,
+        "insufficient": 35
+      },
+      "targets": {
+        "supported": 35,
+        "refuted": 35,
+        "insufficient": 35
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 35,
+        "refuted": 367,
+        "insufficient": 1535
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 12,
+        "sparse": 12,
+        "underpowered": 11
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 448,
+        "sparse": 896,
+        "not_locatable": 191
+      },
+      "reoriented": 0,
+      "mirror_pairs": 35
+    },
+    "H-V3": {
+      "S": 427,
+      "counts": {
+        "supported": 4,
+        "refuted": 4,
+        "insufficient": 4
+      },
+      "targets": {
+        "supported": 4,
+        "refuted": 4,
+        "insufficient": 4
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 4,
+        "refuted": 423,
+        "insufficient": 619
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 2,
+        "sparse": 1,
+        "underpowered": 1
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 92,
+        "sparse": 358,
+        "not_locatable": 169
+      },
+      "reoriented": 0,
+      "mirror_pairs": 4
+    },
+    "H-V5": {
+      "S": 228,
+      "counts": {
+        "supported": 22,
+        "refuted": 22,
+        "insufficient": 22
+      },
+      "targets": {
+        "supported": 22,
+        "refuted": 22,
+        "insufficient": 22
+      },
+      "under_target": {
+        "supported": false,
+        "refuted": false,
+        "insufficient": false
+      },
+      "pool_sizes": {
+        "supported": 22,
+        "refuted": 206,
+        "insufficient": 4891
+      },
+      "insufficient_subtypes": {
+        "not_locatable": 8,
+        "sparse": 7,
+        "underpowered": 7
+      },
+      "insufficient_subtype_pools": {
+        "underpowered": 306,
+        "sparse": 3579,
+        "not_locatable": 1006
+      },
+      "reoriented": 0,
+      "mirror_pairs": 22
+    }
+  },
+  "validation_entries": 16,
+  "out_dir": "data/release/v1.2"
+}

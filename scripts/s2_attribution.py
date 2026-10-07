@@ -22,6 +22,7 @@ from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
 CAUSES = ["no plan (S2 not run)", "no valid SQL", "denominator = numerator", "event absent", "co-exist leak",
+          "non-consecutive pair leak", "no-half report leak",
           "wrong cohort", "tie leak", "split narrowed to co-occurrence",
           "co-exist wrongly dropped", "other omission", "other over-inclusion"]
 
@@ -104,6 +105,16 @@ def _over(r, ev, cond, v, fm, vac):
         return "event absent"
     if cond in ("ordered_pair", "orderable_triple") and len({terms[e] for e in ev}) < len(ev):
         return "co-exist leak"
+    if cond == "consecutive_pair":                      # v1.2: a gapped or co-exist pair
+        from temporal_hypo.generation.corpus import rank_map
+        ranks, _L = rank_map(terms)
+        if abs(ranks[ev[0]] - ranks[ev[1]]) != 1:
+            return "non-consecutive pair leak"
+    if cond == "present_offmid":                        # v1.2: one stage, or A on the middle rank
+        from temporal_hypo.generation.corpus import report_half
+        ranks, L, mid, p_early = report_half(terms)
+        if p_early is None or ranks.get(ev[0]) == mid:
+            return "no-half report leak"
     if cond.startswith("all_present_unique"):
         lv = [terms[e] for e in ev]
         ext = min(lv) if "first" in cond else max(lv)

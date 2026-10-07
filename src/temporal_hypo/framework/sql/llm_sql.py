@@ -148,10 +148,25 @@ def arm_plan(claim: StructuredClaim) -> list[dict]:
         ]
     # single arm
     cond = s.conditioning
-    if cond == "ordered_pair":
+    if claim.mode == "adj_rate_bool":          # v1.2: ordered-pair denominator, ADJACENCY numerator
+        rows = (f"reports of vaccine {v1} containing both {a} and {b} (use first_mention_rank); "
+                f"in_denominator = (ranks differ); in_numerator = (|rank({a}) - rank({b})| = 1); "
+                f"excluded = (same rank); cell NULL. The null (mean 2/L over the denominator) is "
+                f"computed by the harness from the data; do not return it.")
+    elif cond == "consecutive_pair":           # v1.2
+        rows = (f"reports of vaccine {v1} containing both {a} and {b} (use first_mention_rank); "
+                f"in_denominator = (|rank({a}) - rank({b})| = 1); in_numerator = (rank({a}) + 1 = "
+                f"rank({b})); excluded = (ranks differ by 0 or by more than 1); cell NULL.")
+    elif cond == "present_offmid":             # v1.2
+        rows = (f"reports of vaccine {v1} containing {a} (use first_mention_rank: rank and "
+                f"n_ranks); in_denominator = (n_ranks >= 2 AND 2*rank <> n_ranks - 1); "
+                f"in_numerator = (n_ranks >= 2 AND 2*rank < n_ranks - 1); excluded = NOT "
+                f"in_denominator; cell NULL. The structural early-rate null is computed by the "
+                f"harness from the denominator reports; do not return it.")
+    elif cond == "ordered_pair":
         rows = (f"reports of vaccine {v1} containing both {a} and {b}; in_denominator = (levels "
                 f"differ); in_numerator = ({a} level < {b} level); excluded = (same level); cell NULL.")
-    elif cond == "both_present" and claim.mode == "sym_bool_cooccurs":
+    elif cond == "both_present" and claim.mode in ("sym_bool_cooccurs", "cooc_bar"):
         rows = (f"reports of vaccine {v1} containing both {a} and {b}; in_denominator = 1 for all; "
                 f"in_numerator = (same level, i.e. co-exist); excluded = 0; cell NULL.")
     elif cond == "both_present":   # cooc_modal_bool
