@@ -21,7 +21,7 @@ import sqlite3
 from pathlib import Path
 
 REPO = Path(__file__).resolve().parent.parent
-CAUSES = ["no valid SQL", "denominator = numerator", "event absent", "co-exist leak",
+CAUSES = ["no plan (S2 not run)", "no valid SQL", "denominator = numerator", "event absent", "co-exist leak",
           "wrong cohort", "tie leak", "split narrowed to co-occurrence",
           "co-exist wrongly dropped", "other omission", "other over-inclusion"]
 
@@ -61,8 +61,13 @@ def attribute(run: Path, gold: dict[str, dict], fm, vac):
         gold_verdict = g["prediction"]["verdict"]
         right = (x.get("prediction") or {}).get("verdict") == gold_verdict
         verdict_right += right
-        parms = (x.get("retrieval") or {}).get("arms") or []
-        if not parms:
+        rt = x.get("retrieval") or {}
+        parms = rt.get("arms") or []
+        if not parms:                      # S1 produced no usable plan; S2 never ran
+            bad += 1
+            causes["no plan (S2 not run)"] += 1
+            continue
+        if rt.get("ok") is False:          # a statement failed to execute; arms are empty placeholders
             bad += 1
             causes["no valid SQL"] += 1
             continue

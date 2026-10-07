@@ -1065,7 +1065,7 @@ accuracy on cohort+multi tiers; chance ≈ 0.33.
 |---|---|---|---|---:|---|
 | EHRAgent, variant A (e2e code agent over the eval DB) | S1–S3 | 7B / **32B** | 400 | 0.103 / **0.417** (overall incl. report 0.150 / 0.527) | 7B: 72% no answer; 32B: retrieval — variant B (retrieval→oracle S3) 0.446 |
 | EHRSQL protocol (one SQL per hypothesis, counts→gold test) | S2 | 32B | 242 | 0.384 | counts exactly gold on **2.9%**; 27% abstain; verdict lands because cores sit far from α |
-| StatQA-style test selection (gold counts + hypothesis → test) | S3 | 32B | 242 | 0.364 (selection acc) | χ² where Fisher is required (56/86); StatQA taxonomy has no modal-runner equivalent (0/98) |
+| StatQA-style test selection (gold counts + hypothesis → test) | S3 | 32B | 242 | 0.364 (selection acc) | two-proportion z-test where Fisher is required (56/86); χ² on every modal-runner task (0/98; the taxonomy has no modal-runner equivalent) — corrected 2026-10-07 |
 | VERITAS A (own test contract) | S1–S3 | 32B, 16k ctx | 39 | 0.333 primary / 0.179 strict | no one-sample plan type → planning loops; 14/39 hit the 40-min cap; gold-test match 0.00 |
 | VERITAS B (+ our exact-test pool advertised) | S1–S3 | 32B | 39 | 0.308 / 0.179 | adopts our tests 33%; denominator = whole cohort (n=1,164 vs gold 6) |
 | VERITAS C (contract extended with one-sample/modal types + validator) | S1–S3 | — | — | **not run** (built; one smoke, timed out while sharing a GPU) | — |
@@ -1103,8 +1103,8 @@ Chance ≈ 0.33 on verdicts. Per-tier = report / vaccine / multi (158 / 222 / 20
 | e2e toolbox zs | same | qwen2.5-coder:32b | 0.302 | 0.390 | 218 | — | — | 0.00 / 0.46 / 0.90 | 0.435 |
 | S2 isolation | rules+llm-sql | qwen2.5-coder:7b | 0.540 | 1.0 | — | — | — | 1.00 / 0.24 / 0.20 | 0.229 (all-sets EM 0.05) |
 | S2 isolation | rules+llm-sql | qwen2.5-coder:32b | **0.875** | 1.0 | — | — | — | 1.00 / 0.78 / 0.90 | **0.695** (all-sets EM 0.40; co-exist leak any 0.37, mean 0.37; not-loc FPR 0.00) |
-| S3 counts-llm (242) | counts-llm | qwen2.5-coder:7b | 0.655 | — | — | — | — | — | p agree **0.000** (n=198) |
-| S3 counts-llm (242) | counts-llm | qwen2.5-coder:32b | 0.725 | — | — | — | — | — | p agree **0.020** (n=198) |
+| S3 counts-llm | counts-llm | qwen2.5-coder:7b | 0.655 on 400 (report tier 158/158 by fall-through); **cohort-only 0.430** | — | — | — | — | — | p agree **0.000** (n=198) |
+| S3 counts-llm | counts-llm | qwen2.5-coder:32b | 0.725 on 400; **cohort-only 0.545** | — | — | — | — | — | p agree **0.020** (n=198) |
 | **toolbox zs** | llm-s1+compiler / toolbox | **qwen2.5:32b-instruct** | **0.887** | 0.870 | 25 (all vaccine; 0 report-tier) | 0.611 | 0.789 | **1.00** / 0.80 / 1.00 | — |
 | toolbox 3-shot | same, `--k-shot 3` | qwen2.5:32b-instruct | 0.915 | 0.912 | 32 (all report, cohort denominators) | 0.845 | 0.932 | 0.80 / 0.99 / 1.00 | — |
 | **e2e toolbox zs, mixed** | llm-s1+llm-sql / toolbox | **S1 qwen2.5:32b-instruct + SQL qwen2.5-coder:32b** | **0.762** | 0.870 | 25 | — | — | 1.00 / 0.58 / 0.90 | 0.554 |

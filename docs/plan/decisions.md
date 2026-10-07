@@ -2786,3 +2786,47 @@ P-Bench disclosure audit + arithmetic-by-architecture, v1.2 scope.
   synthetic timelines), report-id recall (VAERS id present vs masked), and the
   data-minus-closed-book gain. Mitigation to consider: pseudonymised report ids
   in the release.
+
+
+## AUDIT 2026-10-07: what the experiment record does and does not support (corrections applied)
+
+A read-only audit of prompts, run configs and the draft against the question
+"is the 0.975 → 0.860 gap (smoke-4 vs e2e-sql) architecture or information?".
+
+**Findings.**
+1. Every non-e2e S2 prompt is told the per-mode rule: `sql_messages()`
+   (`framework/sql/llm_sql.py:199-272`) inserts `RULE_BY_MODE[claim.mode]` (with
+   test/null fragments, `generation/pilot.py:34-58`), the exclusion line and the
+   arm plan — including the toolbox end-to-end runs, whose mode comes from
+   `derive_mode`. So as measured the gap is the value of being told the rule.
+2. No run exists for: sentence→SQL with conventions stated (cell B); plan→SQL
+   with conventions and without the per-mode rule (true cell D); SQL checked
+   against the plan and replanned (cell E); any Opus/Opus full pipeline; external
+   systems at Opus or with the toolbox conventions. S2 has no repair/replan code
+   (`llm_sql.py:312-356`; the `llm_client.py:400` docstring claiming one retry is
+   wrong). e2e-sql's prompt is not fully convention-free: `views.sql:11-15`
+   comments state first-mention and precedes-vs-co-exist.
+3. **Slices**: smoke-1…5 ran on the v1 slice; everything since on v1.1; the two
+   share only 104/200 instances (all 79 report-tier + 17 cohort differ), not
+   177/200 as recorded on 09-04. All Opus S2 numbers are therefore on v1.
+   `run_eval.py --release` still defaults to v1.
+4. **Corrections applied to the draft and docs today**: counts-llm local rows
+   were on 400 records (report tier 158/158 by fall-through) — cohort-only
+   0.430 (7B) / 0.545 (32B); attribution "no valid SQL" row counted only empty
+   arms — failed statements are 154 / 54 / 34 / 52, and with them faithfulness is
+   0.10 / 0.52 / 0.67 / 0.56 (coder-7B / coder-32B / instruct-32B / e2e mix),
+   superseding the 10-06 figures; StatQA's Fisher misses are the two-proportion
+   z-test (56/86), χ² was chosen on every modal task; "co-exist leak on 37% of
+   precedes records" was 64/172 records with any exclusion — the leak is 1.0 on
+   the comparative precedes shapes (P-V2/P-V4/P-M2) and 0 on plain precedes;
+   smoke-2's S2 model is coder-7B; "three systems" are four; EHRAgent-32B ran
+   with 2k-token truncation; tb-e2e-7b and the mix product lines were wrong;
+   captions no longer claim "same slice". The 7B-Inst. column of tab:toolbox
+   mixes the other machine's 0.490 with the local replicate's cohort 0.537.
+5. The 7B lookup figure 0.918 appears for two different runs (smoke-1b on v1,
+   ref-v1.1 on v1.1); the local nominally-identical run scores 0.9275.
+
+**Decision pending (advisor, question 3)**: run cells B, D, E at Opus and 7B
+(six runs, ≈ $60 + 1 GPU-hour; prompt variants to add: `--e2e-conventions`,
+`--s2-frame toolbox`, `--s2-replan`) to claim the architecture, or drop the
+architecture claim and state the information result.
