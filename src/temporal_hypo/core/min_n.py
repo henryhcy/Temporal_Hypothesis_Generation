@@ -43,6 +43,11 @@ _FLOOR_BY_FAMILY = {
     "co_occurs": PAIRWISE_FLOOR,
     "sequence": SEQUENCE_FLOOR,
     "first_last": FIRST_LAST_FLOOR,
+    # v1.2 families (decisions.md 2026-10-07): single-proportion claims on
+    # pair- or term-shaped denominators, so they share the pairwise floor.
+    "position": PAIRWISE_FLOOR,
+    "proximity": PAIRWISE_FLOOR,
+    "threshold": PAIRWISE_FLOOR,
 }
 
 

@@ -40,9 +40,9 @@ is NOT a failure: zero rows is exactly how a not_locatable claim looks.
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Mapping, Sequence
+from typing import Iterable, Any, Mapping, Sequence
 
-from temporal_hypo.framework.claim_schema import MODE_SPEC
+from temporal_hypo.framework.claim_schema import MODE_SPEC, DATA_DERIVED_MODES
 from temporal_hypo.framework.sql.aggregate import (
     ARM_COLUMNS,
     REPORT_COLUMNS,
@@ -148,6 +148,40 @@ def _missing(label: str) -> QueryLog:
     return QueryLog(label, "", {}, 0, 0.0, f"no query supplied for arm {label!r}", MISSING_ARM)
 
 
+def derived_null_chance_sum(executor: ReadOnlyExecutor, mode: str, ids: Iterable[int]) -> float:
+    """Sum over ``ids`` of each report's chance rate for ``mode`` (v1.2 data-derived nulls).
+
+    early_bool: the report's early-slot share over all its first-mention terms
+    (the exact middle rank counts for neither half); adj_rate_bool: 2 / L.
+    Reads ``first_mention`` through the read-only executor in id chunks.
+    """
+    from temporal_hypo.generation.corpus import report_half, rank_map
+    ids = sorted(int(i) for i in ids)
+    terms: dict[int, dict[str, int]] = {}
+    for i in range(0, len(ids), 400):
+        chunk = ids[i:i + 400]
+        marks = ",".join("?" * len(chunk))
+        res = executor.execute(
+            f"SELECT vaers_id, term, level FROM first_mention WHERE vaers_id IN ({marks})",
+            tuple(chunk))
+        if res.error is not None:
+            raise RuntimeError(res.error)
+        for vid, term, level in res.rows:
+            terms.setdefault(int(vid), {})[str(term)] = int(level)
+    total = 0.0
+    for vid in ids:
+        t = terms.get(vid)
+        if not t:
+            continue
+        if mode == "early_bool":
+            _r, _L, _mid, p_early = report_half(t)
+            total += p_early or 0.0
+        elif mode == "adj_rate_bool":
+            _r, L = rank_map(t)
+            total += (2.0 / L) if L else 0.0
+    return total
+
+
 def execute_queries(queries: Sequence[ArmQuery], executor: ReadOnlyExecutor, claim: Any) -> Retrieval:
     """Execute, contract-check and aggregate ``queries`` for ``claim`` (module docstring).
 
@@ -203,6 +237,18 @@ def execute_queries(queries: Sequence[ArmQuery], executor: ReadOnlyExecutor, cla
             arms.append(empty_arm())
             continue
         arms.append(aggregate(rows, cell_kind=q.cell_kind))
+
+    # v1.2: a data-derived null is computed by S3 from the DATA behind the
+    # retrieved denominator (11 §13.2: "S2 retrieves the reference population,
+    # S3 computes p0"). The per-report chance is read from the eval DB here,
+    # where the executor lives; the SQL contract is unchanged.
+    if spec is not None and not is_report and arms and spec.mode in DATA_DERIVED_MODES:
+        try:
+            arms[0].chance_sum = derived_null_chance_sum(executor, spec.mode, arms[0].denominator_ids)
+        except Exception as exc:  # noqa: BLE001 -- never fail retrieval on the null computation
+            logs.append(QueryLog("null", "", {}, 0, 0.0,
+                                 f"data-derived null not computed: {type(exc).__name__}: {exc}",
+                                 EXECUTOR_ERROR))
 
     # Pad the arms the mode needs but no statement covered.
     if spec is not None:

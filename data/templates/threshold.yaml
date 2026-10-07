@@ -1,0 +1,98 @@
+family: threshold
+description: 'v1.2 (decisions.md 2026-10-07, issue 32): claims that name a STRENGTH bar; the null is read
+  off the text (null_ref). Tested per orientation: refuted means significantly BELOW the bar, so a core
+  yields one instance, not a mirror pair.'
+common:
+  registers:
+  - original
+  - research
+  - media
+  - clinical
+groups:
+- id: H-V1
+  primitive: precedes
+  level: vaccine
+  answer_type: BOOL
+  null_ref: 0.667
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: After {v}, does {A} precede {B} in at least two thirds of the reports where their order
+        is recorded?
+      claim: After {v}, {A} precedes {B} in at least two thirds of the reports where their order is recorded.
+    research:
+      question: Among {v} reports with {A} and {B} at distinct stages, does {A} precede {B} in at least
+        two thirds of cases?
+      claim: Among {v} reports with {A} and {B} at distinct stages, {A} precedes {B} in at least two thirds
+        of cases.
+    media:
+      question: After {v}, does {A} come before {B} in at least two out of every three cases?
+      claim: After {v}, {A} comes before {B} in at least two out of every three cases.
+    clinical:
+      question: In {v} recipients, does {A} precede {B} in two thirds or more of the cases where the order
+        is documented?
+      claim: In {v} recipients, {A} precedes {B} in two thirds or more of the cases where the order is
+        documented.
+- id: H-V3
+  primitive: co_occurs
+  level: vaccine
+  answer_type: BOOL
+  null_ref: 0.667
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: After {v}, do {A} and {B} co-occur in at least two thirds of the reports containing both?
+      claim: After {v}, {A} and {B} co-occur in at least two thirds of the reports containing both.
+    research:
+      question: Among {v} reports containing both {A} and {B}, are they recorded at the same stage in
+        at least two thirds of cases?
+      claim: Among {v} reports containing both {A} and {B}, they are recorded at the same stage in at
+        least two thirds of cases.
+    media:
+      question: After {v}, do {A} and {B} turn up together in at least two out of every three cases where
+        both appear?
+      claim: After {v}, {A} and {B} turn up together in at least two out of every three cases where both
+        appear.
+    clinical:
+      question: In {v} recipients with both features, are {A} and {B} simultaneous in two thirds or more
+        of cases?
+      claim: In {v} recipients with both features, {A} and {B} are simultaneous in two thirds or more
+        of cases.
+- id: H-V5
+  primitive: first_last
+  level: vaccine
+  answer_type: BOOL
+  null_ref: 0.5
+  slots:
+  - A
+  - B
+  - C
+  - v
+  notes: The bar is 0.5 = 1.5x the 1/3 chance of being first among three. Distinct from F-V3, which tests
+    the NAMED cell against its runner-up (an argmax) rather than against an absolute bar; the two can
+    disagree, and that disagreement is a useful discriminator.
+  variants:
+    original:
+      question: After {v}, is {A} the first event in at least half of the reports containing {A}, {B}
+        and {C}?
+      claim: After {v}, {A} is the first event in at least half of the reports containing {A}, {B} and
+        {C}.
+    research:
+      question: Among {v} reports containing {A}, {B} and {C}, is {A} the earliest of the three in at
+        least 50% of cases?
+      claim: Among {v} reports containing {A}, {B} and {C}, {A} is the earliest of the three in at least
+        50% of cases.
+    media:
+      question: After {v}, is {A} the first of {A}, {B} and {C} in at least half of the cases?
+      claim: After {v}, {A} is the first of {A}, {B} and {C} in at least half of the cases.
+    clinical:
+      question: In {v} recipients presenting {A}, {B} and {C}, is {A} the initial feature in half or more
+        of cases?
+      claim: In {v} recipients presenting {A}, {B} and {C}, {A} is the initial feature in half or more
+        of cases.

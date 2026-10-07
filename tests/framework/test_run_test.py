@@ -474,6 +474,16 @@ def _decisive_case(mode: str) -> tuple[dict, _Retrieval, tuple]:
         counts = {}
     if spec.arms == 2:
         return COHORT, _Retrieval([_arm(15, 13), _arm(15, 4)]), (15, 13, 15, 4)
+    # v1.2: a bar at 2/3 (or 1/2) needs a table that clears it decisively, and a
+    # data-derived null needs the retriever's chance sum (here: p0 = 0.5).
+    if mode in ("precedes_bar", "cooc_bar"):
+        return COHORT, _Retrieval([_arm(30, 29)]), (30, 29, None, None)
+    if mode == "first_bar":
+        return COHORT, _Retrieval([_arm(30, 29, {t[0]: 29, t[1]: 1, t[2]: 0})]), (30, 29, None, None)
+    if mode in ("early_bool", "adj_rate_bool"):
+        arm = _arm(15, 13)
+        arm.chance_sum = 7.5
+        return COHORT, _Retrieval([arm]), (15, 13, None, None)
     return COHORT, _Retrieval([_arm(15, 13, counts)]), (15, 13, None, None)
 
 
@@ -508,6 +518,11 @@ def test_every_mode_builds_a_complete_core_and_predicts(mode):
         "rep_first_choice": {"winner", "unique", "idxs"},
         "rep_last_choice": {"winner", "unique", "idxs"},
         "rep_first_bool": {"winner", "unique", "idxs"},
+        # v1.2
+        "rep_imm_bool": {"rel", "adjacent"}, "rep_early_bool": {"early", "rank", "L"},
+        "early_bool": {"p0", "null_kind"}, "adj_rate_bool": {"p0", "null_kind"},
+        "precedes_bar": {"p0", "null_kind"}, "cooc_bar": {"p0", "null_kind"},
+        "first_bar": {"p0", "null_kind", "named"},
     }.get(mode, set())
     assert set(core.extra) == expected_keys, mode
     if mode in ("seq_bool", "modal_choice"):

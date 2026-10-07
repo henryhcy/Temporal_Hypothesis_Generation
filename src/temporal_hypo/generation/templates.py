@@ -20,7 +20,8 @@ DEFAULT_TEMPLATES_DIR = (
     Path(__file__).resolve().parents[3] / "data" / "templates"
 )
 
-_TEMPLATE_FILES = ("pairwise.yaml", "sequence.yaml", "first_last.yaml")
+_TEMPLATE_FILES = ("pairwise.yaml", "sequence.yaml", "first_last.yaml",
+                   "position.yaml", "proximity.yaml", "threshold.yaml")   # v1.2
 REGISTERS = ("original", "research", "media", "clinical")
 FORMATS = ("question", "claim")
 # Negated surface forms, used when an instance asserts the claim's NEGATION.
@@ -43,6 +44,10 @@ class Group:
     slots: tuple[str, ...]
     # variants[register][format] -> template string
     variants: dict[str, dict[str, str]]
+    # v1.2: the null the claim is tested against -- a number for a text-stated
+    # bar ("at least two thirds" -> 0.667), "structural" for a data-derived
+    # per-core null (position, adjacency), None for the symmetric 0.5 default.
+    null_ref: float | str | None = None
 
 
 def load_groups(templates_dir: Path | None = None) -> dict[str, Group]:
@@ -65,6 +70,7 @@ def load_groups(templates_dir: Path | None = None) -> dict[str, Group]:
                 answer_type=grp["answer_type"],
                 slots=tuple(grp["slots"]),
                 variants=grp["variants"],
+                null_ref=grp.get("null_ref"),
             )
     return groups
 

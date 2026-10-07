@@ -169,6 +169,7 @@ def set_prf(pred: Iterable[int], gold: Iterable[int]) -> dict[str, float]:
 CANDIDATE_SET_MODES = frozenset({
     "first_choice", "first_bool", "last_choice",
     "rep_first_choice", "rep_last_choice", "rep_first_bool",
+    "first_bar",   # v1.2
 })
 
 

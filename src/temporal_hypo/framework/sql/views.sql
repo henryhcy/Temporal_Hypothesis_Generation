@@ -42,6 +42,23 @@ FROM level_terms lt
 JOIN reports r USING (vaers_id)
 GROUP BY lt.vaers_id, r.vaccine, lt.term;
 
+-- First-mention RANK of every term: `rank` is the term's position among the
+-- report's OCCUPIED first-mention levels (0 = earliest stage, dense), and
+-- `n_ranks` is how many such stages the report has. Use it for questions about
+-- CONSECUTIVE stages (|a.rank - b.rank| = 1) and about the EARLIER HALF of a
+-- timeline (rank < (n_ranks - 1) / 2.0; a term on the exact middle rank is in
+-- neither half). Ranks, not level indices: levels can have gaps.
+CREATE VIEW first_mention_rank AS
+SELECT f.vaers_id,
+       f.vaccine,
+       f.term,
+       f.level,
+       (SELECT COUNT(DISTINCT g.level) FROM first_mention g
+         WHERE g.vaers_id = f.vaers_id AND g.level < f.level) AS rank,
+       (SELECT COUNT(DISTINCT g.level) FROM first_mention g
+         WHERE g.vaers_id = f.vaers_id) AS n_ranks
+FROM first_mention f;
+
 -- The raw leveled order, one row per (report, level); terms sorted alphabetically.
 CREATE VIEW report_terms AS
 SELECT lt.vaers_id,

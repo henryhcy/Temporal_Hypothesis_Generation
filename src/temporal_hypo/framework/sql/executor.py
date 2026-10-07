@@ -5,8 +5,8 @@ single check:
 
 1. the connection is opened with the ``file:...?mode=ro`` URI (SQLite itself
    refuses writes to the main database);
-2. an authorizer allows only ``SELECT``, reads of the four eval-schema relations
-   (``reports``, ``level_terms``, ``first_mention``, ``report_terms``) and scalar
+2. an authorizer allows only ``SELECT``, reads of the five eval-schema relations
+   (``reports``, ``level_terms``, ``first_mention``, ``report_terms``, ``first_mention_rank``) and scalar
    function calls -- everything else (writes, ``CREATE``/``DROP``, ``ATTACH``,
    ``PRAGMA``, transactions, recursive CTEs, table-valued functions, the
    ``sqlite_master`` catalogue) is denied at prepare time;
@@ -36,7 +36,8 @@ from temporal_hypo.framework.sql.build_eval_db import open_eval_db
 
 # Relations a query may read. Anything else (sqlite_master, pragma_* and other
 # table-valued functions, temp tables, attached DBs) is denied.
-READABLE_TABLES = frozenset({"reports", "level_terms", "first_mention", "report_terms"})
+READABLE_TABLES = frozenset({"reports", "level_terms", "first_mention", "report_terms",
+                             "first_mention_rank"})   # v1.2 rank view
 
 ERROR_CLASSES = ("not_select", "multi_statement", "denied", "timeout", "sql_error")
 

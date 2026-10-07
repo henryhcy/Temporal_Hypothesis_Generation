@@ -22,6 +22,7 @@ import pytest
 from temporal_hypo.framework.claim_schema import MODE_SPEC, MODES, build_claim, from_gold
 from temporal_hypo.framework.sql.aggregate import ARM_COLUMNS, ArmCounts
 from temporal_hypo.framework.sql.compiler import (
+    WHOLE_REPORT_MODES,
     ARM_LABEL,
     REPORT_LABEL,
     TWO_ARM_LABELS,
@@ -126,6 +127,16 @@ CASES = [
     ("pairpair_bool", (H, F, P, F), _vax("Pfizer"), None),
     ("assoc_bool", (H, F), _vax("Pfizer"), None),
     ("multi_dir_precedes", (H, F), _multi("Pfizer", "Moderna"), ["Pfizer", "Moderna"]),
+    # v1.2 families (decisions.md 2026-10-07)
+    ("rep_early_bool", (H,), _rep(1001), None),           # H at rank 0 of 3 -> earlier half
+    ("rep_imm_bool", (H, F), _rep(1001), None),            # ranks 0,1 -> consecutive
+    ("early_bool", (H,), _vax("Pfizer"), None),
+    ("imm_bool", (H, F), _vax("Pfizer"), None),
+    ("imm_choice", (F, H), _vax("Pfizer"), [F, H]),
+    ("adj_rate_bool", (H, F), _vax("Pfizer"), None),
+    ("precedes_bar", (H, F), _vax("Pfizer"), None),
+    ("cooc_bar", (H, F), _vax("Pfizer"), None),
+    ("first_bar", (H, F, P), _vax("Moderna"), None),
 ]
 CASE_IDS = [c[0] for c in CASES]
 COHORT_CASES = [c for c in CASES if not MODE_SPEC[c[0]].is_report]
@@ -153,7 +164,7 @@ def assert_arm_matches(arm: ArmCounts, block: dict) -> None:
 
 def test_cases_cover_every_mode():
     assert set(CASE_IDS) == set(MODES)
-    assert len(CASE_IDS) == len(set(CASE_IDS)) == 20
+    assert len(CASE_IDS) == len(set(CASE_IDS)) == len(MODES) == 29
 
 
 # ---------------------------------------------------------------------------
@@ -208,7 +219,10 @@ def test_id_sets_match_evidence_ids(mode, terms, cohort, options, executor, corp
         assert gold == {"report_id": rid}
         assert ret.arms == []
         have = corpus_index.report_terms[rid]
-        assert ret.levels == {t: have[t] for t in terms if t in have}
+        if mode in WHOLE_REPORT_MODES:          # v1.2 rank rules read the WHOLE report
+            assert ret.levels == have
+        else:
+            assert ret.levels == {t: have[t] for t in terms if t in have}
         assert set(terms) <= set(ret.levels)      # every event of these cases is present
         return
 

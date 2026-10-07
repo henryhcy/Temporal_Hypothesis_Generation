@@ -54,7 +54,16 @@ _ARROW = " → "  # " -> " rendered as the templates render orderings
 _BINOM_NULL = {
     "dir_bool": 0.5, "dir_choice": 0.5,
     "sym_bool_cooccurs": 0.5,
+    # v1.2 immediate succession: a direction among consecutive-rank pairs
+    "imm_bool": 0.5, "imm_choice": 0.5,
 }
+# v1.2 (decisions.md 2026-10-07): one-sided exact binomial of k/n against a
+# null that is NOT 0.5 -- a TEXT-STATED bar read off the template (the bar
+# modes; `core.extra["p0"]` holds it) or a DATA-DERIVED per-core rate computed
+# at enumeration (position: the structural early-rate; adjacency: mean 2/L).
+# The claim tail is "greater" (rate above the null); refuted is "less".
+_P0_FROM_CORE = {"precedes_bar", "cooc_bar", "first_bar",     # text_stated
+                 "early_bool", "adj_rate_bool"}                 # data_derived
 # "Most common" argmax modes -> modal-vs-runner-up: one-sided exact binomial of
 # the named cell's count vs the runner-up's (null 0.5). Verifies the NAMED
 # ordering/event is the mode, which GOF-vs-uniform cannot.
@@ -166,6 +175,17 @@ def core_tails(core, *, named=None) -> Significance:
     if not core.computable or core.n is None:
         return Significance(None, None, None)
     m = core.mode
+
+    if m in _P0_FROM_CORE:
+        p0 = core.extra.get("p0")
+        if p0 is None or not (0.0 < p0 < 1.0):
+            return Significance(None, None, None)
+        p_claim = sig.binom_exact_p(core.k, core.n, p0, alternative="greater")
+        p_opp = sig.binom_exact_p(core.k, core.n, p0, alternative="less")
+        return Significance(p_claim, None, "binom_exact",
+                            {"null": p0, "alternative": "greater",
+                             "null_kind": core.extra.get("null_kind")},
+                            p_claim=p_claim, p_opposite=p_opp)
 
     if m in _BINOM_NULL:
         p0 = _BINOM_NULL[m]
@@ -358,7 +378,7 @@ def answer_key(core) -> tuple[list[str] | None, str | None]:
     m = core.mode
     ev = list(core.events)
 
-    if m == "dir_choice":  # "which of A, B occurs first?"
+    if m in ("dir_choice", "imm_choice"):  # "which of A, B occurs first?"
         if core.proportion is None or abs(core.proportion - 0.5) < 1e-12:
             return ev[:2], None
         return ev[:2], (ev[0] if core.proportion > 0.5 else ev[1])
@@ -424,7 +444,7 @@ class AnswerRecord:
     insufficient_subtype: str | None = None
 
 
-def _null_ref(mode: str) -> float:
+def _null_ref(mode: str, core=None) -> float:
     """The reference the EFFECT SIZE is measured against -- the tested null.
 
     2026-08-11: the argmax modes are tested modal-vs-runner-up on a 2-cell table
@@ -433,7 +453,15 @@ def _null_ref(mode: str) -> float:
     candidates), which meant the p-value answered "does the named cell beat its
     rival?" while the effect size answered "how far above chance-uniform is this
     share?" -- the same claim/test mismatch the test swap fixed for the p-value.
+
+    2026-10-07 (v1.2, issue 20): widened to ``(mode, core)``. The bar and
+    data-derived modes carry their tested null in ``core.extra["p0"]``, so the
+    effect size is measured against the same reference as the p-value.
     """
+    if mode in _P0_FROM_CORE and core is not None:
+        p0 = (core.extra or {}).get("p0")
+        if p0 is not None:
+            return float(p0)
     return 0.5
 
 
@@ -473,7 +501,7 @@ def _ci_effect(core):
     basis = core.proportion
     if core.mode in _MODAL_RUNNER or core.mode == "cooc_modal_bool":
         basis = _two_cell_proportion(core) or core.proportion
-    return ci, cohens_h(basis, _null_ref(core.mode))
+    return ci, cohens_h(basis, _null_ref(core.mode, core))
 
 
 _GROUPS: dict[str, Group] | None = None

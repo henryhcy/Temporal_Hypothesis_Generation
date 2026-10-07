@@ -36,7 +36,7 @@ from tests.framework.conftest import (
 EVENTS = ("Headache", "Fatigue", "Pyrexia", "Rash")
 VOCAB = {t for _, _, levels in CORPUS for level in levels for t in level}
 REPORT_ID = 1001
-N_TEMPLATES = 184
+N_TEMPLATES = 280   # 184 v1.1 strings + 96 v1.2 (nine groups x 8, plus 24 negated forms)
 
 # The templates that never name the events they are about (documented in the
 # plan and the harness brief): C-V3 research + clinical in all four forms, and
@@ -148,10 +148,11 @@ def test_compile_patterns_shape(groups):
     pats = compile_patterns(groups)
     assert len(pats) == N_TEMPLATES
     assert len({p.template for p in pats}) == N_TEMPLATES - 2          # two shared strings
-    # 25 distinct strings repeat a slot (one of them is the F-R1/F-R3 shared string)
-    assert len({p.template for p in pats if "(?P=" in p.regex.pattern}) == 25
-    assert sum("(?P=" in p.regex.pattern for p in pats) == 26
-    assert sum(p.negated for p in pats) == 3 * len(REGISTERS) * len(FORMATS)   # C-V1/2/3
+    # 55 distinct strings repeat a slot (one of them is the F-R1/F-R3 shared string);
+    # v1.2 added 30 (Y-V1 and H-V5 name {A} twice in every form, Y-V2 in most)
+    assert len({p.template for p in pats if "(?P=" in p.regex.pattern}) == 55
+    assert sum("(?P=" in p.regex.pattern for p in pats) == 56
+    assert sum(p.negated for p in pats) == 6 * len(REGISTERS) * len(FORMATS)   # C-V1/2/3 + T-V1/Y-V1/Y-V3
     for p in pats:
         assert p.regex.pattern.startswith("^") and p.regex.pattern.endswith("$")
         assert p.literal_len > 0

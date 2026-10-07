@@ -72,7 +72,14 @@ _MIN_N = 10
 _VACCINE_TRIPLE_MODES = {
     "seq_bool", "modal_choice",
     "first_choice", "last_choice", "first_bool",
+    "first_bar",                      # v1.2 H-V5: named first among three vs a bar
 }
+# v1.2 (decisions.md 2026-10-07). Modes whose core is ONE event; modes tested
+# against a text-stated BAR (one instance per orientation, no mirror pair); and
+# modes tested against a DATA-DERIVED per-core null carried in core.extra["p0"].
+_SINGLE_EVENT_MODES = {"early_bool", "rep_early_bool"}
+_BAR_MODES = {"precedes_bar", "cooc_bar", "first_bar"}
+_DERIVED_NULL_MODES = {"early_bool", "adj_rate_bool"}
 
 # Per-group statistic + verdict mode. The single source of truth mapping each
 # of the 30 groups to its gold computation.
@@ -107,6 +114,16 @@ MODE_BY_GROUP: dict[str, str] = {
     "F-V1": "first_choice",
     "F-V2": "last_choice",
     "F-V3": "first_bool",
+    # v1.2 families (decisions.md 2026-10-07, issue 32)
+    "T-R1": "rep_early_bool",        # position, single report
+    "T-V1": "early_bool",            # position vs the structural early-rate
+    "Y-R1": "rep_imm_bool",          # immediate succession, single report
+    "Y-V1": "imm_bool",              # A first among CONSECUTIVE-rank pairs
+    "Y-V2": "imm_choice",            # ... CHOICE twin
+    "Y-V3": "adj_rate_bool",         # adjacency rate vs per-core chance 2/L
+    "H-V1": "precedes_bar",          # precedes in >= 2/3 of ordered reports
+    "H-V3": "cooc_bar",              # co-occur in >= 2/3 of both-present reports
+    "H-V5": "first_bar",             # named first in >= 1/2 of unique-first reports
 }
 
 
@@ -270,6 +287,15 @@ def _enum_vaccine(index: CorpusIndex, group: Group, mode: str) -> list[ViableCor
                     if core is not None:
                         cores.append(core)
         return cores
+    if mode in _SINGLE_EVENT_MODES:
+        # v1.2 position: one core per (cohort, term) over the top-K_PAIR terms.
+        for vax in VACCINES:
+            cohort = index.cohort(vax)
+            for term in index.top_terms(cohort, K_PAIR):
+                core = _build_vaccine_core(index, group, mode, vax, cohort, (term,))
+                if core is not None:
+                    cores.append(core)
+        return cores
     is_triple = mode in _VACCINE_TRIPLE_MODES
     for vax in VACCINES:
         cohort = index.cohort(vax)
@@ -280,9 +306,20 @@ def _enum_vaccine(index: CorpusIndex, group: Group, mode: str) -> list[ViableCor
         else:
             sets = combinations(terms, 2)
         for combo in sets:
-            core = _build_vaccine_core(index, group, mode, vax, cohort, combo)
-            if core is not None:
-                cores.append(core)
+            # A BAR claim is not slot-orientable: "A before B in >= 2/3" and
+            # "B before A in >= 2/3" are different claims with independent
+            # verdicts (both can be refuted), so each orientation is its own
+            # core. H-V5 names each of the three candidates in turn.
+            if mode == "precedes_bar":
+                variants = [combo, combo[::-1]]
+            elif mode == "first_bar":
+                variants = [(t, *[o for o in combo if o != t]) for t in combo]
+            else:
+                variants = [combo]
+            for ev in variants:
+                core = _build_vaccine_core(index, group, mode, vax, cohort, ev)
+                if core is not None:
+                    cores.append(core)
     return cores
 
 
@@ -452,6 +489,82 @@ def _build_vaccine_core(index, group, mode, vax, cohort, combo,
                          proportion=wfrac, n=n, k=round(wfrac * n),
                          extra=extra, **base)
 
+    # ----- v1.2 families (decisions.md 2026-10-07) -----------------------
+    if mode in ("imm_bool", "imm_choice"):
+        # N2: among reports where A and B occupy CONSECUTIVE first-mention
+        # ranks, the share with A first. Exact 0.5 null; slot-orientable.
+        a, b = combo
+        frac, n = corpus.immediate_fraction(index, a, b, cohort)
+        ok = _is_testable(n, group.family)
+        return _new_core(group, mode, computable=ok,
+                         natural_verdict=bool_verdict(frac) if ok else "insufficient",
+                         proportion=frac, n=n,
+                         k=round(frac * n) if frac is not None else 0, **base)
+
+    if mode == "early_bool":
+        # N1: A in the earlier half of the timeline, tested against the
+        # core's STRUCTURAL early-rate p0 = exp_sum / n (never 0.5).
+        (a,) = combo
+        frac, n, k, exp = corpus.early_half_fraction(index, a, cohort)
+        p0 = (exp / n) if n else None
+        ok = _is_testable(n, group.family) and p0 is not None and 0.0 < p0 < 1.0
+        nv = ("supported" if frac > p0 else "refuted" if frac < p0
+              else "insufficient") if ok else "insufficient"
+        return _new_core(group, mode, computable=ok, natural_verdict=nv,
+                         proportion=frac, n=n, k=k,
+                         extra={"p0": p0, "null_kind": "data_derived",
+                                "exp_sum": exp}, **base)
+
+    if mode == "adj_rate_bool":
+        # N3: adjacency rate of a distinct-rank pair vs the per-core chance
+        # mean(2/L). Symmetric; orients by negation.
+        a, b = combo
+        frac, n, k, exp = corpus.adjacency_rate(index, a, b, cohort)
+        p0 = (exp / n) if n else None
+        ok = _is_testable(n, group.family) and p0 is not None and 0.0 < p0 < 1.0
+        nv = ("supported" if frac > p0 else "refuted" if frac < p0
+              else "insufficient") if ok else "insufficient"
+        return _new_core(group, mode, computable=ok, natural_verdict=nv,
+                         proportion=frac, n=n, k=k,
+                         extra={"p0": p0, "null_kind": "data_derived",
+                                "exp_sum": exp}, **base)
+
+    if mode in ("precedes_bar", "cooc_bar"):
+        # N4: the existing precedes / co-occurs statistic against a TEXT-STATED
+        # bar. The claim is "rate >= bar"; refuted = significantly below it.
+        a, b = combo
+        bar = float(group.null_ref)
+        fn = corpus.precedes_fraction if mode == "precedes_bar" \
+            else corpus.co_occurs_fraction
+        frac, n = fn(index, a, b, cohort)
+        ok = _is_testable(n, group.family)
+        nv = ("supported" if frac > bar else "refuted" if frac < bar
+              else "insufficient") if (ok and frac is not None) else "insufficient"
+        return _new_core(group, mode, computable=ok, natural_verdict=nv,
+                         proportion=frac, n=n,
+                         k=round(frac * n) if frac is not None else 0,
+                         extra={"p0": bar, "null_kind": "text_stated"}, **base)
+
+    if mode == "first_bar":
+        # N4 (H-V5): the NAMED candidate (combo[0]) is first in >= bar of the
+        # unique-first denominator -- the named cell's share of n, against an
+        # absolute bar (F-V3 tests it against its runner-up instead).
+        terms = list(combo)
+        bar = float(group.null_ref)
+        res = corpus.first_among_fractions(index, terms, cohort)
+        n = int(res["n"])
+        counts = res.get("counts", {})
+        k = counts.get(terms[0], 0)
+        frac = (k / n) if n else None
+        ok = _is_testable(n, group.family)
+        nv = ("supported" if frac > bar else "refuted" if frac < bar
+              else "insufficient") if (ok and frac is not None) else "insufficient"
+        return _new_core(group, mode, computable=ok, natural_verdict=nv,
+                         proportion=frac, n=n, k=k,
+                         extra={"p0": bar, "null_kind": "text_stated",
+                                "named": terms[0], "counts": dict(counts),
+                                "tie_rate": res.get("tie_rate")}, **base)
+
     raise ValueError(f"unhandled vaccine mode: {mode}")
 
 
@@ -526,6 +639,29 @@ def _report_combo(tmap: dict, present: list, mode: str) -> tuple | None:
     """
     if mode == "rep_sym_bool":
         return tuple(present[:2]) if len(present) >= 2 else None
+    if mode == "rep_early_bool":
+        # v1.2 T-R1: ONE event, chosen by a seeded draw among the terms that
+        # sit off the exact middle rank (a middle event is in neither half), so
+        # the report tier supplies both halves rather than only rank-0 events.
+        ranks, L, mid, _p = corpus.report_half(tmap)
+        cands = sorted(t for t in present if ranks[t] != mid)
+        if L < 2 or not cands:
+            return None
+        rng = random.Random(f"{REPORT_SAMPLE_SEED}:{sorted(tmap.items())}")
+        return (rng.choice(cands),)
+    if mode == "rep_imm_bool":
+        # v1.2 Y-R1: the earliest event paired with a seeded choice among the
+        # LATER-level events, so the report tier poses adjacent and gapped pairs
+        # alike (the earliest ordered pair is always adjacent, which would make
+        # every plain-posed instance supported).
+        if len(present) < 2:
+            return None
+        a = present[0]
+        later = [t for t in present[1:] if tmap[t] != tmap[a]]
+        if not later:
+            return None
+        rng = random.Random(f"{REPORT_SAMPLE_SEED}:imm:{sorted(tmap.items())}")
+        return (a, rng.choice(later))
     if mode in _REPORT_TRIPLE_MODES:
         m = len(present)
         for i in range(m):
@@ -626,6 +762,26 @@ def _build_report_core(index, group, mode, vid, tmap, combo) -> ViableCore | Non
         return _new_core(group, mode, natural_verdict=nv,
                          extra={"winner": winners[0] if unique else None,
                                 "unique": unique, "idxs": idxs}, **base)
+
+    if mode == "rep_early_bool":
+        (a,) = combo
+        ranks, L, mid, _p = corpus.report_half(tmap)
+        if a not in ranks or L < 2 or ranks[a] == mid:
+            return None
+        early = ranks[a] < mid
+        return _new_core(group, mode, natural_verdict="supported" if early else "refuted",
+                         extra={"early": early, "rank": ranks[a], "L": L}, **base)
+
+    if mode == "rep_imm_bool":
+        a, b = combo
+        rel = corpus.relation(tmap, a, b)
+        if rel == "missing":
+            return None
+        ranks, _L = corpus.rank_map(tmap)
+        adjacent = abs(ranks[a] - ranks[b]) == 1
+        nv = "supported" if (rel == "before" and adjacent) else "refuted"
+        return _new_core(group, mode, natural_verdict=nv,
+                         extra={"rel": rel, "adjacent": adjacent}, **base)
 
     raise ValueError(f"unhandled report mode: {mode}")
 
@@ -810,6 +966,7 @@ def enumerate_false_cores(index: CorpusIndex, group: Group, *,
     #                         arm 2 keeps its true values (n2 = cohort, k2 = B)
     need = (4 if mode == "pairpair_bool"
             else 3 if mode in _VACCINE_TRIPLE_MODES or mode == "antecedent_bool"
+            else 1 if mode in _SINGLE_EVENT_MODES
             else 2)
     rng = random.Random(seed)
     out: list[ViableCore] = []
@@ -843,7 +1000,13 @@ def enumerate_false_cores(index: CorpusIndex, group: Group, *,
         while got < per_scope and attempts < 200 * per_scope:
             attempts += 1
             kw2: dict = {}
-            if mode == "assoc_bool":
+            if mode in _SINGLE_EVENT_MODES:
+                # v1.2: a single-event claim is not locatable only when the term
+                # is a real corpus term ABSENT from this cohort (like assoc_bool).
+                if not absent:
+                    break
+                combo = (rng.choice(absent),)
+            elif mode == "assoc_bool":
                 if not absent:
                     break
                 a = rng.choice(absent)
@@ -923,6 +1086,10 @@ _SLOT_ORIENTABLE = {
     # assert either side (antecedents A<->C; the two pairs). assoc_bool is NOT
     # here -- it is symmetric like C-V1 and orients by negation.
     "antecedent_bool", "pairpair_bool",
+    # v1.2: immediate succession is a direction like precedes. NOT here:
+    # early_bool / adj_rate_bool (symmetric, orient by negation) and the bar
+    # modes (each orientation is its own core; a bar can be refuted both ways).
+    "imm_bool", "imm_choice",
 }
 
 
@@ -1007,6 +1174,15 @@ def feasible_polarities(core: ViableCore, group: Group | None = None) -> set[str
             out |= {"supported", "refuted"}
         else:
             out |= {"insufficient"}
+    elif m == "rep_early_bool":
+        # v1.2: the data fixes the class (no re-orientation of a single event)
+        out |= {core.natural_verdict}
+    elif m == "rep_imm_bool":
+        # v1.2: an adjacent ordered pair can be posed either way (flip the
+        # direction); a non-adjacent or co-exist pair only refutes.
+        out |= {"refuted"}
+        if core.extra["adjacent"] and core.extra["rel"] in ("before", "after"):
+            out |= {"supported"}
     else:
         out |= {"insufficient"}
     return out
@@ -1070,9 +1246,34 @@ def _realize(core: ViableCore, polarity: str) -> InstanceFacts:
         return _realize_two_arm(core, polarity)
     if m == "assoc_bool":
         return _realize_assoc(core, polarity)
+    if m in ("imm_bool", "imm_choice"):
+        return _realize_directional(core, polarity)
+    if m in ("early_bool", "adj_rate_bool"):
+        return _realize_derived_null(core, polarity)
+    if m in _BAR_MODES:
+        return _realize_bar(core, polarity)
     if m.startswith("rep_"):
         return _realize_report(core, polarity)
     raise ValueError(f"cannot realize mode {m}")
+
+
+def _realize_derived_null(core, polarity):
+    """v1.2 early_bool / adj_rate_bool: symmetric claims against the core's
+    DATA-DERIVED p0; orientation is by negation (handled in ``realize``), so
+    slots never move and the effect size is measured against p0."""
+    p, n, k = core.proportion, core.n, core.k
+    p0 = core.extra["p0"]
+    return _mk(core, polarity, None, core.events, verdict=core.natural_verdict,
+               proportion=p, n=n, k=k, null_ref=p0)
+
+
+def _realize_bar(core, polarity):
+    """v1.2 bar modes: the core already IS one orientation ("A before B in
+    >= 2/3"; "A first in >= 1/2"), so the verdict is the data's and the slots
+    are the core's events; the effect size is measured against the bar."""
+    p, n, k = core.proportion, core.n, core.k
+    return _mk(core, polarity, None, core.events, verdict=core.natural_verdict,
+               proportion=p, n=n, k=k, null_ref=core.extra["p0"])
 
 
 def _mk(core, polarity, flip_kind, events_assigned, *, verdict,
@@ -1103,7 +1304,7 @@ def _mk(core, polarity, flip_kind, events_assigned, *, verdict,
 def _realize_directional(core, polarity):
     a, b = core.events
     frac, n, k = core.proportion, core.n, core.k
-    flip = "option" if core.mode == "dir_choice" else "direction"
+    flip = "option" if core.mode in ("dir_choice", "imm_choice") else "direction"
     if polarity == "supported":
         if frac > 0.5:
             ev, p, kk, fk = (a, b), frac, k, None
@@ -1315,6 +1516,23 @@ def _realize_report(core, polarity):
         others = [t for t in terms if t != named]
         ev = (named, others[0], others[1])
         return _mk(core, polarity, fk, ev, verdict=verdict)
+
+    if m == "rep_early_bool":
+        # v1.2: single event; the class is fixed by where it sits
+        return _mk(core, polarity, None, core.events, verdict=core.natural_verdict)
+
+    if m == "rep_imm_bool":
+        rel, adjacent = core.extra["rel"], core.extra["adjacent"]
+        if polarity == "supported":          # feasible only when adjacent+ordered
+            ev = (a, b) if rel == "before" else (b, a)
+            fk = None if rel == "before" else "direction"
+            return _mk(core, polarity, fk, ev, verdict="supported")
+        # refuted: a non-adjacent/co-exist pair refutes as posed; an adjacent
+        # ordered pair refutes when posed the wrong way round
+        if not adjacent or rel == "co_exist":
+            return _mk(core, polarity, None, (a, b), verdict="refuted")
+        ev = (b, a) if rel == "before" else (a, b)
+        return _mk(core, polarity, "direction", ev, verdict="refuted")
 
     raise ValueError(f"cannot realize report mode {m}")
 

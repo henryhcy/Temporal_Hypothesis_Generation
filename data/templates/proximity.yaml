@@ -1,0 +1,140 @@
+family: proximity
+description: 'v1.2 (decisions.md 2026-10-07, issue 32): how CLOSE two events are. `immediate` conditions
+  on CONSECUTIVE first-mention ranks (null 0.5, slot-orientable); `adjacency` tests the adjacency rate
+  of a distinct-rank pair against the per-core chance 2/L (null_ref: structural).'
+common:
+  registers:
+  - original
+  - research
+  - media
+  - clinical
+groups:
+- id: Y-R1
+  primitive: immediate
+  level: report
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - r
+  variants:
+    original:
+      question: In report {r}, did {A} occur in the stage immediately before {B}?
+      claim: In report {r}, {A} occurred in the stage immediately before {B}.
+    research:
+      question: In this report, does {A} occupy the stage directly preceding {B}?
+      claim: In this report, {A} occupies the stage directly preceding {B}.
+    media:
+      question: In this case, did {A} happen right before {B}, with nothing in between?
+      claim: In this case, {A} happened right before {B}, with nothing in between.
+    clinical:
+      question: In this patient, did {A} immediately precede {B} in the course?
+      claim: In this patient, {A} immediately preceded {B} in the course.
+- id: Y-V1
+  primitive: immediate
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: After {v}, when {A} and {B} fall in consecutive stages, does {A} usually come first?
+      claim: After {v}, when {A} and {B} fall in consecutive stages, {A} usually comes first.
+      question_negated: After {v}, when {A} and {B} fall in consecutive stages, is it the case that {A}
+        does NOT usually come first?
+      claim_negated: After {v}, when {A} and {B} fall in consecutive stages, {A} does not usually come
+        first.
+    research:
+      question: Among {v} reports where {A} and {B} occupy adjacent stages, does {A} precede {B} in the
+        majority of cases?
+      claim: Among {v} reports where {A} and {B} occupy adjacent stages, {A} precedes {B} in the majority
+        of cases.
+      question_negated: Among {v} reports where {A} and {B} occupy adjacent stages, does {A} fail to precede
+        {B} in the majority of cases?
+      claim_negated: Among {v} reports where {A} and {B} occupy adjacent stages, {A} does not precede
+        {B} in the majority of cases.
+    media:
+      question: After {v}, when {A} and {B} happen back to back, is {A} usually the first of the two?
+      claim: After {v}, when {A} and {B} happen back to back, {A} is usually the first of the two.
+      question_negated: After {v}, when {A} and {B} happen back to back, is {A} usually NOT the first
+        of the two?
+      claim_negated: After {v}, when {A} and {B} happen back to back, {A} is usually not the first of
+        the two.
+    clinical:
+      question: In {v} recipients with {A} and {B} in consecutive stages, does {A} usually come first?
+      claim: In {v} recipients with {A} and {B} in consecutive stages, {A} usually comes first.
+      question_negated: In {v} recipients with {A} and {B} in consecutive stages, does {A} usually NOT
+        come first?
+      claim_negated: In {v} recipients with {A} and {B} in consecutive stages, {A} does not usually come
+        first.
+- id: Y-V2
+  primitive: immediate
+  level: vaccine
+  answer_type: CHOICE
+  slots:
+  - A
+  - B
+  - v
+  variants:
+    original:
+      question: After {v}, in reports where {A} and {B} are in consecutive stages, which comes first?
+      claim: After {v}, in reports where {A} and {B} are in consecutive stages, {A} comes first more often.
+    research:
+      question: Among {v} reports with {A} and {B} in adjacent stages, which is the earlier of the two
+        more often?
+      claim: Among {v} reports with {A} and {B} in adjacent stages, {A} is the earlier of the two more
+        often.
+    media:
+      question: After {v}, when these two happen back to back, which comes first, {A} or {B}?
+      claim: After {v}, when these two happen back to back, {A} comes first more often.
+    clinical:
+      question: In {v} recipients with {A} and {B} in consecutive stages, which is the earlier, {A} or
+        {B}?
+      claim: In {v} recipients with {A} and {B} in consecutive stages, {A} is the earlier more often.
+- id: Y-V3
+  primitive: adjacency
+  level: vaccine
+  answer_type: BOOL
+  slots:
+  - A
+  - B
+  - v
+  notes: The null here is the mean per-report chance of adjacency (2/L), NOT 0.5. A solver that assumes
+    0.5 will systematically over-report support, which is exactly the failure this group is designed to
+    expose.
+  variants:
+    original:
+      question: After {v}, do {A} and {B} fall in consecutive stages more often than chance would give?
+      claim: After {v}, {A} and {B} fall in consecutive stages more often than chance would give.
+      question_negated: After {v}, is it the case that {A} and {B} do NOT fall in consecutive stages more
+        often than chance would give?
+      claim_negated: After {v}, {A} and {B} do not fall in consecutive stages more often than chance would
+        give.
+    research:
+      question: Among {v} reports where {A} and {B} occur at different stages, is their adjacency rate
+        above the rate expected from the timelines' stage counts?
+      claim: Among {v} reports where {A} and {B} occur at different stages, their adjacency rate is above
+        the rate expected from the timelines' stage counts.
+      question_negated: Among {v} reports where {A} and {B} occur at different stages, is their adjacency
+        rate no higher than the rate expected from the timelines' stage counts?
+      claim_negated: Among {v} reports where {A} and {B} occur at different stages, their adjacency rate
+        is not above the rate expected from the timelines' stage counts.
+    media:
+      question: After {v}, do {A} and {B} follow each other more closely than you would expect by chance?
+      claim: After {v}, {A} and {B} follow each other more closely than you would expect by chance.
+      question_negated: After {v}, do {A} and {B} follow each other no more closely than you would expect
+        by chance?
+      claim_negated: After {v}, {A} and {B} do not follow each other more closely than you would expect
+        by chance.
+    clinical:
+      question: In {v} recipients, are {A} and {B} adjacent in the course more often than the timelines
+        alone would predict?
+      claim: In {v} recipients, {A} and {B} are adjacent in the course more often than the timelines alone
+        would predict.
+      question_negated: In {v} recipients, are {A} and {B} adjacent in the course no more often than the
+        timelines alone would predict?
+      claim_negated: In {v} recipients, {A} and {B} are not adjacent in the course more often than the
+        timelines alone would predict.
+  null_ref: structural

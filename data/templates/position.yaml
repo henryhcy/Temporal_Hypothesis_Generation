@@ -1,0 +1,77 @@
+family: position
+description: 'v1.2 (decisions.md 2026-10-07, issue 32): WHERE a single event sits in a report''s timeline.
+  The cohort group is tested against the per-core STRUCTURAL early-rate (null_ref: structural), never
+  0.5 -- doc 10 s4.3.'
+common:
+  registers:
+  - original
+  - research
+  - media
+  - clinical
+groups:
+- id: T-R1
+  primitive: position
+  level: report
+  answer_type: BOOL
+  slots:
+  - A
+  - r
+  variants:
+    original:
+      question: In report {r}, did {A} occur in the first half of the timeline?
+      claim: In report {r}, {A} occurred in the first half of the timeline.
+    research:
+      question: In this report, does {A} fall in the earlier half of the recorded stages?
+      claim: In this report, {A} falls in the earlier half of the recorded stages.
+    media:
+      question: In this case, did {A} show up early rather than late?
+      claim: In this case, {A} showed up early rather than late.
+    clinical:
+      question: In this patient, did {A} present in the early part of the course?
+      claim: In this patient, {A} presented in the early part of the course.
+- id: T-V1
+  primitive: position
+  level: vaccine
+  answer_type: BOOL
+  null_ref: structural
+  slots:
+  - A
+  - v
+  notes: WORDING IS LOAD-BEARING. An earlier draft read "usually appears in the earlier half" / "in the
+    majority of cases", which asserts a 0.5 bar -- and the test uses the structural rate (~0.53), so the
+    claim and the statistic would have answered different questions. That is the same defect that got
+    S-V1 and F-V3 reworded on 07-13, F-V2/F-R2 on 08-12 and C-V3 flagged as issue 13. Every register here
+    therefore says "more often than chance would place it", never "usually" and never "most".
+  variants:
+    original:
+      question: After {v}, does {A} appear in the earlier half of the timeline more often than chance
+        would place it there?
+      claim: After {v}, {A} appears in the earlier half of the timeline more often than chance would place
+        it there.
+      question_negated: After {v}, is it the case that {A} does NOT appear in the earlier half of the
+        timeline more often than chance would place it there?
+      claim_negated: After {v}, {A} does not appear in the earlier half of the timeline more often than
+        chance would place it there.
+    research:
+      question: Among {v} reports, is {A}'s early-half rate above the rate expected from the stage structure
+        of the timelines it appears in?
+      claim: Among {v} reports, {A}'s early-half rate is above the rate expected from the stage structure
+        of the timelines it appears in.
+      question_negated: Among {v} reports, is {A}'s early-half rate no higher than the rate expected from
+        the stage structure of the timelines it appears in?
+      claim_negated: Among {v} reports, {A}'s early-half rate is not above the rate expected from the
+        stage structure of the timelines it appears in.
+    media:
+      question: After {v}, does {A} show up earlier in the course than you would expect by chance?
+      claim: After {v}, {A} shows up earlier in the course than you would expect by chance.
+      question_negated: After {v}, does {A} show up no earlier in the course than you would expect by
+        chance?
+      claim_negated: After {v}, {A} does not show up earlier in the course than you would expect by chance.
+    clinical:
+      question: In {v} recipients, does {A} present earlier in the course than the timelines alone would
+        predict?
+      claim: In {v} recipients, {A} presents earlier in the course than the timelines alone would predict.
+      question_negated: In {v} recipients, does {A} present no earlier in the course than the timelines
+        alone would predict?
+      claim_negated: In {v} recipients, {A} does not present earlier in the course than the timelines
+        alone would predict.

@@ -333,3 +333,112 @@ def ordering_distribution(
         "modal_share": modal_count / n_orderable,
         "modal_tie": modal_tie,
     }
+
+
+# ---------------------------------------------------------------------------
+# v1.2 families (decisions.md 2026-10-07): report GEOMETRY on first-mention
+# RANKS, and the four new measurements. Ported from
+# scripts/run_family_inventory.py (tally / rank_map) so the gold matches what
+# the 2,000-round screens measured.
+# ---------------------------------------------------------------------------
+
+def rank_map(terms: dict[str, int]) -> tuple[dict[str, int], int]:
+    """term -> rank among the report's OCCUPIED first-mention levels, and L.
+
+    Ranks, not raw level indices: a report with first mentions at levels
+    {0, 2, 5} has three stages, and "the middle stage" is level 2 whatever
+    the numbering. The half-timeline null depends on this.
+    """
+    levels = sorted(set(terms.values()))
+    pos = {lv: i for i, lv in enumerate(levels)}
+    return {t: pos[lv] for t, lv in terms.items()}, len(levels)
+
+
+def report_half(terms: dict[str, int]) -> tuple[dict[str, int], int, float, float | None]:
+    """(ranks, L, mid, p_early) for one report.
+
+    ``p_early`` is the report's CHANCE rate of an event landing in the earlier
+    half: early slots / (early + late slots) over ALL its first-mention terms,
+    the exact-middle rank counting for neither. None when L < 2 (no halves).
+    Earlier stages hold more terms (2.45 at rank 0 vs ~1.74 from rank 3), so this
+    is above 0.5 corpus-wide (0.5327) and varies per report -- which is why a
+    single-event position claim cannot be tested against 0.5 (doc 10 s4.3).
+    """
+    ranks, L = rank_map(terms)
+    if L < 2:
+        return ranks, L, 0.0, None
+    mid = (L - 1) / 2
+    n_early = sum(1 for r in ranks.values() if r < mid)
+    n_late = sum(1 for r in ranks.values() if r > mid)
+    p_early = n_early / (n_early + n_late) if (n_early + n_late) else None
+    return ranks, L, mid, p_early
+
+
+def early_half_fraction(
+    index: CorpusIndex, a: str, cohort: list[int]
+) -> tuple[float | None, int, int, float]:
+    """N1 position: (frac, n, k, exp_sum) for "A falls in the earlier half".
+
+    Denominator: reports containing A with L >= 2 whose A is NOT on the exact
+    middle rank (a middle event is in neither half). Numerator: rank(A) < mid.
+    ``exp_sum`` accumulates each denominator report's p_early; the core's
+    data-derived null is p0 = exp_sum / n.
+    """
+    n = k = 0
+    exp = 0.0
+    for vid in cohort:
+        t = index.report_terms[vid]
+        if a not in t:
+            continue
+        ranks, L, mid, p_early = report_half(t)
+        if p_early is None or ranks[a] == mid:
+            continue
+        n += 1
+        k += int(ranks[a] < mid)
+        exp += p_early
+    return ((k / n) if n else None), n, k, exp
+
+
+def immediate_fraction(
+    index: CorpusIndex, a: str, b: str, cohort: list[int]
+) -> tuple[float | None, int]:
+    """N2 immediate succession: among reports where A and B occupy CONSECUTIVE
+    ranks (|rank(A) - rank(B)| == 1), the share with A first. Null 0.5."""
+    n = k = 0
+    for vid in cohort:
+        t = index.report_terms[vid]
+        if a not in t or b not in t:
+            continue
+        ranks, _L = rank_map(t)
+        ra, rb = ranks[a], ranks[b]
+        if abs(ra - rb) != 1:
+            continue
+        n += 1
+        k += int(ra < rb)
+    return ((k / n) if n else None), n
+
+
+def adjacency_rate(
+    index: CorpusIndex, a: str, b: str, cohort: list[int]
+) -> tuple[float | None, int, int, float]:
+    """N3 adjacency vs chance: (frac, n, k, exp_sum).
+
+    Denominator: reports with A and B at DISTINCT ranks (the ordered-pair
+    denominator). Numerator: the two are adjacent. Each report's chance of
+    adjacency for a distinct pair is 2/L (L(L-1) ordered placements, 2(L-1)
+    adjacent), so the core's null is p0 = exp_sum / n.
+    """
+    n = k = 0
+    exp = 0.0
+    for vid in cohort:
+        t = index.report_terms[vid]
+        if a not in t or b not in t:
+            continue
+        ranks, L = rank_map(t)
+        ra, rb = ranks[a], ranks[b]
+        if ra == rb:
+            continue
+        n += 1
+        k += int(abs(ra - rb) == 1)
+        exp += 2.0 / L
+    return ((k / n) if n else None), n, k, exp

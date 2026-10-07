@@ -192,8 +192,59 @@ WHERE r.vaccine = :vax AND a.vaers_id IS NULL
 ORDER BY r.vaers_id"""
 
 
-def report_sql(n_events: int) -> str:
-    """single_report: ``(term, level)`` of the claim's events in report ``:r``."""
+# v1.2 consecutive_pair: both present; denominator = CONSECUTIVE first-mention
+# ranks; numerator = A at the rank directly before B; co-exist and gapped pairs
+# are present-but-excluded.
+CONSECUTIVE_PAIR_SQL = """\
+SELECT a.vaers_id,
+       (ABS(a.rank - b.rank) = 1) AS in_denominator,
+       (a.rank + 1 = b.rank)      AS in_numerator,
+       (ABS(a.rank - b.rank) <> 1) AS excluded,
+       NULL                       AS cell
+FROM first_mention_rank a
+JOIN first_mention_rank b ON b.vaers_id = a.vaers_id
+WHERE a.vaccine = :vax AND a.term = :a AND b.term = :b
+ORDER BY a.vaers_id"""
+
+# v1.2 adjacency (adj_rate_bool): the ordered-pair denominator; numerator = the
+# two ranks are consecutive (either order). The null (mean 2/L) is computed by
+# S3 from the denominator reports' n_ranks, not returned here.
+ADJACENT_PAIR_SQL = """\
+SELECT a.vaers_id,
+       (a.rank <> b.rank)         AS in_denominator,
+       (ABS(a.rank - b.rank) = 1) AS in_numerator,
+       (a.rank = b.rank)          AS excluded,
+       NULL                       AS cell
+FROM first_mention_rank a
+JOIN first_mention_rank b ON b.vaers_id = a.vaers_id
+WHERE a.vaccine = :vax AND a.term = :a AND b.term = :b
+ORDER BY a.vaers_id"""
+
+# v1.2 present_offmid (early_bool): reports containing A with >= 2 stages whose A
+# is not on the exact middle rank; numerator = A in the earlier half.
+PRESENT_OFFMID_SQL = """\
+SELECT a.vaers_id,
+       (a.n_ranks >= 2 AND 2 * a.rank <> a.n_ranks - 1) AS in_denominator,
+       (a.n_ranks >= 2 AND 2 * a.rank <  a.n_ranks - 1) AS in_numerator,
+       (a.n_ranks <  2 OR  2 * a.rank =  a.n_ranks - 1) AS excluded,
+       NULL                                              AS cell
+FROM first_mention_rank a
+WHERE a.vaccine = :vax AND a.term = :a
+ORDER BY a.vaers_id"""
+
+# Report-tier modes whose rule needs the WHOLE report (ranks depend on every
+# stage, not only on the claim's events).
+WHOLE_REPORT_MODES = frozenset({"rep_early_bool", "rep_imm_bool"})
+
+
+def report_sql(n_events: int, *, whole_report: bool = False) -> str:
+    """single_report: ``(term, level)`` of the claim's events in report ``:r``
+    (or of EVERY term of the report when ``whole_report``: v1.2 rank claims)."""
+    if whole_report:
+        return ("SELECT term, level\n"
+                "FROM first_mention\n"
+                "WHERE vaers_id = :r\n"
+                "ORDER BY level, term")
     placeholders = ", ".join(f":{p}" for p in TERM_PARAMS[:n_events])
     return ("SELECT term, level\n"
             "FROM first_mention\n"
@@ -235,8 +286,9 @@ def compile_sql(claim: StructuredClaim) -> list[ArmQuery]:
         rid = claim.report_id
         if rid is None:
             return []
-        params = {"r": int(rid), **dict(zip(TERM_PARAMS, terms))}
-        return [ArmQuery(REPORT_LABEL, report_sql(len(terms)), params, None)]
+        whole = claim.mode in WHOLE_REPORT_MODES
+        params = {"r": int(rid)} if whole else {"r": int(rid), **dict(zip(TERM_PARAMS, terms))}
+        return [ArmQuery(REPORT_LABEL, report_sql(len(terms), whole_report=whole), params, None)]
 
     # -- cohort tiers ---------------------------------------------------------
     vaccines = list(claim.vaccines)
@@ -261,6 +313,13 @@ def compile_sql(claim: StructuredClaim) -> list[ArmQuery]:
                 ArmQuery(c2, PRESENCE_WITHOUT_SQL, dict(params), kind)]
 
     cond = spec.conditioning
+    # v1.2: adjacency shares the ordered-pair denominator but not its numerator
+    if claim.mode == "adj_rate_bool":
+        return [ArmQuery(ARM_LABEL, ADJACENT_PAIR_SQL, {"vax": vax, "a": a, "b": b}, kind)]
+    if cond == "consecutive_pair":
+        return [ArmQuery(ARM_LABEL, CONSECUTIVE_PAIR_SQL, {"vax": vax, "a": a, "b": b}, kind)]
+    if cond == "present_offmid":
+        return [ArmQuery(ARM_LABEL, PRESENT_OFFMID_SQL, {"vax": vax, "a": a}, kind)]
     if cond == "ordered_pair":
         return [pair(ARM_LABEL, a, b, vax)]
     if cond == "both_present":

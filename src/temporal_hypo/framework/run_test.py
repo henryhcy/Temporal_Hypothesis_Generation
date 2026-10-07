@@ -43,6 +43,8 @@ from temporal_hypo.core import verdict as vd
 from temporal_hypo.core.answers import Significance, answer_key, core_significance
 from temporal_hypo.core.min_n import family_floor, min_n_gate
 from temporal_hypo.framework.claim_schema import (
+    DATA_DERIVED_MODES,
+    MODE_P0,
     FAMILIES,
     GROUP_BY_MODE,
     MODE_SPEC,
@@ -64,7 +66,7 @@ PROCEDURE_MODES = ("honouring", "gold")
 
 _SEQUENCE_MODES = ("seq_bool", "modal_choice")
 _EXTREME_MODES = ("first_choice", "first_bool", "last_choice")
-_REP_PAIR_MODES = ("rep_dir_bool", "rep_dir_choice", "rep_sym_bool")
+_REP_PAIR_MODES = ("rep_dir_bool", "rep_dir_choice", "rep_sym_bool", "rep_imm_bool")
 _REP_EXTREME_MODES = ("rep_first_choice", "rep_first_bool", "rep_last_choice")
 
 
@@ -127,6 +129,20 @@ def report_rule(claim: StructuredClaim, levels: Mapping[str, int] | None) -> str
         return None
     lv = [int(levels[t]) for t in terms]  # type: ignore[index]
 
+    # v1.2 rank rules need the WHOLE report (every term's first-mention level).
+    if m == "rep_early_bool":
+        from temporal_hypo.generation.corpus import report_half
+        ranks, L, mid, p_early = report_half({str(t): int(l) for t, l in levels.items()})
+        r = ranks.get(str(terms[0]))
+        if r is None or p_early is None or r == mid:
+            return vd.INSUFFICIENT          # one stage, or A on the middle rank: no half
+        return vd.SUPPORTED if r < mid else vd.REFUTED
+    if m == "rep_imm_bool":
+        from temporal_hypo.generation.corpus import rank_map
+        ranks, _L = rank_map({str(t): int(l) for t, l in levels.items()})
+        ra, rb = ranks[str(terms[0])], ranks[str(terms[1])]
+        return vd.SUPPORTED if ra + 1 == rb else vd.REFUTED
+
     if m == "rep_dir_bool":
         return vd.SUPPORTED if lv[0] < lv[1] else vd.REFUTED
     if m == "rep_dir_choice":
@@ -152,7 +168,18 @@ def _report_extra(mode: str, terms: tuple, levels: Mapping[str, int] | None) -> 
     if mode in _REP_PAIR_MODES:
         a, b = (tuple(terms) + (None, None))[:2]
         rel = relation(lv, a, b) if (a is not None and b is not None) else "missing"
-        return {"rel": None if rel == "missing" else rel}
+        out = {"rel": None if rel == "missing" else rel}
+        if mode == "rep_imm_bool" and rel != "missing":
+            from temporal_hypo.generation.corpus import rank_map
+            ranks, _L = rank_map(lv)
+            out["adjacent"] = abs(ranks[a] - ranks[b]) == 1
+        return out
+    if mode == "rep_early_bool":
+        from temporal_hypo.generation.corpus import report_half
+        a = terms[0] if terms else None
+        ranks, L, mid, _p = report_half(lv) if lv else ({}, 0, 0.0, None)
+        r = ranks.get(a) if a is not None else None
+        return {"early": (r is not None and r < mid), "rank": r, "L": L}
     idxs = {t: lv.get(t) for t in terms if t is not None}
     if mode == "rep_seq_bool":
         vals = [idxs.get(t) for t in terms]
@@ -256,6 +283,19 @@ def to_viable_core(claim: StructuredClaim, retrieval: "Retrieval | Any") -> Viab
                           extra=_report_extra(claim.mode, terms, levels), **common)
 
     n, k, counts, den = _arm_fields(arms[0] if arms else None)
+    extra = _cohort_extra(claim.mode, terms, counts)
+    # v1.2: the tested null travels on the core (as the generator stores it):
+    # a text-stated bar is the mode's constant; a data-derived null is the
+    # retriever's per-report chance sum over the denominator, divided by n.
+    if claim.mode in MODE_P0:
+        extra["p0"] = MODE_P0[claim.mode]
+        extra["null_kind"] = "text_stated"
+        if claim.mode == "first_bar":
+            extra["named"] = str(terms[0]) if terms else None
+    elif claim.mode in DATA_DERIVED_MODES:
+        cs = getattr(arms[0], "chance_sum", None) if arms else None
+        extra["p0"] = (cs / n) if (cs is not None and n) else None
+        extra["null_kind"] = "data_derived"
     if spec.arms == 2:
         n2, k2, _, _ = _arm_fields(arms[1] if len(arms) > 1 else None)
         proportion2: float | None = (k2 / n2) if n2 else None
@@ -267,7 +307,7 @@ def to_viable_core(claim: StructuredClaim, retrieval: "Retrieval | Any") -> Viab
                       natural_verdict="",
                       proportion=(k / n) if n else None, n=n, k=k,
                       proportion2=proportion2, n2=n2, k2=k2,
-                      extra=_cohort_extra(claim.mode, terms, counts), **common)
+                      extra=extra, **common)
 
 
 # ---------------------------------------------------------------------------
@@ -337,6 +377,15 @@ def _honour(core: ViableCore, claim: StructuredClaim, errors: list[str],
 
     if p.test == "binom_exact":
         p0 = p.null.p0
+        plan_nk = (claim.plan or {}).get("null_kind") if claim.plan else None
+        if p0 is None and (plan_nk == "data_derived" or claim.mode in DATA_DERIVED_MODES):
+            # v1.2: the claim states a RECIPE ("the structural rate over the
+            # denominator reports"); S3 resolves it on the retrieved data. The
+            # reference procedure carries no p0 for these modes either, so the
+            # resolution is only noted when a composed plan asked for it.
+            p0 = (core.extra or {}).get("p0")
+            if plan_nk == "data_derived":
+                notes.append(f"data-derived null resolved on the retrieved denominator: p0={p0}")
         if p0 is None or not (0.0 < float(p0) < 1.0):
             errors.append(f"binom_exact needs a null p0 in (0, 1), got {p0!r}; reference procedure used")
             return None

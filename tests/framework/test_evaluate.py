@@ -357,7 +357,7 @@ def test_extraction(metrics):
         assert p[f] == A(1.0), f
     assert e["procedure_em"] == A(13 / 15)
     c = e["mode_confusion"]
-    assert len(c) == 20 and all(len(row) == 21 for row in c.values())
+    assert len(c) == 29 and all(len(row) == 30 for row in c.values())   # 29 modes since v1.2
     assert c["dir_bool"]["dir_bool"] == 7 and c["dir_choice"]["dir_choice"] == 2
     assert c["rep_dir_bool"]["rep_dir_bool"] == 2 and c["rep_first_choice"]["rep_first_choice"] == 2
     assert c["sym_bool_cooccurs"]["sym_bool_cooccurs"] == 2

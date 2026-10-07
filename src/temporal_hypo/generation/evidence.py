@@ -103,6 +103,58 @@ def _extreme_sets(index, terms: tuple[str, ...], cohort: list[int], *,
             "ties": ties}
 
 
+def _immediate_sets(index, a: str, b: str, cohort: list[int]) -> dict:
+    """v1.2 immediate succession: CONSECUTIVE-rank pairs only; a both-present
+    report at the same rank or with a gap is present-but-excluded."""
+    denom, num, excl = [], [], []
+    for vid in cohort:
+        t = index.report_terms[vid]
+        if a not in t or b not in t:
+            continue
+        ranks, _L = corpus.rank_map(t)
+        if abs(ranks[a] - ranks[b]) != 1:
+            excl.append(vid)
+            continue
+        denom.append(vid)
+        if ranks[a] < ranks[b]:
+            num.append(vid)
+    return {"denominator": denom, "numerator": num, "excluded": excl}
+
+
+def _early_half_sets(index, a: str, cohort: list[int]) -> dict:
+    """v1.2 position: reports with A, >= 2 stages, A off the middle rank."""
+    denom, num, excl = [], [], []
+    for vid in cohort:
+        t = index.report_terms[vid]
+        if a not in t:
+            continue
+        ranks, L, mid, p_early = corpus.report_half(t)
+        if p_early is None or ranks[a] == mid:
+            excl.append(vid)
+            continue
+        denom.append(vid)
+        if ranks[a] < mid:
+            num.append(vid)
+    return {"denominator": denom, "numerator": num, "excluded": excl}
+
+
+def _adjacency_sets(index, a: str, b: str, cohort: list[int]) -> dict:
+    """v1.2 adjacency rate: the ordered-pair denominator; numerator = adjacent."""
+    denom, num, excl = [], [], []
+    for vid in cohort:
+        t = index.report_terms[vid]
+        if a not in t or b not in t:
+            continue
+        ranks, _L = corpus.rank_map(t)
+        if ranks[a] == ranks[b]:
+            excl.append(vid)
+            continue
+        denom.append(vid)
+        if abs(ranks[a] - ranks[b]) == 1:
+            num.append(vid)
+    return {"denominator": denom, "numerator": num, "excluded": excl}
+
+
 def evidence_ids(index, facts) -> dict:
     """Report ids behind ``facts``, oriented to the claim it asserts.
 
@@ -130,6 +182,20 @@ def evidence_ids(index, facts) -> dict:
     if m == "last_choice":
         return _extreme_sets(index, tuple(ev), core.cohort_ids,
                              named=ev[0], last=True)
+    # v1.2 families (decisions.md 2026-10-07)
+    if m in ("imm_bool", "imm_choice"):
+        return _immediate_sets(index, ev[0], ev[1], core.cohort_ids)
+    if m == "early_bool":
+        return _early_half_sets(index, ev[0], core.cohort_ids)
+    if m == "adj_rate_bool":
+        return _adjacency_sets(index, ev[0], ev[1], core.cohort_ids)
+    if m == "precedes_bar":
+        return _pair_sets(index, ev[0], ev[1], core.cohort_ids)
+    if m == "cooc_bar":
+        return _cooccur_sets(index, ev[0], ev[1], core.cohort_ids)
+    if m == "first_bar":
+        return _extreme_sets(index, tuple(ev), core.cohort_ids,
+                             named=ev[0], last=False)
 
     if m == "multi_dir_precedes":
         v1, v2 = facts.vaccines_assigned

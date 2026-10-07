@@ -54,6 +54,10 @@ class ArmCounts:
     excluded_ids: set[int]
     counts: dict[Any, int] = field(default_factory=dict)   # cell -> count, denominator rows only
     n_rows: int = 0
+    # v1.2: for a DATA-DERIVED null, the sum over denominator reports of each
+    # report's chance rate (structural early-rate; adjacency chance 2/L), computed
+    # by the retriever from the data; the core's p0 is chance_sum / n.
+    chance_sum: float | None = None
 
     @property
     def proportion(self) -> float | None:

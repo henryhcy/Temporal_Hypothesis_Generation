@@ -58,6 +58,15 @@ _STAT_BY_MODE = {
     "rep_seq_bool": "rep_seq",
     "rep_first_choice": "rep_first", "rep_first_bool": "rep_first",
     "rep_last_choice": "rep_last",
+    # v1.2 (decisions.md 2026-10-07). A bar is a different statistic from the
+    # 0.5 version of the same rate: "A before B >= 2/3" and "A before B > 1/2"
+    # share counts but not the fact asserted, so they get their own ids.
+    "early_bool": "early_half", "rep_early_bool": "rep_early_half",
+    "imm_bool": "immediate", "imm_choice": "immediate",
+    "rep_imm_bool": "rep_immediate",
+    "adj_rate_bool": "adjacency_rate",
+    "precedes_bar": "precedes_bar", "cooc_bar": "cooc_bar",
+    "first_bar": "first_bar",
 }
 
 

@@ -46,9 +46,16 @@ from temporal_hypo.generation.templates import load_groups
 
 _REPO = Path(__file__).resolve().parent.parent
 
-_PRECEDES = {"dir_bool", "dir_choice"}
+_PRECEDES = {"dir_bool", "dir_choice", "precedes_bar"}        # v1.2: H-V1 shares the rule
 _SEQ = {"seq_bool", "modal_choice"}
-_EXTREME = {"first_choice", "last_choice", "first_bool"}
+_EXTREME = {"first_choice", "last_choice", "first_bool", "first_bar"}
+_COOC = {"sym_bool_cooccurs", "cooc_modal_bool", "cooc_bar"}
+_IMMEDIATE = {"imm_bool", "imm_choice"}                         # v1.2
+
+
+def _ranks(index, vid):
+    from temporal_hypo.generation import corpus
+    return corpus.rank_map(index.report_terms[vid])
 
 
 def _lv(index, vid, events):
@@ -115,7 +122,7 @@ def check_instance(index, facts, fails: Counter, examples: dict) -> None:
             if not (a is not None and b is not None and a < b):
                 bad("D: numerator report does not satisfy 'A before B'",
                     f"report {vid} levels={a},{b}")
-    elif m in ("sym_bool_cooccurs", "cooc_modal_bool"):
+    elif m in _COOC:
         for vid in num:
             a, b = _lv(index, vid, ev)
             if a != b:
@@ -123,6 +130,61 @@ def check_instance(index, facts, fails: Counter, examples: dict) -> None:
                     f"report {vid} {a},{b}")
         if exc:
             bad("C: co-occurs should exclude nothing", f"{len(exc)} excluded")
+    elif m in _IMMEDIATE:
+        # v1.2 C: every denominator report has A and B at CONSECUTIVE ranks;
+        # every excluded report has both present but not consecutive.
+        for vid in den:
+            ranks, _L = _ranks(index, vid)
+            if ev[0] not in ranks or ev[1] not in ranks or \
+                    abs(ranks[ev[0]] - ranks[ev[1]]) != 1:
+                bad("C: immediate denominator report is not a consecutive pair",
+                    f"report {vid}")
+        for vid in exc:
+            ranks, _L = _ranks(index, vid)
+            if ev[0] in ranks and ev[1] in ranks and \
+                    abs(ranks[ev[0]] - ranks[ev[1]]) == 1:
+                bad("C: immediate excluded report IS a consecutive pair", f"report {vid}")
+        for vid in num:
+            ranks, _L = _ranks(index, vid)
+            if not ranks[ev[0]] < ranks[ev[1]]:
+                bad("D: immediate numerator does not have A before B", f"report {vid}")
+    elif m == "early_bool":
+        # v1.2 C/D: denominator = A present, >= 2 stages, A off the middle rank;
+        # numerator = A in the earlier half; the null is the mean per-report
+        # early-slot share over the denominator (recomputed here).
+        from temporal_hypo.generation import corpus as _c
+        exp = 0.0
+        for vid in den:
+            ranks, L, mid, p_early = _c.report_half(index.report_terms[vid])
+            if ev[0] not in ranks or p_early is None or ranks[ev[0]] == mid:
+                bad("C: early-half denominator report has no half for A", f"report {vid}")
+            else:
+                exp += p_early
+        for vid in num:
+            ranks, L, mid, _p = _c.report_half(index.report_terms[vid])
+            if not ranks[ev[0]] < mid:
+                bad("D: early-half numerator report has A in the later half", f"report {vid}")
+        p0 = core.extra.get("p0")
+        if den and p0 is not None and abs(exp / len(den) - p0) > 1e-9:
+            bad("D: data-derived null does not match the denominator's mean early-rate",
+                f"{exp/len(den)} vs {p0}")
+    elif m == "adj_rate_bool":
+        from temporal_hypo.generation import corpus as _c
+        exp = 0.0
+        for vid in den:
+            ranks, L = _ranks(index, vid)
+            if ev[0] not in ranks or ev[1] not in ranks or ranks[ev[0]] == ranks[ev[1]]:
+                bad("C: adjacency denominator report is not a distinct-rank pair", f"report {vid}")
+            else:
+                exp += 2.0 / L
+        for vid in num:
+            ranks, _L = _ranks(index, vid)
+            if abs(ranks[ev[0]] - ranks[ev[1]]) != 1:
+                bad("D: adjacency numerator report is not adjacent", f"report {vid}")
+        p0 = core.extra.get("p0")
+        if den and p0 is not None and abs(exp / len(den) - p0) > 1e-9:
+            bad("D: data-derived null does not match the denominator's mean 2/L",
+                f"{exp/len(den)} vs {p0}")
     elif m in _SEQ:
         for vid in den:
             lv = _lv(index, vid, ev)

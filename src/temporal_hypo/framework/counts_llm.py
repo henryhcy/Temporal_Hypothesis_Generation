@@ -65,7 +65,10 @@ def counts_payload(claim: StructuredClaim, core: Any) -> dict:
     out: dict[str, Any] = {
         "claim_is_about": spec.statistic,
         "test": proc.test,
-        "null": {"kind": proc.null.kind, "p0": proc.null.p0},
+        # v1.2: a data-derived p0 lives on the core (computed by S3 from the data)
+        "null": {"kind": proc.null.kind,
+                 "p0": (proc.null.p0 if proc.null.p0 is not None
+                        else (getattr(core, "extra", None) or {}).get("p0"))},
         "claim_tail": proc.claim_tail,
         "alpha": proc.alpha,
         "min_n_floor": proc.min_n_floor,

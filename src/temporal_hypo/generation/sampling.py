@@ -185,6 +185,13 @@ def balance_group(
 
     S = len(decisive)
     per_class = S if per_core == 2 else S // 2
+    # v1.2 (decisions.md 2026-10-07): a BAR core can serve only the class the
+    # data puts it in (both orientations can be refuted), so equal thirds is
+    # capped by the smaller feasible pool -- for every shipped v1.1 group both
+    # pools equal S and this changes nothing.
+    pool_sup = sum(1 for c in decisive if "supported" in feas[id(c)])
+    pool_ref = sum(1 for c in decisive if "refuted" in feas[id(c)])
+    per_class = min(per_class, pool_sup, pool_ref)
     if t is not None:
         per_class = min(per_class, t // len(CLASSES))
     targets = {k: per_class for k in CLASSES}

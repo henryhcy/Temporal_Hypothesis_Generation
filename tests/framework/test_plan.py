@@ -43,7 +43,7 @@ def test_derive_mode_inverts_derive_plan(mode):
     s = MODE_SPEC[mode]
     p = derive_plan(mode)
     assert derive_mode(s.tier, s.answer_type, s.n_events, p["arms"], p["denominator"],
-                       p["quantity"], p["extreme"]) == mode
+                       p["quantity"], p["extreme"], p["null_kind"]) == mode
 
 
 @pytest.mark.parametrize("mode", MODES)

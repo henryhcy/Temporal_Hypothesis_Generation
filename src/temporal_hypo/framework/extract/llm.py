@@ -92,6 +92,18 @@ H0_BY_MODE: dict[str, str] = {
                      "arms of the same cohort (p1 = p2)",
     "assoc_bool": "H0: P({B} present | {A} present) = P({B} present | {A} absent) "
                   "(p1 = p2; no association)",
+    # -- v1.2 families (decisions.md 2026-10-07) ---------------------------------
+    "early_bool": "H0: P({A} in the earlier half) = the STRUCTURAL early-rate of the reports "
+                  "that contain {A} (computed from their stage populations; not 0.5)",
+    "rep_early_bool": "H0: none -- single deterministic observation, no sampling distribution",
+    "imm_bool": "H0: P({A} directly before {B} | the two are at consecutive stages) = 0.5",
+    "imm_choice": "H0: P({A} directly before {B} | the two are at consecutive stages) = 0.5",
+    "rep_imm_bool": "H0: none -- single deterministic observation, no sampling distribution",
+    "adj_rate_bool": "H0: P({A} and {B} at consecutive stages | distinct stages) = the mean "
+                     "chance 2/L over those reports (L = the report's stage count; not 0.5)",
+    "precedes_bar": "H0: P({A} precedes {B}) = 2/3 among ordered reports (the stated bar)",
+    "cooc_bar": "H0: P({A} and {B} co-occur) = 2/3 among reports containing both (the stated bar)",
+    "first_bar": "H0: P({A} is the unique earliest of {A},{B},{C}) = 1/2 (the stated bar)",
 }
 assert set(H0_BY_MODE) == set(MODES), sorted(set(H0_BY_MODE) ^ set(MODES))
 
@@ -117,6 +129,16 @@ ROLES_BY_MODE: dict[str, str] = {
     "pairpair_bool": "A,B,C,D: A precedes B more often than C precedes D (arm1 = A,B; arm2 = C,D)",
     "assoc_bool": "A,B: B occurs more often with A than without A (arm1 = has A; arm2 = lacks A)",
     "multi_dir_precedes": "A,B: A precedes B more often after cohort v1 than v2 (v1 = asserted/first-named vaccine)",
+    # v1.2
+    "early_bool": "A: A falls in the earlier half of the timeline more often than chance",
+    "rep_early_bool": "A: A occurred in the first half of this report's timeline",
+    "imm_bool": "A,B: when at consecutive stages, A is usually the earlier",
+    "imm_choice": "A,B: when at consecutive stages, A is the earlier more often (A = asserted/first-named)",
+    "rep_imm_bool": "A,B: A occupied the stage directly before B",
+    "adj_rate_bool": "A,B: A and B fall at consecutive stages more often than chance",
+    "precedes_bar": "A,B: A precedes B in at least two thirds of ordered reports",
+    "cooc_bar": "A,B: A and B co-occur in at least two thirds of reports containing both",
+    "first_bar": "A,B,C: A is the earliest in at least half of the reports containing all three",
 }
 assert set(ROLES_BY_MODE) == set(MODES)
 
@@ -187,7 +209,10 @@ CONDITIONING_GLOSS = (
     "all_present_unique_first/last: all candidates present with a unique earliest/latest "
     "(ties are dropped);\n"
     "presence_split: the whole vaccine cohort split on whether the report contains A; "
-    "single_report: the one report named by VAERS id, first-mention levels."
+    "single_report: the one report named by VAERS id, first-mention levels;\n"
+    "consecutive_pair: both present at CONSECUTIVE first-mention ranks (|rank(A) - rank(B)| = 1; "
+    "co-existing and gapped pairs are excluded); present_offmid: reports containing A with at "
+    "least two stages where A is not on the exact middle rank."
 )
 
 
@@ -207,19 +232,22 @@ WHAT_JSON_SCHEMA: dict = _what_schema()
 
 TIER_HINT = (
     "- TIER: the input's `level` fixes which modes are admissible. level=report -> one of the "
-    "seven rep_* modes (the claim is about ONE report, a single deterministic observation, no "
+    "nine rep_* modes (the claim is about ONE report, a single deterministic observation, no "
     "test); level=vaccine -> a single-cohort mode (dir_*, sym_bool_cooccurs, assoc_bool, "
     "cooc_modal_bool, seq_bool, modal_choice, first_*, last_choice, antecedent_bool, "
-    "pairpair_bool); level=multi -> multi_dir_precedes. Never choose a cohort mode for a "
+    "pairpair_bool, early_bool, imm_*, adj_rate_bool, precedes_bar, cooc_bar, first_bar); "
+    "level=multi -> multi_dir_precedes. Never choose a cohort mode for a "
     "report-level input or a rep_* mode for a cohort-level input."
 )
 
 ROUTING_HINT = (
-    "- CANDIDATE COUNT: count the distinct event terms the text names. Exactly 2 -> a "
+    "- CANDIDATE COUNT: count the distinct event terms the text names. Exactly 1 -> a "
+    "position mode (early_bool, rep_early_bool). Exactly 2 -> a "
     "pairwise mode (dir_*, rep_dir_*, sym_bool_cooccurs, cooc_modal_bool, assoc_bool, "
-    "multi_dir_precedes), NEVER a first/last or sequence mode. Exactly 3 -> a sequence, "
-    "first/last or antecedent mode (seq_bool, modal_choice, first_*, last_choice, "
-    "antecedent_bool, rep_seq_bool, rep_first_*, rep_last_choice). Exactly 4 -> "
+    "multi_dir_precedes, imm_*, rep_imm_bool, adj_rate_bool, precedes_bar, cooc_bar), NEVER a "
+    "first/last or sequence mode. Exactly 3 -> a sequence, "
+    "first/last, antecedent or first-bar mode (seq_bool, modal_choice, first_*, last_choice, "
+    "antecedent_bool, first_bar, rep_seq_bool, rep_first_*, rep_last_choice). Exactly 4 -> "
     "pairpair_bool. 'Which came first, A or B?' with only two candidates is a DIRECTION "
     "claim (dir_choice / rep_dir_choice), not a first/last claim."
 )
@@ -331,6 +359,21 @@ CONVENTIONS_TEXT = (
     "nothing is conditioned on co-occurrence.\n"
     "- When a claim compares two vaccine cohorts, each cohort is its own arm with the "
     "same denominator rule applied inside it.\n"
+    "- A report's STAGES are its occupied first-mention levels, ranked 0, 1, 2, ... from the "
+    "earliest; two events are at consecutive stages when their ranks differ by exactly one. "
+    "When a claim is about an event directly preceding another, a report where the two "
+    "co-exist or have a stage between them cannot witness it: the denominator is reports "
+    "with both at consecutive ranks (consecutive_pair). When a claim is about how often "
+    "two events land at consecutive stages at all, the denominator is reports with both "
+    "at distinct stages (ordered_pair) and chance is the report's own 2/L (L = its stage "
+    "count), so the null is computed from the data.\n"
+    "- When a claim is about ONE event falling in the earlier half of a timeline, a report "
+    "with a single stage has no halves and an event on the exact middle stage is in "
+    "neither half: both leave the denominator (present_offmid). Earlier stages hold more "
+    "events, so the chance of 'early' is the structural early-rate of the reports in the "
+    "denominator, computed from the data, never 0.5.\n"
+    "- When the wording states a bar ('in at least two thirds', 'in at least half'), the "
+    "null proportion is that bar, read off the text; refuted means significantly BELOW it.\n"
     "- A claim about ONE named report is a single deterministic observation over that "
     "report's first-mention levels (single_report): no test, no floor.\n"
     "- Population claims: alpha = " + "ALPHA_TEXT_PLACEHOLDER" + "; minimum-n floors: "

@@ -18,9 +18,13 @@ def test_load_all_groups():
     #    + the addition half (same day, decisions.md batch 2): P-V2 and C-V2
     #      re-enter with NEW definitions (conditional antecedent; association
     #      vs independence -- not the retired PROP claims) plus P-V4 -> 20.
-    assert len(groups) == 20
+    #    + v1.2 (decisions.md 2026-10-07, issue 32): nine groups from the three
+    #      new families -- position T-R1/T-V1, proximity Y-R1/Y-V1/Y-V2/Y-V3,
+    #      threshold H-V1/H-V3/H-V5 -> 29.
+    assert len(groups) == 29
     for gid in ("P-V1", "P-V2", "P-V4", "C-V2", "C-V3", "S-V3", "F-V3",
-                "P-R1", "P-M2"):
+                "P-R1", "P-M2",
+                "T-R1", "T-V1", "Y-R1", "Y-V1", "Y-V2", "Y-V3", "H-V1", "H-V3", "H-V5"):
         assert gid in groups
     for gid in ("S-V2", "S-M2", "S-V4", "F-M3", "C-M2",
                 "P-M1", "C-M1", "S-M1", "S-M3", "F-M1", "F-M2"):

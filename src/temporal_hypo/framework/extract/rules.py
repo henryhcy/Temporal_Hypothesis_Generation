@@ -90,6 +90,7 @@ _VACCINE_SLOT_INDEX = {"v": 0, "v1": 0, "v2": 1}
 _EVENT_OPTION_MODES = frozenset({
     "dir_choice", "rep_dir_choice", "first_choice", "last_choice",
     "rep_first_choice", "rep_last_choice",
+    "imm_choice",   # v1.2
 })
 
 SlotCheck = Callable[[str, str], bool]

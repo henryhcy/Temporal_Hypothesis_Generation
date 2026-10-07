@@ -55,6 +55,22 @@ RULE_BY_MODE = {
     "rep_first_choice": "per-report first_among single winner",
     "rep_last_choice": "per-report last_among single winner",
     "rep_first_bool": "per-report: is named event the unique earliest?",
+    # v1.2 families (decisions.md 2026-10-07)
+    "early_bool": "early-half denom = reports with A, >= 2 stages, A off the middle "
+                  "rank; k = A in the earlier half; null = the core's STRUCTURAL "
+                  "early-rate (mean per-report early-slot share), binomial",
+    "rep_early_bool": "per-report: is A's first-mention rank in the earlier half?",
+    "imm_bool": "immediate denom = reports with A and B at CONSECUTIVE ranks; "
+                "supported if A-first frac > 0.5",
+    "imm_choice": "immediate frac on consecutive-rank denom; names the earlier event",
+    "rep_imm_bool": "per-report: A at the rank directly before B",
+    "adj_rate_bool": "adjacency denom = reports with A and B at distinct ranks; "
+                     "k = adjacent; null = mean per-report chance 2/L, binomial",
+    "precedes_bar": "precedes denom (ordered pairs); supported if frac "
+                    "significantly >= 2/3, refuted if significantly below",
+    "cooc_bar": "co-occurs frac (both-present denom) against the 2/3 bar",
+    "first_bar": "named candidate's share of the unique-first denominator against "
+                 "the 1/2 bar (absolute, not runner-up)",
 }
 
 # Groups sampled for Part C (spans families, answer types, levels).
@@ -97,6 +113,16 @@ _EXCLUSION_REASON = {
     "first_choice": "tie for first -- no single earliest event",
     "last_choice": "tie for last -- no single latest event",
     "first_bool": "tie for first -- no single earliest event",
+    # v1.2
+    "early_bool": "A on the exact middle rank (in neither half), or a one-stage "
+                  "report -- no half to fall in",
+    "imm_bool": "A and B present but NOT at consecutive ranks (co-exist or a gap)",
+    "imm_choice": "A and B present but NOT at consecutive ranks (co-exist or a gap)",
+    "adj_rate_bool": "co-exist (same rank) -- no distance",
+    "precedes_bar": "co-exist (same level) -- not ordered, so excluded from a "
+                    "PRECEDES denominator",
+    "cooc_bar": "n/a -- every both-present report counts for CO-OCCURS",
+    "first_bar": "tie for first -- no single earliest event",
 }
 
 

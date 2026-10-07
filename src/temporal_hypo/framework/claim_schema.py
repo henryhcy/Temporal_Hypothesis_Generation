@@ -32,8 +32,10 @@ from temporal_hypo.generation.cores import MODE_BY_GROUP
 # ---------------------------------------------------------------------------
 
 TIERS = ("report", "vaccine", "multi")
-FAMILIES = ("pairwise", "sequence", "first_last")   # == YAML top-level family; C-* are pairwise
-PRIMITIVES = ("precedes", "co_occurs", "sequence", "first_last")
+FAMILIES = ("pairwise", "sequence", "first_last",
+            "position", "proximity", "threshold")   # == YAML top-level family; C-* are pairwise; v1.2 adds three
+PRIMITIVES = ("precedes", "co_occurs", "sequence", "first_last",
+              "position", "immediate", "adjacency")  # v1.2 adds three
 ANSWER_TYPES = ("BOOL", "CHOICE")
 ROLES = ("A", "B", "C", "D")
 TESTS = ("binom_exact", "modal_runner", "fisher_exact")
@@ -49,7 +51,15 @@ CONDITIONINGS = (
     "all_present_unique_last",   # all candidates present, unique latest; ties dropped
     "presence_split",            # whole cohort split on presence of A
     "single_report",             # the one report; first-mention levels of the events
+    # v1.2 (decisions.md 2026-10-07): geometry on first-mention RANKS
+    "consecutive_pair",          # both present at CONSECUTIVE ranks (|rank(A) - rank(B)| = 1)
+    "present_offmid",            # A present, >= 2 stages, A not on the exact middle rank
 )
+# v1.2: the TEXT-STATED null of the bar modes (read off the template wording).
+MODE_P0: dict[str, float] = {"precedes_bar": 0.667, "cooc_bar": 0.667, "first_bar": 0.5}
+# v1.2: modes whose null is DATA-DERIVED per core (the structural early-rate;
+# the mean adjacency chance 2/L). S3 computes it from the retrieved denominator.
+DATA_DERIVED_MODES = frozenset({"early_bool", "adj_rate_bool"})
 VERDICTS = ("supported", "refuted", "insufficient")
 # The harness's fourth response token: the INPUT does not determine the claim
 # (C-V3 research/clinical and F-V3 research never name the events). Distinct
@@ -140,12 +150,34 @@ MODE_SPEC: dict[str, ModeSpec] = {s.mode: s for s in (
           "presence_split", "fisher_exact", "two_arm_equality", "rate_arm1_vs_arm2"),
     _spec("multi_dir_precedes", "multi", "pairwise", "precedes", "CHOICE", 2, 2,
           "ordered_pair", "fisher_exact", "two_arm_equality", "rate_arm1_vs_arm2"),
+    # --- v1.2 families (decisions.md 2026-10-07, issue 32) -------------------
+    _spec("rep_early_bool", "report", "position", "position", "BOOL", 1, 1,
+          "single_report", None, "none", "single_observation"),
+    _spec("early_bool", "vaccine", "position", "position", "BOOL", 1, 1,
+          "present_offmid", "binom_exact", "binomial", "conditioned_proportion"),
+    _spec("rep_imm_bool", "report", "proximity", "immediate", "BOOL", 2, 1,
+          "single_report", None, "none", "single_observation"),
+    _spec("imm_bool", "vaccine", "proximity", "immediate", "BOOL", 2, 1,
+          "consecutive_pair", "binom_exact", "binomial", "conditioned_proportion"),
+    _spec("imm_choice", "vaccine", "proximity", "immediate", "CHOICE", 2, 1,
+          "consecutive_pair", "binom_exact", "binomial", "conditioned_proportion"),
+    _spec("adj_rate_bool", "vaccine", "proximity", "adjacency", "BOOL", 2, 1,
+          "ordered_pair", "binom_exact", "binomial", "conditioned_proportion"),
+    _spec("precedes_bar", "vaccine", "threshold", "precedes", "BOOL", 2, 1,
+          "ordered_pair", "binom_exact", "binomial", "conditioned_proportion"),
+    _spec("cooc_bar", "vaccine", "threshold", "co_occurs", "BOOL", 2, 1,
+          "both_present", "binom_exact", "binomial", "conditioned_proportion"),
+    _spec("first_bar", "vaccine", "threshold", "first_last", "BOOL", 3, 1,
+          "all_present_unique_first", "binom_exact", "binomial",
+          "conditioned_proportion", "event"),
 )}
 
 assert set(MODE_SPEC) == set(MODES), sorted(set(MODE_SPEC) ^ set(MODES))
 
 # Modes whose wording carries a negated form (the symmetric co-occurs claims).
-NEGATABLE_MODES = frozenset({"sym_bool_cooccurs", "assoc_bool", "cooc_modal_bool"})
+NEGATABLE_MODES = frozenset({"sym_bool_cooccurs", "assoc_bool", "cooc_modal_bool",
+                             # v1.2: the symmetric claims against a derived null
+                             "early_bool", "adj_rate_bool", "imm_bool"})
 
 
 # ---------------------------------------------------------------------------
@@ -192,7 +224,14 @@ def derive_procedure(mode: str, *, negated: bool = False) -> Procedure:
     is exactly the tail swap ``core.answers.oriented_significance`` applies.
     """
     s = MODE_SPEC[mode]
-    p0 = 0.5 if s.null_kind == "binomial" else None
+    if s.null_kind != "binomial":
+        p0 = None
+    elif mode in MODE_P0:                 # v1.2 text-stated bar
+        p0 = MODE_P0[mode]
+    elif mode in DATA_DERIVED_MODES:      # v1.2: computed from the data at S3
+        p0 = None
+    else:
+        p0 = 0.5
     return Procedure(
         test=s.test,
         null=NullSpec(s.null_kind, p0, s.statistic),
@@ -446,7 +485,7 @@ FLAT_JSON_SCHEMA: dict = {
     "properties": {
         "mode": {"type": "string", "enum": list(MODES)},
         "events": {"type": "array", "items": {"type": "string"},
-                   "minItems": 2, "maxItems": 4,
+                   "minItems": 1, "maxItems": 4,
                    "description": "The event terms IN THE ORDER THE CLAIM ASSERTS (A, B[, C[, D]]). Use the exact spelling from the text."},
         "negated": {"type": "boolean",
                     "description": "true only if the wording asserts the NEGATION of the claim (e.g. 'do NOT typically co-occur')."},
@@ -527,6 +566,10 @@ QUANTITIES = (
     "dominant_relation_of_pair",  # is co-existence the most common relation of A,B
     "ordering_of_triple",         # is A->B->C the most common strict ordering
     "extreme_of_set",             # is the named candidate most often the earliest/latest
+    # v1.2 (decisions.md 2026-10-07)
+    "immediate_order_of_pair",    # is A at the stage DIRECTLY before B
+    "position_of_event",          # does ONE event fall in the earlier half of the timeline
+    "adjacency_of_pair",          # do A and B fall in consecutive stages (either order)
 )
 _LEGACY_QUANTITY = "rate_across_two_arms"
 EXTREMES = ("earliest", "latest")
@@ -556,7 +599,30 @@ PLAN_BY_MODE: dict[str, tuple[str, str | None]] = {
     "pairpair_bool": ("order_of_pair", None),        # arms 2
     "assoc_bool": ("co_occurrence_of_pair", None),   # arms 2, presence_split
     "multi_dir_precedes": ("order_of_pair", None),   # arms 2, tier multi
+    # v1.2
+    "rep_early_bool": ("position_of_event", None), "early_bool": ("position_of_event", None),
+    "rep_imm_bool": ("immediate_order_of_pair", None),
+    "imm_bool": ("immediate_order_of_pair", None), "imm_choice": ("immediate_order_of_pair", None),
+    "adj_rate_bool": ("adjacency_of_pair", None),
+    "precedes_bar": ("order_of_pair", None),         # distinguished by null_kind text_stated
+    "cooc_bar": ("co_occurrence_of_pair", None),
+    "first_bar": ("extreme_of_set", "earliest"),
 }
+
+# v1.2: the plan NULL KIND is part of a mode's shape -- a bar claim ("A before
+# B in >= 2/3") has the same quantity/denominator as the 0.5 claim and differs
+# only in where its null comes from.
+def plan_null_kind(mode: str) -> str:
+    s = MODE_SPEC[mode]
+    if s.is_report:
+        return "none"
+    if s.null_kind == "two_arm_equality":
+        return "two_arm_equality"
+    if mode in MODE_P0:
+        return "text_stated"
+    if mode in DATA_DERIVED_MODES:
+        return "data_derived"
+    return "symmetric_fixed"
 assert set(PLAN_BY_MODE) == set(MODES), sorted(set(PLAN_BY_MODE) ^ set(MODES))
 
 _TEST_TO_FAMILY = {"binom_exact": "proportion_vs_p0", "modal_runner": "named_vs_runner_up",
@@ -565,15 +631,18 @@ _FAMILY_TO_TEST = {v: k for k, v in _TEST_TO_FAMILY.items()}
 
 
 def plan_signature(tier: str, answer_type: str, n_events: int, arms: int,
-                   conditioning: str, quantity: str, extreme: str | None) -> tuple:
-    return (tier, answer_type, int(n_events), int(arms), conditioning, quantity, extreme)
+                   conditioning: str, quantity: str, extreme: str | None,
+                   null_kind: str = "symmetric_fixed") -> tuple:
+    return (tier, answer_type, int(n_events), int(arms), conditioning, quantity, extreme,
+            null_kind)
 
 
 def _build_mode_by_signature() -> dict[tuple, str]:
     table: dict[tuple, str] = {}
     for m, s in MODE_SPEC.items():
         q, x = PLAN_BY_MODE[m]
-        key = plan_signature(s.tier, s.answer_type, s.n_events, s.arms, s.conditioning, q, x)
+        key = plan_signature(s.tier, s.answer_type, s.n_events, s.arms, s.conditioning, q, x,
+                             plan_null_kind(m))
         assert key not in table, f"plan signature clash: {table[key]} / {m}"
         table[key] = m
     return table
@@ -584,7 +653,7 @@ MODE_BY_SIGNATURE: dict[tuple, str] = _build_mode_by_signature()
 
 def normalize_plan_shape(tier: str, answer_type: str, n_events: int, arms: int | None,
                          conditioning: str | None, quantity: str | None,
-                         extreme: str | None) -> tuple:
+                         extreme: str | None, null_kind: str | None = None) -> tuple:
     """Fill plan fields that other plan fields (or the given tier) already IMPLY.
 
     Nothing here consults the answer: a presence split is two arms by definition,
@@ -614,15 +683,27 @@ def normalize_plan_shape(tier: str, answer_type: str, n_events: int, arms: int |
             conditioning = "ordered_pair"
     if quantity != "extreme_of_set":
         extreme = None
-    return plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme)
+    # v1.2: the null kind is IMPLIED for every shape but a bar / derived claim:
+    # a report is observed (none), two arms test equality, a quantity with no
+    # stated bar and no derived reference is symmetric. Only text_stated and
+    # data_derived are taken from the plan as emitted.
+    if tier == "report":
+        null_kind = "none"
+    elif arms == 2:
+        null_kind = "two_arm_equality"
+    elif null_kind not in ("text_stated", "data_derived"):
+        null_kind = "symmetric_fixed"
+    return plan_signature(tier, answer_type, n_events, arms, conditioning, quantity, extreme,
+                          null_kind)
 
 
 def derive_mode(tier: str, answer_type: str, n_events: int, arms: int | None,
                 conditioning: str | None, quantity: str | None,
-                extreme: str | None = None) -> str | None:
+                extreme: str | None = None, null_kind: str | None = None) -> str | None:
     """The mode a composed plan corresponds to, or None if no mode has that shape."""
     return MODE_BY_SIGNATURE.get(
-        normalize_plan_shape(tier, answer_type, n_events, arms, conditioning, quantity, extreme))
+        normalize_plan_shape(tier, answer_type, n_events, arms, conditioning, quantity, extreme,
+                             null_kind))
 
 
 def derive_plan(mode: str, *, negated: bool = False) -> dict:
@@ -630,12 +711,7 @@ def derive_plan(mode: str, *, negated: bool = False) -> dict:
     s = MODE_SPEC[mode]
     proc = derive_procedure(mode, negated=negated)
     q, x = PLAN_BY_MODE[mode]
-    if s.is_report:
-        null_kind = "none"
-    elif s.null_kind == "two_arm_equality":
-        null_kind = "two_arm_equality"
-    else:
-        null_kind = "symmetric_fixed"
+    null_kind = plan_null_kind(mode)
     fam = _TEST_TO_FAMILY[proc.test]
     return {
         "quantity": q,
@@ -644,7 +720,8 @@ def derive_plan(mode: str, *, negated: bool = False) -> dict:
         "denominator": s.conditioning,
         "null_kind": null_kind,
         "p0": proc.null.p0,
-        "null_reference": None,
+        "null_reference": ("the reports in the denominator" if null_kind == "data_derived"
+                           else None),
         "tail": proc.claim_tail,
         "test_family": fam,
         "test_rule": ("exact_if_small_else_asymptotic" if fam == "two_proportions"
@@ -725,12 +802,14 @@ def claim_from_plan(plan: Mapping[str, Any], question_row: Mapping[str, Any], *,
     if plan.get("quantity") == "extreme_of_set" and len(terms) == 2 and plan.get("extreme") == "latest":
         terms = terms[::-1]   # "A is the latest of {A, B}" asserts B precedes A
     mode = derive_mode(tier, answer_type, len(terms), plan.get("arms"),
-                       plan.get("denominator"), plan.get("quantity"), plan.get("extreme"))
+                       plan.get("denominator"), plan.get("quantity"), plan.get("extreme"),
+                       plan.get("null_kind"))
     if mode is None:
         raise ValueError(
             f"no mode for plan shape tier={tier} answer_type={answer_type} n_events={len(terms)} "
             f"arms={plan.get('arms')} denominator={plan.get('denominator')} "
-            f"quantity={plan.get('quantity')} extreme={plan.get('extreme')}")
+            f"quantity={plan.get('quantity')} extreme={plan.get('extreme')} "
+            f"null_kind={plan.get('null_kind')}")
     s = MODE_SPEC[mode]
     negated = bool(plan.get("negated", False))
     ref = derive_procedure(mode, negated=negated)
