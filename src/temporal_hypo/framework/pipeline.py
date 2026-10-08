@@ -48,8 +48,7 @@ PROCEDURE_MODES = ("honouring", "gold")
 PREDICTION_FIELDS = (
     "hypothesis_id", "instance_id", "group_id", "register", "format", "condition",
     "pipeline", "model", "claim", "claim_problems", "retrieval", "prediction",
-    "latency_ms", "tokens", "error",
-)
+    "latency_ms", "tokens", "error", "verify",)
 
 
 class Retriever(Protocol):
@@ -198,6 +197,13 @@ class Pipeline:
         # decides whether they are written to predictions.jsonl (see `run`).
         out["retrieval"] = _retrieval_to_dict(retrieval, keep_ids=True)
         out["prediction"] = _prediction_to_dict(pred)
+        # issue 41: verify-and-repair rounds actually used at S1 and S2 (0 = none)
+        out["verify"] = {"s1_rounds": int(getattr(self.extractor, "last_rounds", 0) or 0),
+                         "s2_rounds": int(getattr(self.retriever, "last_rounds", 0) or 0),
+                         "s1_notes": [n for n in (getattr(self.extractor, "last_notes", None) or [])
+                                      if str(n).startswith("verify")],
+                         "s2_notes": [n for n in (getattr(self.retriever, "last_notes", None) or [])
+                                      if str(n).startswith("verify")]}
         tokens = None
         if self.tokens_of is not None:
             tokens = self.tokens_of(self.extractor)

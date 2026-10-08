@@ -663,12 +663,15 @@ class LLMExtractor:
                  max_tokens: int = 400, groups: Mapping[str, Any] | None = None,
                  tier_hint: bool = False, routing_hint: bool = False,
                  null_hints: bool = True, frame: str = "catalogue",
+                 verify_rounds: int = 0,
                  dataset_card: str | None = None) -> None:
         if frame not in ("catalogue", "toolbox"):
             raise ValueError(f"frame must be 'catalogue' or 'toolbox', got {frame!r}")
         if frame == "toolbox" and not dataset_card:
             raise ValueError("the toolbox frame needs a dataset_card (task_card.dataset_card)")
         self.frame = frame
+        self.verify_rounds = int(verify_rounds)   # issue 41: bounded verify-and-repair
+        self.last_rounds = 0
         self.dataset_card = dataset_card
         self.client = client
         self.model = model
@@ -805,6 +808,40 @@ class LLMExtractor:
             raise ValueError(problem)
         return flat
 
+    def _verify_and_repair(self, messages: list[dict], flat: dict,
+                           question_row: Mapping[str, Any]) -> dict:
+        """Issue 41: up to ``verify_rounds`` re-asks, each naming the stated conventions
+        the plan violates (``framework.verify``); stops at the first consistent plan.
+        The verifier reads the plan, the input row and the conventions -- never the gold."""
+        from temporal_hypo.framework.verify import all_plan_problems
+
+        convo = list(messages)
+        for rnd in range(1, self.verify_rounds + 1):
+            problems = all_plan_problems(flat, question_row)
+            if not problems:
+                break
+            self.last_rounds = rnd
+            self.last_notes.append(f"verify round {rnd}: " + " | ".join(problems))
+            convo = convo + [
+                {"role": "assistant", "content": json.dumps(flat, ensure_ascii=False)},
+                {"role": "user", "content": "\n".join([
+                    "CHECK AGAINST THE STATED CONVENTIONS FAILED:",
+                    *[f"- {x}" for x in problems],
+                    "Reply again with ONLY the corrected plan JSON (same schema, no prose).",
+                ])},
+            ]
+            c = self._complete(convo)
+            try:
+                new = parse_json_object(c.text)
+                problem = self._check_flat(new)
+                if problem:
+                    raise ValueError(problem)
+            except ValueError as exc:
+                self.last_notes.append(f"verify round {rnd}: reply unusable ({exc}); kept the previous plan")
+                break
+            flat = dict(new)
+        return flat
+
     def extract(self, question_row: Mapping[str, Any], *, blind_group: bool = False
                 ) -> StructuredClaim | None:
         """The claim for one question row, or None (reason on ``last_error``)."""
@@ -812,10 +849,14 @@ class LLMExtractor:
         self.last_flat = None
         self.last_completions = []
         self.last_notes = []
+        self.last_rounds = 0
         try:
             messages = self.build_messages(question_row, blind_group=blind_group)
             flat = self._ask(messages)
             self.last_flat = dict(flat)
+            if self.frame == "toolbox" and self.verify_rounds > 0:
+                flat = self._verify_and_repair(messages, flat, question_row)
+                self.last_flat = dict(flat)
             terms, oov = snap_terms(flat.get("events") or [], self.vocabulary)
             if oov:
                 self.last_notes.append("out-of-vocabulary terms: " + ", ".join(repr(t) for t in oov))

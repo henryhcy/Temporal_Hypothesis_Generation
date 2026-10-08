@@ -192,7 +192,8 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
                                  fewshot=shots, k_shot=args.k_shot, vocabulary=vocabulary,
                                  tier_hint=args.tier_hint, routing_hint=args.routing_hint,
                                  null_hints=not args.hide_null_hints,
-                                 frame=args.s1_frame, dataset_card=card)
+                                 frame=args.s1_frame, dataset_card=card,
+                                 verify_rounds=args.verify_rounds)
 
     # S2. The 2026-10-07 audit's S2 prompt variants: --e2e-conventions states the
     # stipulations in the single-call sentence->SQL prompt (cell B); --s2-frame
@@ -218,7 +219,8 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
 
         retriever = LLMSQLRetriever(sql_client or llm_client, args.sql_model or args.model,
                                     executor, frame=args.s2_frame, conventions=conventions,
-                                    replan=args.s2_replan)
+                                    replan=args.s2_replan,
+                                    verify_rounds=(args.verify_rounds or None))
 
     tester = None
     if args.pipeline == "counts-llm":
@@ -280,6 +282,10 @@ def main() -> None:
                    help="S2 prompt (audit cell D): 'catalogue' = claim JSON + per-mode rule + "
                         "exclusion + arm plan; 'toolbox' = the composed plan + the stated "
                         "conventions, no per-mode rule")
+    p.add_argument("--verify-rounds", type=int, default=0,
+                   help="issue 41: bounded verify-and-repair rounds per stage (S1 in the toolbox "
+                        "frame: conventions consistency; S2: executor error + plan consistency). "
+                        "0 = the capability row; k = the system row")
     p.add_argument("--s2-replan", action="store_true",
                    help="audit cell E: check the executed arms against the plan (never the gold) "
                         "and ask once more when they violate it")
@@ -359,6 +365,7 @@ def main() -> None:
         "formats": args.formats, "groups": args.groups, "limit": args.limit,
         "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "s1_frame": args.s1_frame,
         "e2e_conventions": args.e2e_conventions, "s2_frame": args.s2_frame, "s2_replan": args.s2_replan,
+        "verify_rounds": args.verify_rounds,
         "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx,
         "n_records": len(records),
         **(_model_provenance(args) if "llm" in args.pipeline else {}),

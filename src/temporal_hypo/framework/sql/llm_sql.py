@@ -426,15 +426,21 @@ class LLMSQLRetriever:
 
     def __init__(self, client: Provider, model: str, executor: Any, *,
                  frame: str = "catalogue", conventions: str | None = None,
-                 replan: bool = False,
+                 replan: bool = False, verify_rounds: int | None = None,
                  ddl: str | None = None, temperature: float = 0.0,
                  max_tokens: int = 1200) -> None:
         self.client = client
         self.model = model
         self.frame = frame
         self.conventions = conventions
-        self.replan = bool(replan)
-        self.name = f"llm-sql{'' if frame == 'catalogue' else '@' + frame}{'+replan' if replan else ''}:{model}"
+        # issue 41: bounded verify-and-repair rounds at S2 (an executor error, or a
+        # plan-consistency violation, each re-asked once per round). ``replan`` is the
+        # one-round form used by the 10-08 cell-E runs.
+        self.verify_rounds = int(verify_rounds) if verify_rounds is not None else (1 if replan else 0)
+        self.replan = self.verify_rounds > 0
+        self.last_rounds = 0
+        self.name = (f"llm-sql{'' if frame == 'catalogue' else '@' + frame}"
+                     f"{'+verify' + str(self.verify_rounds) if self.verify_rounds else ''}:{model}")
         self.executor = executor
         self._ddl = ddl
         self.temperature = float(temperature)
@@ -522,31 +528,41 @@ class LLMSQLRetriever:
         messages = self.messages_for(claim)
         queries = self.queries_for(claim)
         ret = execute_queries(queries, self.executor, claim)
-        if not self.replan or MODE_SPEC[claim.mode].is_report:
+        self.last_rounds = 0
+        if self.verify_rounds <= 0:
             return ret
-        problems = plan_consistency(claim, ret, self.executor)
-        if not problems:
-            return ret
-        self.last_notes.append("replan: " + " | ".join(problems))
-        first_reply = json.dumps(self.last_raw, ensure_ascii=False) if self.last_raw else \
-            json.dumps({"arms": [{"label": q.label, "sql": q.sql} for q in queries]})
-        follow = messages + [
-            {"role": "assistant", "content": first_reply},
-            {"role": "user", "content": "\n".join([
-                "CHECK AGAINST THE PLAN FAILED:",
-                *[f"- {x}" for x in problems],
-                "Revise the statement(s) so that the denominator is exactly the reports the plan's "
-                "denominator primitive names (present-but-unusable reports get in_denominator = 0, "
-                "excluded = 1) and the numerator is the subset where the asserted relation holds.",
-                'Return {"arms": [...]} now.',
-            ])},
-        ]
-        queries2 = self._ask(claim, follow)
-        ret2 = execute_queries(queries2, self.executor, claim)
-        for q in ret.queries:
-            q.label = f"{q.label} (pass 1)"
-        ret2.queries = list(ret.queries) + list(ret2.queries)
-        return ret2
+        convo = list(messages)
+        logs_so_far: list = []
+        for rnd in range(1, self.verify_rounds + 1):
+            problems = [f"statement for arm {q.label!r} failed: {q.error}"
+                        for q in ret.queries if q.error]
+            if not MODE_SPEC[claim.mode].is_report:
+                problems += plan_consistency(claim, ret, self.executor)
+            if not problems:
+                break
+            self.last_rounds = rnd
+            self.last_notes.append(f"verify round {rnd}: " + " | ".join(problems))
+            reply = json.dumps(self.last_raw, ensure_ascii=False) if self.last_raw else \
+                json.dumps({"arms": [{"label": q.label, "sql": q.sql} for q in queries]})
+            convo = convo + [
+                {"role": "assistant", "content": reply},
+                {"role": "user", "content": "\n".join([
+                    "CHECK FAILED:",
+                    *[f"- {x}" for x in problems],
+                    "Revise the statement(s): a failed statement must execute under the DDL and the "
+                    "row contract; the denominator must be exactly the reports the plan's denominator "
+                    "primitive names (present-but-unusable reports get in_denominator = 0, excluded = "
+                    "1) and the numerator the subset where the asserted relation holds.",
+                    'Return {"arms": [...]} now.',
+                ])},
+            ]
+            for q in ret.queries:
+                q.label = f"{q.label} (pass {rnd})"
+            logs_so_far += list(ret.queries)
+            queries = self._ask(claim, convo)
+            ret = execute_queries(queries, self.executor, claim)
+        ret.queries = logs_so_far + list(ret.queries)
+        return ret
 
     # -- accounting ----------------------------------------------------------
 
