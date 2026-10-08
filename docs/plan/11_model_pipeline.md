@@ -1162,6 +1162,49 @@ Chance ≈ 0.33 on verdicts. Per-tier = report / vaccine / multi (158 / 222 / 20
    register rewrites the statistical situation, not the event names. The 7B's ±0.11
    swings are noise around a low mean. Draft: `tab:registers`.
 
+### 10.3f Attribution, faithfulness and abstention on both smoke slices (2026-10-08)
+
+**S2 attribution + faithfulness** (`scripts/s2_attribution.py`; cohort records;
+the failed-SQL cause counted since the 10-07 audit fix):
+
+| run | records | wrong/failed denominators | verdict still right | faithfulness | dominant named causes |
+|---|---:|---:|---:|---:|---|
+| v1.1 S2 coder-7B | 242 | 224 | 12 | 0.10 | SQL failed 154, n=k 30 |
+| v1.1 S2 coder-32B | 242 | 142 | 74 | 0.52 | SQL failed 54, event absent 46, n=k 18, co-exist leak 14, wrong cohort 10 |
+| v1.1 S2 instruct-32B | 242 | 126 | 48 | 0.67 | event absent 42, n=k 36, SQL failed 34 |
+| v1.1 e2e instruct+coder 32B | 242 | 156 | 48 | 0.56 | SQL failed 52, n=k 38, no plan 25 |
+| v1.2 S2 coder-7B | 266 | 194 | 24 | 0.51 | SQL failed 94, n=k 24, event absent 16, co-exist 12, non-consecutive 10 |
+| **v1.2 S2 coder-32B** | 266 | 100 | 26 | **0.81** | SQL failed 40, event absent 30, n=k 20 |
+| v1.2 e2e instruct+coder 32B | 266 | 119 | 24 | 0.81 | SQL failed 39, n=k 35, no plan 19, event absent 14 |
+
+The v1.2 slice carries the nine new groups, whose denominators the 32B gets
+right (S2 at 1.0 on eight of them), which is why its faithfulness is higher
+there; the two 32B failure modes that remain are the same two: a failed
+statement and the eligible set defined as the supporting set (n = k).
+
+**Abstention metrics** (`scripts/abstention_metrics.py`; cohort records; gold
+from the compiler run on the same slice):
+
+| run (v1.1 slice / v1.2 slice) | false-decisiveness | over-abstention | subtype acc | no-answer |
+|---|---|---|---|---|
+| S1 toolbox zs, instruct-7B | 0.000 / 0.022 | 0.061 / 0.129 | 0.943 / 0.977 | 0.384 / 0.335 |
+| S1 toolbox zs, instruct-32B | 0.000 / 0.058 | 0.059 / 0.051 | 0.922 / 0.938 | 0.087 / 0.071 |
+| S1 catalogue, instruct-32B | 0.000 / 0.000 | 0.000 / 0.000 | 1.000 / 1.000 | 0.008 / 0.004 |
+| S2 coder-7B | 0.074 / 0.162 | 0.840 / 0.604 | 0.480 / 0.548 | 0 / 0 |
+| S2 coder-32B | 0.037 / 0.000 | 0.255 / 0.323 | 0.692 / 0.784 | 0 / 0 |
+| S2 instruct-32B (v1.1 only) | 0.000 | 0.319 | 0.778 | 0 |
+| e2e instruct+coder 32B | 0.040 / 0.029 | 0.341 / 0.303 | 0.688 / 0.761 | 0.103 / 0.071 |
+| counts-llm coder-7B | **0.148 / 0.216** | 0.670 / 0.646 | **0.000 / 0.000** | 0 |
+| counts-llm coder-32B | **0.111 / 0.081** | 0.511 / 0.521 | **0.000 / 0.000** | 0 |
+
+Readings: (1) with S1 as the only model stage, false-decisiveness is ~0 and
+the subtype is right ~94% -- the deterministic S3 does the abstaining; (2) a
+model-written S2 over-abstains (25-84%: failed or under-inclusive SQL becomes
+insufficient) and mislabels the subtype a quarter of the time; (3) a model
+computing the test itself INVENTS a result on 8-22% of gold-insufficient claims
+and never names the right subtype -- the abstention counterpart of the p-value
+finding. (4) The 7B's no-answer rate (34-38%) is the no-shape plans.
+
 ### 10.4 M3–M5 — designed, not built
 
 M3 split + fine-tune (P0 / P1 / P2 table); M4 in-context B1, agent B2, single-pass
