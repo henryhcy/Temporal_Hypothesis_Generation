@@ -49,10 +49,10 @@ wrong.
   no longer runs on current code (VAERS ids); reproduce its rows at commit 27c5d77 with
   `data/medtempo_eval.v11.db`.
 - **Paper draft (`docs/draft/`, mirrored in the Overleaf project `overleaf-hypogen`, branch `main`):**
-  `www2027.tex` is the ACM sigconf wrapper for WWW 2027 (the Overleaf main document);
-  `dataset_construction_aaai.tex` is the AAAI wrapper; both `\input` the shared
-  `body_dataset_construction.tex` -- edit the text THERE. `dataset_construction.tex` (ARR
-  twin) is frozen as of 2026-10-08. Figures: `docs/draft/Figures/` (`scripts/draft_overview_figure.py`).
+  `www2027.tex` is the ACM sigconf wrapper for WWW 2027 (the Overleaf main document); it
+  `\input`s `body_dataset_construction.tex` -- edit the text THERE. The AAAI wrapper and
+  template files were retired on 2026-10-08 (git history); `dataset_construction.tex` (ARR
+  twin) is frozen. Figures: `docs/draft/Figures/` (`scripts/draft_overview_figure.py`).
 - `docs/plan/decisions.md`        — locked decisions, **chronological and append-only**: read newest-first, and never quote one entry as current without checking for a later one on the same topic
 - `docs/plan/open_questions.md`   — items still under discussion (do not assume). Cleaned 08-12; every entry is genuinely open and carries its issue number
 
