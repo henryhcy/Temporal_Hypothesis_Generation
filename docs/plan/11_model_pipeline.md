@@ -1482,3 +1482,66 @@ the regime of the test rule is anticipated); the vocabulary; the conventions,
 situation-phrased (decisions "state every stipulation"); the toolbox with
 definitions (§13.4). This is LATCH's schema-summary pattern applied to a
 timeline corpus.
+
+
+### 10.3g The v1.2-FINAL smoke rows (2026-10-08; both GPUs; `results/v12f_smoke200_*`, `results/chains/v12f_*.sh`)
+
+Every row below is on the final v1.2 release (cap 600, pseudonymised ids,
+conventions v2.1) and the new slice `smoke_200_v1.2_s0` (200 instances over all
+29 groups; 400 records). The pre-final v1.2 rows of §10.3f are superseded. The
+full table with stage metrics is `docs/plan/results_v12f_smoke200.md`
+(generated from `metrics.json`, `scripts/abstention_metrics.py` and
+`scripts/s2_attribution.py`); the headline statistic is the COHORT column
+(vaccine + multi tiers; review item 6).
+
+| row | all | cohort | den-F1 | faithfulness | over-abstention |
+|---|---:|---:|---:|---:|---:|
+| S1 catalogue lookup 32B (answer-injected) | 0.998 | 0.996 | 1.000 | -- | 0.00 |
+| S1 toolbox zero-shot 32B, rounds 0 / +1 verify | 0.897 / **0.915** | 0.845 / **0.872** | 0.879 / 0.890 | -- | 0.09 / 0.10 |
+| S1 toolbox zero-shot 7B, rounds 0 / +1 | 0.605 / 0.650 | 0.554 / 0.624 | 0.633 / 0.694 | -- | 0.14 / 0.11 |
+| S1 32B registers research / media / clinical (1 round; original 0.915) | 0.840 / 0.887 / 0.882 | | | | |
+| S2 coder-32B, rounds 0 / +2 | 0.810 / **0.880** | 0.705 / **0.814** | 0.654 / 0.804 | 0.75 / 0.85 | 0.40 / 0.24 |
+| S2 coder-7B, rounds 0 / +2 | 0.615 / 0.660 | 0.403 / 0.473 | 0.322 / 0.350 | 0.35 / 0.46 | 0.69 / 0.59 |
+| A e2e schema only, 32B / 7B | 0.297 / 0.417 | 0.360 / 0.283 | 0.198 / 0.104 | 0.10 / 0.32 | 0.73 / 0.91 |
+| B e2e + conventions, 32B / 7B | 0.527 / 0.400 | 0.523 / 0.314 | 0.477 / 0.150 | 0.36 / 0.27 | 0.48 / 0.87 |
+| D plan + conventions, 32B rounds 0 / +2 | 0.537 / **0.645** | 0.446 / **0.612** | 0.526 / 0.688 | 0.48 / 0.72 | 0.49 / 0.27 |
+| E plan + consistency re-ask, 32B | 0.632 | 0.593 | 0.685 | 0.64 | 0.24 |
+| D / E at 7B (C2 0.417) | 0.362-0.398 | 0.198-0.252 | 0.18 | 0.26-0.33 | 0.64-0.67 |
+| counts-given judgment 32B / 7B | 0.705 / 0.650 | 0.543 / 0.457 | (given) | 1.00 | 0.55 / 0.62; subtype acc 0.00 |
+
+**Findings.**
+1. **The verifier pays at every stage and every size**: S1 +0.018 at 32B
+   (+0.045 at 7B); S2 +0.070 at 32B (den-F1 0.654 -> 0.804, faithfulness
+   0.75 -> 0.85), +0.045 at 7B; the composed system D +0.108 (cohort +0.166,
+   faithfulness 0.48 -> 0.72, co-exist leak 0.29 -> 0.15).
+2. **On v1.2 the decomposition does NOT beat e2e+conventions by itself**: D at
+   rounds 0 is 0.537 vs B 0.527 overall and BELOW it on the cohort tiers
+   (0.446 vs 0.523). Per family, D r0 loses on pairwise (0.45 vs 0.64: C-V1
+   0.12, P-V2 0.00, P-V4 0.14; the plan-frame coder-32B returns n = k
+   denominators (63) and invalid SQL (48) on the comparative shapes) and on
+   threshold (0.33). With two rounds D recovers pairwise to 0.62, threshold
+   0.71, P-V4 0.86, P-V3 0.83. The v1.1 ordering (B 0.52 < D 0.67) therefore
+   needs the verifier on v1.2: architecture + verification, not architecture
+   alone, is what beats information alone. E (single re-ask) sits between
+   (0.632; faithfulness 0.64).
+3. **Information alone is worth more on v1.2 than on v1.1**: A -> B +0.23 at
+   32B (v1.1: +0.14); at 7B B is below A (0.400 vs 0.417) -- the 7B cannot use
+   the conventions.
+4. **Registers** at 32B: research -0.075, media -0.028, clinical -0.033 against
+   original (0.915); at 7B the swings are noise around 0.6.
+5. **Counts-given judgment** is still the floor that verdict accuracy hides:
+   0.705 overall but 0.543 on the cohort tiers, false-decisiveness 0.17, subtype
+   accuracy 0.00, p-agreement 0.03.
+6. **C-V2 is 0/18 under the toolbox at 32B on BOTH v1.2 builds (v1.1: 0.27;
+   catalogue 1.00; 7B 0.56)**: the mode is right (16/18 cooc_modal_bool) but
+   the composed null is not -- the wording "occur together more often than
+   their separate rates would predict" reads as an independence baseline, and
+   the 32B composes a derived / two-arm null where the reference procedure is a
+   fixed-p0 binomial. The 7B scores because it writes 0.5 regardless. This is
+   template-faithfulness (11a), not model capability: the sentence promises a
+   null the gold does not test. Logged as **issue 42** (reword C-V2 to the
+   statistic it computes, or move it to the data-derived family with the
+   independence expectation as p0 -- which would make it a genuine new null).
+7. Pre-final -> final drift on the same groups: S1 32B 0.863 -> 0.897 (v2.1
+   text + the rewording), S2 32B 0.840 -> 0.810 (rounds 0) and 0.880 -> 0.880
+   (rounds 2); the slice changed (cap, pseudonyms), so these are not paired.

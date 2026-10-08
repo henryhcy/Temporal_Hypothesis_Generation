@@ -3178,3 +3178,21 @@ every oriented instance again (`test_honouring_equals_gold_on_cohort_sample`).
 measured on the 2026-10-07 build (same groups, different instances and VAERS
 ids in the texts); they are superseded by the v1.2-final rows queued next and
 are kept for the record only.
+
+---
+
+## MEASURED: the v1.2-final smoke rows -- verifier, grid, registers, counts (2026-10-08)
+
+All 26 local rows of the v1.1 program re-run on the final v1.2 release and slice
+(`smoke_200_v1.2_s0`; few-shot rows dropped by the user; Opus rows held on
+cost). Table and findings in 11 §10.3g; stage metrics in
+`docs/plan/results_v12f_smoke200.md`. Headline (cohort tiers): S1 toolbox
+zero-shot 32B 0.845 -> 0.872 with one verify round; S2 coder-32B 0.705 ->
+0.814 with two; cell D 0.446 -> 0.612 with two; e2e A 0.360, B 0.523;
+counts-given 0.543. Two conclusions change the paper's story relative to
+v1.1: (i) on v1.2 the decomposition beats e2e+conventions only WITH the
+verifier (D r0 is below B on the cohort tiers), so the claim is "architecture
++ verification"; (ii) the conventions are worth +0.23 to the 32B e2e model
+and nothing to the 7B. New **issue 42**: C-V2's wording promises an
+independence null the gold does not test (0/18 under the toolbox at 32B on
+both v1.2 builds; 1.00 under the catalogue) -- fix in v1.2.1.

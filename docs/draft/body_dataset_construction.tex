@@ -512,6 +512,9 @@ denominator entirely. Those are stipulations about what the statistic means for
 this corpus, not facts about the sentence --- they are what the structured claim
 carries, and a system without it cannot reconstruct them.
 
+%% 2026-10-08: Tables toolbox / registers / attribution / grid carry the FINAL v1.2
+%% numbers (11 §10.3g). The prose of this and the next subsections still quotes
+%% the v1.1 rows and the dataset sections describe v1.1 -- both to be rewritten.
 \subsection{Composing the procedure without the mapping}
 
 The Stage-1 runs above hand the model a catalogue: the 20 claim types with
@@ -529,24 +532,25 @@ slice.
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrrr}
 \toprule
-S1 condition & 7B-Inst. & Coder-7B & Coder-32B & \textbf{32B-Inst.} & Opus \\
+ & \multicolumn{2}{c}{\textbf{32B-Inst.}} & \multicolumn{2}{c}{7B-Inst.} \\
+S1 condition (S2, S3 at gold) & all & cohort tiers & all & cohort tiers \\
 \midrule
-Catalogue + hints (lookup; upper bound) & 0.918 & --- & 0.993 & 0.990 & 1.000 \\
-Toolbox, 3 worked plans & 0.64--0.68 & --- & 0.580 & 0.915 & 1.000 \\
-\textbf{Toolbox, zero-shot} & 0.490 & 0.400 & 0.410 & \textbf{0.887} & \textbf{0.958} \\
-\quad cohort tiers only ($n=242$) & 0.537 & 0.240 & 0.678 & 0.814 & --- \\
+Catalogue + hints (lookup; answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
+\textbf{Toolbox, zero-shot} & 0.897 & 0.845 & 0.605 & 0.554 \\
+\quad + one verify-and-repair round & \textbf{0.915} & \textbf{0.872} & 0.650 & 0.624 \\
 \bottomrule
 \end{tabular}
-\caption{Verdict accuracy when the claim-type mapping is withheld. Same
-200-instance slice (400 records), blind-group, procedure-blind; S2 and S3 at
-gold. The 7B few-shot number is wording-sensitive across prompt revisions. The
-Coder-32B compose rows score 0 on the report tier (158 records, 39.5\%):
-every report-level plan names a cohort denominator, so the harness derives no
-claim type; its cohort-tier compose accuracy is 0.678 zero-shot and 0.959 with
-three worked plans (lookup 0.988). The instruct variant of the same 32B never
-makes that error zero-shot (report tier 1.000).}
+\caption{Verdict accuracy when the claim-type mapping is withheld, on the final
+v1.2 release (slice \texttt{smoke\_200\_v1.2\_s0}: 200 instances over all 29
+groups, 400 records; blind-group, procedure-blind; S2 and S3 at gold). ``Cohort
+tiers'' is the statistical headline (258 records); the report tier is a reading
+task scored separately (32B: 0.993). The verify round re-asks only plans that
+violate a stated convention. Few-shot rows are not reported: a worked plan is a
+mapping row. On the v1.1 slice the frontier model (Opus) reached 0.958
+zero-shot against 0.887 for the same 32B; it is re-run on v1.2 when the API
+budget allows.}
 \label{tab:toolbox}
 \end{table*}
 
@@ -583,14 +587,15 @@ toolbox condition on each register.
 \small
 \begin{tabular}{lrrrr}
 \toprule
-S1, toolbox zero-shot & Original & Research & Media & Clinical \\
+S1, toolbox zero-shot (1 round) & Original & Research & Media & Clinical \\
 \midrule
-Coder-7B & 0.400 & 0.500 & 0.287 & 0.455 \\
-32B-Instruct & 0.887 & 0.772 & 0.855 & 0.840 \\
+7B-Instruct & 0.650 & 0.635 & 0.545 & 0.590 \\
+32B-Instruct & 0.915 & 0.840 & 0.887 & 0.882 \\
 \bottomrule
 \end{tabular}
-\caption{Verdict accuracy by register; same 200 instances, S2 and S3 at gold,
-mapping withheld, no worked examples.}
+\caption{Verdict accuracy by register on the final v1.2 slice; same 200
+instances, S2 and S3 at gold, mapping withheld, no worked examples, one
+verify-and-repair round.}
 \label{tab:registers}
 \end{table}
 
@@ -602,6 +607,58 @@ in both directions, which is noise around a low mean rather than sensitivity.
 Templated paraphrase is therefore a real but bounded perturbation for a capable
 model, and the release's four registers make it a standard row rather than a
 separate study.
+
+\subsection{Architecture versus information, with and without verification}
+\label{sec:grid}
+
+Table~\ref{tab:grid} separates what the prompt tells the model (the stated
+conventions) from what the decomposition adds (a composed plan, a per-stage
+contract, a verifier), on the final v1.2 slice. Reading the 32B column on the
+cohort tiers: stating the conventions to the end-to-end model is worth
+$+0.16$ (A$\rightarrow$B); composing a plan first, without a verifier, is worth
+nothing more (D at rounds~0 is \emph{below} B, 0.446 vs 0.523 --- on the
+comparative \emph{precedes} shapes the plan-frame SQL returns $n=k$
+denominators and invalid statements); two bounded verify-and-repair rounds
+then add $+0.17$ (D$+$2: 0.612), and the single plan-consistency re-ask (E)
+most of that. The ordering on v1.1 (B $<$ D) therefore survives on v1.2 only as
+``architecture \emph{plus} verification'': the contract is what makes a stage
+checkable, and checking is where the gain is. At 7B nothing moves the cohort
+tiers above 0.3 except the catalogue rule (C), and the conventions are worth
+nothing to the end-to-end model (B $\le$ A): a model that cannot compose the
+plan cannot use the stipulations either.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrrrr}
+\toprule
+ & & \multicolumn{4}{c}{32B (Inst.\ for S1, Coder for SQL)} & \multicolumn{4}{c}{7B} \\
+cell & what the model is given / asked & all & cohort & den.\ F1 & faith. & all & cohort & den.\ F1 & faith. \\
+\midrule
+A & sentence $\rightarrow$ SQL, schema only & 0.297 & 0.360 & 0.198 & 0.10 & 0.417 & 0.283 & 0.104 & 0.32 \\
+B & \quad + conventions stated & 0.527 & 0.523 & 0.477 & 0.36 & 0.400 & 0.314 & 0.150 & 0.27 \\
+C2 & composed plan, catalogue rule at S2 & --- & --- & --- & --- & 0.417 & 0.264 & 0.257 & 0.32 \\
+D & composed plan $+$ conventions, no verifier & 0.537 & 0.446 & 0.526 & 0.48 & 0.362 & 0.198 & 0.183 & 0.26 \\
+D$+$2 & \quad + two verify-and-repair rounds & \textbf{0.645} & \textbf{0.612} & 0.688 & 0.72 & 0.398 & 0.252 & 0.182 & 0.26 \\
+E & composed plan $+$ plan-consistency re-ask & 0.632 & 0.593 & 0.685 & 0.64 & 0.362 & 0.198 & 0.176 & 0.33 \\
+C & gold plan, catalogue rule at S2 (S2 row) & 0.810 & 0.705 & 0.654 & 0.75 & 0.615 & 0.403 & 0.322 & 0.35 \\
+C$+$2 & \quad + two verify-and-repair rounds & 0.880 & 0.814 & 0.804 & 0.85 & 0.660 & 0.473 & 0.350 & 0.46 \\
+\midrule
+S1 & composed plan, gold S2/S3 (Table~\ref{tab:toolbox}) & 0.897 & 0.845 & --- & --- & 0.605 & 0.554 & --- & --- \\
+S1$+$1 & \quad + one verify-and-repair round & 0.915 & 0.872 & --- & --- & 0.650 & 0.624 & --- & --- \\
+counts & gold $n,k$ given; model picks test and verdict & 0.705 & 0.543 & (given) & --- & 0.650 & 0.457 & (given) & --- \\
+\bottomrule
+\end{tabular}
+\caption{The architecture-vs-information grid on the final v1.2 slice (400
+records; cohort $=$ 258 cohort-tier records). Den.\ F1 is the denominator-set
+F1 over cohort arms; faith.\ is $P(\text{denominator exact} \mid \text{verdict
+right})$. Cells A--E are the audit's grid; the verify-and-repair rows are the
+system rows (S1: one round; S2: two). The counts-given row has no denominator
+to get wrong and still decides at 0.54 on the cohort tiers, with false
+decisiveness 0.17 and subtype accuracy 0.}
+\label{tab:grid}
+\end{table*}
 
 \subsection{Where retrieval fails: attribution and faithfulness}
 
@@ -617,35 +674,38 @@ right})$: a third to a half of the correct 32B verdicts, and nine in ten of
 the 7B's, rest on a wrong or failed denominator, which is the quantity verdict
 accuracy cannot see.
 
-\begin{table}[t]
+\begin{table*}[t]
 \centering
 \footnotesize
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrrrrr}
 \toprule
-S2 failure cause (242 cohort records) & Coder-7B & Coder-32B & 32B-Inst. & E2E mix \\
+ & \multicolumn{3}{c}{S1 at gold (rules)} & \multicolumn{3}{c}{S1 composed (32B-Inst., toolbox)} \\
+S2 failure cause (258 cohort records) & Coder-7B & Coder-32B & \quad+2 rounds & D plan+conv. & \quad+2 rounds & E re-ask \\
 \midrule
-no plan from S1 (S2 not run) & 0 & 0 & 0 & 25 \\
-SQL failed to execute & 154 & 54 & 34 & 52 \\
-denominator $=$ numerator ($n=k$) & 30 & 18 & 36 & 38 \\
-event absent from report & 14 & 46 & 42 & 19 \\
-\emph{co-exist} leak into \emph{precedes} & 4 & 14 & 6 & 10 \\
-wrong cohort & 0 & 10 & 2 & 10 \\
-split narrowed to co-occurrence & 4 & 0 & 0 & 0 \\
-\emph{co-exist} wrongly dropped & 0 & 0 & 2 & 0 \\
-other omission & 18 & 0 & 4 & 2 \\
+no plan from S1 (S2 not run) & 0 & 0 & 0 & 17 & 13 & 17 \\
+SQL failed to execute & 134 & 80 & 36 & 48 & 11 & 9 \\
+denominator $=$ numerator ($n=k$) & 22 & 30 & 14 & 63 & 41 & 40 \\
+event absent from report & 6 & 6 & 10 & 0 & 1 & 15 \\
+\emph{co-exist} leak into \emph{precedes} & 12 & 0 & 0 & 17 & 11 & 19 \\
+tie leak into a first/last denominator & 0 & 0 & 8 & 35 & 19 & 23 \\
+non-consecutive pair in an \emph{immediate} denominator & 0 & 0 & 0 & 0 & 4 & 1 \\
+wrong cohort & 0 & 0 & 0 & 2 & 0 & 2 \\
+other omission & 38 & 2 & 6 & 10 & 20 & 13 \\
 \midrule
-wrong or missing denominators & 224 & 142 & 126 & 156 \\
-\quad of which verdict still right & 12 & 74 & 48 & 48 \\
-\textbf{faithfulness} $P(\text{den.\ exact} \mid \text{verdict right})$ & 0.10 & 0.52 & 0.67 & 0.56 \\
+wrong or missing denominators & 212 & 118 & 74 & 192 & 120 & 139 \\
+\quad of which verdict still right & 22 & 16 & 24 & 50 & 40 & 53 \\
+\textbf{faithfulness} $P(\text{den.\ exact} \mid \text{verdict right})$ & 0.35 & 0.75 & 0.85 & 0.48 & 0.72 & 0.64 \\
 \bottomrule
 \end{tabular}
 \caption{Attribution of denominator failures to the conditioning rule violated,
-and the faithfulness score. S1 at gold except the end-to-end column (32B-Inst.\
-S1, Coder-32B SQL, toolbox zero-shot). A record takes its dominant cause;
-``SQL failed'' counts records whose statement did not execute (empty arms); ``other omission'' is under-inclusion not yet matched to a rule.}
+and the faithfulness score, on the final v1.2 slice. A record takes its
+dominant cause; ``SQL failed'' counts records whose statement did not execute
+(empty arms); ``other omission'' is under-inclusion not yet matched to a rule.
+The verify-and-repair rounds remove most failed statements and $n=k$ queries;
+the tie and \emph{co-exist} leaks are what remains.}
 \label{tab:attribution}
-\end{table}
+\end{table*}
 
 \subsection{External systems}
 
