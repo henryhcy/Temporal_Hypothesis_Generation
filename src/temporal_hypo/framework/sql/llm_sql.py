@@ -35,6 +35,7 @@ from typing import Any, Mapping, Sequence
 from temporal_hypo.framework.claim_schema import MODE_SPEC, StructuredClaim
 from temporal_hypo.framework.extract.llm_client import Completion, Provider, parse_json_object
 from temporal_hypo.framework.sql.aggregate import ARM_COLUMNS, ORDERING_SEP, REPORT_COLUMNS
+from temporal_hypo.framework.sql.compiler import WHOLE_REPORT_MODES
 from temporal_hypo.generation.pilot import RULE_BY_MODE, _EXCLUSION_REASON
 
 try:  # the reference compiler owns ArmQuery; fall back to the same shape if it is not built yet
@@ -111,6 +112,12 @@ def arm_plan(claim: StructuredClaim) -> list[dict]:
     v2 = f"'{vax[1]}'" if len(vax) > 1 else "?"
     if s.is_report:
         terms = ", ".join(_q(x) for x in claim.terms)
+        if claim.mode in WHOLE_REPORT_MODES:   # v1.2: rank claims need every stage
+            return [{"label": "report",
+                     "rows": "(term, level) -- the first-mention level of EVERY term in the one "
+                             f"report vaers_id = {claim.report_id} (not only the claim's events "
+                             f"{terms}): the claim is about stage RANKS, which depend on all of "
+                             "the report's stages. One row per term present."}]
         return [{"label": "report",
                  "rows": "(term, level) -- the first-mention level of each of the claim's "
                          f"events in the one report vaers_id = {claim.report_id}; "
@@ -217,8 +224,10 @@ def sql_messages(claim: StructuredClaim, ddl: str) -> list[dict]:
     plan = arm_plan(claim)
     labels = [p["label"] for p in plan]
     if s.is_report:
+        which = ("EVERY term of the report" if claim.mode in WHOLE_REPORT_MODES
+                 else "event term present in the report")
         contract = (f"Each statement returns rows with EXACTLY these columns, in this order: "
-                    f"{', '.join(REPORT_COLUMNS)} -- one row per event term present in the report, "
+                    f"{', '.join(REPORT_COLUMNS)} -- one row per {which}, "
                     "level = its FIRST-mention level.")
     else:
         contract = (f"Each statement returns ONE ROW PER REPORT of the arm with EXACTLY these "

@@ -45,6 +45,7 @@ import json
 from typing import Any, Mapping
 
 from temporal_hypo.framework.claim_schema import MODE_SPEC, StructuredClaim
+from temporal_hypo.framework.sql.compiler import WHOLE_REPORT_MODES
 from temporal_hypo.framework.sql.aggregate import ARM_COLUMNS, ORDERING_SEP, REPORT_COLUMNS
 from temporal_hypo.framework.sql.llm_sql import (
     LLMSQLRetriever,
@@ -66,9 +67,14 @@ def e2e_messages(row: Mapping[str, Any], claim: StructuredClaim, ddl: str) -> li
     s = MODE_SPEC[claim.mode]
     labels = expected_labels(claim)
     if s.is_report:
+        # v1.2: a claim about stage RANKS (first half of the timeline; directly
+        # before) needs every stage, so the whole report is returned.
+        which = ("EVERY term present in the report (the claim is about stage ranks, which "
+                 "depend on all of the report's stages)" if claim.mode in WHOLE_REPORT_MODES
+                 else "event term the claim names that is present in the report")
         contract = (f"Each statement returns rows with EXACTLY these columns, in this order: "
-                    f"{', '.join(REPORT_COLUMNS)} -- one row per event term the claim names that "
-                    "is present in the report, level = its FIRST-mention level.")
+                    f"{', '.join(REPORT_COLUMNS)} -- one row per {which}, "
+                    "level = its FIRST-mention level.")
     else:
         contract = (f"Each statement returns ONE ROW PER REPORT of the arm with EXACTLY these "
                     f"columns, in this order: {', '.join(ARM_COLUMNS)}. vaers_id INTEGER; "
