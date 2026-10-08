@@ -41,6 +41,7 @@ def _row(question_row: Mapping, name: str, response: str, answer: str | None) ->
                        "n": None, "k": None, "n2": None, "k2": None,
                        "answer": answer, "gate_reason": None, "procedure_errors": []},
         "latency_ms": 0.0, "tokens": None, "error": None,
+        "verify": {"s1_rounds": 0, "s2_rounds": 0, "s1_notes": [], "s2_notes": []},
     }
 
 
