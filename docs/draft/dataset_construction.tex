@@ -30,8 +30,33 @@
 \begin{document}
 \maketitle
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/overview.pdf}
+\caption{Overview. \textbf{Task} (left): verify a temporal--statistical claim about
+annotated vaccine-adverse-event timelines with a three-decision verdict; the
+framework sees the annotations (pseudonymised report ids, first-mention stages),
+never narrative text. \textbf{Dataset}: MedTempo v1.2, 29 groups in seven claim
+families over three cohort tiers, with every stage of the gold computation
+released (plan, evidence sets, exact test). \textbf{Reference framework} (top):
+an instrumented decomposition --- S1 composes a conditional plan from stated
+conventions with the mode mapping withheld, S2 retrieves per-report role rows
+by SQL, S3 runs the exact test against the plan's null --- with a bounded
+verify-and-repair round per stage; the stage-level gold beneath each stage
+yields stage metrics (plan EM, denominator F1 and co-exist leak, p-agreement,
+faithfulness, abstention) in addition to verdict accuracy. \textbf{Baseline
+families} (bottom) are placed on the stages they replace, which is the
+architecture-vs-information grid (cells A--E): end-to-end sentence-to-SQL,
+an agentic tool loop, external protocols adapted at their native stage, and
+counts-given judgment.}
+\label{fig:overview}
+\end{figure*}
+
 \section{Source Corpus}
 \label{sec:corpus}
+
+Figure~\ref{fig:overview} summarises the task, the dataset, the instrumented
+reference framework and the baseline families compared in \S\ref{sec:baselines}.
 
 The benchmark is built on MedTempo, a corpus of 3{,}166 VAERS adverse-event
 reports annotated with a \emph{leveled order}: a single totally ordered chain of
