@@ -2998,9 +2998,9 @@ Registers, instruct-32B zero-shot: original 0.863 / research **0.630** / media
 0.770 / clinical 0.757 -- a larger wording sensitivity than on v1.1 (0.03-0.12),
 and it sits on the REPORT tier (0.43-0.59 vs 0.90): the non-original report
 templates say "in this report / case / patient" without the VAERS id, and the
-model then composes a cohort denominator (issue 35 again: research 54, media
-40, clinical 42 of the report rows are no-shape, almost all with a cohort
-denominator). The 3-shot dial shows the same mechanism from the other side
+model then composes a cohort denominator (issue 35 again: research 77, media
+52, clinical 51 of the 134 report rows are no-shape, almost all with a cohort
+denominator -- mostly all_present_unique_first/last). The 3-shot dial shows the same mechanism from the other side
 (cohort-shaped examples pull report plans to cohort denominators: report 0.90 ->
 0.66 while cohort rises 0.84 -> 0.97). coder-32B zero-shot repeats its v1.1
 pattern on every report group (all nine at 0.00). Issue 35 is therefore the
