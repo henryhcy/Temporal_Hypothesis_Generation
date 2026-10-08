@@ -3053,7 +3053,7 @@ per-mode rule) on the v1.1 slice. Round 0 is the capability row.
 | S1, instruct-32B, v1.2 | 0.863 | **0.902** | 0.897 | 212/400 at S1 | report tier 0.90 -> **1.00** (the single-report convention restated); no-shape 32 -> 16; cohort 0.84 -> 0.85 |
 | S1, instruct-7B, v1.2 | 0.495 | **0.637** | 0.640 | 339/400 | report tier 0.37 -> 0.65; no-shape 172 -> 113; claim EM 0.48 -> 0.62 |
 | e2e-D, 32B, v1.1 | 0.665 | 0.720 | **0.750** | 164 at S1, 190 at S2 (106 second rounds) | den-F1 0.58 -> 0.68; co-exist leak 0.41 -> 0.29; cohort 0.48 -> 0.60 |
-| e2e-D, 7B, v1.1 | 0.305 | 0.388 | 0.388 | 329 at S1, 19 at S2 | S1 only; the 7B's statements that fail are placeholders (no SQL produced), re-asked at most once with no gain |
+| e2e-D, 7B, v1.1 | 0.305 | 0.388 | 0.388 | 329 at S1, 17 at S2 | S1 only. Correction after checking: the 7B's statements mostly EXECUTE (3 of 176 claimed cohort rows failed); its denominators are wrong wholesale (e.g. 332 of 346 reports co-exist or lack an event) and the re-ask does not repair them -- the 7B cannot write the conditioning, with or without feedback |
 
 Readings. (1) One S1 round pays at every tier (+0.04 at 32B, +0.14 at 7B) and
 a second S1 round adds nothing (-0.005 / +0.003): **S1 rounds = 1.** (2) At S2 the
