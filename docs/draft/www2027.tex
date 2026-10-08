@@ -1,0 +1,89 @@
+%% WWW 2027 (The Web Conference) submission wrapper: ACM sigconf, double-blind.
+%% acmart ships with Overleaf's TeX Live -- nothing to upload. Set this file as
+%% the Overleaf MAIN DOCUMENT (Menu > Settings > Main document). Check the CFP
+%% for the page limit and the exact \acmConference line before submission.
+\documentclass[sigconf,anonymous,review]{acmart}
+%% `review` adds line numbers for the reviewers; drop it for the camera-ready.
+
+%% acmart already loads amsmath, graphicx, hyperref, natbib (\citep/\citet work),
+%% booktabs and xcolor. The guard before amssymb avoids the \Bbbk clash with the
+%% Libertine maths acmart uses.
+\usepackage{multirow}
+\usepackage{array}
+\usepackage{tabularx}
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\let\Bbbk\relax
+\usepackage{amssymb}
+
+%% ACM front-matter placeholders (fill from the WWW 2027 CFP / rights form)
+\copyrightyear{2027}
+\acmYear{2027}
+\setcopyright{none}
+\acmConference[WWW '27]{Proceedings of the ACM Web Conference 2027}{2027}{TBD}
+\acmBooktitle{Proceedings of the ACM Web Conference 2027 (WWW '27)}
+\acmDOI{10.1145/nnnnnnn.nnnnnnn}
+\acmISBN{978-x-xxxx-xxxx-x/YY/MM}
+
+\begin{document}
+
+\title{Verifying Temporal--Statistical Claims over Annotated Clinical Timelines:
+A Benchmark with Stage-Level Ground Truth}
+%% working title -- replace
+
+\author{Anonymous Author(s)}
+\affiliation{%
+  \institution{Anonymous Institution}
+  \city{}
+  \country{}
+}
+
+\begin{abstract}
+%% DRAFT abstract written from the project's framing (docs/plan, 2026-10-08);
+%% every number is a v1.2 release statistic. Rewrite before submission.
+We study the verification of temporal--statistical claims --- ``after vaccine
+$v$, event $A$ tends to precede event $B$'' --- against expert-annotated
+timelines of vaccine adverse-event reports, where a verdict must rest on an
+explicit denominator, a stated null and an exact test. We release MedTempo
+v1.2, a benchmark of 8,763 claim instances (70,104 renderings across four
+registers and two formats) in 29 groups and seven claim families over report,
+cohort and two-cohort tiers, in which every stage of the gold computation ---
+the plan, the evidence sets and the exact test --- is released alongside the
+three-decision verdict (supported / refuted / insufficient), and report
+identifiers are pseudonymised so that no public lookup is possible. We
+evaluate systems with an instrumented reference decomposition (plan, retrieve,
+test) whose stage-level ground truth yields stage metrics beyond verdict
+accuracy, including denominator agreement, faithfulness and abstention, and we
+place end-to-end, agentic, counts-given and externally adapted baselines on the
+stages they replace. Across local and frontier models the dominant failure is
+the denominator, which verdict accuracy alone conceals; a bounded
+verify-and-repair round per stage recovers part of it.
+\end{abstract}
+
+\begin{CCSXML}
+<ccs2012>
+<concept>
+<concept_id>10010147.10010178.10010179</concept_id>
+<concept_desc>Computing methodologies~Natural language processing</concept_desc>
+<concept_significance>500</concept_significance>
+</concept>
+<concept>
+<concept_id>10010405.10010444.10010449</concept_id>
+<concept_desc>Applied computing~Health informatics</concept_desc>
+<concept_significance>300</concept_significance>
+</concept>
+</ccs2012>
+\end{CCSXML}
+\ccsdesc[500]{Computing methodologies~Natural language processing}
+\ccsdesc[300]{Applied computing~Health informatics}
+
+\keywords{claim verification, temporal reasoning, statistical hypothesis testing,
+benchmark, clinical timelines, text-to-SQL}
+
+\maketitle
+
+\input{body_dataset_construction}
+
+\bibliographystyle{ACM-Reference-Format}
+\bibliography{related_work}
+
+\end{document}
