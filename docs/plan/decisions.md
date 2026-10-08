@@ -2984,3 +2984,24 @@ claim's events; rank claims need every stage (fixed in both SQL prompts, T-R1
 35), H-V5 0.38, Y-R1 0.62, Y-V3 0.75. Run dirs `results/v12_smoke200_*` on the
 GPU box. HOLD HERE: nothing downstream (composition, eval_core, Opus) starts
 before the review of the five items.
+
+**Step-2 rows on the v1.2 smoke slice (2026-10-08 morning; scoring = conventions
+v2 + folds).** Model grid, S1 only (S2/S3 at gold):
+
+| S1 condition | instruct-7B | coder-32B | instruct-32B |
+|---|---|---|---|
+| catalogue (lookup) | 0.865 | 0.998 | 0.990 |
+| toolbox, 3 worked plans | -- | -- | 0.863 (report tier 0.66, cohort 0.97) |
+| toolbox, zero-shot | 0.495 | 0.497 (report tier **0.00**, cohort 0.75) | **0.863** (report 0.90, cohort 0.84; new groups 0.82) |
+
+Registers, instruct-32B zero-shot: original 0.863 / research **0.630** / media
+0.770 / clinical 0.757 -- a larger wording sensitivity than on v1.1 (0.03-0.12),
+and it sits on the REPORT tier (0.43-0.59 vs 0.90): the non-original report
+templates say "in this report / case / patient" without the VAERS id, and the
+model then composes a cohort denominator (issue 35 again: research 54, media
+40, clinical 42 of the report rows are no-shape, almost all with a cohort
+denominator). The 3-shot dial shows the same mechanism from the other side
+(cohort-shaped examples pull report plans to cohort denominators: report 0.90 ->
+0.66 while cohort rises 0.84 -> 0.97). coder-32B zero-shot repeats its v1.1
+pattern on every report group (all nine at 0.00). Issue 35 is therefore the
+single largest open scoring question for v1.2 at every local tier.
