@@ -21,7 +21,7 @@ query is a measurement:
 - an executor failure keeps the executor's ``error_class`` (``not_select``,
   ``multi_statement``, ``denied``, ``timeout``, ``sql_error``);
 - a result whose columns are not exactly the contract's (case-insensitive,
-  same order), or whose rows do not coerce (``vaers_id`` not an integer, wrong
+  same order), or whose rows do not coerce (``report_id`` not an integer, wrong
   width, non-integer level), is a ``contract_violation``;
 - a result cut off at the executor's row cap is a ``row_cap`` failure -- an
   aggregate over a truncated result would be silently wrong;
@@ -162,7 +162,7 @@ def derived_null_chance_sum(executor: ReadOnlyExecutor, mode: str, ids: Iterable
         chunk = ids[i:i + 400]
         marks = ",".join("?" * len(chunk))
         res = executor.execute(
-            f"SELECT vaers_id, term, level FROM first_mention WHERE vaers_id IN ({marks})",
+            f"SELECT report_id, term, level FROM first_mention WHERE report_id IN ({marks})",
             tuple(chunk))
         if res.error is not None:
             raise RuntimeError(res.error)

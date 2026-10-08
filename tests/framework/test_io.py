@@ -292,9 +292,9 @@ def test_release_sha256s_match_manifest(tmp_path: Path):
 @needs_release
 def test_real_release_loads_and_verifies():
     rel = load_release(RELEASE_DIR, RELEASE_STEM, verify_sha=True)
-    assert len(rel.questions) == 147_936
-    assert len(rel.answers) == 18_492
-    assert rel.manifest[rio.ISSUE25_KEY] == 1800
+    assert len(rel.questions) == 70_104      # v1.2 (2026-10-08): cap 600 / group
+    assert len(rel.answers) == 8_763
+    assert rel.manifest[rio.ISSUE25_KEY] == 0  # oriented test_verdict since v1.1
     assert all("test_verdict" not in row for row in rel.answers.values())
     assert all(len(row["hypothesis_ids"]) == 8 for row in rel.answers.values())
     assert set(rel.questions[0]) == set(INPUT_FIELDS)
@@ -303,4 +303,4 @@ def test_real_release_loads_and_verifies():
     # every gold row answers question rows that exist, and vice versa
     listed = {h for row in rel.answers.values() for h in row["hypothesis_ids"]}
     assert listed == {q["hypothesis_id"] for q in rel.questions}
-    assert len(list(rel.iter_records(registers="original", formats="question"))) == 18_492
+    assert len(list(rel.iter_records(registers="original", formats="question"))) == 8_763

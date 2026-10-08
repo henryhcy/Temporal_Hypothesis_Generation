@@ -18,7 +18,7 @@ from temporal_hypo.generation.pilot import RULE_BY_MODE
 
 H, F, P = "Headache", "Fatigue", "Pyrexia"
 VAX = {"level": "vaccine", "vaccines": ["Pfizer"], "report_id": None}
-DDL = "CREATE TABLE reports (vaers_id INTEGER);"
+DDL = "CREATE TABLE reports (report_id INTEGER);"
 
 
 @pytest.fixture(scope="module")

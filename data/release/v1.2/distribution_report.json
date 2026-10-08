@@ -30,8 +30,8 @@
         "total_enumerated": 534
       },
       "C-R1": {
-        "viable_cores": 300,
-        "total_enumerated": 300
+        "viable_cores": 600,
+        "total_enumerated": 600
       },
       "C-V1": {
         "viable_cores": 519,
@@ -82,16 +82,16 @@
         "total_enumerated": 1680
       },
       "T-R1": {
-        "viable_cores": 300,
-        "total_enumerated": 300
+        "viable_cores": 600,
+        "total_enumerated": 600
       },
       "T-V1": {
         "viable_cores": 75,
         "total_enumerated": 75
       },
       "Y-R1": {
-        "viable_cores": 300,
-        "total_enumerated": 300
+        "viable_cores": 600,
+        "total_enumerated": 600
       },
       "Y-V1": {
         "viable_cores": 223,
@@ -305,12 +305,12 @@
         }
       },
       "C-R1": {
-        "supported": 193,
-        "refuted": 107,
+        "supported": 300,
+        "refuted": 300,
         "insufficient": 0,
         "fractions": {
-          "supported": 0.6433,
-          "refuted": 0.3567,
+          "supported": 0.5,
+          "refuted": 0.5,
           "insufficient": 0.0
         }
       },
@@ -435,12 +435,12 @@
         }
       },
       "T-R1": {
-        "supported": 169,
-        "refuted": 131,
+        "supported": 300,
+        "refuted": 300,
         "insufficient": 0,
         "fractions": {
-          "supported": 0.5633,
-          "refuted": 0.4367,
+          "supported": 0.5,
+          "refuted": 0.5,
           "insufficient": 0.0
         }
       },
@@ -455,12 +455,12 @@
         }
       },
       "Y-R1": {
-        "supported": 181,
-        "refuted": 119,
+        "supported": 300,
+        "refuted": 300,
         "insufficient": 0,
         "fractions": {
-          "supported": 0.6033,
-          "refuted": 0.3967,
+          "supported": 0.5,
+          "refuted": 0.5,
           "insufficient": 0.0
         }
       },
@@ -527,13 +527,13 @@
     },
     "per_family": {
       "pairwise": {
-        "supported": 8776,
-        "refuted": 7106,
+        "supported": 8883,
+        "refuted": 7299,
         "insufficient": 11472,
         "fractions": {
-          "supported": 0.3208,
-          "refuted": 0.2598,
-          "insufficient": 0.4194
+          "supported": 0.3212,
+          "refuted": 0.2639,
+          "insufficient": 0.4148
         }
       },
       "sequence": {
@@ -557,23 +557,23 @@
         }
       },
       "position": {
-        "supported": 221,
-        "refuted": 154,
+        "supported": 352,
+        "refuted": 323,
         "insufficient": 0,
         "fractions": {
-          "supported": 0.5893,
-          "refuted": 0.4107,
+          "supported": 0.5215,
+          "refuted": 0.4785,
           "insufficient": 0.0
         }
       },
       "proximity": {
-        "supported": 703,
-        "refuted": 452,
+        "supported": 822,
+        "refuted": 633,
         "insufficient": 1845,
         "fractions": {
-          "supported": 0.2343,
-          "refuted": 0.1507,
-          "insufficient": 0.615
+          "supported": 0.2491,
+          "refuted": 0.1918,
+          "insufficient": 0.5591
         }
       },
       "threshold": {

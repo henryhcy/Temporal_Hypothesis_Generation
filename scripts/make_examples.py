@@ -24,6 +24,7 @@ import sqlite3
 from pathlib import Path
 
 from temporal_hypo.core.answers import compute_answer, core_significance
+from temporal_hypo.core.pseudonym import report_ref
 from temporal_hypo.core.min_n import min_n_gate
 from temporal_hypo.generation.cores import (
     enumerate_group_full,
@@ -441,7 +442,7 @@ def run(db_path: Path, out_dir: Path) -> dict:
 
 def _cohort_str(e) -> str:
     if e["report_id"] is not None:
-        return f"report VAERS-{e['report_id']}"
+        return f"report {report_ref(e['report_id'])}"
     if len(e["vaccines"]) == 2:
         return f"{e['vaccines'][0]} vs {e['vaccines'][1]}"
     return e["vaccines"][0] if e["vaccines"] else "?"

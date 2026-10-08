@@ -21,6 +21,7 @@ import pytest
 
 from temporal_hypo.core.answers import _ARROW
 from temporal_hypo.framework.claim_schema import MODE_SPEC, ROLES, build_claim, from_gold
+from temporal_hypo.core.pseudonym import report_ref
 from temporal_hypo.framework.extract.rules import (
     ARROW, RulesExtractor, compile_patterns, iter_bindings, vocabulary_from_db,
 )
@@ -92,7 +93,7 @@ def cases(groups) -> Iterator[Case]:
             vaccines = ["Pfizer"]
             cohort = {"level": "vaccine", "vaccines": vaccines, "report_id": None}
         values = {ROLES[i]: e for i, e in enumerate(events)}
-        values["r"] = f"VAERS-{REPORT_ID}"
+        values["r"] = report_ref(REPORT_ID)
         if len(vaccines) == 1:
             values["v"] = vaccines[0]
         elif len(vaccines) == 2:
@@ -148,10 +149,11 @@ def test_compile_patterns_shape(groups):
     pats = compile_patterns(groups)
     assert len(pats) == N_TEMPLATES
     assert len({p.template for p in pats}) == N_TEMPLATES - 2          # two shared strings
-    # 55 distinct strings repeat a slot (one of them is the F-R1/F-R3 shared string);
-    # v1.2 added 30 (Y-V1 and H-V5 name {A} twice in every form, Y-V2 in most)
-    assert len({p.template for p in pats if "(?P=" in p.regex.pattern}) == 55
-    assert sum("(?P=" in p.regex.pattern for p in pats) == 56
+    # 59 distinct strings repeat a slot (one of them is the F-R1/F-R3 shared string);
+    # v1.2 added 34 (Y-V1 and H-V5 name {A} twice in every form, Y-V2 in most,
+    # H-V1 in the three non-original registers since the 2026-10-08 rewording)
+    assert len({p.template for p in pats if "(?P=" in p.regex.pattern}) == 59
+    assert sum("(?P=" in p.regex.pattern for p in pats) == 60
     assert sum(p.negated for p in pats) == 6 * len(REGISTERS) * len(FORMATS)   # C-V1/2/3 + T-V1/Y-V1/Y-V3
     for p in pats:
         assert p.regex.pattern.startswith("^") and p.regex.pattern.endswith("$")
@@ -311,7 +313,7 @@ def test_terms_containing_template_literals(groups):
         ({"group_id": "C-R1", "level": "report", "answer_type": "BOOL", "register": "original",
           "format": "question", "cohort": report, "options": None,
           "text": "Do Drug reaction with eosinophilia and systemic symptoms and Headache "
-                  "co-occur in report VAERS-123456?"},
+                  "co-occur in report MT-0123456?"},
          ("rep_sym_bool", ("Drug reaction with eosinophilia and systemic symptoms", "Headache"))),
         ({"group_id": "P-V4", "level": "vaccine", "answer_type": "BOOL", "register": "research",
           "format": "question", "cohort": vax, "options": None,
@@ -351,10 +353,10 @@ def test_rejects_out_of_vocabulary_and_inconsistent_scope(extractor):
     rep = {"level": "report", "vaccines": [], "report_id": 1001}
     row = {"group_id": "P-R1", "level": "report", "answer_type": "BOOL", "register": "original",
            "format": "question", "options": None, "cohort": rep,
-           "text": "Did Headache occur before Fatigue in report VAERS-1001?"}
+           "text": "Did Headache occur before Fatigue in report MT-0001001?"}
     assert extractor.extract(row).report_id == 1001
     assert extractor.extract({**row, "text": row["text"].replace("1001", "1002")}) is None
-    assert extractor.extract({**row, "text": row["text"].replace("VAERS-1001", "1001")}) is None
+    assert extractor.extract({**row, "text": row["text"].replace("MT-0001001", "1001")}) is None
     # a CHOICE row whose named event is not among its options is not a parse
     row = {"group_id": "P-R2", "level": "report", "answer_type": "CHOICE", "register": "media",
            "format": "claim", "options": ["Nausea", "Rash"], "cohort": rep,
@@ -398,7 +400,7 @@ def test_release_round_trip_both_conditions():
 
     answers = {a["instance_id"]: a
                for a in _iter_jsonl(RELEASE_DIR / f"{RELEASE_STEM}_answers.jsonl")}
-    assert len(answers) == 18_492
+    assert len(answers) == 8_763       # v1.2 (cap 600 / group)
     gold_cache: dict[str, tuple] = {}
 
     tallies = {cond: collections.Counter() for cond in ("given", "blind")}
@@ -431,14 +433,14 @@ def test_release_round_trip_both_conditions():
                 confusion[cond][q["group_id"]][("parsed_as", claim.mode, q["register"],
                                                 q["format"])] += 1
 
-    assert n_rows == 147_936
+    assert n_rows == 70_104
     for cond in ("given", "blind"):
         t = tallies[cond]
-        if t["wrong"] or t["exact"] != 145_644 or t["underdetermined"] != 2_292:
+        if t["wrong"] or t["exact"] != 67_812 or t["underdetermined"] != 2_292:
             print(f"\n[{cond}] tallies: {dict(t)}")
             for gid, ctr in sorted(confusion[cond].items()):
                 print(f"  {gid}: {dict(ctr.most_common(10))}")
         assert t["wrong"] == 0, (cond, dict(t))
-        assert t["exact"] == 145_644, (cond, dict(t))
+        assert t["exact"] == 67_812, (cond, dict(t))
         assert t["underdetermined"] == 2_292, (cond, dict(t))
         assert und_templates[cond] == RELEASE_UNDERDETERMINED

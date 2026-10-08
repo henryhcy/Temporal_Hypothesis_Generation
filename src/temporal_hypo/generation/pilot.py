@@ -209,8 +209,11 @@ def _validation_entry(core, group, index, polarity=None) -> dict:
 
 def run_pilot(
     db_path: Path, out_dir: Path, *, seed: int = 0, t: int = 100,
-    full: bool = False
+    full: bool = False, cap: int | None = None
 ) -> dict:
+    """``cap`` is the per-group instance cap of the v1.2 composition layer
+    (decisions.md 2026-10-08, item 4: 600 = 200 per class); None lets each
+    group's own decisive supply S set the budget (every v1.1 release)."""
     conn = sqlite3.connect(str(db_path))
     index = CorpusIndex.load(conn)
     groups = load_groups()
@@ -252,8 +255,8 @@ def run_pilot(
                 pool = pool + enumerate_false_cores(
                     index, group, count=-(-S // 3) + 3, seed=f"{seed}|{gid}")
             # `group` is passed so feasible_polarities can see negated wording;
-            # `t=None` lets the group's own S set the budget (equal thirds).
-            sel = balance_group(pool, gid, group, t=None, seed=seed)
+            # `t=cap` (None = the group's own S sets the budget, equal thirds).
+            sel = balance_group(pool, gid, group, t=cap, seed=seed)
             chosen = sel.chosen
             b_summary[gid] = {
                 "S": sel.S,

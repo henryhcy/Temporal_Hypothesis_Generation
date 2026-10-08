@@ -22,11 +22,11 @@ from temporal_hypo.generation.pilot import RULE_BY_MODE, _EXCLUSION_REASON
 from tests.framework.conftest import H, F, P, R, N
 
 DDL = """
-CREATE TABLE reports (vaers_id INTEGER PRIMARY KEY, vaccine TEXT NOT NULL, num_stages INTEGER NOT NULL);
-CREATE TABLE level_terms (vaers_id INTEGER NOT NULL REFERENCES reports(vaers_id), level_index INTEGER NOT NULL, term TEXT NOT NULL);
+CREATE TABLE reports (report_id INTEGER PRIMARY KEY, vaccine TEXT NOT NULL, num_stages INTEGER NOT NULL);
+CREATE TABLE level_terms (report_id INTEGER NOT NULL REFERENCES reports(report_id), level_index INTEGER NOT NULL, term TEXT NOT NULL);
 CREATE VIEW first_mention AS
-  SELECT lt.vaers_id, r.vaccine, lt.term, MIN(lt.level_index) AS level
-  FROM level_terms lt JOIN reports r USING (vaers_id) GROUP BY lt.vaers_id, lt.term;
+  SELECT lt.report_id, r.vaccine, lt.term, MIN(lt.level_index) AS level
+  FROM level_terms lt JOIN reports r USING (report_id) GROUP BY lt.report_id, lt.term;
 """
 
 VAX = {"level": "vaccine", "vaccines": ["Pfizer"], "report_id": None}
@@ -40,9 +40,9 @@ MULTI = build_claim("multi_dir_precedes", [H, F], {"level": "multi", "vaccines":
                                                    "report_id": None}, options=["Pfizer", "Moderna"])
 REPORT = build_claim("rep_dir_bool", [H, F], REP)
 
-PAIR_SQL = ("SELECT a.vaers_id, (a.level<>b.level) AS in_denominator, (a.level<b.level) AS in_numerator, "
+PAIR_SQL = ("SELECT a.report_id, (a.level<>b.level) AS in_denominator, (a.level<b.level) AS in_numerator, "
             "(a.level=b.level) AS excluded, NULL AS cell FROM first_mention a JOIN first_mention b "
-            "USING (vaers_id) WHERE a.vaccine='Pfizer' AND a.term='Headache' AND b.term='Fatigue'")
+            "USING (report_id) WHERE a.vaccine='Pfizer' AND a.term='Headache' AND b.term='Fatigue'")
 
 
 class StubProvider:
@@ -97,7 +97,7 @@ def test_sql_messages_carry_ddl_contract_claim_rule_and_reminders():
     system, user = msgs[0]["content"], msgs[1]["content"]
     assert DDL.strip() in system
     assert ", ".join(ARM_COLUMNS) in system
-    assert "first-mention" in system and "vaers_id" in system
+    assert "first-mention" in system and "report_id" in system
     assert "cell MUST be NULL" in system and "Inline every literal" in system
     payload = json.loads(user.split("CLAIM (JSON):\n", 1)[1].split("\n", 1)[0])
     assert payload == claim_payload(DIR)

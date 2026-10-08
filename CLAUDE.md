@@ -42,9 +42,12 @@ wrong.
 - **`s1-toolbox` branch (2026-09-30):** S1 is evaluated under the TOOLBOX frame (`--s1-frame toolbox`,
   11 §11a/§13): conventions stated, mode mapping withheld, the model composes a conditional plan;
   the catalogue frame is the upper bound. Headline condition is zero-shot. API keys: gitignored `.env`.
-- **`v1.2` branch (2026-10-07):** nine new groups (position / proximity / threshold; data-derived
-  and text-stated nulls) in `data/release/v1.2`, validated and B0-certified, UNDER REVIEW; v1.1 stays
-  the working release until the review and the composition layer land. See decisions.md BUILT v1.2.
+- **`v1.2` branch (2026-10-07/08):** nine new groups (position / proximity / threshold; data-derived
+  and text-stated nulls). **`data/release/v1.2` is the WORKING RELEASE (final 2026-10-08)**: cap 600
+  per group, every report group 200/200, report ids pseudonymised; validated (56,138 instances) and
+  B0-certified on all 70,104 records. See decisions.md BUILT v1.2 and IMPLEMENTED 2026-10-08. v1.1
+  no longer runs on current code (VAERS ids); reproduce its rows at commit 27c5d77 with
+  `data/medtempo_eval.v11.db`.
 - `docs/plan/decisions.md`        — locked decisions, **chronological and append-only**: read newest-first, and never quote one entry as current without checking for a later one on the same topic
 - `docs/plan/open_questions.md`   — items still under discussion (do not assume). Cleaned 08-12; every entry is genuinely open and carries its issue number
 
@@ -90,6 +93,7 @@ The canonical template definitions are in `data/templates/`:
 - `data/templates/pairwise.yaml`    — precedes and co-occurs groups
 - `data/templates/sequence.yaml`    — sequence groups
 - `data/templates/first_last.yaml`  — first / last groups
+- `data/templates/position.yaml`, `proximity.yaml`, `threshold.yaml` — the v1.2 families (2026-10-07)
 
 These YAML files are the **single source of truth** for the templates.
 The .docx under `docs/reference/` is a generated artifact for advisor
@@ -143,10 +147,15 @@ meetings, produced by `scripts/render_templates_docx.py`.
 - **Run `scripts/validate_gold.py` before trusting generated data.** Six
   invariant families; it is what caught the first-mention bug.
 - **The eval harness reads `data/medtempo_eval.db`, never `data/medtempo.db`**
-  (2026-09-01). The eval DB is keyed on `vaers_id`, has no `narrative` column and no
-  surrogate id; it is the mechanical guard behind "never narrative text". Build it
-  with `scripts/build_eval_db.py`; the DDL in `framework/sql/views.sql` is what
-  models see.
+  (2026-09-01). The eval DB is keyed on the pseudonymous `report_id`, has no
+  `narrative` column, no VAERS id and no surrogate id; it is the mechanical guard
+  behind "never narrative text". Build it with `scripts/build_eval_db.py`; the DDL
+  in `framework/sql/views.sql` is what models see.
+- **Report ids are pseudonyms** (2026-10-08, `core/pseudonym.py`). Every id a model can
+  see -- `MT-0482913` in a text, `cohort.report_id`, `evidence_ids`, the eval DB -- is a
+  keyed permutation of the VAERS id. The key is `data/private/pseudonym.key` (gitignored;
+  NEVER commit it, never print it; losing it changes every id). Generation and the eval-DB
+  build need it; the harness does not. `MEDTEMPO_PSEUDONYM_KEY=identity` is for tests only.
 - **Never call `core/answers.py::compute_answer` for an asserted claim** (2026-09-01).
   It reports the WINNER's tail, not the asserted cell's; the harness scores a claim
   with `core_significance(core, named=claim.named_cell())` and applies the negation

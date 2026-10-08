@@ -54,6 +54,8 @@ SQL, agent) is graded identically.
 
 from __future__ import annotations
 
+from temporal_hypo.core.pseudonym import report_ref
+
 import json
 import math
 import random
@@ -1189,7 +1191,7 @@ def _severity(rec: _Rec) -> tuple:
 def _describe_claim(c: StructuredClaim | None) -> str:
     if c is None:
         return "no parse"
-    cohort = ", ".join(f"VAERS-{co.report_id}" if co.report_id is not None else str(co.vaccine)
+    cohort = ", ".join(report_ref(co.report_id) if co.report_id is not None else str(co.vaccine)
                        for co in c.cohorts)
     s = (f"mode={c.mode}  events={list(c.terms)}  cohort=[{cohort}]  negated={c.negated}"
          f"  asserted_option={c.asserted_option!r}")

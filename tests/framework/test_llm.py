@@ -167,7 +167,7 @@ def test_question_row_from_answer_renders_the_original_claim_text():
     assert qrow["text"] == "After Pfizer, Headache typically occurs before Fatigue."
     assert qrow["group_id"] == "P-V1" and qrow["level"] == "vaccine"
     qrow = question_row_from_answer(ANSWER_ROWS[1])
-    assert qrow["text"] == "In report VAERS-1001, Headache came first, before Fatigue."
+    assert qrow["text"] == "In report MT-0001001, Headache came first, before Fatigue."
     neg = question_row_from_answer(ANSWER_ROWS[2])   # negated C-V1 wording exists
     assert "not" in neg["text"].lower()
     multi = question_row_from_answer(ANSWER_ROWS[4])
@@ -181,7 +181,7 @@ def test_fewshot_pairs_accepts_tuples_answer_rows_dict_pairs_and_merged_rows():
     pairs = fewshot_pairs([tup, ANSWER_ROWS[1], pair, merged, {"junk": 1}, ("x",), 42], k=10)
     assert len(pairs) == 4
     assert pairs[0][0] is not DIR_ROW and pairs[0] == (DIR_ROW, ANSWER_ROWS[0])
-    assert pairs[1][0]["text"].startswith("In report VAERS-1001")
+    assert pairs[1][0]["text"].startswith("In report MT-0001001")
     assert pairs[2][0]["text"] == DIR_ROW["text"]
     assert pairs[3][0]["text"] == DIR_ROW["text"] and pairs[3][1]["mode"] == "dir_bool"
     assert len(fewshot_pairs(ANSWER_ROWS, k=2)) == 2
@@ -235,7 +235,7 @@ def test_extract_blind_group_hides_group_id_in_every_user_turn():
 
 
 def test_extract_given_group_fewshot_shows_group_and_neutral_question_asserts_nothing():
-    q = q_row("P-R2", "Which came first in report VAERS-1001, Headache or Fatigue?",
+    q = q_row("P-R2", "Which came first in report MT-0001001, Headache or Fatigue?",
               level="report", answer_type="CHOICE", report_id=1001, options=[H, F], fmt="question")
     stub = StubProvider([json.dumps(FLAT_DIR)])
     ex = LLMExtractor(stub, "m", fewshot=[{"question": q, "answer": ANSWER_ROWS[1]}], k_shot=1,

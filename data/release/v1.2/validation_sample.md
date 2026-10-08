@@ -23,26 +23,26 @@ What to check, in order of what has actually gone wrong before:
 - **gold verdict: supported**
 - 95% CI: [0.5625, 0.809]
   - supports the claim (numerator):
-      - 923644  levels={'Headache': 1, 'Fatigue': 2}
-      - 938335  levels={'Headache': 0, 'Fatigue': 1}
-      - 944881  levels={'Headache': 0, 'Fatigue': 1}
-      - 954599  levels={'Headache': 0, 'Fatigue': 1}
-      - 984621  levels={'Headache': 0, 'Fatigue': 1}
-      - 1007886  levels={'Headache': 1, 'Fatigue': 2}
+      - 5341252  levels={'Headache': 1, 'Fatigue': 2}
+      - 8882718  levels={'Headache': 0, 'Fatigue': 1}
+      - 3443605  levels={'Headache': 0, 'Fatigue': 1}
+      - 8803251  levels={'Headache': 0, 'Fatigue': 1}
+      - 9454869  levels={'Headache': 0, 'Fatigue': 1}
+      - 7956230  levels={'Headache': 1, 'Fatigue': 2}
   - in denominator but does NOT support:
-      - 945613  levels={'Headache': 3, 'Fatigue': 1}
-      - 946352  levels={'Headache': 2, 'Fatigue': 1}
-      - 957667  levels={'Headache': 1, 'Fatigue': 0}
-      - 981131  levels={'Headache': 1, 'Fatigue': 0}
-      - 987158  levels={'Headache': 6, 'Fatigue': 2}
-      - 1073719  levels={'Headache': 1, 'Fatigue': 0}
+      - 30669  levels={'Headache': 3, 'Fatigue': 1}
+      - 989864  levels={'Headache': 2, 'Fatigue': 1}
+      - 2094006  levels={'Headache': 1, 'Fatigue': 0}
+      - 9284759  levels={'Headache': 1, 'Fatigue': 0}
+      - 4161604  levels={'Headache': 6, 'Fatigue': 2}
+      - 7586307  levels={'Headache': 1, 'Fatigue': 0}
   - EXCLUDED from the denominator:
-      - 916915  levels={'Headache': 2, 'Fatigue': 2}
-      - 927674  levels={'Headache': 2, 'Fatigue': 2}
-      - 927944  levels={'Headache': 1, 'Fatigue': 1}
-      - 940509  levels={'Headache': 1, 'Fatigue': 1}
-      - 950639  levels={'Headache': 2, 'Fatigue': 2}
-      - 951488  levels={'Headache': 1, 'Fatigue': 1}
+      - 8958400  levels={'Headache': 2, 'Fatigue': 2}
+      - 4460409  levels={'Headache': 2, 'Fatigue': 2}
+      - 8128597  levels={'Headache': 1, 'Fatigue': 1}
+      - 3756722  levels={'Headache': 1, 'Fatigue': 1}
+      - 7034748  levels={'Headache': 2, 'Fatigue': 2}
+      - 6933763  levels={'Headache': 1, 'Fatigue': 1}
 
 ## 2. P-V2 (antecedent_bool, BOOL) -- realized as insufficient
 - claim: "After Pfizer, Headache follows Fatigue more often than it follows Pyrexia."
@@ -56,16 +56,16 @@ What to check, in order of what has actually gone wrong before:
 - cohort 2: proportion=0.4667 n=60 k=28
   - cohort_1: n=50 k=15 excluded=67
   - cohort_1 sample:
-      - 923644  levels={'Fatigue': 2, 'Headache': 1, 'Pyrexia': None}
-      - 938335  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
-      - 944881  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 0}
-      - 945613  levels={'Fatigue': 1, 'Headache': 3, 'Pyrexia': None}
+      - 5341252  levels={'Fatigue': 2, 'Headache': 1, 'Pyrexia': None}
+      - 8882718  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
+      - 3443605  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 0}
+      - 30669  levels={'Fatigue': 1, 'Headache': 3, 'Pyrexia': None}
   - cohort_2: n=60 k=28 excluded=59
   - cohort_2 sample:
-      - 925349  levels={'Fatigue': None, 'Headache': 0, 'Pyrexia': 3}
-      - 934254  levels={'Fatigue': None, 'Headache': 1, 'Pyrexia': 0}
-      - 938335  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
-      - 954599  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
+      - 1290146  levels={'Fatigue': None, 'Headache': 0, 'Pyrexia': 3}
+      - 7180193  levels={'Fatigue': None, 'Headache': 1, 'Pyrexia': 0}
+      - 8882718  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
+      - 8803251  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
 
 ## 3. P-V3 (dir_choice, CHOICE) -- realized as supported
 - claim: "After Pfizer, Headache usually comes before Fatigue."
@@ -79,26 +79,26 @@ What to check, in order of what has actually gone wrong before:
 - **gold verdict: supported**
 - 95% CI: [0.5625, 0.809]
   - supports the claim (numerator):
-      - 923644  levels={'Headache': 1, 'Fatigue': 2}
-      - 938335  levels={'Headache': 0, 'Fatigue': 1}
-      - 944881  levels={'Headache': 0, 'Fatigue': 1}
-      - 954599  levels={'Headache': 0, 'Fatigue': 1}
-      - 984621  levels={'Headache': 0, 'Fatigue': 1}
-      - 1007886  levels={'Headache': 1, 'Fatigue': 2}
+      - 5341252  levels={'Headache': 1, 'Fatigue': 2}
+      - 8882718  levels={'Headache': 0, 'Fatigue': 1}
+      - 3443605  levels={'Headache': 0, 'Fatigue': 1}
+      - 8803251  levels={'Headache': 0, 'Fatigue': 1}
+      - 9454869  levels={'Headache': 0, 'Fatigue': 1}
+      - 7956230  levels={'Headache': 1, 'Fatigue': 2}
   - in denominator but does NOT support:
-      - 945613  levels={'Headache': 3, 'Fatigue': 1}
-      - 946352  levels={'Headache': 2, 'Fatigue': 1}
-      - 957667  levels={'Headache': 1, 'Fatigue': 0}
-      - 981131  levels={'Headache': 1, 'Fatigue': 0}
-      - 987158  levels={'Headache': 6, 'Fatigue': 2}
-      - 1073719  levels={'Headache': 1, 'Fatigue': 0}
+      - 30669  levels={'Headache': 3, 'Fatigue': 1}
+      - 989864  levels={'Headache': 2, 'Fatigue': 1}
+      - 2094006  levels={'Headache': 1, 'Fatigue': 0}
+      - 9284759  levels={'Headache': 1, 'Fatigue': 0}
+      - 4161604  levels={'Headache': 6, 'Fatigue': 2}
+      - 7586307  levels={'Headache': 1, 'Fatigue': 0}
   - EXCLUDED from the denominator:
-      - 916915  levels={'Headache': 2, 'Fatigue': 2}
-      - 927674  levels={'Headache': 2, 'Fatigue': 2}
-      - 927944  levels={'Headache': 1, 'Fatigue': 1}
-      - 940509  levels={'Headache': 1, 'Fatigue': 1}
-      - 950639  levels={'Headache': 2, 'Fatigue': 2}
-      - 951488  levels={'Headache': 1, 'Fatigue': 1}
+      - 8958400  levels={'Headache': 2, 'Fatigue': 2}
+      - 4460409  levels={'Headache': 2, 'Fatigue': 2}
+      - 8128597  levels={'Headache': 1, 'Fatigue': 1}
+      - 3756722  levels={'Headache': 1, 'Fatigue': 1}
+      - 7034748  levels={'Headache': 2, 'Fatigue': 2}
+      - 6933763  levels={'Headache': 1, 'Fatigue': 1}
 
 ## 4. P-V4 (pairpair_bool, BOOL) -- realized as insufficient
 - claim: "After Pfizer, Headache precedes Fatigue more often than Pyrexia precedes Pain."
@@ -112,16 +112,16 @@ What to check, in order of what has actually gone wrong before:
 - cohort 2: proportion=0.5429 n=35 k=19
   - cohort_1: n=50 k=35 excluded=67
   - cohort_1 sample:
-      - 923644  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': None, 'Pain': None}
-      - 938335  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1, 'Pain': None}
-      - 944881  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 0, 'Pain': 0}
-      - 945613  levels={'Headache': 3, 'Fatigue': 1, 'Pyrexia': None, 'Pain': None}
+      - 5341252  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': None, 'Pain': None}
+      - 8882718  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1, 'Pain': None}
+      - 3443605  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 0, 'Pain': 0}
+      - 30669  levels={'Headache': 3, 'Fatigue': 1, 'Pyrexia': None, 'Pain': None}
   - cohort_2: n=35 k=19 excluded=58
   - cohort_2 sample:
-      - 925349  levels={'Headache': 0, 'Fatigue': None, 'Pyrexia': 3, 'Pain': 2}
-      - 964390  levels={'Headache': None, 'Fatigue': 2, 'Pyrexia': 3, 'Pain': 1}
-      - 975412  levels={'Headache': None, 'Fatigue': None, 'Pyrexia': 1, 'Pain': 0}
-      - 983050  levels={'Headache': 1, 'Fatigue': None, 'Pyrexia': 1, 'Pain': 2}
+      - 1290146  levels={'Headache': 0, 'Fatigue': None, 'Pyrexia': 3, 'Pain': 2}
+      - 9987037  levels={'Headache': None, 'Fatigue': 2, 'Pyrexia': 3, 'Pain': 1}
+      - 5454409  levels={'Headache': None, 'Fatigue': None, 'Pyrexia': 1, 'Pain': 0}
+      - 827872  levels={'Headache': 1, 'Fatigue': None, 'Pyrexia': 1, 'Pain': 2}
 
 ## 5. C-V1 (sym_bool_cooccurs, BOOL) -- realized as insufficient
 - claim: "After Pfizer, Headache and Fatigue typically co-occur."
@@ -135,19 +135,19 @@ What to check, in order of what has actually gone wrong before:
 - **gold verdict: insufficient (underpowered)**
 - 95% CI: [0.4821, 0.6586]
   - supports the claim (numerator):
-      - 916915  levels={'Headache': 2, 'Fatigue': 2}
-      - 927674  levels={'Headache': 2, 'Fatigue': 2}
-      - 927944  levels={'Headache': 1, 'Fatigue': 1}
-      - 940509  levels={'Headache': 1, 'Fatigue': 1}
-      - 950639  levels={'Headache': 2, 'Fatigue': 2}
-      - 951488  levels={'Headache': 1, 'Fatigue': 1}
+      - 8958400  levels={'Headache': 2, 'Fatigue': 2}
+      - 4460409  levels={'Headache': 2, 'Fatigue': 2}
+      - 8128597  levels={'Headache': 1, 'Fatigue': 1}
+      - 3756722  levels={'Headache': 1, 'Fatigue': 1}
+      - 7034748  levels={'Headache': 2, 'Fatigue': 2}
+      - 6933763  levels={'Headache': 1, 'Fatigue': 1}
   - in denominator but does NOT support:
-      - 923644  levels={'Headache': 1, 'Fatigue': 2}
-      - 938335  levels={'Headache': 0, 'Fatigue': 1}
-      - 944881  levels={'Headache': 0, 'Fatigue': 1}
-      - 945613  levels={'Headache': 3, 'Fatigue': 1}
-      - 946352  levels={'Headache': 2, 'Fatigue': 1}
-      - 954599  levels={'Headache': 0, 'Fatigue': 1}
+      - 5341252  levels={'Headache': 1, 'Fatigue': 2}
+      - 8882718  levels={'Headache': 0, 'Fatigue': 1}
+      - 3443605  levels={'Headache': 0, 'Fatigue': 1}
+      - 30669  levels={'Headache': 3, 'Fatigue': 1}
+      - 989864  levels={'Headache': 2, 'Fatigue': 1}
+      - 8803251  levels={'Headache': 0, 'Fatigue': 1}
 
 ## 6. C-V2 (assoc_bool, BOOL) -- realized as supported
 - claim: "After Pfizer, Headache and Fatigue occur together more often than their separate rates would predict."
@@ -161,16 +161,16 @@ What to check, in order of what has actually gone wrong before:
 - cohort 2: proportion=0.1992 n=718 k=143
   - cohort_1: n=301 k=117 excluded=0
   - cohort_1 sample:
-      - 916915  levels={'Headache': 2, 'Fatigue': 2}
-      - 923644  levels={'Headache': 1, 'Fatigue': 2}
-      - 924830  levels={'Headache': 0, 'Fatigue': None}
-      - 925349  levels={'Headache': 0, 'Fatigue': None}
+      - 8958400  levels={'Headache': 2, 'Fatigue': 2}
+      - 5341252  levels={'Headache': 1, 'Fatigue': 2}
+      - 211234  levels={'Headache': 0, 'Fatigue': None}
+      - 1290146  levels={'Headache': 0, 'Fatigue': None}
   - cohort_2: n=718 k=143 excluded=0
   - cohort_2 sample:
-      - 917756  levels={'Headache': None, 'Fatigue': None}
-      - 917879  levels={'Headache': None, 'Fatigue': None}
-      - 918837  levels={'Headache': None, 'Fatigue': None}
-      - 927691  levels={'Headache': None, 'Fatigue': None}
+      - 2596992  levels={'Headache': None, 'Fatigue': None}
+      - 6964051  levels={'Headache': None, 'Fatigue': None}
+      - 707515  levels={'Headache': None, 'Fatigue': None}
+      - 6489279  levels={'Headache': None, 'Fatigue': None}
 
 ## 7. C-V3 (cooc_modal_bool, BOOL) -- realized as supported
 - claim: "After Pfizer, co-occurrence is the dominant relation for Headache and Fatigue."
@@ -184,19 +184,19 @@ What to check, in order of what has actually gone wrong before:
 - **gold verdict: supported**
 - 95% CI: [0.4821, 0.6586]
   - supports the claim (numerator):
-      - 916915  levels={'Headache': 2, 'Fatigue': 2}
-      - 927674  levels={'Headache': 2, 'Fatigue': 2}
-      - 927944  levels={'Headache': 1, 'Fatigue': 1}
-      - 940509  levels={'Headache': 1, 'Fatigue': 1}
-      - 950639  levels={'Headache': 2, 'Fatigue': 2}
-      - 951488  levels={'Headache': 1, 'Fatigue': 1}
+      - 8958400  levels={'Headache': 2, 'Fatigue': 2}
+      - 4460409  levels={'Headache': 2, 'Fatigue': 2}
+      - 8128597  levels={'Headache': 1, 'Fatigue': 1}
+      - 3756722  levels={'Headache': 1, 'Fatigue': 1}
+      - 7034748  levels={'Headache': 2, 'Fatigue': 2}
+      - 6933763  levels={'Headache': 1, 'Fatigue': 1}
   - in denominator but does NOT support:
-      - 923644  levels={'Headache': 1, 'Fatigue': 2}
-      - 938335  levels={'Headache': 0, 'Fatigue': 1}
-      - 944881  levels={'Headache': 0, 'Fatigue': 1}
-      - 945613  levels={'Headache': 3, 'Fatigue': 1}
-      - 946352  levels={'Headache': 2, 'Fatigue': 1}
-      - 954599  levels={'Headache': 0, 'Fatigue': 1}
+      - 5341252  levels={'Headache': 1, 'Fatigue': 2}
+      - 8882718  levels={'Headache': 0, 'Fatigue': 1}
+      - 3443605  levels={'Headache': 0, 'Fatigue': 1}
+      - 30669  levels={'Headache': 3, 'Fatigue': 1}
+      - 989864  levels={'Headache': 2, 'Fatigue': 1}
+      - 8803251  levels={'Headache': 0, 'Fatigue': 1}
 
 ## 8. S-V3 (modal_choice, CHOICE) -- realized as insufficient
 - claim: "After Pfizer, the most common ordering of Headache, Pyrexia, Fatigue is Headache → Pyrexia → Fatigue."
@@ -210,20 +210,20 @@ What to check, in order of what has actually gone wrong before:
 - **gold verdict: insufficient (underpowered)**
 - 95% CI: [0.1876, 0.8124]
   - supports the claim (numerator):
-      - 1279632  levels={'Headache': 0, 'Pyrexia': 1, 'Fatigue': 2}
-      - 1282430  levels={'Headache': 0, 'Pyrexia': 2, 'Fatigue': 3}
-      - 1385457  levels={'Headache': 0, 'Pyrexia': 1, 'Fatigue': 4}
+      - 2045476  levels={'Headache': 0, 'Pyrexia': 1, 'Fatigue': 2}
+      - 8645528  levels={'Headache': 0, 'Pyrexia': 2, 'Fatigue': 3}
+      - 29289  levels={'Headache': 0, 'Pyrexia': 1, 'Fatigue': 4}
   - in denominator but does NOT support:
-      - 987158  levels={'Headache': 6, 'Pyrexia': 5, 'Fatigue': 2}
-      - 1179334  levels={'Headache': 3, 'Pyrexia': 6, 'Fatigue': 2}
-      - 1382583  levels={'Headache': 2, 'Pyrexia': 1, 'Fatigue': 0}
+      - 4161604  levels={'Headache': 6, 'Pyrexia': 5, 'Fatigue': 2}
+      - 8480848  levels={'Headache': 3, 'Pyrexia': 6, 'Fatigue': 2}
+      - 4709905  levels={'Headache': 2, 'Pyrexia': 1, 'Fatigue': 0}
   - EXCLUDED from the denominator:
-      - 927674  levels={'Headache': 2, 'Pyrexia': 2, 'Fatigue': 2}
-      - 927944  levels={'Headache': 1, 'Pyrexia': 1, 'Fatigue': 1}
-      - 938335  levels={'Headache': 0, 'Pyrexia': 1, 'Fatigue': 1}
-      - 944881  levels={'Headache': 0, 'Pyrexia': 0, 'Fatigue': 1}
-      - 946352  levels={'Headache': 2, 'Pyrexia': 2, 'Fatigue': 1}
-      - 951488  levels={'Headache': 1, 'Pyrexia': 1, 'Fatigue': 1}
+      - 4460409  levels={'Headache': 2, 'Pyrexia': 2, 'Fatigue': 2}
+      - 8128597  levels={'Headache': 1, 'Pyrexia': 1, 'Fatigue': 1}
+      - 8882718  levels={'Headache': 0, 'Pyrexia': 1, 'Fatigue': 1}
+      - 3443605  levels={'Headache': 0, 'Pyrexia': 0, 'Fatigue': 1}
+      - 989864  levels={'Headache': 2, 'Pyrexia': 2, 'Fatigue': 1}
+      - 6933763  levels={'Headache': 1, 'Pyrexia': 1, 'Fatigue': 1}
 
 ## 9. F-V1 (first_choice, CHOICE) -- realized as insufficient
 - claim: "After Pfizer, Headache is most commonly the first event among Headache, Fatigue, Pyrexia."
@@ -237,26 +237,26 @@ What to check, in order of what has actually gone wrong before:
 - **gold verdict: insufficient (underpowered)**
 - 95% CI: [0.2188, 0.6134]
   - supports the claim (numerator):
-      - 938335  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
-      - 954599  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
-      - 1090979  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': 2}
-      - 1150778  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
-      - 1279632  levels={'Headache': 0, 'Fatigue': 2, 'Pyrexia': 1}
-      - 1282430  levels={'Headache': 0, 'Fatigue': 3, 'Pyrexia': 2}
+      - 8882718  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
+      - 8803251  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
+      - 6981502  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': 2}
+      - 2489821  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
+      - 2045476  levels={'Headache': 0, 'Fatigue': 2, 'Pyrexia': 1}
+      - 8645528  levels={'Headache': 0, 'Fatigue': 3, 'Pyrexia': 2}
   - in denominator but does NOT support:
-      - 946352  levels={'Headache': 2, 'Fatigue': 1, 'Pyrexia': 2}
-      - 987158  levels={'Headache': 6, 'Fatigue': 2, 'Pyrexia': 5}
-      - 1073719  levels={'Headache': 1, 'Fatigue': 0, 'Pyrexia': 1}
-      - 1080700  levels={'Headache': 1, 'Fatigue': 0, 'Pyrexia': 1}
-      - 1179334  levels={'Headache': 3, 'Fatigue': 2, 'Pyrexia': 6}
-      - 1249997  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 0}
+      - 989864  levels={'Headache': 2, 'Fatigue': 1, 'Pyrexia': 2}
+      - 4161604  levels={'Headache': 6, 'Fatigue': 2, 'Pyrexia': 5}
+      - 7586307  levels={'Headache': 1, 'Fatigue': 0, 'Pyrexia': 1}
+      - 3221671  levels={'Headache': 1, 'Fatigue': 0, 'Pyrexia': 1}
+      - 8480848  levels={'Headache': 3, 'Fatigue': 2, 'Pyrexia': 6}
+      - 334132  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 0}
   - EXCLUDED from the denominator:
-      - 927674  levels={'Headache': 2, 'Fatigue': 2, 'Pyrexia': 2}
-      - 927944  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 1}
-      - 944881  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 0}
-      - 951488  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 1}
-      - 1007886  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': 1}
-      - 1075077  levels={'Headache': 0, 'Fatigue': 0, 'Pyrexia': 1}
+      - 4460409  levels={'Headache': 2, 'Fatigue': 2, 'Pyrexia': 2}
+      - 8128597  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 1}
+      - 3443605  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 0}
+      - 6933763  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 1}
+      - 7956230  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': 1}
+      - 2107541  levels={'Headache': 0, 'Fatigue': 0, 'Pyrexia': 1}
 
 ## 10. F-V2 (last_choice, CHOICE) -- realized as insufficient
 - claim: "After Pfizer, Fatigue is most commonly the last event among Fatigue, Headache, Pyrexia."
@@ -270,26 +270,26 @@ What to check, in order of what has actually gone wrong before:
 - **gold verdict: insufficient (underpowered)**
 - 95% CI: [0.2903, 0.7097]
   - supports the claim (numerator):
-      - 944881  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 0}
-      - 1007886  levels={'Fatigue': 2, 'Headache': 1, 'Pyrexia': 1}
-      - 1182745  levels={'Fatigue': 2, 'Headache': 0, 'Pyrexia': 0}
-      - 1256881  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 0}
-      - 1279632  levels={'Fatigue': 2, 'Headache': 0, 'Pyrexia': 1}
-      - 1282430  levels={'Fatigue': 3, 'Headache': 0, 'Pyrexia': 2}
+      - 3443605  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 0}
+      - 7956230  levels={'Fatigue': 2, 'Headache': 1, 'Pyrexia': 1}
+      - 1944276  levels={'Fatigue': 2, 'Headache': 0, 'Pyrexia': 0}
+      - 632545  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 0}
+      - 2045476  levels={'Fatigue': 2, 'Headache': 0, 'Pyrexia': 1}
+      - 8645528  levels={'Fatigue': 3, 'Headache': 0, 'Pyrexia': 2}
   - in denominator but does NOT support:
-      - 987158  levels={'Fatigue': 2, 'Headache': 6, 'Pyrexia': 5}
-      - 1075077  levels={'Fatigue': 0, 'Headache': 0, 'Pyrexia': 1}
-      - 1179334  levels={'Fatigue': 2, 'Headache': 3, 'Pyrexia': 6}
-      - 1222168  levels={'Fatigue': 0, 'Headache': 0, 'Pyrexia': 1}
-      - 1251710  levels={'Fatigue': 1, 'Headache': 1, 'Pyrexia': 2}
-      - 1382583  levels={'Fatigue': 0, 'Headache': 2, 'Pyrexia': 1}
+      - 4161604  levels={'Fatigue': 2, 'Headache': 6, 'Pyrexia': 5}
+      - 2107541  levels={'Fatigue': 0, 'Headache': 0, 'Pyrexia': 1}
+      - 8480848  levels={'Fatigue': 2, 'Headache': 3, 'Pyrexia': 6}
+      - 5552387  levels={'Fatigue': 0, 'Headache': 0, 'Pyrexia': 1}
+      - 4685111  levels={'Fatigue': 1, 'Headache': 1, 'Pyrexia': 2}
+      - 4709905  levels={'Fatigue': 0, 'Headache': 2, 'Pyrexia': 1}
   - EXCLUDED from the denominator:
-      - 927674  levels={'Fatigue': 2, 'Headache': 2, 'Pyrexia': 2}
-      - 927944  levels={'Fatigue': 1, 'Headache': 1, 'Pyrexia': 1}
-      - 938335  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
-      - 946352  levels={'Fatigue': 1, 'Headache': 2, 'Pyrexia': 2}
-      - 951488  levels={'Fatigue': 1, 'Headache': 1, 'Pyrexia': 1}
-      - 954599  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
+      - 4460409  levels={'Fatigue': 2, 'Headache': 2, 'Pyrexia': 2}
+      - 8128597  levels={'Fatigue': 1, 'Headache': 1, 'Pyrexia': 1}
+      - 8882718  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
+      - 989864  levels={'Fatigue': 1, 'Headache': 2, 'Pyrexia': 2}
+      - 6933763  levels={'Fatigue': 1, 'Headache': 1, 'Pyrexia': 1}
+      - 8803251  levels={'Fatigue': 1, 'Headache': 0, 'Pyrexia': 1}
 
 ## 11. F-V3 (first_bool, BOOL) -- realized as insufficient
 - claim: "After Pfizer, Headache is the most common first event among Headache, Fatigue, Pyrexia."
@@ -303,26 +303,26 @@ What to check, in order of what has actually gone wrong before:
 - **gold verdict: insufficient (underpowered)**
 - 95% CI: [0.2188, 0.6134]
   - supports the claim (numerator):
-      - 938335  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
-      - 954599  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
-      - 1090979  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': 2}
-      - 1150778  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
-      - 1279632  levels={'Headache': 0, 'Fatigue': 2, 'Pyrexia': 1}
-      - 1282430  levels={'Headache': 0, 'Fatigue': 3, 'Pyrexia': 2}
+      - 8882718  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
+      - 8803251  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
+      - 6981502  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': 2}
+      - 2489821  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 1}
+      - 2045476  levels={'Headache': 0, 'Fatigue': 2, 'Pyrexia': 1}
+      - 8645528  levels={'Headache': 0, 'Fatigue': 3, 'Pyrexia': 2}
   - in denominator but does NOT support:
-      - 946352  levels={'Headache': 2, 'Fatigue': 1, 'Pyrexia': 2}
-      - 987158  levels={'Headache': 6, 'Fatigue': 2, 'Pyrexia': 5}
-      - 1073719  levels={'Headache': 1, 'Fatigue': 0, 'Pyrexia': 1}
-      - 1080700  levels={'Headache': 1, 'Fatigue': 0, 'Pyrexia': 1}
-      - 1179334  levels={'Headache': 3, 'Fatigue': 2, 'Pyrexia': 6}
-      - 1249997  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 0}
+      - 989864  levels={'Headache': 2, 'Fatigue': 1, 'Pyrexia': 2}
+      - 4161604  levels={'Headache': 6, 'Fatigue': 2, 'Pyrexia': 5}
+      - 7586307  levels={'Headache': 1, 'Fatigue': 0, 'Pyrexia': 1}
+      - 3221671  levels={'Headache': 1, 'Fatigue': 0, 'Pyrexia': 1}
+      - 8480848  levels={'Headache': 3, 'Fatigue': 2, 'Pyrexia': 6}
+      - 334132  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 0}
   - EXCLUDED from the denominator:
-      - 927674  levels={'Headache': 2, 'Fatigue': 2, 'Pyrexia': 2}
-      - 927944  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 1}
-      - 944881  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 0}
-      - 951488  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 1}
-      - 1007886  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': 1}
-      - 1075077  levels={'Headache': 0, 'Fatigue': 0, 'Pyrexia': 1}
+      - 4460409  levels={'Headache': 2, 'Fatigue': 2, 'Pyrexia': 2}
+      - 8128597  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 1}
+      - 3443605  levels={'Headache': 0, 'Fatigue': 1, 'Pyrexia': 0}
+      - 6933763  levels={'Headache': 1, 'Fatigue': 1, 'Pyrexia': 1}
+      - 7956230  levels={'Headache': 1, 'Fatigue': 2, 'Pyrexia': 1}
+      - 2107541  levels={'Headache': 0, 'Fatigue': 0, 'Pyrexia': 1}
 
 ## 12. P-M2 (multi_dir_precedes, CHOICE) -- realized as insufficient
 - claim: "Headache precedes Fatigue more often after Pfizer than after Moderna."
@@ -336,53 +336,53 @@ What to check, in order of what has actually gone wrong before:
 - cohort 2: proportion=0.6418 n=67 k=43
   - cohort_1: n=50 k=35 excluded=67
   - cohort_1 sample:
-      - 923644  levels={'Headache': 1, 'Fatigue': 2}
-      - 938335  levels={'Headache': 0, 'Fatigue': 1}
-      - 944881  levels={'Headache': 0, 'Fatigue': 1}
-      - 945613  levels={'Headache': 3, 'Fatigue': 1}
+      - 5341252  levels={'Headache': 1, 'Fatigue': 2}
+      - 8882718  levels={'Headache': 0, 'Fatigue': 1}
+      - 3443605  levels={'Headache': 0, 'Fatigue': 1}
+      - 30669  levels={'Headache': 3, 'Fatigue': 1}
   - cohort_2: n=67 k=43 excluded=70
   - cohort_2 sample:
-      - 917442  levels={'Headache': 1, 'Fatigue': 2}
-      - 917671  levels={'Headache': 0, 'Fatigue': 1}
-      - 924707  levels={'Headache': 1, 'Fatigue': 0}
-      - 926528  levels={'Headache': 0, 'Fatigue': 1}
+      - 3874603  levels={'Headache': 1, 'Fatigue': 2}
+      - 4298201  levels={'Headache': 0, 'Fatigue': 1}
+      - 150098  levels={'Headache': 1, 'Fatigue': 0}
+      - 1282819  levels={'Headache': 0, 'Fatigue': 1}
 
 ## 13. P-R1 (rep_dir_bool, BOOL) -- realized as supported
-- claim: "In report VAERS-2536660, Throat irritation occurred before Fatigue."
-- events: ['Throat irritation', 'Fatigue']   cohort: report-level
+- claim: "In report MT-9619450, Injection site paraesthesia occurred before Injection site pruritus."
+- events: ['Injection site paraesthesia', 'Injection site pruritus']   cohort: report-level
 - conditioning rule: per-report relation; before => supported
 - **n = None, k = None, proportion = None**
 - test: None   p_claim = None   p_opposite = None   alpha = 0.05
 - **gold verdict: supported (deterministic)**
   - supports the claim (numerator):
-      - 2536660  levels={'Throat irritation': 0, 'Fatigue': 1}
+      - 9619450  levels={'Injection site paraesthesia': 0, 'Injection site pruritus': 1}
 
 ## 14. C-R1 (rep_sym_bool, BOOL) -- realized as refuted
-- claim: "In report VAERS-2536660, Throat irritation and Fatigue co-occur."
-- events: ['Throat irritation', 'Fatigue']   cohort: report-level
+- claim: "In report MT-9619450, Injection site paraesthesia and Injection site pruritus co-occur."
+- events: ['Injection site paraesthesia', 'Injection site pruritus']   cohort: report-level
 - conditioning rule: per-report relation; co_exist => supported
 - **n = None, k = None, proportion = None**
 - test: None   p_claim = None   p_opposite = None   alpha = 0.05
 - **gold verdict: refuted (deterministic)**
   - supports the claim (numerator):
-      - 2536660  levels={'Throat irritation': 0, 'Fatigue': 1}
+      - 9619450  levels={'Injection site paraesthesia': 0, 'Injection site pruritus': 1}
 
 ## 15. S-R1 (rep_seq_bool, BOOL) -- realized as supported
-- claim: "In report VAERS-2536660, Throat irritation, Fatigue, Pyrexia occur in the order Throat irritation → Fatigue → Pyrexia."
-- events: ['Throat irritation', 'Fatigue', 'Pyrexia']   cohort: report-level
+- claim: "In report MT-9619450, Injection site paraesthesia, Injection site pruritus, Injection site erythema occur in the order Injection site paraesthesia → Injection site pruritus → Injection site erythema."
+- events: ['Injection site paraesthesia', 'Injection site pruritus', 'Injection site erythema']   cohort: report-level
 - conditioning rule: per-report strict order A<B<C
 - **n = None, k = None, proportion = None**
 - test: None   p_claim = None   p_opposite = None   alpha = 0.05
 - **gold verdict: supported (deterministic)**
   - supports the claim (numerator):
-      - 2536660  levels={'Throat irritation': 0, 'Fatigue': 1, 'Pyrexia': 2}
+      - 9619450  levels={'Injection site paraesthesia': 0, 'Injection site pruritus': 1, 'Injection site erythema': 2}
 
 ## 16. F-R1 (rep_first_choice, CHOICE) -- realized as supported
-- claim: "In report VAERS-2536660, Throat irritation occurs first among Throat irritation, Fatigue, Pyrexia."
-- events: ['Throat irritation', 'Fatigue', 'Pyrexia']   cohort: report-level
+- claim: "In report MT-9619450, Injection site paraesthesia occurs first among Injection site paraesthesia, Injection site pruritus, Injection site erythema."
+- events: ['Injection site paraesthesia', 'Injection site pruritus', 'Injection site erythema']   cohort: report-level
 - conditioning rule: per-report first_among single winner
 - **n = None, k = None, proportion = None**
 - test: None   p_claim = None   p_opposite = None   alpha = 0.05
 - **gold verdict: supported (deterministic)**
   - supports the claim (numerator):
-      - 2536660  levels={'Throat irritation': 0, 'Fatigue': 1, 'Pyrexia': 2}
+      - 9619450  levels={'Injection site paraesthesia': 0, 'Injection site pruritus': 1, 'Injection site erythema': 2}

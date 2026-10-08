@@ -5,8 +5,9 @@ Usage:
     python scripts/build_eval_db.py --db data/medtempo.db --out data/medtempo_eval.db
 
 The eval DB is what the harness (and any text-to-SQL model) queries: it has no
-`narrative` column and no surrogate ids, and its `first_mention` view already
-applies the first-mention rule. See `src/temporal_hypo/framework/sql/views.sql`.
+`narrative` column, no VAERS ids (every `report_id` is the pseudonym under
+`data/private/pseudonym.key`) and no surrogate ids, and its `first_mention` view
+already applies the first-mention rule. See `src/temporal_hypo/framework/sql/views.sql`.
 """
 
 from __future__ import annotations
@@ -15,6 +16,7 @@ import argparse
 import sqlite3
 from pathlib import Path
 
+from temporal_hypo.core.pseudonym import Pseudonymizer
 from temporal_hypo.framework.sql.build_eval_db import build_eval_db, open_eval_db
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -39,8 +41,13 @@ def main() -> None:
     if not args.db.exists():
         parser.error(f"Input database not found: {args.db}")
 
-    print(f"Building {args.out} from {args.db} (SQLite {sqlite3.sqlite_version}) ...")
-    counts = build_eval_db(args.db, args.out)
+    pz = Pseudonymizer.default()
+    if pz.is_identity:
+        parser.error("refusing to build the eval DB with identity report ids "
+                     "(the key lives in data/private/pseudonym.key)")
+    print(f"Building {args.out} from {args.db} (SQLite {sqlite3.sqlite_version}); "
+          f"report ids pseudonymised ...")
+    counts = build_eval_db(args.db, args.out, pseudonymizer=pz)
 
     conn = open_eval_db(args.out, readonly=True)
     try:

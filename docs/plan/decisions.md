@@ -3103,3 +3103,78 @@ per-mode rule was worth. Both rows are reported; rounds used per row are in
    reported in its own two-class table; the statistical headline -- verdict
    accuracy, faithfulness, abstention, the A-E grid -- is computed on the
    cohort and multi tiers only. Nothing is removed from the release.
+
+---
+
+## IMPLEMENTED: the v1.2 review -- final v1.2 release, pseudonymous ids (2026-10-08; issue 32)
+
+All six review items are in the code and the release is regenerated and
+re-certified. **`data/release/v1.2` is now the working release** (CLAUDE.md
+updated); v1.1 stays committed and immutable.
+
+**Composition (item 4).** `scripts/run_pilot.py --cap 600` (seed 0, target
+300): per group at most 200 instances per class, drawn by `balance_group`
+with a new "paired" stage so a capped both-ways draw poses the SAME cores as
+mirror pairs (`mirror_pairs` is now the count of cores used in both classes).
+The report-tier enumerator caps **per natural verdict class** (300 each)
+instead of 300 cores flat, which is what balanced C-R1 (193/107 -> 200/200)
+and T-R1 (169/131 -> 200/200); every report group is now 200/200.
+Release: **70,104 records / 8,763 instances / 29 groups / 4,761 facts**
+(v1.1: 147,936 / 18,492 / 20 / 8,964); verdicts 3,521 / 3,521 / 1,721; the
+report tier is 9 x 400. Groups below the cap are unchanged in size (P-V1/P-V3
+167, P-M2 29, S-V1/S-V3 2, F-V1/F-V3 34, F-V2 46, T-V1 34, Y-V1/Y-V2 68,
+Y-V3 35, H-V1 35, H-V3 4, H-V5 22).
+
+**Pseudonymous report ids (item 4).** `core/pseudonym.py`: every id a model
+can see -- the claim texts (`MT-0482913`), `cohort.report_id`,
+`evidence_ids`, the eval DB's `report_id` column -- is a keyed permutation of
+the VAERS id (6-round Feistel on 24 bits, HMAC-SHA256, cycle-walked into
+[0, 10^7); a bijection, so no table is stored). The key lives in
+`data/private/pseudonym.key` (gitignored, mode 600; `MEDTEMPO_PSEUDONYM_KEY`
+overrides; `identity` is for the unit tests only and the release scripts
+refuse it). `CorpusIndex.load` maps at load time, so generation, evidence ids
+and `validate_gold` (via `CorpusIndex.vaers_of`) share one id space with the
+eval DB (`build_eval_db` maps with the same key; the column is renamed
+`vaers_id -> report_id` throughout `framework/sql`, the DDL comment says it
+is not a VAERS id). The harness never needs the key. **Losing the key changes
+every id**: it is backed up outside the repo by the user. Reason: VAERS is
+public, so a frontier model could look a report up by id (issue 8 /
+pretraining-knowledge); the pseudonym removes the key without touching the
+annotations.
+
+**Consequence for v1.1 runs.** The eval DB is pseudonymised and the SQL layer
+emits `report_id`, so the v1.1 release (VAERS ids in texts and evidence) no
+longer runs on the current code. Every v1.1 number in docs 11 / the draft is
+reproducible at commit 27c5d77 or earlier with `data/medtempo_eval.v11.db`
+(the VAERS-keyed eval DB, kept locally, gitignored). From here every row is
+v1.2. `run_eval.py --release` now defaults to v1.2 (issue 40 closed).
+
+**The other items.** (1) Conventions v2.1: the null-sources text gains the
+majority stipulation ('typically / usually / more often than not / tend to'
+with no number = a bar of one half, p0 = 0.5, also for co-occurrence). (3)
+H-V1 / H-V3 / H-V5 reworded as recorded (questions are the same sentences
+as questions); the rules parser follows (59 / 60 slot-repeating patterns). (6)
+`normalize_plan_shape`: `level == report` => `single_report` / 1 arm / none;
+`verify.s1_plan_problems` no longer checks the report tier.
+
+**Re-certification.** `validate_gold --sample 0`: 56,138 instances checked
+(the whole enumerated universe), ALL CHECKS PASSED (A-F). B0 oracle
+(`results/oracle_v1.2`): all 70,104 records, verdict / claim EM / den-F1 =
+1.000, underdetermined 2,292 (892 s); on `eval_core` (`results/oracle_v1.2_core`,
+2,350 instances, 18,800 records) 1.000 (504 s). Subsets rebuilt:
+`results/subsets/eval_core_v1.2_pg90_s0.json` (2,350) and
+`smoke_200_v1.2_s0.json` (200 over all 29 groups, 84/80/36, drawn within
+eval_core, mirrors together); the pre-final v1.2 subsets are in
+`results/subsets/stale/`. Tests: 681 pass (release-reading tests now pin
+v1.2: 70,104 / 8,763 / 3,600 report rows / 27 few-shot groups).
+
+**One harness fix found by the re-certification.** `run_test._honour`: a
+data-derived null on an EMPTY denominator (not_locatable) has no chance rate
+to resolve and nothing to test; it is no longer logged as a procedure error
+(the reference procedure decides, verdict unchanged). Honouring == gold on
+every oriented instance again (`test_honouring_equals_gold_on_cohort_sample`).
+
+**Every pre-final v1.2 pilot row** (11 §10.3f, `results/v12_smoke200_*`) was
+measured on the 2026-10-07 build (same groups, different instances and VAERS
+ids in the texts); they are superseded by the v1.2-final rows queued next and
+are kept for the record only.

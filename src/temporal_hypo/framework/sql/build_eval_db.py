@@ -2,11 +2,12 @@
 
 The harness must never be able to read ``reports.narrative`` (CLAUDE.md: the
 framework reads ANNOTATIONS, not narratives), and every id it exposes must be
-the public ``vaers_id`` -- ``evidence_ids`` in the release are VAERS ids, never
-the raw DB's surrogate ``report_id``. Rather than trusting every query to avoid
-those two columns, this module produces a separate database that simply does
-not contain them: ``reports`` is re-keyed on ``vaers_id`` and ``level_terms``
-references it directly. The full DDL, including the ``first_mention`` view that
+the PSEUDONYMOUS ``report_id`` (``core.pseudonym``, decisions.md 2026-10-08):
+never the VAERS id and never the raw DB's surrogate key. Rather than trusting
+every query to avoid those columns, this module produces a separate database
+that simply does not contain them: ``reports`` is re-keyed on the pseudonym
+(the same ``Pseudonymizer`` that ``CorpusIndex.load`` applies, so the release's
+``evidence_ids`` and the DB agree) and ``level_terms`` references it directly. The full DDL, including the ``first_mention`` view that
 encodes the first-mention rule (``MIN(level_index)`` per report and term --
 exactly what ``generation.corpus.CorpusIndex.load`` does in Python), lives in
 ``views.sql`` so the text shown to text-to-SQL models and the schema actually
@@ -18,6 +19,8 @@ from __future__ import annotations
 import os
 import sqlite3
 from pathlib import Path
+
+from temporal_hypo.core.pseudonym import Pseudonymizer
 
 _HERE = Path(__file__).resolve().parent
 VIEWS_SQL_PATH = _HERE / "views.sql"
@@ -64,15 +67,19 @@ def _remove_db_files(dst: Path) -> None:
             p.unlink()
 
 
-def build_eval_db(src: sqlite3.Connection | str | Path, dst: str | Path) -> dict:
+def build_eval_db(src: sqlite3.Connection | str | Path, dst: str | Path, *,
+                  pseudonymizer: Pseudonymizer | None = None) -> dict:
     """Create ``dst`` from the raw DB ``src`` (a connection or a path); overwrite if present.
 
-    Copies ``reports(vaers_id, vaccine, num_groups AS num_stages)`` and
-    ``level_terms`` re-keyed on ``vaers_id``; drops ``narrative`` and the surrogate
-    ids. Returns ``{"reports", "level_terms", "terms", "first_mention"}`` row counts
-    and raises ``RuntimeError`` if the copy does not reproduce the source counts.
+    Copies ``reports(vaers_id -> report_id, vaccine, num_groups AS num_stages)``
+    and ``level_terms`` re-keyed on the pseudonymous ``report_id``; drops
+    ``narrative``, the VAERS id and the surrogate id. ``pseudonymizer`` defaults
+    to ``Pseudonymizer.default()`` (the private key). Returns ``{"reports",
+    "level_terms", "terms", "first_mention", "identity"}`` and raises
+    ``RuntimeError`` if the copy does not reproduce the source counts.
     """
     _require_sqlite()
+    pz = pseudonymizer or Pseudonymizer.default()
     dst = Path(dst)
     dst.parent.mkdir(parents=True, exist_ok=True)
 
@@ -96,6 +103,10 @@ def build_eval_db(src: sqlite3.Connection | str | Path, dst: str | Path) -> dict
     finally:
         if own_src:
             conn.close()
+    reports = sorted((pz(v), vax, n) for v, vax, n in reports)
+    level_terms = sorted((pz(v), li, t) for v, li, t in level_terms)
+    if len({r[0] for r in reports}) != len(reports):
+        raise RuntimeError("pseudonymisation collided (not a permutation?)")
 
     # Build into a sibling temp file and swap it in, so a failed build never
     # leaves a half-written eval DB at `dst`.
@@ -108,11 +119,11 @@ def build_eval_db(src: sqlite3.Connection | str | Path, dst: str | Path) -> dict
         out.executescript(EVAL_DDL)
         with out:
             out.executemany(
-                "INSERT INTO reports (vaers_id, vaccine, num_stages) VALUES (?, ?, ?)",
+                "INSERT INTO reports (report_id, vaccine, num_stages) VALUES (?, ?, ?)",
                 reports,
             )
             out.executemany(
-                "INSERT INTO level_terms (vaers_id, level_index, term) VALUES (?, ?, ?)",
+                "INSERT INTO level_terms (report_id, level_index, term) VALUES (?, ?, ?)",
                 level_terms,
             )
         counts = {
@@ -120,9 +131,10 @@ def build_eval_db(src: sqlite3.Connection | str | Path, dst: str | Path) -> dict
             "level_terms": out.execute("SELECT COUNT(*) FROM level_terms").fetchone()[0],
             "terms": out.execute("SELECT COUNT(DISTINCT term) FROM level_terms").fetchone()[0],
             "first_mention": out.execute("SELECT COUNT(*) FROM first_mention").fetchone()[0],
+            "identity": pz.is_identity,
         }
         cols = {row[1] for row in out.execute("PRAGMA table_info(reports)")}
-        if "narrative" in cols or "report_id" in cols:
+        if "narrative" in cols or "vaers_id" in cols:
             raise RuntimeError(f"eval DB schema leaks raw columns: {sorted(cols)}")
         if counts["reports"] != len(reports) or counts["level_terms"] != len(level_terms):
             raise RuntimeError(f"eval DB row counts do not match the source: {counts}")

@@ -123,3 +123,14 @@ def test_mirror_pairs_share_a_core_so_a_split_can_keep_them_together():
     sel = balance_group(cores, "G", seed=0)
     ids = {core_id(realize(c, pol)) for c, pol, _ in sel.chosen}
     assert len(sel.chosen) == 2 and len(ids) == 1
+
+
+def test_a_capped_both_ways_draw_keeps_mirror_pairs_together():
+    # review 2026-10-08 (item 4): with a cap, the refuted instances are the
+    # mirrors of the SAME cores as the supported ones, not an independent draw
+    cores = [_core(i, 0.8 if i % 2 else 0.2, 20) for i in range(500)]
+    sel = balance_group(cores, "G", t=60, seed=2)
+    sup = {id(c) for c, pol, _ in sel.chosen if pol == "supported"}
+    ref = {id(c) for c, pol, _ in sel.chosen if pol == "refuted"}
+    assert len(sup) == len(ref) == 20 and sup == ref
+    assert sel.mirror_pairs == 20 and sel.reoriented == 20

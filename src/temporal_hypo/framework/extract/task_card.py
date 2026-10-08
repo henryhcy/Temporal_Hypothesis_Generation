@@ -15,8 +15,8 @@ def stage_population(conn: sqlite3.Connection, max_level: int = 5) -> list[tuple
     """(level_index, mean terms at that level over reports that have it, n reports)."""
     rows = conn.execute(
         "SELECT level_index, AVG(c), COUNT(*) FROM ("
-        "  SELECT vaers_id, level_index, COUNT(*) AS c FROM level_terms "
-        "  GROUP BY vaers_id, level_index) "
+        "  SELECT report_id, level_index, COUNT(*) AS c FROM level_terms "
+        "  GROUP BY report_id, level_index) "
         "WHERE level_index <= ? GROUP BY level_index ORDER BY level_index", (max_level,)
     ).fetchall()
     return [(int(l), float(m), int(n)) for l, m, n in rows]
@@ -36,7 +36,8 @@ def dataset_card(conn: sqlite3.Connection) -> str:
         f"an ordered sequence of stages (mean {levels:.1f} per report); every stage holds one "
         f"or more MedDRA event terms that occurred together; a term's position is its FIRST "
         f"mention. Terms at the same stage CO-EXIST (no order between them).",
-        f"COHORTS (one vaccine per report): {cohort_txt}. A report is identified by its VAERS id.",
+        f"COHORTS (one vaccine per report): {cohort_txt}. A report is identified by its report_id, a 7-digit "
+        f"pseudonymous key written MT-0001234 in the claims (= report_id 1234; not a VAERS id).",
         f"VOCABULARY: {n_terms} distinct event terms; claims name terms verbatim.",
         f"STAGE POPULATION (mean events per stage): {stage_txt}. Earlier stages hold more "
         f"events, so a randomly chosen event is more likely to be early than late -- the "

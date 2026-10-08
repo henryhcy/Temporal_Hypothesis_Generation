@@ -91,8 +91,26 @@ def groups():
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-RELEASE_DIR = REPO_ROOT / "data" / "release" / "v1"
+# v1.2 is the first release in PSEUDONYM id space (core/pseudonym.py); the
+# texts of v1/v1.1 carry VAERS ids and no longer parse under REPORT_RE.
+RELEASE_DIR = REPO_ROOT / "data" / "release" / "v1.2"
 RELEASE_STEM = "pilot_instances"
+
+
+def release_pseudonymizer():
+    """The RELEASE's id space: the suite runs the pseudonymiser in identity mode,
+    so a test that joins the real release to the real raw DB must map under the
+    private key file (skipped when absent)."""
+    from temporal_hypo.core.pseudonym import KEY_PATH, Pseudonymizer
+    if not KEY_PATH.exists():
+        pytest.skip("data/private/pseudonym.key not present")
+    return Pseudonymizer.from_hex(KEY_PATH.read_text())
+
+
+def release_index(conn):
+    """A CorpusIndex in the release's id space (see ``release_pseudonymizer``)."""
+    from temporal_hypo.generation.corpus import CorpusIndex
+    return CorpusIndex.load(conn, pseudonymizer=release_pseudonymizer())
 
 
 def release_available() -> bool:
@@ -101,4 +119,4 @@ def release_available() -> bool:
 
 
 needs_release = pytest.mark.skipif(not release_available(),
-                                   reason="data/release/v1 not present")
+                                   reason="data/release/v1.2 not present")

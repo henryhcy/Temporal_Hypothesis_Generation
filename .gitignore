@@ -49,8 +49,14 @@ data/release/*/pilot_instances_answers.jsonl
 # eval harness artifacts (docs/plan/11_model_pipeline.md)
 results/*
 !results/subsets/
-data/medtempo_eval.db
+data/medtempo_eval*.db
 *.db-journal
 
 # local secrets (API keys); loaded by scripts/run_eval.py, never committed
 .env
+
+# the report-id pseudonym key (core/pseudonym.py): PRIVATE, never committed
+data/private/
+
+# pre-final subset files set aside on 2026-10-08 (ids of the 10-07 build)
+results/subsets/stale/

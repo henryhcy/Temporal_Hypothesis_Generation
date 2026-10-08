@@ -240,7 +240,7 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
 def main() -> None:
     p = argparse.ArgumentParser(description="Run a hypothesis-verification pipeline and score it.")
     p.add_argument("--release", type=Path,
-                   default=_REPO_ROOT / "data" / "release" / "v1.1")   # issue 40: the working release
+                   default=_REPO_ROOT / "data" / "release" / "v1.2")   # the working release (2026-10-08)
     p.add_argument("--stem", default="pilot_instances")
     p.add_argument("--eval-db", type=Path, default=_REPO_ROOT / "data" / "medtempo_eval.db")
     p.add_argument("--pipeline", choices=PIPELINES, required=True)

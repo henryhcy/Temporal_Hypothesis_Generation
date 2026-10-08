@@ -6,7 +6,7 @@ WHAT: ``LLMSQLRetriever.queries_for(claim)`` shows the model the eval-DB DDL
 prose for its mode (``pilot.RULE_BY_MODE`` / ``pilot._EXCLUSION_REASON``), the
 arm plan (how many statements, their labels, what each arm is), and the
 reminders that matter (first mention already applied by the view, ids are
-``vaers_id``, ``cell`` NULL outside the denominator, what an argmax cell holds),
+``report_id``, ``cell`` NULL outside the denominator, what an argmax cell holds),
 and asks for ``{"arms": [{"label", "sql"}]}``. ``retrieve(claim)`` executes them
 through the read-only executor via ``framework.sql.retrieve.execute_queries`` so
 the model's rows flow into the same ``aggregate`` as the reference compiler's.
@@ -115,12 +115,12 @@ def arm_plan(claim: StructuredClaim) -> list[dict]:
         if claim.mode in WHOLE_REPORT_MODES:   # v1.2: rank claims need every stage
             return [{"label": "report",
                      "rows": "(term, level) -- the first-mention level of EVERY term in the one "
-                             f"report vaers_id = {claim.report_id} (not only the claim's events "
+                             f"report report_id = {claim.report_id} (not only the claim's events "
                              f"{terms}): the claim is about stage RANKS, which depend on all of "
                              "the report's stages. One row per term present."}]
         return [{"label": "report",
                  "rows": "(term, level) -- the first-mention level of each of the claim's "
-                         f"events in the one report vaers_id = {claim.report_id}; "
+                         f"events in the one report report_id = {claim.report_id}; "
                          f"terms: {terms}. One row per event present; absent events simply "
                          "produce no row."}]
     if claim.mode == "antecedent_bool":
@@ -253,13 +253,14 @@ def sql_messages(claim: StructuredClaim, ddl: str, *, frame: str = "catalogue",
                     "level = its FIRST-mention level.")
     else:
         contract = (f"Each statement returns ONE ROW PER REPORT of the arm with EXACTLY these "
-                    f"columns, in this order: {', '.join(ARM_COLUMNS)}. vaers_id INTEGER; "
+                    f"columns, in this order: {', '.join(ARM_COLUMNS)}. report_id INTEGER; "
                     "in_denominator / in_numerator / excluded are 0/1 integers; cell is TEXT or NULL.")
     reminders = [
-        "The view first_mention(vaers_id, vaccine, term, level) ALREADY applies the first-mention "
+        "The view first_mention(report_id, vaccine, term, level) ALREADY applies the first-mention "
         "rule (level = MIN(level_index) per report and term) -- join it, do not re-aggregate "
         "level_terms unless you need to.",
-        "Report ids are vaers_id everywhere (the release's report ids). There is no other id.",
+        "Report ids are report_id everywhere: the dataset's own pseudonymous 7-digit key, written "
+        "MT-0001234 in a claim (= report_id 1234). They are not VAERS ids. There is no other id.",
         "Restrict to the cohort: vaccine = '<name>' (first_mention carries vaccine).",
         "Inline every literal (single-quoted strings, '' to escape a quote). Do not use bind "
         "parameters. One SELECT (or WITH ... SELECT) per arm; no other statements.",
@@ -363,7 +364,7 @@ def _denominator_violations(executor: Any, cond: str, ev: tuple, ids: Any) -> in
     for i in range(0, len(ids), 400):
         chunk = ids[i:i + 400]
         res = executor.execute(
-            f"SELECT vaers_id, term, level FROM first_mention WHERE vaers_id IN ({','.join('?' * len(chunk))})",
+            f"SELECT report_id, term, level FROM first_mention WHERE report_id IN ({','.join('?' * len(chunk))})",
             tuple(chunk))
         if res.error is not None:
             return 0

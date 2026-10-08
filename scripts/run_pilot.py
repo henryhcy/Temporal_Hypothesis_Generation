@@ -12,6 +12,7 @@ import argparse
 import json
 from pathlib import Path
 
+from temporal_hypo.core.pseudonym import Pseudonymizer
 from temporal_hypo.generation.pilot import run_pilot
 
 _REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -26,6 +27,9 @@ def main() -> None:
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--target", type=int, default=100,
                         help="Provisional per-group target T (ignored with --full)")
+    parser.add_argument("--cap", type=int, default=None,
+                        help="Per-group instance cap (v1.2 composition: 600 = 200 "
+                        "per class); default: no cap, S sets the budget")
     parser.add_argument("--full", action="store_true",
                         help="Whole-population diagnostic: every viable core at "
                         "its natural verdict, no top-K cap and no balancing.")
@@ -35,8 +39,12 @@ def main() -> None:
         args.out = _REPO_ROOT / "data" / ("pilot_full" if args.full else "pilot")
     args.out.mkdir(parents=True, exist_ok=True)
 
+    pz = Pseudonymizer.default()
+    if pz.is_identity:
+        parser.error("refusing to generate with identity report ids (unset "
+                     "MEDTEMPO_PSEUDONYM_KEY=identity; the key lives in data/private/)")
     summary = run_pilot(args.db, args.out, seed=args.seed, t=args.target,
-                        full=args.full)
+                        full=args.full, cap=args.cap)
 
     mode = "whole-population diagnostic" if args.full else "pilot"
     print(f"{mode} complete. Wrote artifacts to: {summary['out_dir']}")

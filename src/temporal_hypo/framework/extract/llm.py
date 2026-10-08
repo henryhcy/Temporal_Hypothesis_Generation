@@ -32,6 +32,8 @@ runner-up). The script is a CLI and is not imported.
 
 from __future__ import annotations
 
+from temporal_hypo.core.pseudonym import report_ref
+
 import json
 from dataclasses import replace
 from typing import Any, Mapping, Sequence
@@ -209,7 +211,7 @@ CONDITIONING_GLOSS = (
     "all_present_unique_first/last: all candidates present with a unique earliest/latest "
     "(ties are dropped);\n"
     "presence_split: the whole vaccine cohort split on whether the report contains A; "
-    "single_report: the one report named by VAERS id, first-mention levels;\n"
+    "single_report: the one report named in the claim (MT-0001234 = report_id 1234), first-mention levels;\n"
     "consecutive_pair: both present at CONSECUTIVE first-mention ranks (|rank(A) - rank(B)| = 1; "
     "co-existing and gapped pairs are excluded); present_offmid: reports containing A with at "
     "least two stages where A is not on the exact middle rank."
@@ -397,6 +399,11 @@ NULL_SOURCES_TEXT = (
     "proportion and NOT data-derived.\n"
     "- text_stated: the wording carries a quantitative bar ('in at least two-thirds of "
     "reports') -- p0 is that bar.\n"
+    "- MAJORITY wording ('typically', 'usually', 'more often than not', 'tend to') with no "
+    "number means a bar of one half: null_kind symmetric_fixed, p0 = 0.5 -- also for "
+    "co-occurrence ('typically co-occur' = in more than half of the reports containing "
+    "both). The chance level is computed from the data ONLY for one event's position and "
+    "for a pair's adjacency rate.\n"
     "- data_derived: the claim is about ONE event's position relative to the report's "
     "timeline and no symmetry applies -- the null proportion is the structural rate of the "
     "reference population, computed from the data (see STAGE POPULATION); state the "
@@ -567,7 +574,7 @@ def _slot_values(fc: Mapping[str, Any]) -> dict[str, str]:
     elif len(vax) >= 2:
         vals["v1"], vals["v2"] = vax[0], vax[1]
     if fc.get("report_id") is not None:
-        vals["r"] = f"VAERS-{fc['report_id']}"
+        vals["r"] = report_ref(fc["report_id"])
     return vals
 
 

@@ -13,8 +13,10 @@ Equivalence with ``core.aggregation`` is asserted in the tests
 
 from __future__ import annotations
 
+from temporal_hypo.core.pseudonym import Pseudonymizer
+
 import sqlite3
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 _MIN_N = 10
 # Sequence groups use STRICT ordering over an ORDERABLE denominator (reports
@@ -28,15 +30,23 @@ SEQ_MIN_N = 5
 class CorpusIndex:
     """Preloaded view of the MedTempo DB keyed for in-memory aggregation."""
 
-    # vaers_id -> {term: level_index}
+    # report_id -> {term: level_index}   (report_id = the PSEUDONYM, never the VAERS id)
     report_terms: dict[int, dict[str, int]]
-    # vaers_id -> vaccine name
+    # report_id -> vaccine name
     report_vaccine: dict[int, str]
+    # report_id -> vaers_id: private, for the DB-backed cross-checks only
+    vaers_of: dict[int, int] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, conn: sqlite3.Connection) -> "CorpusIndex":
+    def load(cls, conn: sqlite3.Connection,
+             pseudonymizer: Pseudonymizer | None = None) -> "CorpusIndex":
+        """Load the raw DB. Every id in the index is the pseudonym of the VAERS id
+        (decisions.md 2026-10-08): the texts, the evidence ids and the eval DB
+        all live in that one id space, and only ``vaers_of`` maps back."""
+        pz = pseudonymizer or Pseudonymizer.default()
         report_terms: dict[int, dict[str, int]] = {}
         report_vaccine: dict[int, str] = {}
+        vaers_of: dict[int, int] = {}
         rows = conn.execute(
             """
             SELECT r.vaers_id, r.vaccine, lt.level_index, lt.term
@@ -46,8 +56,10 @@ class CorpusIndex:
             """
         ).fetchall()
         for vaers_id, vaccine, level_index, term in rows:
-            report_vaccine[vaers_id] = vaccine
-            terms = report_terms.setdefault(vaers_id, {})
+            rid = pz(vaers_id)
+            vaers_of[rid] = vaers_id
+            report_vaccine[rid] = vaccine
+            terms = report_terms.setdefault(rid, {})
             # FIRST-MENTION RULE (decisions.md seed): when a term appears at more
             # than one level, only the earliest is recorded. This used to assign
             # unconditionally, so the LAST row won -- and with no ORDER BY, which row
@@ -61,9 +73,13 @@ class CorpusIndex:
         for (vaers_id, vaccine) in conn.execute(
             "SELECT vaers_id, vaccine FROM reports"
         ).fetchall():
-            report_vaccine.setdefault(vaers_id, vaccine)
-            report_terms.setdefault(vaers_id, {})
-        return cls(report_terms=report_terms, report_vaccine=report_vaccine)
+            rid = pz(vaers_id)
+            vaers_of[rid] = vaers_id
+            report_vaccine.setdefault(rid, vaccine)
+            report_terms.setdefault(rid, {})
+        if len(vaers_of) != len(set(vaers_of.values())):
+            raise RuntimeError("pseudonymisation collided (not a permutation?)")
+        return cls(report_terms=report_terms, report_vaccine=report_vaccine, vaers_of=vaers_of)
 
     # -- cohorts and frequencies -------------------------------------------
 

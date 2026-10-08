@@ -384,6 +384,11 @@ def _honour(core: ViableCore, claim: StructuredClaim, errors: list[str],
             # reference procedure carries no p0 for these modes either, so the
             # resolution is only noted when a composed plan asked for it.
             p0 = (core.extra or {}).get("p0")
+            if p0 is None and n == 0:
+                # an EMPTY denominator has no chance rate to resolve and nothing
+                # to test (the verdict is insufficient / not_locatable either
+                # way): not a procedure error, the reference procedure decides
+                return None
             if plan_nk == "data_derived":
                 notes.append(f"data-derived null resolved on the retrieved denominator: p0={p0}")
         if p0 is None or not (0.0 < float(p0) < 1.0):

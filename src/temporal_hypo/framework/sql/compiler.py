@@ -2,7 +2,7 @@
 
 WHAT. ``compile_sql(claim)`` turns a ``StructuredClaim`` into the ``ArmQuery``
 list Stage 2 executes: one statement per arm, each returning exactly
-``aggregate.ARM_COLUMNS`` -- ``(vaers_id, in_denominator, in_numerator,
+``aggregate.ARM_COLUMNS`` -- ``(report_id, in_denominator, in_numerator,
 excluded, cell)`` -- over the eval DB's ``first_mention`` view; at the report
 tier, one statement returning ``(term, level)`` for the claim's events in the one
 report. Everything the claim supplies (terms, vaccine, report id) is bound as a
@@ -80,29 +80,29 @@ def _sql_literal(s: str) -> str:
 
 # ordered_pair: both present; denominator = distinct levels; co-exist excluded.
 ORDERED_PAIR_SQL = """\
-SELECT a.vaers_id,
+SELECT a.report_id,
        (a.level <> b.level) AS in_denominator,
        (a.level <  b.level) AS in_numerator,
        (a.level =  b.level) AS excluded,
        NULL                 AS cell
 FROM first_mention a
-JOIN first_mention b ON b.vaers_id = a.vaers_id
+JOIN first_mention b ON b.report_id = a.report_id
 WHERE a.vaccine = :vax AND a.term = :a AND b.term = :b
-ORDER BY a.vaers_id"""
+ORDER BY a.report_id"""
 
 # both_present: every both-present report is in the denominator and co-exist is
 # the numerator. `{cell}` is NULL for sym_bool_cooccurs and the 3-way relation
 # for cooc_modal_bool (whose named cell, co_exist, is that same numerator).
 _BOTH_PRESENT_TEMPLATE = """\
-SELECT a.vaers_id,
+SELECT a.report_id,
        1                   AS in_denominator,
        (a.level = b.level) AS in_numerator,
        0                   AS excluded,
        {cell} AS cell
 FROM first_mention a
-JOIN first_mention b ON b.vaers_id = a.vaers_id
+JOIN first_mention b ON b.report_id = a.report_id
 WHERE a.vaccine = :vax AND a.term = :a AND b.term = :b
-ORDER BY a.vaers_id"""
+ORDER BY a.report_id"""
 
 RELATION_CELL_SQL = ("CASE WHEN a.level < b.level THEN 'before' "
                      "WHEN a.level > b.level THEN 'after' ELSE 'co_exist' END")
@@ -113,10 +113,10 @@ RELATION_SQL = _BOTH_PRESENT_TEMPLATE.format(cell=RELATION_CELL_SQL)
 # All three events present, with their first-mention levels side by side.
 _TRIPLE_CTE = """\
 WITH t AS (
-    SELECT a.vaers_id, a.level AS la, b.level AS lb, c.level AS lc
+    SELECT a.report_id, a.level AS la, b.level AS lb, c.level AS lc
     FROM first_mention a
-    JOIN first_mention b ON b.vaers_id = a.vaers_id
-    JOIN first_mention c ON c.vaers_id = a.vaers_id
+    JOIN first_mention b ON b.report_id = a.report_id
+    JOIN first_mention c ON c.report_id = a.report_id
     WHERE a.vaccine = :vax AND a.term = :a AND b.term = :b AND c.term = :c
 )"""
 
@@ -138,21 +138,21 @@ def _ordering_case() -> str:
 
 # orderable_triple: denominator = pairwise-distinct levels; numerator = A<B<C.
 ORDERABLE_TRIPLE_SQL = _TRIPLE_CTE + f"""
-SELECT vaers_id,
+SELECT report_id,
        (la <> lb AND lb <> lc AND la <> lc)     AS in_denominator,
        (la < lb AND lb < lc)                    AS in_numerator,
        NOT (la <> lb AND lb <> lc AND la <> lc) AS excluded,
        {_ordering_case()} AS cell
 FROM t
-ORDER BY vaers_id"""
+ORDER BY report_id"""
 
 # all_present_unique_first / _last: m = MIN / MAX of the three levels; n_win = how
 # many events sit at m. A unique extreme -> denominator (cell = the winner); a
 # tie -> excluded, out of the denominator entirely (2026-08-11 rule).
 _EXTREME_TEMPLATE = _TRIPLE_CTE + """,
-u AS (SELECT vaers_id, la, lb, lc, {agg}(la, lb, lc) AS m FROM t),
-w AS (SELECT vaers_id, la, lb, lc, m, (la = m) + (lb = m) + (lc = m) AS n_win FROM u)
-SELECT vaers_id,
+u AS (SELECT report_id, la, lb, lc, {agg}(la, lb, lc) AS m FROM t),
+w AS (SELECT report_id, la, lb, lc, m, (la = m) + (lb = m) + (lc = m) AS n_win FROM u)
+SELECT report_id,
        (n_win = 1)            AS in_denominator,
        (n_win = 1 AND la = m) AS in_numerator,
        (n_win > 1)            AS excluded,
@@ -160,7 +160,7 @@ SELECT vaers_id,
             THEN CASE WHEN la = m THEN :a WHEN lb = m THEN :b ELSE :c END
        END AS cell
 FROM w
-ORDER BY vaers_id"""
+ORDER BY report_id"""
 
 UNIQUE_FIRST_SQL = _EXTREME_TEMPLATE.format(agg="MIN")
 UNIQUE_LAST_SQL = _EXTREME_TEMPLATE.format(agg="MAX")
@@ -168,69 +168,69 @@ UNIQUE_LAST_SQL = _EXTREME_TEMPLATE.format(agg="MAX")
 # presence_split: arm 1 = cohort reports containing A, arm 2 = the rest; every
 # row is in the denominator, the numerator is "contains B", nothing is excluded.
 PRESENCE_WITH_SQL = """\
-SELECT r.vaers_id,
+SELECT r.report_id,
        1                        AS in_denominator,
-       (b.vaers_id IS NOT NULL) AS in_numerator,
+       (b.report_id IS NOT NULL) AS in_numerator,
        0                        AS excluded,
        NULL                     AS cell
 FROM reports r
-JOIN first_mention a      ON a.vaers_id = r.vaers_id AND a.term = :a
-LEFT JOIN first_mention b ON b.vaers_id = r.vaers_id AND b.term = :b
+JOIN first_mention a      ON a.report_id = r.report_id AND a.term = :a
+LEFT JOIN first_mention b ON b.report_id = r.report_id AND b.term = :b
 WHERE r.vaccine = :vax
-ORDER BY r.vaers_id"""
+ORDER BY r.report_id"""
 
 PRESENCE_WITHOUT_SQL = """\
-SELECT r.vaers_id,
+SELECT r.report_id,
        1                        AS in_denominator,
-       (b.vaers_id IS NOT NULL) AS in_numerator,
+       (b.report_id IS NOT NULL) AS in_numerator,
        0                        AS excluded,
        NULL                     AS cell
 FROM reports r
-LEFT JOIN first_mention a ON a.vaers_id = r.vaers_id AND a.term = :a
-LEFT JOIN first_mention b ON b.vaers_id = r.vaers_id AND b.term = :b
-WHERE r.vaccine = :vax AND a.vaers_id IS NULL
-ORDER BY r.vaers_id"""
+LEFT JOIN first_mention a ON a.report_id = r.report_id AND a.term = :a
+LEFT JOIN first_mention b ON b.report_id = r.report_id AND b.term = :b
+WHERE r.vaccine = :vax AND a.report_id IS NULL
+ORDER BY r.report_id"""
 
 
 # v1.2 consecutive_pair: both present; denominator = CONSECUTIVE first-mention
 # ranks; numerator = A at the rank directly before B; co-exist and gapped pairs
 # are present-but-excluded.
 CONSECUTIVE_PAIR_SQL = """\
-SELECT a.vaers_id,
+SELECT a.report_id,
        (ABS(a.rank - b.rank) = 1) AS in_denominator,
        (a.rank + 1 = b.rank)      AS in_numerator,
        (ABS(a.rank - b.rank) <> 1) AS excluded,
        NULL                       AS cell
 FROM first_mention_rank a
-JOIN first_mention_rank b ON b.vaers_id = a.vaers_id
+JOIN first_mention_rank b ON b.report_id = a.report_id
 WHERE a.vaccine = :vax AND a.term = :a AND b.term = :b
-ORDER BY a.vaers_id"""
+ORDER BY a.report_id"""
 
 # v1.2 adjacency (adj_rate_bool): the ordered-pair denominator; numerator = the
 # two ranks are consecutive (either order). The null (mean 2/L) is computed by
 # S3 from the denominator reports' n_ranks, not returned here.
 ADJACENT_PAIR_SQL = """\
-SELECT a.vaers_id,
+SELECT a.report_id,
        (a.rank <> b.rank)         AS in_denominator,
        (ABS(a.rank - b.rank) = 1) AS in_numerator,
        (a.rank = b.rank)          AS excluded,
        NULL                       AS cell
 FROM first_mention_rank a
-JOIN first_mention_rank b ON b.vaers_id = a.vaers_id
+JOIN first_mention_rank b ON b.report_id = a.report_id
 WHERE a.vaccine = :vax AND a.term = :a AND b.term = :b
-ORDER BY a.vaers_id"""
+ORDER BY a.report_id"""
 
 # v1.2 present_offmid (early_bool): reports containing A with >= 2 stages whose A
 # is not on the exact middle rank; numerator = A in the earlier half.
 PRESENT_OFFMID_SQL = """\
-SELECT a.vaers_id,
+SELECT a.report_id,
        (a.n_ranks >= 2 AND 2 * a.rank <> a.n_ranks - 1) AS in_denominator,
        (a.n_ranks >= 2 AND 2 * a.rank <  a.n_ranks - 1) AS in_numerator,
        (a.n_ranks <  2 OR  2 * a.rank =  a.n_ranks - 1) AS excluded,
        NULL                                              AS cell
 FROM first_mention_rank a
 WHERE a.vaccine = :vax AND a.term = :a
-ORDER BY a.vaers_id"""
+ORDER BY a.report_id"""
 
 # Report-tier modes whose rule needs the WHOLE report (ranks depend on every
 # stage, not only on the claim's events).
@@ -243,12 +243,12 @@ def report_sql(n_events: int, *, whole_report: bool = False) -> str:
     if whole_report:
         return ("SELECT term, level\n"
                 "FROM first_mention\n"
-                "WHERE vaers_id = :r\n"
+                "WHERE report_id = :r\n"
                 "ORDER BY level, term")
     placeholders = ", ".join(f":{p}" for p in TERM_PARAMS[:n_events])
     return ("SELECT term, level\n"
             "FROM first_mention\n"
-            f"WHERE vaers_id = :r AND term IN ({placeholders})\n"
+            f"WHERE report_id = :r AND term IN ({placeholders})\n"
             "ORDER BY level, term")
 
 

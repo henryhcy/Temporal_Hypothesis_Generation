@@ -205,23 +205,32 @@ def balance_group(
         """Fill `count` instances of class `want`, natural-first. Returns the count."""
         nonlocal reoriented
         got = 0
-        for stage in ("natural", "reorient"):
+        # with per_core=2 the second class is the MIRROR of the first, so a CAPPED
+        # draw must pose the SAME cores both ways (review 2026-10-08, item 4):
+        # stage "paired" takes the cores already chosen for the other class
+        # before any fresh core. Uncapped, every decisive core is used anyway.
+        stages = ("paired", "natural", "reorient") if per_core == 2 else ("natural", "reorient")
+
+        def ok(c, stage) -> bool:
+            i = id(c)
+            if (i, want) in used_by_class or want not in feas[i]:
+                return False
+            if stage == "paired":
+                return i in used
+            if i in used:                      # fresh cores only from here on
+                return False
+            return (natural[i] == want) == (stage == "natural")
+
+        for stage in stages:
             if got >= count:
                 break
-            # with per_core=2 a core may serve BOTH classes, so `used` only blocks
-            # re-use within the SAME class
-            pool = [c for c in decisive
-                    if (id(c), want) not in used_by_class
-                    and (per_core == 2 or id(c) not in used)
-                    and want in feas[id(c)]
-                    and ((natural[id(c)] == want) if stage == "natural"
-                         else (natural[id(c)] != want))]
+            pool = [c for c in decisive if ok(c, stage)]
             picked = _stratified_draw(pool, count - got, band, rng)
             for c in picked:
                 used.add(id(c))
                 used_by_class.add((id(c), want))
                 chosen.append((c, want, band[id(c)]))
-                if stage == "reorient":
+                if natural[id(c)] != want:
                     reoriented += 1
             got += len(picked)
         return got
@@ -255,5 +264,6 @@ def balance_group(
         subtype_pools={k: len(v) for k, v in by_sub.items()},
         reoriented=reoriented,
         S=S,
-        mirror_pairs=(min(n_sup, n_ref) if per_core == 2 else 0),
+        mirror_pairs=sum(1 for c in decisive
+                         if (id(c), "supported") in used_by_class and (id(c), "refuted") in used_by_class),
     )

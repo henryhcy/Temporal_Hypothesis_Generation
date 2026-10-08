@@ -34,9 +34,9 @@ def _columns(conn: sqlite3.Connection, table: str) -> list[tuple]:
 
 def _first_mention_map(conn: sqlite3.Connection) -> dict[int, dict[str, int]]:
     out: dict[int, dict[str, int]] = {}
-    for vid, term, level in conn.execute("SELECT vaers_id, term, level FROM first_mention"):
+    for vid, term, level in conn.execute("SELECT report_id, term, level FROM first_mention"):
         out.setdefault(vid, {})[term] = level
-    for (vid,) in conn.execute("SELECT vaers_id FROM reports"):
+    for (vid,) in conn.execute("SELECT report_id FROM reports"):
         out.setdefault(vid, {})
     return out
 
@@ -52,21 +52,21 @@ def test_schema_has_no_narrative_and_no_surrogate_ids(eval_db_path):
         lt_cols = [c[1] for c in _columns(conn, "level_terms")]
     finally:
         conn.close()
-    assert report_cols == ["vaers_id", "vaccine", "num_stages"]
-    assert lt_cols == ["vaers_id", "level_index", "term"]
+    assert report_cols == ["report_id", "vaccine", "num_stages"]
+    assert lt_cols == ["report_id", "level_index", "term"]
     assert "narrative" not in report_cols + lt_cols
-    assert "report_id" not in report_cols + lt_cols
+    assert "vaers_id" not in report_cols + lt_cols
 
 
-def test_reports_keyed_by_vaers_id(eval_db_path):
+def test_reports_keyed_by_report_id(eval_db_path):
     conn = open_eval_db(eval_db_path)
     try:
         pk = [c[1] for c in _columns(conn, "reports") if c[5] == 1]
-        ids = sorted(v for (v,) in conn.execute("SELECT vaers_id FROM reports"))
-        lt_ids = {v for (v,) in conn.execute("SELECT DISTINCT vaers_id FROM level_terms")}
+        ids = sorted(v for (v,) in conn.execute("SELECT report_id FROM reports"))
+        lt_ids = {v for (v,) in conn.execute("SELECT DISTINCT report_id FROM level_terms")}
     finally:
         conn.close()
-    assert pk == ["vaers_id"]
+    assert pk == ["report_id"]
     assert ids == sorted(vid for vid, _, _ in CORPUS)
     assert lt_ids <= set(ids)
 
@@ -84,7 +84,7 @@ def test_schema_objects_and_indices(eval_db_path):
 
 def test_ddl_header_tells_models_the_rules():
     header = EVAL_DDL.split("CREATE TABLE", 1)[0]
-    assert "VAERS" in header
+    assert "pseudonymous" in header and "NOT a VAERS id" in header
     assert "FIRST mention" in header or "first mention" in header.lower()
     assert "first_mention" in header
     # no `narrative` anywhere in the executable statements the model could query
@@ -126,8 +126,8 @@ def test_build_from_a_path(tmp_path):
 def test_num_stages_equals_len_levels(eval_db_path):
     conn = open_eval_db(eval_db_path)
     try:
-        got = dict(conn.execute("SELECT vaers_id, num_stages FROM reports"))
-        vax = dict(conn.execute("SELECT vaers_id, vaccine FROM reports"))
+        got = dict(conn.execute("SELECT report_id, num_stages FROM reports"))
+        vax = dict(conn.execute("SELECT report_id, vaccine FROM reports"))
     finally:
         conn.close()
     assert got == {vid: len(levels) for vid, _, levels in CORPUS}
@@ -138,14 +138,14 @@ def test_first_mention_applies_first_mention_rule(eval_db_path):
     conn = open_eval_db(eval_db_path)
     try:
         rows = conn.execute(
-            "SELECT level FROM first_mention WHERE vaers_id = 1015 AND term = 'Headache'"
+            "SELECT level FROM first_mention WHERE report_id = 1015 AND term = 'Headache'"
         ).fetchall()
         raw = conn.execute(
-            "SELECT level_index FROM level_terms WHERE vaers_id = 1015 AND term = 'Headache' "
+            "SELECT level_index FROM level_terms WHERE report_id = 1015 AND term = 'Headache' "
             "ORDER BY level_index"
         ).fetchall()
         vaccine = conn.execute(
-            "SELECT DISTINCT vaccine FROM first_mention WHERE vaers_id = 1015"
+            "SELECT DISTINCT vaccine FROM first_mention WHERE report_id = 1015"
         ).fetchall()
     finally:
         conn.close()
@@ -167,10 +167,10 @@ def test_report_terms_is_sorted_and_deterministic(eval_db_path):
     conn = open_eval_db(eval_db_path)
     try:
         rows = conn.execute(
-            "SELECT level_index, terms FROM report_terms WHERE vaers_id = 1015 ORDER BY level_index"
+            "SELECT level_index, terms FROM report_terms WHERE report_id = 1015 ORDER BY level_index"
         ).fetchall()
         r1003 = conn.execute(
-            "SELECT terms FROM report_terms WHERE vaers_id = 1003 AND level_index = 0"
+            "SELECT terms FROM report_terms WHERE report_id = 1003 AND level_index = 0"
         ).fetchone()
     finally:
         conn.close()
@@ -197,7 +197,7 @@ def test_open_eval_db_readonly_refuses_writes(eval_db_path):
     conn = open_eval_db(eval_db_path, readonly=True)
     try:
         with pytest.raises(sqlite3.OperationalError, match="readonly"):
-            conn.execute("INSERT INTO reports (vaers_id, vaccine, num_stages) VALUES (1, 'Pfizer', 1)")
+            conn.execute("INSERT INTO reports (report_id, vaccine, num_stages) VALUES (1, 'Pfizer', 1)")
     finally:
         conn.close()
 
@@ -228,7 +228,7 @@ def test_first_mention_reproduces_corpus_index_on_real_db(tmp_path):
     conn = open_eval_db(tmp_path / "medtempo_eval.db")
     try:
         got = _first_mention_map(conn)
-        vax = dict(conn.execute("SELECT vaers_id, vaccine FROM reports"))
+        vax = dict(conn.execute("SELECT report_id, vaccine FROM reports"))
         assert "narrative" not in [c[1] for c in _columns(conn, "reports")]
     finally:
         conn.close()

@@ -3,9 +3,9 @@
 Every retrieval method -- the reference compiler and a model's SQL alike -- must
 return, per ARM, rows of exactly this shape::
 
-    (vaers_id, in_denominator, in_numerator, excluded, cell)
+    (report_id, in_denominator, in_numerator, excluded, cell)
 
-- ``vaers_id``        the report (the release's report id; NOT the DB surrogate)
+- ``report_id``        the report (the release's report id; NOT the DB surrogate)
 - ``in_denominator``  1 if the report satisfies the claim's conditioning (counts in n)
 - ``in_numerator``    1 if it also satisfies the asserted direction (counts in k)
 - ``excluded``        1 if the report is present-but-unusable (co-exist for a
@@ -29,7 +29,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Iterable, Sequence
 
-ARM_COLUMNS = ("vaers_id", "in_denominator", "in_numerator", "excluded", "cell")
+ARM_COLUMNS = ("report_id", "in_denominator", "in_numerator", "excluded", "cell")
 REPORT_COLUMNS = ("term", "level")
 
 # how a `cell` string is turned into the key the oracle's counts dict expects
@@ -38,7 +38,7 @@ ORDERING_SEP = "|"   # ordering cells are 'A|B|C' in the asserted-term spelling
 
 @dataclass(frozen=True)
 class ArmRow:
-    vaers_id: int
+    report_id: int
     in_denominator: bool
     in_numerator: bool
     excluded: bool
@@ -78,7 +78,7 @@ def rows_from_records(records: Iterable[Sequence[Any]]) -> list[ArmRow]:
         try:
             vid = int(vid)
         except (TypeError, ValueError):
-            raise ValueError(f"vaers_id is not an integer: {vid!r}") from None
+            raise ValueError(f"report_id is not an integer: {vid!r}") from None
         out.append(ArmRow(vid, bool(den), bool(num), bool(exc),
                           None if cell is None else str(cell)))
     return out
@@ -103,14 +103,14 @@ def aggregate(rows: Iterable[ArmRow], *, cell_kind: str | None = None) -> ArmCou
     for r in rows:
         n_rows += 1
         if r.in_denominator:
-            den.add(r.vaers_id)
+            den.add(r.report_id)
             if r.in_numerator:
-                num.add(r.vaers_id)
+                num.add(r.report_id)
             if cell_kind is not None and r.cell is not None:
                 key = cell_key(r.cell, cell_kind)
                 counts[key] = counts.get(key, 0) + 1
         elif r.excluded:
-            exc.add(r.vaers_id)
+            exc.add(r.report_id)
     return ArmCounts(n=len(den), k=len(num), denominator_ids=den,
                      numerator_ids=num, excluded_ids=exc, counts=counts,
                      n_rows=n_rows)

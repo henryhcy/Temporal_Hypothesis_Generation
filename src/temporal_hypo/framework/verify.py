@@ -62,13 +62,8 @@ def s1_plan_problems(plan: Mapping[str, Any], row: Mapping[str, Any]) -> list[st
     events = [e for e in (plan.get("events") or []) if e]
 
     if tier == "report":
-        # the convention: a claim about ONE named report is a single deterministic
-        # observation over that report's first-mention levels
-        if den != "single_report" or (arms not in (None, 1)) or nk not in (None, "none"):
-            problems.append(
-                "the input is ONE named report (level = report): by the conventions it is a single "
-                "deterministic observation over that report's first-mention levels -- denominator "
-                "single_report, arms 1, null_kind none (no population, no test, no floor)")
+        # review item 6 (2026-10-08): the report tier is a reading task; the harness
+        # fills denominator / arms / null itself, so there is nothing to verify here.
         return problems
 
     # quantity <-> denominator, as the conventions phrase each situation

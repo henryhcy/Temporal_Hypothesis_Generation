@@ -33,6 +33,8 @@ single observations with no test, so they keep their deterministic verdict.
 
 from __future__ import annotations
 
+from temporal_hypo.core.pseudonym import report_ref as _report_ref
+
 import random
 
 from dataclasses import dataclass, field
@@ -61,7 +63,7 @@ from temporal_hypo.generation.vaccines import VACCINES, VACCINE_PAIRS
 # per group; changing K is a dataset-composition change, never a silent tweak.
 K_PAIR = 25
 K_TRIPLE = 16
-MAX_REPORT_CORES = 300
+MAX_REPORT_CORES = 300   # per NATURAL verdict class (review 2026-10-08, item 4)
 
 # Locked viability threshold (mirrors corpus._MIN_N).
 _MIN_N = 10
@@ -224,7 +226,8 @@ def _slot_vaccines(vaccines: tuple[str, ...]) -> dict[str, str]:
 
 
 def report_ref(report_id: int) -> str:
-    return f"VAERS-{report_id}"
+    # the id is already the pseudonym (CorpusIndex.load); render it as MT-0001234
+    return _report_ref(report_id)
 
 
 # ---------------------------------------------------------------------------
@@ -691,10 +694,18 @@ def _enum_report(index: CorpusIndex, group: Group, mode: str) -> list[ViableCore
     # chronological window predating Janssen's authorisation (8.8% Janssen at
     # the report tier vs 36.8% of the corpus). A seeded shuffle makes the cap's
     # composition match the corpus in expectation and stays reproducible.
+    # Review 2026-10-08 (item 4, "C-R1 balanced"): the cap is PER NATURAL VERDICT
+    # CLASS. A report-tier core that is not orientable (co-exist / early-half /
+    # immediate succession are facts about one report, not a direction) can only
+    # serve the class the report puts it in, so a flat cap of 300 cores left
+    # C-R1 at 193/107. Filling each class to the cap lets the balancer draw
+    # equal classes; for orientable groups (every core natural-supported) this
+    # is the old behaviour.
     vids = sorted(index.report_terms)
     random.Random(REPORT_SAMPLE_SEED).shuffle(vids)
+    per_class = {"supported": 0, "refuted": 0}
     for vid in vids:
-        if len(cores) >= MAX_REPORT_CORES:
+        if min(per_class.values()) >= MAX_REPORT_CORES:
             break
         tmap = index.report_terms[vid]
         present = sorted(tmap, key=lambda t: (tmap[t], t))
@@ -702,8 +713,13 @@ def _enum_report(index: CorpusIndex, group: Group, mode: str) -> list[ViableCore
         if combo is None:
             continue
         core = _build_report_core(index, group, mode, vid, tmap, combo)
-        if core is not None:
-            cores.append(core)
+        if core is None:
+            continue
+        cls = core.natural_verdict if core.natural_verdict in per_class else "supported"
+        if per_class[cls] >= MAX_REPORT_CORES:
+            continue
+        per_class[cls] += 1
+        cores.append(core)
     return cores
 
 

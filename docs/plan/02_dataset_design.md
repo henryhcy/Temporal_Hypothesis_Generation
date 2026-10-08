@@ -223,3 +223,13 @@ sequence with internal co-occurrence, exact synonym table contents).
     existing statistic against the bar read off the text; supported =
     significantly above, refuted = significantly below; each orientation is
     its own instance (no mirror pairs).
+
+16. **Report ids are pseudonyms** (2026-10-08, review item 4). The VAERS id
+    never appears in a text, a record or the eval DB: `core/pseudonym.py`
+    maps it through a keyed permutation (`MT-0482913`); the key is private
+    (`data/private/`). The annotations are untouched; only the lookup key is
+    removed, so a model cannot retrieve a public report by id.
+17. **Composition cap** (2026-10-08, review item 4): at most 200 instances per
+    class per group (`--cap 600`), drawn seeded over cores with mirror pairs
+    kept together; the report-tier enumerator caps per natural class so the
+    non-orientable report groups (C-R1, T-R1, Y-R1) are balanced.

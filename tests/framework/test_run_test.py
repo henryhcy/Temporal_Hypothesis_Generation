@@ -41,7 +41,8 @@ from temporal_hypo.framework.run_test import (
 from temporal_hypo.framework.sql.aggregate import ArmCounts
 from temporal_hypo.generation import evidence as ev
 from temporal_hypo.generation.corpus import CorpusIndex, relation
-from tests.framework.conftest import RELEASE_DIR, RELEASE_STEM, REPO_ROOT, needs_release
+from temporal_hypo.framework.sql.compiler import WHOLE_REPORT_MODES
+from tests.framework.conftest import RELEASE_DIR, RELEASE_STEM, REPO_ROOT, needs_release, release_index
 
 DB_PATH = REPO_ROOT / "data" / "medtempo.db"
 needs_db = pytest.mark.skipif(not DB_PATH.exists(), reason="data/medtempo.db not present")
@@ -83,7 +84,8 @@ def _answers() -> list[dict]:
 
 @lru_cache(maxsize=None)
 def _index() -> CorpusIndex:
-    return CorpusIndex.load(sqlite3.connect(str(DB_PATH)))
+    # the release's id space (pseudonyms under the private key), not identity
+    return release_index(sqlite3.connect(str(DB_PATH)))
 
 
 def _counts_for(index: CorpusIndex, mode: str, terms: tuple, den_ids) -> dict:
@@ -173,6 +175,30 @@ def _arms_from_index(index: CorpusIndex, claim) -> list[ArmCounts]:
                     b_only.append(vid)
         return [_arm_from_sets({"denominator": with_a, "numerator": both, "excluded": []}),
                 _arm_from_sets({"denominator": without_a, "numerator": b_only, "excluded": []})]
+    # v1.2 modes (decisions.md 2026-10-07): the bars share the v1.1 conditionings;
+    # the data-derived nulls carry the in-memory chance sum the retriever computes
+    if m == "precedes_bar":
+        return [_arm_from_sets(ev._pair_sets(index, t[0], t[1], cohort))]
+    if m == "cooc_bar":
+        return [_arm_from_sets(ev._cooccur_sets(index, t[0], t[1], cohort))]
+    if m == "first_bar":
+        return [_arm_from_sets(ev._extreme_sets(index, t, cohort, named=t[0], last=False))]
+    if m in ("imm_bool", "imm_choice"):
+        return [_arm_from_sets(ev._immediate_sets(index, t[0], t[1], cohort))]
+    if m in ("early_bool", "adj_rate_bool"):
+        from temporal_hypo.generation.corpus import rank_map, report_half
+        sets = ev._early_half_sets(index, t[0], cohort) if m == "early_bool" \
+            else ev._adjacency_sets(index, t[0], t[1], cohort)
+        arm = _arm_from_sets(sets)
+        cs = 0.0
+        for vid in sets["denominator"]:
+            tm = index.report_terms[vid]
+            if m == "early_bool":
+                cs += report_half(tm)[3]
+            else:
+                cs += 2.0 / rank_map(tm)[1]
+        arm.chance_sum = cs
+        return [arm]
     raise AssertionError(f"no in-memory conditioning for {m}")
 
 
@@ -232,8 +258,10 @@ def test_reproduces_release_row_from_evidence_ids(case):
 
 @needs_release
 def test_release_negated_rows_exist_only_for_negatable_modes():
+    from temporal_hypo.framework.claim_schema import NEGATABLE_MODES
     negated_modes = {r["mode"] for r in _answers() if r["negated"]}
-    assert negated_modes == {"sym_bool_cooccurs", "assoc_bool", "cooc_modal_bool"}
+    assert negated_modes <= set(NEGATABLE_MODES)
+    assert {"sym_bool_cooccurs", "assoc_bool", "cooc_modal_bool", "early_bool", "adj_rate_bool"} <= negated_modes
 
 
 # ---------------------------------------------------------------------------
@@ -246,11 +274,12 @@ def test_release_negated_rows_exist_only_for_negatable_modes():
 def test_report_rule_matches_every_report_row():
     index = _index()
     rows = [r for r in _answers() if r["level"] == "report"]
-    assert len(rows) == 3900
+    assert len(rows) == 3600            # v1.2: 9 report groups x 400 (two classes, cap 200 each)
     for row in rows:
         claim = from_gold(row)
         tmap = index.report_terms[row["cohort"]["report_id"]]
-        levels = {t: tmap[t] for t in claim.terms if t in tmap}
+        # v1.2 rank claims (T-R1 / Y-R1) read the WHOLE report (compiler.WHOLE_REPORT_MODES)
+        levels = dict(tmap) if claim.mode in WHOLE_REPORT_MODES else {t: tmap[t] for t in claim.terms if t in tmap}
         assert report_rule(claim, levels) == row["gold_verdict"], row["instance_id"]
         retrieval = _Retrieval([], levels)
         gold = run_test(claim, retrieval, procedure_mode="gold")
@@ -265,7 +294,7 @@ def test_report_rule_matches_every_report_row():
 # (3) honouring == gold on a stratified cohort sample rebuilt from the corpus
 # ---------------------------------------------------------------------------
 
-def _cohort_sample(rows: list[dict], total: int = 400, per_mode: int = 30, seed: int = 0) -> list[dict]:
+def _cohort_sample(rows: list[dict], total: int = 400, per_mode: int = 15, seed: int = 0) -> list[dict]:
     """Seeded sample: up to ``per_mode`` per cohort mode (rare modes whole), topped up to ``total``."""
     rng = random.Random(seed)
     by_mode: dict[str, list[dict]] = {}

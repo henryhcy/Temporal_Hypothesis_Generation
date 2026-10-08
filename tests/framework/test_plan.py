@@ -104,7 +104,7 @@ def test_fewshot_pool_excludes_held_out_groups():
     pool = fewshot_pool(release, (), k_per_mode=1, seed=0, exclude_groups={"P-R2", "F-R1"})
     groups = {a["group_id"] for a in pool}
     assert "P-R2" not in groups and "F-R1" not in groups
-    assert len(groups) == 18
+    assert len(groups) == 27          # v1.2: 29 groups - 2 held out
 
 
 
@@ -203,5 +203,7 @@ def test_v12_implied_folds():
                        "symmetric_fixed") == "dir_bool"
     assert derive_mode("vaccine", "BOOL", 1, 1, "present_offmid", "position_of_event", None,
                        "symmetric_fixed") is None          # position has no 0.5 twin
-    # the report tier is NOT folded (issue 35 is the user's decision)
-    assert derive_mode("report", "BOOL", 1, 1, "present_offmid", "position_of_event") is None
+    # review item 6 (2026-10-08): the report tier is a reading task; the harness fills
+    # the denominator, so a cohort denominator on a report claim still maps
+    assert derive_mode("report", "BOOL", 1, 1, "present_offmid", "position_of_event") == "rep_early_bool"
+    assert derive_mode("report", "BOOL", 2, 1, "ordered_pair", "order_of_pair") == "rep_dir_bool"

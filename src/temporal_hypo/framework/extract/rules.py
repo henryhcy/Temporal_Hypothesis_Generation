@@ -9,7 +9,7 @@ backreference ``(?P=X)`` (25 templates name a slot twice, e.g. S-V1
 "is {A} -> {B} -> {C} the most common ordering of {A}, {B}, {C}"; a second named
 group of the same name would not compile). A match binds the slots; the
 bindings are validated (event terms against the DB vocabulary, vaccines against
-``VACCINES``, ``{r}`` against ``VAERS-(\\d+)`` and the row's cohort), lossy slots
+``VACCINES``, ``{r}`` against ``MT-(\\d{7})`` and the row's cohort), lossy slots
 are filled from the row's structured ``cohort`` / ``options``, and the result is
 assembled with ``claim_schema.build_claim`` so the HOW layer is the reference one.
 
@@ -53,6 +53,8 @@ Design points that matter:
 
 from __future__ import annotations
 
+from temporal_hypo.core.pseudonym import REPORT_RE
+
 import re
 import sqlite3
 from dataclasses import dataclass
@@ -69,7 +71,7 @@ from temporal_hypo.generation.templates import (
 from temporal_hypo.generation.vaccines import VACCINES
 
 __all__ = [
-    "ARROW", "EVENT_SLOTS", "REPORT_SLOT", "VACCINE_SLOTS", "VAERS_RE",
+    "ARROW", "EVENT_SLOTS", "REPORT_SLOT", "VACCINE_SLOTS", "REPORT_RE",
     "RulesExtractor", "TemplatePattern", "compile_patterns", "iter_bindings",
     "vocabulary_from_db",
 ]
@@ -77,8 +79,7 @@ __all__ = [
 EVENT_SLOTS: tuple[str, ...] = ROLES                  # A, B, C, D
 VACCINE_SLOTS: tuple[str, ...] = ("v", "v1", "v2")
 REPORT_SLOT = "r"
-# The report reference as `cores.report_ref` renders it.
-VAERS_RE = re.compile(r"VAERS-(\d+)")
+# The report reference as `core.pseudonym.report_ref` renders it (MT-0001234).
 # The ordering separator `core.answers.answer_key` uses for modal_choice options
 # (== answers._ARROW; the S-V3 templates spell it the same way).
 ARROW = " → "
@@ -346,7 +347,7 @@ class RulesExtractor:
                 i = _VACCINE_SLOT_INDEX[name]
                 return i < len(cohort_vaccines) and cohort_vaccines[i] == value
             if name == REPORT_SLOT:
-                m = VAERS_RE.fullmatch(value)
+                m = REPORT_RE.fullmatch(value)
                 if m is None:
                     return False
                 return report_id is None or int(m.group(1)) == int(report_id)

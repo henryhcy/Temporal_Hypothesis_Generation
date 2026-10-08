@@ -85,14 +85,15 @@ def e2e_messages(row: Mapping[str, Any], claim: StructuredClaim, ddl: str,
                     "level = its FIRST-mention level.")
     else:
         contract = (f"Each statement returns ONE ROW PER REPORT of the arm with EXACTLY these "
-                    f"columns, in this order: {', '.join(ARM_COLUMNS)}. vaers_id INTEGER; "
+                    f"columns, in this order: {', '.join(ARM_COLUMNS)}. report_id INTEGER; "
                     "in_denominator / in_numerator / excluded are 0/1 integers; cell is TEXT or "
                     "NULL.")
     reminders = [
-        "The view first_mention(vaers_id, vaccine, term, level) ALREADY applies the first-mention "
+        "The view first_mention(report_id, vaccine, term, level) ALREADY applies the first-mention "
         "rule (level = MIN(level_index) per report and term) -- join it, do not re-aggregate "
         "level_terms unless you need to.",
-        "Report ids are vaers_id everywhere. There is no other id.",
+        "Report ids are report_id everywhere: the dataset's own pseudonymous 7-digit key, written "
+        "MT-0001234 in a claim (= report_id 1234). There is no other id.",
         "Restrict to the cohort named in the input (first_mention carries vaccine).",
         "Event terms are MedDRA terms spelled exactly as they appear in the sentence.",
         "Inline every literal (single-quoted strings, '' to escape a quote). Do not use bind "

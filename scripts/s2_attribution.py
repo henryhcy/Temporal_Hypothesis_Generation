@@ -30,8 +30,8 @@ CAUSES = ["no plan (S2 not run)", "no valid SQL", "denominator = numerator", "ev
 def load_db(path: Path):
     con = sqlite3.connect(path)
     fm: dict[int, dict[str, int]] = collections.defaultdict(dict)
-    vac = dict(con.execute("SELECT vaers_id, vaccine FROM reports"))
-    for vid, t, l in con.execute("SELECT vaers_id, term, level FROM first_mention"):
+    vac = dict(con.execute("SELECT report_id, vaccine FROM reports"))
+    for vid, t, l in con.execute("SELECT report_id, term, level FROM first_mention"):
         fm[vid][t] = l
     return fm, vac
 

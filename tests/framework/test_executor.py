@@ -45,26 +45,26 @@ def _report_count(eval_db_path) -> int:
 
 def test_select_over_first_mention_with_named_params(executor):
     res = executor.execute(
-        "SELECT vaers_id, level FROM first_mention WHERE term = :t AND vaers_id = :v",
+        "SELECT report_id, level FROM first_mention WHERE term = :t AND report_id = :v",
         {"t": "Headache", "v": 1015},
     )
     assert isinstance(res, ExecResult)
     assert res.error is None and res.error_class is None
     assert res.rows == [(1015, 0)]
-    assert res.columns == ["vaers_id", "level"]
+    assert res.columns == ["report_id", "level"]
     assert res.truncated is False
     assert res.ms >= 0.0
 
 
 def test_positional_params_and_column_aliases(executor):
     res = executor.execute(
-        "SELECT a.vaers_id, (a.level < b.level) AS in_numerator "
-        "FROM first_mention a JOIN first_mention b USING (vaers_id) "
-        "WHERE a.vaccine = ? AND a.term = ? AND b.term = ? ORDER BY a.vaers_id",
+        "SELECT a.report_id, (a.level < b.level) AS in_numerator "
+        "FROM first_mention a JOIN first_mention b USING (report_id) "
+        "WHERE a.vaccine = ? AND a.term = ? AND b.term = ? ORDER BY a.report_id",
         ("Janssen", "Headache", "Fatigue"),
     )
     assert res.error is None
-    assert res.columns == ["vaers_id", "in_numerator"]
+    assert res.columns == ["report_id", "in_numerator"]
     assert res.rows == [(3003, 1)]
 
 
@@ -74,7 +74,7 @@ def test_with_clause_and_leading_comments_are_allowed(executor):
     /* and a block
        comment */
     WITH hf AS (
-        SELECT vaers_id FROM first_mention WHERE term = 'Headache'
+        SELECT report_id FROM first_mention WHERE term = 'Headache'
     )
     SELECT COUNT(*) AS n FROM hf
     """
@@ -101,7 +101,7 @@ def test_semicolon_inside_literal_or_comment_is_not_a_statement_break(executor):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("sql", [
-    "INSERT INTO reports (vaers_id, vaccine, num_stages) VALUES (1, 'Pfizer', 1)",
+    "INSERT INTO reports (report_id, vaccine, num_stages) VALUES (1, 'Pfizer', 1)",
     "UPDATE reports SET vaccine = 'Moderna'",
     "DELETE FROM reports",
     "CREATE TABLE t (x)",
@@ -119,9 +119,9 @@ def test_semicolon_inside_literal_or_comment_is_not_a_statement_break(executor):
     "SELECT * FROM sqlite_temp_master",
     "SELECT * FROM pragma_table_info('reports')",
     # WITH-prefixed writes pass the keyword check and must be caught by the authorizer
-    "WITH x AS (SELECT 1) INSERT INTO reports (vaers_id, vaccine, num_stages) SELECT 9, 'Pfizer', 1 FROM x",
+    "WITH x AS (SELECT 1) INSERT INTO reports (report_id, vaccine, num_stages) SELECT 9, 'Pfizer', 1 FROM x",
     "WITH x AS (SELECT 1) DELETE FROM reports",
-    "WITH x AS (SELECT 1) UPDATE reports SET vaccine = 'Moderna' WHERE vaers_id IN (SELECT * FROM x)",
+    "WITH x AS (SELECT 1) UPDATE reports SET vaccine = 'Moderna' WHERE report_id IN (SELECT * FROM x)",
 ])
 def test_denied_statements(executor, eval_db_path, sql):
     res = executor.execute(sql)
@@ -138,7 +138,7 @@ def test_sqlite_master_is_denied_by_the_authorizer(executor):
 
 def test_with_prefixed_write_is_denied_by_the_authorizer(executor, eval_db_path):
     res = executor.execute(
-        "WITH x AS (SELECT 1) INSERT INTO reports (vaers_id, vaccine, num_stages) "
+        "WITH x AS (SELECT 1) INSERT INTO reports (report_id, vaccine, num_stages) "
         "SELECT 9, 'Pfizer', 1 FROM x"
     )
     assert res.error_class == "denied"
@@ -178,12 +178,12 @@ def test_sql_error_class(executor):
 
 def test_row_cap_marks_truncated(eval_db_path, log_path):
     with ReadOnlyExecutor(eval_db_path, row_cap=3, log_path=log_path) as ex:
-        res = ex.execute("SELECT vaers_id FROM reports ORDER BY vaers_id")
+        res = ex.execute("SELECT report_id FROM reports ORDER BY report_id")
         assert res.error is None
         assert res.truncated is True
         assert res.rows == [(1001,), (1002,), (1003,)]
         # exactly row_cap rows is not a truncation
-        res = ex.execute("SELECT vaers_id FROM reports ORDER BY vaers_id LIMIT 3")
+        res = ex.execute("SELECT report_id FROM reports ORDER BY report_id LIMIT 3")
         assert res.truncated is False and len(res.rows) == 3
 
 
@@ -207,7 +207,7 @@ def test_timeout_on_expensive_query(eval_db_path, log_path):
 
 def test_logs_one_json_line_per_call(executor, log_path):
     calls = [
-        ("SELECT vaers_id FROM reports WHERE vaccine = :v", {"v": "Janssen"}),
+        ("SELECT report_id FROM reports WHERE vaccine = :v", {"v": "Janssen"}),
         ("DELETE FROM reports", None),
         ("SELECT 1; SELECT 2", None),
         ("SELECT * FROM sqlite_master", None),

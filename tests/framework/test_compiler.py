@@ -43,6 +43,8 @@ from temporal_hypo.framework.sql.retrieve import (
 from temporal_hypo.generation import corpus as corpus_mod
 from temporal_hypo.generation.evidence import evidence_ids
 from tests.framework.conftest import (
+    release_index,
+    release_pseudonymizer,
     C,
     CORPUS,
     F,
@@ -190,7 +192,7 @@ def test_labels_and_cell_kinds(mode, terms, cohort, options):
 def test_sql_uses_only_the_eval_schema_and_bound_params(mode, terms, cohort, options):
     for q in compile_sql(make_claim(mode, terms, cohort, options)):
         low = q.sql.lower()
-        assert "narrative" not in low and "report_id" not in low and "level_terms" not in low
+        assert "narrative" not in low and "vaers_id" not in low and "level_terms" not in low
         assert "first_mention" in low
         placeholders = set(re.findall(r":(\w+)", q.sql))
         assert placeholders == set(q.params), (placeholders, q.params)
@@ -435,7 +437,7 @@ def _arm_q(sql: str, params: dict | None = None, cell_kind: str | None = None) -
 
 def test_wrong_columns_are_a_contract_violation(executor):
     claim = make_claim("dir_bool", (H, F), _vax("Pfizer"))
-    q = _arm_q("SELECT vaers_id, level FROM first_mention WHERE vaccine = :vax", PFIZER)
+    q = _arm_q("SELECT report_id, level FROM first_mention WHERE vaccine = :vax", PFIZER)
     ret = execute_queries([q], executor, claim)
     assert not ret.ok
     assert len(ret.arms) == 1 and ret.arms[0].n == 0 and ret.arms[0].n_rows == 0
@@ -445,13 +447,13 @@ def test_wrong_columns_are_a_contract_violation(executor):
     assert log.params == PFIZER and log.label == ARM_LABEL
 
 
-def test_bad_vaers_id_is_a_contract_violation(executor):
+def test_bad_report_id_is_a_contract_violation(executor):
     claim = make_claim("dir_bool", (H, F), _vax("Pfizer"))
-    q = _arm_q("SELECT term AS vaers_id, 1 AS in_denominator, 0 AS in_numerator, 0 AS excluded, "
+    q = _arm_q("SELECT term AS report_id, 1 AS in_denominator, 0 AS in_numerator, 0 AS excluded, "
                "NULL AS cell FROM first_mention WHERE vaccine = :vax", PFIZER)
     ret = execute_queries([q], executor, claim)
     assert ret.queries[0].error_class == CONTRACT_VIOLATION
-    assert "vaers_id" in ret.queries[0].error
+    assert "report_id" in ret.queries[0].error
     assert ret.arms[0].denominator_ids == set()
 
 
@@ -469,7 +471,7 @@ def test_executor_failures_pass_through(executor):
     ret = execute_queries([
         _arm_q("DELETE FROM reports"),
         _arm_q("SELECT no_such_column FROM first_mention"),
-        _arm_q("SELECT vaers_id, 1, 0, 0, NULL FROM first_mention WHERE vaccine = :vax"),   # missing binding
+        _arm_q("SELECT report_id, 1, 0, 0, NULL FROM first_mention WHERE vaccine = :vax"),   # missing binding
     ], executor, claim)
     assert not ret.ok
     assert [q.error_class for q in ret.queries] == ["not_select", "sql_error", "sql_error"]
@@ -514,16 +516,16 @@ def test_row_cap_truncation_is_a_failure(eval_db_path, corpus_index):
 
 def test_report_tier_contract_violation(executor):
     claim = make_claim("rep_dir_bool", (H, F), _rep(1001))
-    three_cols = ArmQuery(REPORT_LABEL, "SELECT vaers_id, term, level FROM first_mention WHERE vaers_id = :r",
+    three_cols = ArmQuery(REPORT_LABEL, "SELECT report_id, term, level FROM first_mention WHERE report_id = :r",
                           {"r": 1001}, None)
     ret = execute_queries([three_cols], executor, claim)
     assert not ret.ok and ret.levels == {} and ret.arms == []
     assert ret.queries[0].error_class == CONTRACT_VIOLATION
-    swapped = ArmQuery(REPORT_LABEL, "SELECT level, term FROM first_mention WHERE vaers_id = :r",
+    swapped = ArmQuery(REPORT_LABEL, "SELECT level, term FROM first_mention WHERE report_id = :r",
                        {"r": 1001}, None)
     assert execute_queries([swapped], executor, claim).queries[0].error_class == CONTRACT_VIOLATION
     # a model returning every term of the report is fine: levels is a superset
-    wide = ArmQuery(REPORT_LABEL, "SELECT term, level FROM first_mention WHERE vaers_id = :r", {"r": 1001}, None)
+    wide = ArmQuery(REPORT_LABEL, "SELECT term, level FROM first_mention WHERE report_id = :r", {"r": 1001}, None)
     ok = execute_queries([wide], executor, claim)
     assert ok.ok and ok.levels == {H: 0, F: 1, P: 2}
 
@@ -610,11 +612,11 @@ def test_release_sample_matches_evidence_ids(tmp_path):
     from temporal_hypo.generation.corpus import CorpusIndex
 
     eval_db = tmp_path / "medtempo_eval.db"
-    build_eval_db(RAW_DB, eval_db)
+    build_eval_db(RAW_DB, eval_db, pseudonymizer=release_pseudonymizer())   # the release's id space
     release = load_release(RELEASE_DIR, verify_sha=False)
     raw = sqlite3.connect(RAW_DB.resolve().as_uri() + "?mode=ro", uri=True)
     try:
-        index = CorpusIndex.load(raw)
+        index = release_index(raw)       # the release's (pseudonymous) id space
     finally:
         raw.close()
 

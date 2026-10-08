@@ -193,7 +193,7 @@ class EventSlot:
 @dataclass(frozen=True)
 class CohortSpec:
     vaccine: str | None       # Pfizer | Moderna | Janssen | None (report tier)
-    report_id: int | None     # VAERS id (== reports.vaers_id), report tier only
+    report_id: int | None     # pseudonymous id (== eval DB reports.report_id), report tier only
 
 
 @dataclass(frozen=True)
@@ -670,7 +670,12 @@ def normalize_plan_shape(tier: str, answer_type: str, n_events: int, arms: int |
     if conditioning == "presence_split":
         arms = 2
     if tier == "report":
+        # review item 6 (2026-10-08): a claim about ONE named report is a reading
+        # task -- denominator, arms and null are not part of it; the harness fills
+        # them (single_report / 1 / none) and only the quantity, extreme and events
+        # decide the claim type.
         arms = 1
+        conditioning = "single_report"
     if quantity == "extreme_of_set" and extreme is None:
         extreme = {"all_present_unique_first": "earliest",
                    "all_present_unique_last": "latest"}.get(conditioning or "")

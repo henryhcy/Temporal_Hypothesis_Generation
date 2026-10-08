@@ -2,7 +2,7 @@
 from temporal_hypo.framework.verify import all_plan_problems, procedure_problems, s1_plan_problems, stated_bar
 
 VAX = {"level": "vaccine", "text": "After Pfizer, Headache precedes Fatigue."}
-REP = {"level": "report", "text": "In report VAERS-1, Headache occurred in the first half of the timeline."}
+REP = {"level": "report", "text": "In report MT-0000001, Headache occurred in the first half of the timeline."}
 
 
 def _plan(**kw):
@@ -21,10 +21,10 @@ def test_clean_plans_pass():
                                    null_kind="none", p0=None, test_family="none"), REP) == []
 
 
-def test_report_tier_with_cohort_denominator_is_flagged():
-    p = s1_plan_problems(_plan(events=["Headache"], quantity="position_of_event", denominator="present_offmid",
-                               null_kind="data_derived"), REP)
-    assert p and "single_report" in p[0]
+def test_report_tier_is_not_verified():
+    # review item 6: the harness fills the report tier's denominator / arms / null
+    assert s1_plan_problems(_plan(events=["Headache"], quantity="position_of_event", denominator="present_offmid",
+                                  null_kind="data_derived"), REP) == []
 
 
 def test_quantity_denominator_and_null_rules():

@@ -339,7 +339,7 @@ def test_eval_core_on_real_release():
                      for r in release.answers.values() if r["group_id"] == g)
         if simple:
             assert n <= per_group, (g, n)
-    assert 1_500 <= d["n_instances"] <= 2_200
+    assert 1_500 <= d["n_instances"] <= 2_610      # v1.2: 29 groups x <= 90
     # a few-shot pool drawn outside eval_core is disjoint by fact; modes whose
     # instances were ALL drawn (S-V1/S-V3 have 6, P-M2 87 <= cap) have no examples
     pool = fewshot_pool(release, ids, k_per_mode=2, seed=0)
@@ -349,7 +349,8 @@ def test_eval_core_on_real_release():
     assert eligible_modes == {r["mode"] for r in pool}
     assert len(pool) == 2 * len(eligible_modes)
     all_modes = {r["mode"] for r in release.answers.values()}
-    assert all_modes - eligible_modes == {"seq_bool", "modal_choice", "multi_dir_precedes"}
+    # v1.2: H-V3 (12) and H-V5 (66) are also drawn whole
+    assert all_modes - eligible_modes == {"seq_bool", "modal_choice", "multi_dir_precedes", "cooc_bar", "first_bar"}
     print(f"  fewshot_pool: {len(pool)} rows over {len(eligible_modes)} modes; "
           f"no examples for {sorted(all_modes - eligible_modes)}")
     inv = invariance_subset(release, n=200, seed=0, within=ids)

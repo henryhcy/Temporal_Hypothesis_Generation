@@ -1,18 +1,18 @@
 {
-  "n_instances": 158624,
+  "n_instances": 70104,
   "n_groups": 29,
   "part_b": {
     "P-R1": {
       "S": 300,
       "counts": {
-        "supported": 300,
-        "refuted": 300,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 300,
-        "refuted": 300,
-        "insufficient": 300
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -26,20 +26,20 @@
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
-      "reoriented": 300,
-      "mirror_pairs": 300
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "P-R2": {
       "S": 300,
       "counts": {
-        "supported": 300,
-        "refuted": 300,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 300,
-        "refuted": 300,
-        "insufficient": 300
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -53,8 +53,8 @@
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
-      "reoriented": 300,
-      "mirror_pairs": 300
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "P-V1": {
       "S": 167,
@@ -94,14 +94,14 @@
     "P-V2": {
       "S": 751,
       "counts": {
-        "supported": 751,
-        "refuted": 751,
-        "insufficient": 751
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "targets": {
-        "supported": 751,
-        "refuted": 751,
-        "insufficient": 751
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -114,17 +114,17 @@
         "insufficient": 4543
       },
       "insufficient_subtypes": {
-        "not_locatable": 251,
-        "sparse": 250,
-        "underpowered": 250
+        "not_locatable": 67,
+        "sparse": 67,
+        "underpowered": 66
       },
       "insufficient_subtype_pools": {
         "underpowered": 2264,
         "sparse": 1969,
         "not_locatable": 310
       },
-      "reoriented": 751,
-      "mirror_pairs": 751
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "P-V3": {
       "S": 167,
@@ -164,14 +164,14 @@
     "P-V4": {
       "S": 2857,
       "counts": {
-        "supported": 2857,
-        "refuted": 2857,
-        "insufficient": 2857
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "targets": {
-        "supported": 2857,
-        "refuted": 2857,
-        "insufficient": 2857
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -184,17 +184,17 @@
         "insufficient": 14479
       },
       "insufficient_subtypes": {
-        "not_locatable": 953,
-        "sparse": 952,
-        "underpowered": 952
+        "not_locatable": 67,
+        "sparse": 67,
+        "underpowered": 66
       },
       "insufficient_subtype_pools": {
         "underpowered": 6210,
         "sparse": 7132,
         "not_locatable": 1137
       },
-      "reoriented": 2857,
-      "mirror_pairs": 2857
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "P-M2": {
       "S": 29,
@@ -232,16 +232,16 @@
       "mirror_pairs": 29
     },
     "C-R1": {
-      "S": 300,
+      "S": 600,
       "counts": {
-        "supported": 107,
-        "refuted": 107,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 107,
-        "refuted": 107,
-        "insufficient": 107
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -249,26 +249,26 @@
         "insufficient": true
       },
       "pool_sizes": {
-        "supported": 193,
-        "refuted": 107,
+        "supported": 300,
+        "refuted": 300,
         "insufficient": 0
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
       "reoriented": 0,
-      "mirror_pairs": 107
+      "mirror_pairs": 0
     },
     "C-V1": {
       "S": 252,
       "counts": {
-        "supported": 252,
-        "refuted": 252,
-        "insufficient": 252
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "targets": {
-        "supported": 252,
-        "refuted": 252,
-        "insufficient": 252
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -281,29 +281,29 @@
         "insufficient": 735
       },
       "insufficient_subtypes": {
-        "not_locatable": 84,
-        "sparse": 84,
-        "underpowered": 84
+        "not_locatable": 67,
+        "sparse": 67,
+        "underpowered": 66
       },
       "insufficient_subtype_pools": {
         "underpowered": 267,
         "sparse": 358,
         "not_locatable": 110
       },
-      "reoriented": 252,
-      "mirror_pairs": 252
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "C-V2": {
       "S": 349,
       "counts": {
-        "supported": 349,
-        "refuted": 349,
-        "insufficient": 349
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "targets": {
-        "supported": 349,
-        "refuted": 349,
-        "insufficient": 349
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -316,15 +316,15 @@
         "insufficient": 671
       },
       "insufficient_subtypes": {
-        "not_locatable": 120,
-        "underpowered": 229
+        "not_locatable": 100,
+        "underpowered": 100
       },
       "insufficient_subtype_pools": {
         "underpowered": 551,
         "not_locatable": 120
       },
-      "reoriented": 349,
-      "mirror_pairs": 349
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "C-V3": {
       "S": 174,
@@ -364,14 +364,14 @@
     "S-R1": {
       "S": 300,
       "counts": {
-        "supported": 300,
-        "refuted": 300,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 300,
-        "refuted": 300,
-        "insufficient": 300
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -385,8 +385,8 @@
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
-      "reoriented": 300,
-      "mirror_pairs": 300
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "S-V1": {
       "S": 2,
@@ -461,14 +461,14 @@
     "F-R1": {
       "S": 300,
       "counts": {
-        "supported": 300,
-        "refuted": 300,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 300,
-        "refuted": 300,
-        "insufficient": 300
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -482,20 +482,20 @@
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
-      "reoriented": 300,
-      "mirror_pairs": 300
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "F-R2": {
       "S": 300,
       "counts": {
-        "supported": 300,
-        "refuted": 300,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 300,
-        "refuted": 300,
-        "insufficient": 300
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -509,20 +509,20 @@
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
-      "reoriented": 300,
-      "mirror_pairs": 300
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "F-R3": {
       "S": 300,
       "counts": {
-        "supported": 300,
-        "refuted": 300,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 300,
-        "refuted": 300,
-        "insufficient": 300
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -536,8 +536,8 @@
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
-      "reoriented": 300,
-      "mirror_pairs": 300
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "F-V1": {
       "S": 34,
@@ -645,16 +645,16 @@
       "mirror_pairs": 34
     },
     "T-R1": {
-      "S": 300,
+      "S": 600,
       "counts": {
-        "supported": 131,
-        "refuted": 131,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 131,
-        "refuted": 131,
-        "insufficient": 131
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -662,14 +662,14 @@
         "insufficient": true
       },
       "pool_sizes": {
-        "supported": 169,
-        "refuted": 131,
+        "supported": 300,
+        "refuted": 300,
         "insufficient": 0
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
       "reoriented": 0,
-      "mirror_pairs": 131
+      "mirror_pairs": 0
     },
     "T-V1": {
       "S": 34,
@@ -705,16 +705,16 @@
       "mirror_pairs": 34
     },
     "Y-R1": {
-      "S": 300,
+      "S": 600,
       "counts": {
-        "supported": 181,
-        "refuted": 181,
+        "supported": 200,
+        "refuted": 200,
         "insufficient": 0
       },
       "targets": {
-        "supported": 181,
-        "refuted": 181,
-        "insufficient": 181
+        "supported": 200,
+        "refuted": 200,
+        "insufficient": 200
       },
       "under_target": {
         "supported": false,
@@ -722,14 +722,14 @@
         "insufficient": true
       },
       "pool_sizes": {
-        "supported": 181,
-        "refuted": 300,
+        "supported": 300,
+        "refuted": 600,
         "insufficient": 0
       },
       "insufficient_subtypes": {},
       "insufficient_subtype_pools": {},
-      "reoriented": 62,
-      "mirror_pairs": 181
+      "reoriented": 200,
+      "mirror_pairs": 200
     },
     "Y-V1": {
       "S": 68,
@@ -869,7 +869,7 @@
         "not_locatable": 191
       },
       "reoriented": 0,
-      "mirror_pairs": 35
+      "mirror_pairs": 0
     },
     "H-V3": {
       "S": 427,
@@ -904,7 +904,7 @@
         "not_locatable": 169
       },
       "reoriented": 0,
-      "mirror_pairs": 4
+      "mirror_pairs": 0
     },
     "H-V5": {
       "S": 228,
@@ -939,7 +939,7 @@
         "not_locatable": 1006
       },
       "reoriented": 0,
-      "mirror_pairs": 22
+      "mirror_pairs": 0
     }
   },
   "validation_entries": 16,
