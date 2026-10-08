@@ -2943,3 +2943,22 @@ v2 conventions text as the v1.2 task card and report the v1-vs-v2 sensitivity
 are implied-field folds in the 09-30 sense; the report-tier fold of issue 35 is
 not among them); (3) H-V3 (12 instances) in or out of the headline set; (4) the
 composition layer; (5) the four deferred groups.
+
+**Screen result (2,000 rounds, level shuffle at the shipping universe,
+`data/pilot/v12_groups_screen.json`).** All seven cohort groups clear:
+
+| group | real S (sup/ref) | null S | p_dec | null supported | p_sup |
+|---|---|---|---|---|---|
+| Y-V1 / Y-V2 | 68 (45/23) | 14.9 ± 3.8 | 0.000 | 7.4 | 0.000 |
+| T-V1 | 34 (30/4) | 4.4 ± 2.0 | 0.000 | 2.2 | 0.000 |
+| Y-V3 | 35 (28/7) | 15.4 ± 3.8 | 0.000 | 9.5 | 0.000 |
+| H-V1 | 402 (35/367) | 351.3 ± 9.4 | 0.000 | 0.4 | 0.000 |
+| H-V3 | 427 (4/423) | 465.1 ± 6.3 | **1.000** | 0.0 | 0.000 |
+| H-V5 | 228 (22/206) | 196.9 ± 10.3 | 0.002 | 0.4 | 0.000 |
+
+H-V3 clears on `p_sup` only (shuffled timelines produce MORE decisive cores,
+because refutation below a 2/3 bar is free at the 0.5 chance rate): the doc 10
+s4.2 threshold-family reading, and the reason the balancer draws from the
+supported pool. The report-tier groups (T-R1, Y-R1) are deterministic
+observations and are not screened. **All three gates are green; v1.2 is a
+certified CANDIDATE release pending the review items above.**
