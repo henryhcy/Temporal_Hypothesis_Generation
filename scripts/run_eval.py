@@ -194,7 +194,17 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
                                  null_hints=not args.hide_null_hints,
                                  frame=args.s1_frame, dataset_card=card)
 
-    # S2
+    # S2. The 2026-10-07 audit's S2 prompt variants: --e2e-conventions states the
+    # stipulations in the single-call sentence->SQL prompt (cell B); --s2-frame
+    # toolbox sends the composed PLAN + conventions instead of the per-mode rule
+    # (cell D); --s2-replan checks the executed arms against the plan and asks
+    # once more on a violation (cell E).
+    conventions = None
+    if args.e2e_conventions or args.s2_frame == "toolbox":
+        from temporal_hypo.framework.extract.llm import conventions_block
+        from temporal_hypo.framework.extract.task_card import dataset_card
+
+        conventions = conventions_block(dataset_card(open_eval_db(args.eval_db)))
     if args.pipeline in ("oracle", "rules+compiler", "llm-s1+compiler", "counts-llm"):
         # counts-llm gets GOLD retrieval on purpose: it is a stage-3 measurement.
         retriever = CompilerRetriever(executor)
@@ -202,12 +212,13 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
         from temporal_hypo.framework.sql.e2e_sql import E2ESQLRetriever
 
         retriever = E2ESQLRetriever(sql_client or llm_client, args.sql_model or args.model,
-                                    executor)
+                                    executor, conventions=conventions if args.e2e_conventions else None)
     else:
         from temporal_hypo.framework.sql.llm_sql import LLMSQLRetriever
 
         retriever = LLMSQLRetriever(sql_client or llm_client, args.sql_model or args.model,
-                                    executor)
+                                    executor, frame=args.s2_frame, conventions=conventions,
+                                    replan=args.s2_replan)
 
     tester = None
     if args.pipeline == "counts-llm":
@@ -262,6 +273,16 @@ def main() -> None:
                    help="S1 prompt frame: 'catalogue' (the 20-mode table; the procedure-given "
                         "upper bound) or 'toolbox' (task card + primitives, no catalogue; the "
                         "model composes a conditional plan -- issues 29/31)")
+    p.add_argument("--e2e-conventions", action="store_true",
+                   help="e2e-llm-sql only (audit cell B): state the toolbox conventions in the "
+                        "single-call sentence->SQL prompt (no claim, rule or arm plan)")
+    p.add_argument("--s2-frame", choices=("catalogue", "toolbox"), default="catalogue",
+                   help="S2 prompt (audit cell D): 'catalogue' = claim JSON + per-mode rule + "
+                        "exclusion + arm plan; 'toolbox' = the composed plan + the stated "
+                        "conventions, no per-mode rule")
+    p.add_argument("--s2-replan", action="store_true",
+                   help="audit cell E: check the executed arms against the plan (never the gold) "
+                        "and ask once more when they violate it")
     p.add_argument("--hide-null-hints", action="store_true",
                    help="ablation (issue 27): strip the test/null/p0/floor/rule/H0 columns from "
                         "the S1 mode catalogue and the sentence that states the mapping, so the "
@@ -337,6 +358,7 @@ def main() -> None:
         "subset": args.subset, "per_group": args.per_group, "registers": args.registers,
         "formats": args.formats, "groups": args.groups, "limit": args.limit,
         "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "s1_frame": args.s1_frame,
+        "e2e_conventions": args.e2e_conventions, "s2_frame": args.s2_frame, "s2_replan": args.s2_replan,
         "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx,
         "n_records": len(records),
         **(_model_provenance(args) if "llm" in args.pipeline else {}),

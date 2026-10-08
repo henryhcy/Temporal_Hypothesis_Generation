@@ -218,8 +218,30 @@ def claim_payload(claim: StructuredClaim) -> dict:
     }
 
 
-def sql_messages(claim: StructuredClaim, ddl: str) -> list[dict]:
-    """System + user messages asking for one statement per arm."""
+def plan_payload(claim: StructuredClaim) -> dict:
+    """The claim as a composed PLAN (cell D of the 2026-10-07 audit): the WHAT layer
+    plus the plan's own fields -- no mode name, no per-mode rule, no arm rows."""
+    from temporal_hypo.framework.claim_schema import derive_plan
+    plan = dict(claim.plan) if claim.plan else derive_plan(claim.mode, negated=claim.negated)
+    keep = ("quantity", "extreme", "arms", "denominator", "null_kind", "p0", "null_reference", "tail")
+    return {
+        "events": [{"role": e.role, "term": e.term} for e in claim.events],
+        "cohorts": [{"vaccine": c.vaccine, "report_id": c.report_id} for c in claim.cohorts],
+        "negated": claim.negated,
+        "asserted_option": claim.asserted_option,
+        "plan": {k: plan.get(k) for k in keep},
+    }
+
+
+def sql_messages(claim: StructuredClaim, ddl: str, *, frame: str = "catalogue",
+                 conventions: str | None = None) -> list[dict]:
+    """System + user messages asking for one statement per arm.
+
+    ``frame="catalogue"`` (the default, every run before 2026-10-08) sends the
+    claim JSON, the mode's CONDITIONING RULE, the EXCLUSION line and the ARM PLAN
+    rows. ``frame="toolbox"`` sends the composed PLAN and the stated conventions
+    instead: the model derives the rows from the plan's denominator primitive.
+    """
     s = MODE_SPEC[claim.mode]
     plan = arm_plan(claim)
     labels = [p["label"] for p in plan]
@@ -259,11 +281,6 @@ def sql_messages(claim: StructuredClaim, ddl: str) -> list[dict]:
         else:
             reminders.append("cell may be NULL for every row (this mode has no argmax table).")
         reminders.append("Never expose or read any column other than those in the DDL.")
-    rule = RULE_BY_MODE.get(claim.mode, claim.mode)
-    excl = _EXCLUSION_REASON.get(claim.mode, "")
-    if not excl:
-        excl = "n/a" if s.is_report or s.conditioning == "presence_split" else \
-            "co-exist (same level) -- not ordered, so excluded from a PRECEDES denominator"
     system = "\n".join([
         "You write SQLite SQL over a read-only database of VAERS reports annotated as leveled "
         "orders of MedDRA event terms. Given a structured temporal claim, write the query (or "
@@ -274,12 +291,35 @@ def sql_messages(claim: StructuredClaim, ddl: str) -> list[dict]:
         "DATABASE (DDL shown verbatim):",
         ddl.strip(),
         "",
+        *(["CONVENTIONS OF THIS DATASET:", conventions.strip(), ""]
+          if (frame == "toolbox" and conventions) else []),
         "ROW CONTRACT:",
         contract,
         "",
         "REMINDERS:",
         *[f"- {r}" for r in reminders],
     ])
+    if frame == "toolbox":
+        arm_note = ("one statement" if len(labels) == 1 else
+                    "two statements: cohort_1 is the FIRST arm the claim names (the first pair, "
+                    "the with-A group, or the first vaccine) and cohort_2 the second")
+        user = "\n".join([
+            "PLAN (JSON): the claim's events (roles A, B, ...), its cohort, and the composed plan -- "
+            "the quantity measured, the denominator primitive (which reports count; see the "
+            "conventions), how many arms, and the null. Derive each report's role from the plan.",
+            json.dumps(plan_payload(claim), ensure_ascii=False),
+            "",
+            f"Return {len(labels)} {arm_note}; use exactly these labels in this order: "
+            f"{', '.join(labels)}.",
+            "",
+            'Return {"arms": [...]} now.',
+        ])
+        return [{"role": "system", "content": system}, {"role": "user", "content": user}]
+    rule = RULE_BY_MODE.get(claim.mode, claim.mode)
+    excl = _EXCLUSION_REASON.get(claim.mode, "")
+    if not excl:
+        excl = "n/a" if s.is_report or s.conditioning == "presence_split" else \
+            "co-exist (same level) -- not ordered, so excluded from a PRECEDES denominator"
     user = "\n".join([
         "CLAIM (JSON):",
         json.dumps(claim_payload(claim), ensure_ascii=False),
@@ -297,6 +337,87 @@ def sql_messages(claim: StructuredClaim, ddl: str) -> list[dict]:
 
 
 # ---------------------------------------------------------------------------
+# plan consistency (cell E): checks that use the plan and the data, never the gold
+# ---------------------------------------------------------------------------
+
+_LEVEL_DENOMINATORS = ("ordered_pair", "orderable_triple", "consecutive_pair",
+                       "all_present_unique_first", "all_present_unique_last")
+
+
+def _arm_terms(claim: StructuredClaim) -> list[tuple]:
+    t = [x for x in claim.terms if x is not None]
+    if claim.mode == "antecedent_bool" and len(t) >= 3:
+        return [(t[0], t[1]), (t[2], t[1])]
+    if claim.mode == "pairpair_bool" and len(t) >= 4:
+        return [(t[0], t[1]), (t[2], t[3])]
+    if claim.mode == "multi_dir_precedes":
+        return [tuple(t), tuple(t)]
+    return [tuple(t)]
+
+
+def _denominator_violations(executor: Any, cond: str, ev: tuple, ids: Any) -> int:
+    """How many of ``ids`` fail the denominator primitive ``cond`` for events ``ev``."""
+    from temporal_hypo.generation.corpus import rank_map
+    ids = sorted(int(i) for i in ids)
+    levels: dict[int, dict[str, int]] = {}
+    for i in range(0, len(ids), 400):
+        chunk = ids[i:i + 400]
+        res = executor.execute(
+            f"SELECT vaers_id, term, level FROM first_mention WHERE vaers_id IN ({','.join('?' * len(chunk))})",
+            tuple(chunk))
+        if res.error is not None:
+            return 0
+        for vid, term, level in res.rows:
+            levels.setdefault(int(vid), {})[str(term)] = int(level)
+    bad = 0
+    for vid in ids:
+        t = levels.get(vid, {})
+        if any(e not in t for e in ev):
+            bad += 1
+            continue
+        lv = [t[e] for e in ev]
+        if cond in ("ordered_pair", "orderable_triple"):
+            bad += int(len(set(lv)) < len(lv))
+        elif cond == "consecutive_pair":
+            ranks, _L = rank_map(t)
+            bad += int(abs(ranks[ev[0]] - ranks[ev[1]]) != 1)
+        elif cond == "all_present_unique_first":
+            bad += int(lv.count(min(lv)) > 1)
+        elif cond == "all_present_unique_last":
+            bad += int(lv.count(max(lv)) > 1)
+    return bad
+
+
+def plan_consistency(claim: StructuredClaim, retrieval: Any, executor: Any) -> list[str]:
+    """Violations of the claim's own plan by the executed arms (empty = consistent)."""
+    s = MODE_SPEC[claim.mode]
+    arms = list(getattr(retrieval, "arms", None) or [])
+    problems: list[str] = []
+    for i, a in enumerate(arms):
+        if a.n and a.n == a.k:
+            problems.append(f"arm {i + 1}: the denominator equals the numerator (n = k = {a.n}); "
+                            "the denominator must also contain the reports where the asserted "
+                            "relation does NOT hold")
+    if s.arms == 2 and len(arms) == 2 and (arms[0].n == 0) != (arms[1].n == 0):
+        problems.append("one arm is empty while the other is not; both arms are conditioned the "
+                        "same way inside their own group")
+    cond = claim.procedure.conditioning
+    if cond in _LEVEL_DENOMINATORS:
+        for i, (a, ev) in enumerate(zip(arms, _arm_terms(claim))):
+            if not a.n or not ev:
+                continue
+            bad = _denominator_violations(executor, cond, ev, a.denominator_ids)
+            if bad:
+                what = {"consecutive_pair": "are not at consecutive ranks",
+                        "all_present_unique_first": "tie for the earliest",
+                        "all_present_unique_last": "tie for the latest"}.get(
+                    cond, "share a first-mention level (co-exist) or lack an event")
+                problems.append(f"arm {i + 1}: {bad} of the {a.n} denominator reports {what}; the "
+                                f"plan's denominator ({cond}) excludes them")
+    return problems
+
+
+# ---------------------------------------------------------------------------
 # the retriever
 # ---------------------------------------------------------------------------
 
@@ -304,11 +425,16 @@ class LLMSQLRetriever:
     """A ``Provider`` writes the per-arm SQL; the executor runs it (module docstring)."""
 
     def __init__(self, client: Provider, model: str, executor: Any, *,
+                 frame: str = "catalogue", conventions: str | None = None,
+                 replan: bool = False,
                  ddl: str | None = None, temperature: float = 0.0,
                  max_tokens: int = 1200) -> None:
         self.client = client
         self.model = model
-        self.name = f"llm-sql:{model}"
+        self.frame = frame
+        self.conventions = conventions
+        self.replan = bool(replan)
+        self.name = f"llm-sql{'' if frame == 'catalogue' else '@' + frame}{'+replan' if replan else ''}:{model}"
         self.executor = executor
         self._ddl = ddl
         self.temperature = float(temperature)
@@ -325,7 +451,7 @@ class LLMSQLRetriever:
         return self._ddl
 
     def messages_for(self, claim: StructuredClaim) -> list[dict]:
-        return sql_messages(claim, self.ddl)
+        return sql_messages(claim, self.ddl, frame=self.frame, conventions=self.conventions)
 
     def _placeholder_queries(self, claim: StructuredClaim, reason: str) -> list[ArmQuery]:
         """One non-executable statement per planned arm so the failure is logged per arm."""
@@ -345,10 +471,14 @@ class LLMSQLRetriever:
         self.last_completions = []
         self.last_raw = None
         self.last_notes = []
+        return self._ask(claim, self.messages_for(claim))
+
+    def _ask(self, claim: StructuredClaim, messages: list[dict]) -> list[ArmQuery]:
+        """One completion over ``messages``, parsed and aligned to the arm plan."""
         want = expected_labels(claim)
         kind = MODE_SPEC[claim.mode].named_cell_kind
         try:
-            c = self.client.complete(self.messages_for(claim), schema=SQL_JSON_SCHEMA,
+            c = self.client.complete(messages, schema=SQL_JSON_SCHEMA,
                                      model=self.model, temperature=self.temperature,
                                      max_tokens=self.max_tokens)
             self.last_completions.append(c)
@@ -380,10 +510,43 @@ class LLMSQLRetriever:
         return [ArmQuery(label=lbl, sql=sql, params={}, cell_kind=kind) for lbl, sql in ordered]
 
     def retrieve(self, claim: StructuredClaim):
-        """``framework.sql.retrieve.execute_queries`` over ``queries_for(claim)``."""
+        """``framework.sql.retrieve.execute_queries`` over ``queries_for(claim)``.
+
+        With ``replan`` (cell E of the 2026-10-07 audit) the executed arms are
+        checked against the PLAN -- never against the gold -- and on a violation
+        the model is asked once more with the violation named; the second
+        retrieval replaces the first (both query logs are kept).
+        """
         from temporal_hypo.framework.sql.retrieve import execute_queries
 
-        return execute_queries(self.queries_for(claim), self.executor, claim)
+        messages = self.messages_for(claim)
+        queries = self.queries_for(claim)
+        ret = execute_queries(queries, self.executor, claim)
+        if not self.replan or MODE_SPEC[claim.mode].is_report:
+            return ret
+        problems = plan_consistency(claim, ret, self.executor)
+        if not problems:
+            return ret
+        self.last_notes.append("replan: " + " | ".join(problems))
+        first_reply = json.dumps(self.last_raw, ensure_ascii=False) if self.last_raw else \
+            json.dumps({"arms": [{"label": q.label, "sql": q.sql} for q in queries]})
+        follow = messages + [
+            {"role": "assistant", "content": first_reply},
+            {"role": "user", "content": "\n".join([
+                "CHECK AGAINST THE PLAN FAILED:",
+                *[f"- {x}" for x in problems],
+                "Revise the statement(s) so that the denominator is exactly the reports the plan's "
+                "denominator primitive names (present-but-unusable reports get in_denominator = 0, "
+                "excluded = 1) and the numerator is the subset where the asserted relation holds.",
+                'Return {"arms": [...]} now.',
+            ])},
+        ]
+        queries2 = self._ask(claim, follow)
+        ret2 = execute_queries(queries2, self.executor, claim)
+        for q in ret.queries:
+            q.label = f"{q.label} (pass 1)"
+        ret2.queries = list(ret.queries) + list(ret2.queries)
+        return ret2
 
     # -- accounting ----------------------------------------------------------
 

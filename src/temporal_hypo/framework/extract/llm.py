@@ -435,6 +435,19 @@ PROCEDURE_TEXT = (
 )
 
 
+def conventions_block(dataset_card: str | None = None) -> str:
+    """The situation-phrased stipulations (plus the computed dataset card when given),
+    as one text block -- the same words the toolbox S1 frame states. Used by the S2
+    prompt variants that state the conventions without the per-mode rule (the
+    cell-B / cell-D baselines of the 2026-10-07 audit)."""
+    conv = (CONVENTIONS_TEXT
+            .replace("ALPHA_TEXT_PLACEHOLDER", ALPHA_TEXT)
+            .replace("FLOORS_PLACEHOLDER",
+                     f"{PAIRWISE_FLOOR} per arm for claims about pairs, first/last and "
+                     f"co-occurrence, {SEQUENCE_FLOOR} for three-event orderings"))
+    return "\n\n".join(x for x in (dataset_card, conv) if x)
+
+
 def toolbox_system_prompt(*, dataset_card: str, blind_group: bool = True) -> str:
     """The toolbox frame: task card + conventions + null sources + test toolbox + procedure.
 

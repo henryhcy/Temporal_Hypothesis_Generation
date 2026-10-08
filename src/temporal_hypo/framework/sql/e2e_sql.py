@@ -62,8 +62,16 @@ def row_payload(row: Mapping[str, Any]) -> dict:
     return {k: row[k] for k in SHOWN_FIELDS if k in row}
 
 
-def e2e_messages(row: Mapping[str, Any], claim: StructuredClaim, ddl: str) -> list[dict]:
-    """System + user messages carrying the SENTENCE, not the structured claim."""
+def e2e_messages(row: Mapping[str, Any], claim: StructuredClaim, ddl: str,
+                 conventions: str | None = None) -> list[dict]:
+    """System + user messages carrying the SENTENCE, not the structured claim.
+
+    ``conventions`` (cell B of the 2026-10-07 audit): the situation-phrased
+    stipulations of the toolbox frame are STATED, still with no claim JSON, no
+    per-mode rule, no exclusion line and no arm plan -- so the gain over the
+    plain sentence-to-SQL run is the value of being told the conventions in one
+    call, and the gain of the plan pipeline over this is architecture.
+    """
     s = MODE_SPEC[claim.mode]
     labels = expected_labels(claim)
     if s.is_report:
@@ -122,6 +130,7 @@ def e2e_messages(row: Mapping[str, Any], claim: StructuredClaim, ddl: str) -> li
         "DATABASE (DDL shown verbatim):",
         ddl.strip(),
         "",
+        *(["CONVENTIONS OF THIS DATASET:", conventions.strip(), ""] if conventions else []),
         "ROW CONTRACT:",
         contract,
         "",
@@ -150,16 +159,17 @@ class E2ESQLRetriever(LLMSQLRetriever):
 
     wants_row = True
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self, *args: Any, conventions: str | None = None, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
-        self.name = f"e2e-sql:{self.model}"
+        self.conventions = conventions
+        self.name = f"e2e-sql{'+conventions' if conventions else ''}:{self.model}"
         self._row: Mapping[str, Any] | None = None
 
     def messages_for(self, claim: StructuredClaim) -> list[dict]:
         if self._row is None:
             raise RuntimeError("E2ESQLRetriever needs the question row: call "
                                "retrieve(claim, row=...) (Pipeline does this via wants_row)")
-        return e2e_messages(self._row, claim, self.ddl)
+        return e2e_messages(self._row, claim, self.ddl, conventions=self.conventions)
 
     def retrieve(self, claim: StructuredClaim, *, row: Mapping[str, Any] | None = None):
         from temporal_hypo.framework.sql.retrieve import execute_queries
