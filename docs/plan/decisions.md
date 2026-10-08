@@ -2962,3 +2962,25 @@ s4.2 threshold-family reading, and the reason the balancer draws from the
 supported pool. The report-tier groups (T-R1, Y-R1) are deterministic
 observations and are not screened. **All three gates are green; v1.2 is a
 certified CANDIDATE release pending the review items above.**
+
+**Step-1 local rows on the v1.2 smoke slice (2026-10-07 evening; final
+scoring = conventions v2 + folds; SQL prompts with the whole-report contract
+for the rank claims, commit edcebe0).**
+
+| row | instruct-32B / coder-32B | instruct-7B / coder-7B | v1.1 slice (32B, for reference) |
+|---|---|---|---|
+| S1 catalogue (lookup) | 0.990 | 0.865 | 0.990 |
+| S1 toolbox zero-shot | **0.863** (new groups 0.823) | 0.495 | 0.890 |
+| S2 isolation (`rules+llm-sql`) | **0.840**; den-F1 0.769; leak 0.146 | 0.600; den-F1 0.398 | 0.875; 0.695; 0.372 |
+| end-to-end (toolbox S1 + coder SQL) | **0.752**; den-F1 0.657 | 0.328 | 0.762 |
+| counts-llm verdict / p-agreement | 0.720 / **0.028** | 0.630 / 0.000 | 0.725 / 0.020 |
+
+New groups downstream (S2 at coder-32B, S1 at gold): every one at 1.0 except
+H-V5 0.75 -- the rank view, the consecutive / off-middle denominators and the
+harness-computed data-derived null all work for model-written SQL. The first S2
+pass had T-R1 at 0.0 because the report-tier SQL contract asked only for the
+claim's events; rank claims need every stage (fixed in both SQL prompts, T-R1
+-> 1.0). End-to-end, the remaining new-group losses are S1's: T-R1 0.0 (issue
+35), H-V5 0.38, Y-R1 0.62, Y-V3 0.75. Run dirs `results/v12_smoke200_*` on the
+GPU box. HOLD HERE: nothing downstream (composition, eval_core, Opus) starts
+before the review of the five items.
