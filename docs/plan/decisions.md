@@ -3005,3 +3005,38 @@ denominator -- mostly all_present_unique_first/last). The 3-shot dial shows the 
 0.66 while cohort rises 0.84 -> 0.97). coder-32B zero-shot repeats its v1.1
 pattern on every report group (all nine at 0.00). Issue 35 is therefore the
 single largest open scoring question for v1.2 at every local tier.
+
+
+## MEASURED: architecture vs information -- the A-E grid at local tiers (2026-10-08; issue 39)
+
+v1.1 smoke slice, 400 records; coder SQL at each tier, instruct S1 where S1 is a
+model (toolbox zero-shot, conventions v2 + folds). Prompt variants: commit
+2e55324 (`--e2e-conventions`, `--s2-frame toolbox`, `--s2-replan`).
+
+| cell | S1 | S2 prompt | 32B verdict | den-F1 | co-exist leak | 7B verdict |
+|---|---|---|---|---|---|---|
+| A | none | sentence -> SQL, conventions withheld | 0.380 | 0.326 | 0.349 | 0.448 |
+| B | none | sentence -> SQL + the stated conventions | 0.522 | 0.451 | 0.419 | 0.395 |
+| D | composed plan | plan + conventions, no per-mode rule | 0.665 | 0.577 | 0.413 | 0.305 |
+| E | composed plan | D + plan-consistency check, one re-ask | **0.715** | 0.641 | **0.145** | 0.295 |
+| C2 | composed plan | claim + per-mode rule + arm plan (the catalogue S2) | 0.762 | 0.554 | 0.238 | 0.307 |
+| C | gold | per-mode rule (rules+llm-sql) | 0.875 | 0.695 | 0.372 | 0.540 |
+
+Increments at 32B, matched information: stating the conventions in one call
+(A -> B) **+0.14**; an explicit plan before the SQL with the SAME conventions
+(B -> D) **+0.14** -- that is the architecture; the per-mode rule on top (D ->
+C2) +0.10; one verification round (D -> E) +0.05 and the co-exist leak cut from
+0.41 to 0.15 (151/400 rows re-asked). At 7B every cell sits at 0.30-0.45 and
+the re-ask fires on 12 rows: that tier's failures are failed statements (154 of
+242 cohort records), not plan violations -- nothing above S1 can help it. The
+Opus column of this grid is on hold (advisor question 3); at 32B the
+architecture claim holds with the information claim measured beside it.
+
+**Adopted on the back of E (2026-10-08, user):** a bounded verify-and-repair
+round per stage, verifiers reading only the contract, the stated conventions
+and the data (never the gold); rounds = 0 stays the capability row, rounds = k
+the system row; start at one round per stage and raise only where a second
+round still moves the number. S1 checks: tier = report => single_report / 1
+arm / null none; quantity <-> denominator compatibility per the conventions;
+a bar in the text => text_stated p0. S2: executor error => re-ask with the
+error; then the E check. S3: rule validity => re-ask S1 for the HOW fields.
