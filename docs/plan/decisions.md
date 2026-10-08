@@ -3065,3 +3065,41 @@ is 0.750 against the 0.665 capability row and the 0.762 catalogue-rule row:
 verification with the conventions stated recovers almost all of what the
 per-mode rule was worth. Both rows are reported; rounds used per row are in
 `predictions.jsonl["verify"]`. Cost: ~1.5x the S1 calls, ~1.7x the S2 calls.
+
+
+## DECIDED: the v1.2 review (2026-10-08, user) -- six items
+
+1. **Conventions text = v2** (order words distance-blind; only adjacency wording
+   conditions on consecutive ranks; a stated bar is the null), extended to
+   **v2.1** with the majority stipulation: "typically / usually / more often
+   than not" means a bar of one half (p0 = 0.5). The v1 -> v2 effect is reported
+   as the wording dial; the frontier S1 rows are re-run on v2.1.
+2. **Both normalization folds stay**: consecutive_pair + order_of_pair => the
+   immediate order (the denominator fixes the quantity); a derived or stated
+   null on a shape with no such twin keeps its shape and the null kind costs
+   ONE plan field (as v1.1 scored it), not the row. Rationale in the review:
+   strict matching would score label agreement, which the catalogue frame
+   already measures.
+3. **The bar groups stay, with inferential wording** ("{A} tends to precede {B}
+   in at least two out of three cases..."; "the rate ... is at least two
+   thirds"; "tends to be the first ... in at least half of cases"), positive
+   wording only (refuted = significantly below the bar; no negated form, which
+   would double-count the same fact). Bars unchanged: H-V1 0.667, H-V3 0.667,
+   H-V5 0.5. **H-V3 is kept** (12 instances) but excluded from headline
+   per-group metrics like S-V1/S-V3. "Typically"/"usually" are not used on bar
+   claims (they mean one half in this dataset).
+4. **Composition**: per-group cap **600 instances** (200 per class) by a seeded
+   draw over cores with mirror pairs kept together (P-V4 8,571 -> 600, P-V2
+   2,253 -> 600, C-V2/C-V1 -> 600; release ~9.7k instances / ~78k records);
+   **C-R1 balanced**; **report ids pseudonymised** in the texts and the eval DB
+   (stable hash; the mapping stays private). The third class for the report
+   tier (4b) is WITHDRAWN by item 6.
+5. **Deferred to v1.2.1**: T-R2/T-V2 and Y-R2 (re-author), H-V4 (screen first);
+   H-V2 stays dropped.
+6. **The report tier is a separate single-report READING task** (issue 35
+   closed): a claim about one named report is answered by the deterministic
+   rule; denominator, null and test are not part of the task for that tier
+   (the harness fills single_report / 1 arm / none for level = report). It is
+   reported in its own two-class table; the statistical headline -- verdict
+   accuracy, faithfulness, abstention, the A-E grid -- is computed on the
+   cohort and multi tiers only. Nothing is removed from the release.
