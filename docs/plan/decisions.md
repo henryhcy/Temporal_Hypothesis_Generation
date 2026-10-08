@@ -3040,3 +3040,28 @@ round still moves the number. S1 checks: tier = report => single_report / 1
 arm / null none; quantity <-> denominator compatibility per the conventions;
 a bar in the text => text_stated p0. S2: executor error => re-ask with the
 error; then the E check. S3: rule validity => re-ask S1 for the HOW fields.
+
+
+## MEASURED: verify-and-repair rounds (issue 41), rounds 0 / 1 / 2 (2026-10-08)
+
+`--verify-rounds k` (commit 884d69f). S1-only on the v1.2 smoke slice; the
+plan-frame end-to-end (cell D: instruct S1 + coder SQL, conventions, no
+per-mode rule) on the v1.1 slice. Round 0 is the capability row.
+
+| configuration | r0 | r1 | r2 | rows re-asked (r1) | what moved |
+|---|---|---|---|---|---|
+| S1, instruct-32B, v1.2 | 0.863 | **0.902** | 0.897 | 212/400 at S1 | report tier 0.90 -> **1.00** (the single-report convention restated); no-shape 32 -> 16; cohort 0.84 -> 0.85 |
+| S1, instruct-7B, v1.2 | 0.495 | **0.637** | 0.640 | 339/400 | report tier 0.37 -> 0.65; no-shape 172 -> 113; claim EM 0.48 -> 0.62 |
+| e2e-D, 32B, v1.1 | 0.665 | 0.720 | **0.750** | 164 at S1, 190 at S2 (106 second rounds) | den-F1 0.58 -> 0.68; co-exist leak 0.41 -> 0.29; cohort 0.48 -> 0.60 |
+| e2e-D, 7B, v1.1 | 0.305 | 0.388 | 0.388 | 329 at S1, 19 at S2 | S1 only; the 7B's statements that fail are placeholders (no SQL produced), re-asked at most once with no gain |
+
+Readings. (1) One S1 round pays at every tier (+0.04 at 32B, +0.14 at 7B) and
+a second S1 round adds nothing (-0.005 / +0.003): **S1 rounds = 1.** (2) At S2 the
+second round still moves the 32B (+0.03) -- **S2 rounds = 2** at 32B, 1 at 7B.
+(3) The S1 verifier's main effect is issue 35 answered by feedback: restating
+the single-report convention takes the 32B report tier to 1.00 without any
+scoring fold. (4) With S1 at r1 and S2 at r2 the local 32B system row on v1.1
+is 0.750 against the 0.665 capability row and the 0.762 catalogue-rule row:
+verification with the conventions stated recovers almost all of what the
+per-mode rule was worth. Both rows are reported; rounds used per row are in
+`predictions.jsonl["verify"]`. Cost: ~1.5x the S1 calls, ~1.7x the S2 calls.
