@@ -1561,6 +1561,20 @@ full table with stage metrics is `docs/plan/results_v12f_smoke200.md`
    (C+2: 36 failures left, D+2: 11). Controlled test queued: the same rows
    with the schema shown as table/column LISTINGS (view semantics in comments,
    no SELECT bodies to copy aliases from; `--ddl-style listing`).
+   **Step 1 result (listing DDL, same rows, 22:10):** the copied-alias error is
+   gone everywhere, and the S2 row (gold plan) recovers: C failed statements
+   86 -> 42 (v1.1: 52), denominator F1 0.654 -> 0.761 (v1.1: 0.695), verdict
+   0.810 -> 0.830, old groups 0.758 -> 0.779 -- SQL validity is no longer the
+   gap there; the remaining 0.10 to v1.1 on the old groups comes with a BETTER
+   denominator F1, i.e. it is the re-drawn instances, not the SQL. In the
+   sentence->SQL and plan->SQL frames the error only MOVED: A 170 -> 197 and D
+   48 -> 92 failed statements, now `ambiguous column name: report_id` (157 / 57)
+   -- without the view bodies the coder writes an unqualified `report_id` in a
+   self-join of first_mention (v1.1's A had the same error on `vaers_id`, 60).
+   A 0.297 -> 0.378, D 0.537 -> 0.520 (cohort 0.446 -> 0.380). **Step 2
+   (queued, `_ddl_listing_hint`)**: the row contract now says to select the id
+   as `<alias>.report_id AS report_id` in a self-join (uniform across cells);
+   A / B / D re-run with listing + hint.
 7. Pre-final -> final drift on the same groups: S1 32B 0.863 -> 0.897 (v2.1
    text + the rewording), S2 32B 0.840 -> 0.810 (rounds 0) and 0.880 -> 0.880
    (rounds 2); the slice changed (cap, pseudonyms), so these are not paired.
