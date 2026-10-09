@@ -3193,6 +3193,11 @@ counts-given 0.543. Two conclusions change the paper's story relative to
 v1.1: (i) on v1.2 the decomposition beats e2e+conventions only WITH the
 verifier (D r0 is below B on the cohort tiers), so the claim is "architecture
 + verification"; (ii) the conventions are worth +0.23 to the 32B e2e model
-and nothing to the 7B. New **issue 42**: C-V2's wording promises an
-independence null the gold does not test (0/18 under the toolbox at 32B on
-both v1.2 builds; 1.00 under the catalogue) -- fix in v1.2.1.
+and nothing to the 7B. New **issue 42**: C-V2 (the two-arm association test) is composed as ONE-ARM
+co-occurrence by the 32B zero-shot on both v1.1 (22/22) and v1.2 (18/18) --
+a standing S1 shape failure, not a wording bug and not a regression (v1.1's
+0.27 was luck); the toolbox conventions state no stipulation for "more often
+than their separate rates would predict". New **issue 43**: the `report_id`
+rename raised SQL failures in every SQL-writing row (dangling aliases copied
+from the DDL's view definitions), which explains the old-group drops in A /
+C / D; a listing-style DDL is the controlled fix under test.

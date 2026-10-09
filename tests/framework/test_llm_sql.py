@@ -245,3 +245,17 @@ def test_live_llm_sql_writes_one_statement_per_arm(tmp_path):
     assert r.last_error is None, r.last_error
     assert [q.label for q in qs] == ["cohort_1", "cohort_2"]
     assert all(q.sql.lstrip().upper().startswith(("SELECT", "WITH")) for q in qs)
+
+
+def test_schema_listing_keeps_tables_and_lists_every_view_without_bodies():
+    from temporal_hypo.framework.sql.llm_sql import schema_listing
+    import re
+    ddl = load_eval_ddl()
+    lst = schema_listing(ddl)
+    assert "CREATE VIEW" not in lst and "SELECT" not in lst.split("-- VIEWS")[1]
+    for stmt in re.findall(r"CREATE (?:TABLE|INDEX) \S+", ddl):
+        assert stmt in lst
+    for view in re.findall(r"CREATE VIEW (\S+)", ddl):
+        assert f"--   {view}(" in lst, view
+    assert "first_mention_rank(report_id, vaccine, term, level, rank, n_ranks)" in lst
+    assert load_eval_ddl("listing") == lst

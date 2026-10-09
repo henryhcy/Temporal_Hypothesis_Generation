@@ -1532,16 +1532,35 @@ full table with stage metrics is `docs/plan/results_v12f_smoke200.md`
 5. **Counts-given judgment** is still the floor that verdict accuracy hides:
    0.705 overall but 0.543 on the cohort tiers, false-decisiveness 0.17, subtype
    accuracy 0.00, p-agreement 0.03.
-6. **C-V2 is 0/18 under the toolbox at 32B on BOTH v1.2 builds (v1.1: 0.27;
-   catalogue 1.00; 7B 0.56)**: the mode is right (16/18 cooc_modal_bool) but
-   the composed null is not -- the wording "occur together more often than
-   their separate rates would predict" reads as an independence baseline, and
-   the 32B composes a derived / two-arm null where the reference procedure is a
-   fixed-p0 binomial. The 7B scores because it writes 0.5 regardless. This is
-   template-faithfulness (11a), not model capability: the sentence promises a
-   null the gold does not test. Logged as **issue 42** (reword C-V2 to the
-   statistic it computes, or move it to the data-derived family with the
-   independence expectation as p0 -- which would make it a genuine new null).
+6. **C-V2 (assoc_bool) is 0/18 under the toolbox at 32B** -- and this is NOT
+   new: on v1.1 the same 32B composed every C-V2 record as ONE-ARM
+   co-occurrence (`sym_bool_cooccurs`, 22/22; v1.2-final 18/18); v1.1's 0.27
+   was six verdicts that happened to agree. The gold is the two-arm Fisher
+   test (rate of B among reports with A vs without A); the wording "occur
+   together more often than their separate rates would predict" is faithful
+   to it. Under the catalogue the mode is given (1.00); zero-shot, the 32B
+   never composes the two-arm shape -- the same error the draft already
+   records for Opus on v1.1 ("association composed as plain co-occurrence").
+   The earlier note in this section that blamed the wording was wrong
+   (corrected 2026-10-08 22:00). **Issue 42** is therefore a conventions gap:
+   the toolbox text states a stipulation for every other situation but not
+   for "more often than their separate rates would predict" (= two arms,
+   presence split, equality null). Whether to add that sentence is the
+   user's call (it is wording-level information, like the majority sentence).
+8. **The `vaers_id -> report_id` rename cost SQL validity -- issue 43.** The
+   SQL-writing rows regressed on the OLD 20 groups only (A 0.380 -> 0.275,
+   C 0.875 -> 0.758, D r0 0.665 -> 0.523; B unchanged 0.522 -> 0.520; S1
+   unchanged 0.887 -> 0.893), and the new groups are EASIER (C 0.961). The
+   executor logs show why: failed statements rose from 52 -> 86 (C), 17 -> 48
+   (D), 117 -> 170 (A), and the new dominant error is a DANGLING ALIAS copied
+   from the view definitions in the DDL -- `SELECT lt.report_id ... FROM
+   first_mention fm_a JOIN first_mention fm_b` (`lt.report_id` 117 in A, 33 in
+   D; `f.report_id` 38 in C). With `vaers_id` the same copying happened at a
+   quarter of the rate (A: 24). This is a prompt artefact of the rename, not
+   the data and not the method; the verify rounds already repair most of it
+   (C+2: 36 failures left, D+2: 11). Controlled test queued: the same rows
+   with the schema shown as table/column LISTINGS (view semantics in comments,
+   no SELECT bodies to copy aliases from; `--ddl-style listing`).
 7. Pre-final -> final drift on the same groups: S1 32B 0.863 -> 0.897 (v2.1
    text + the rewording), S2 32B 0.840 -> 0.810 (rounds 0) and 0.880 -> 0.880
    (rounds 2); the slice changed (cap, pseudonyms), so these are not paired.

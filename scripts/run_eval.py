@@ -206,6 +206,10 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
         from temporal_hypo.framework.extract.task_card import dataset_card
 
         conventions = conventions_block(dataset_card(open_eval_db(args.eval_db)))
+    prompt_ddl = None
+    if args.ddl_style == "listing":
+        from temporal_hypo.framework.sql.llm_sql import load_eval_ddl as _load_ddl
+        prompt_ddl = _load_ddl("listing")
     if args.pipeline in ("oracle", "rules+compiler", "llm-s1+compiler", "counts-llm"):
         # counts-llm gets GOLD retrieval on purpose: it is a stage-3 measurement.
         retriever = CompilerRetriever(executor)
@@ -213,14 +217,15 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
         from temporal_hypo.framework.sql.e2e_sql import E2ESQLRetriever
 
         retriever = E2ESQLRetriever(sql_client or llm_client, args.sql_model or args.model,
-                                    executor, conventions=conventions if args.e2e_conventions else None)
+                                    executor, conventions=conventions if args.e2e_conventions else None,
+                                    ddl=prompt_ddl)
     else:
         from temporal_hypo.framework.sql.llm_sql import LLMSQLRetriever
 
         retriever = LLMSQLRetriever(sql_client or llm_client, args.sql_model or args.model,
                                     executor, frame=args.s2_frame, conventions=conventions,
                                     replan=args.s2_replan,
-                                    verify_rounds=(args.verify_rounds or None))
+                                    verify_rounds=(args.verify_rounds or None), ddl=prompt_ddl)
 
     tester = None
     if args.pipeline == "counts-llm":
@@ -282,6 +287,9 @@ def main() -> None:
                    help="S2 prompt (audit cell D): 'catalogue' = claim JSON + per-mode rule + "
                         "exclusion + arm plan; 'toolbox' = the composed plan + the stated "
                         "conventions, no per-mode rule")
+    p.add_argument("--ddl-style", choices=("definitions", "listing"), default="definitions",
+                   help="how the SQL prompts show the schema: the views' CREATE bodies (default) or "
+                        "column listings with the semantics in comments (issue 43)")
     p.add_argument("--verify-rounds", type=int, default=0,
                    help="issue 41: bounded verify-and-repair rounds per stage (S1 in the toolbox "
                         "frame: conventions consistency; S2: executor error + plan consistency). "
@@ -366,6 +374,7 @@ def main() -> None:
         "k_shot": args.k_shot, "tier_hint": args.tier_hint, "routing_hint": args.routing_hint, "s1_frame": args.s1_frame,
         "e2e_conventions": args.e2e_conventions, "s2_frame": args.s2_frame, "s2_replan": args.s2_replan,
         "verify_rounds": args.verify_rounds,
+        "ddl_style": args.ddl_style,
         "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx,
         "n_records": len(records),
         **(_model_provenance(args) if "llm" in args.pipeline else {}),

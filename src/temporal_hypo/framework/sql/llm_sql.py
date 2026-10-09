@@ -68,8 +68,43 @@ SQL_JSON_SCHEMA: dict = {
 }
 
 
-def load_eval_ddl() -> str:
-    """``build_eval_db.EVAL_DDL`` (lazy import), else ``views.sql`` next to this file."""
+VIEW_LISTING = '''
+-- VIEWS. Query them exactly like tables, with aliases YOU define (there is no
+-- pre-defined alias such as lt, f or r):
+--   first_mention(report_id, vaccine, term, level)
+--     one row per (report_id, term): level = the term's FIRST mention in that report
+--     (MIN(level_index) over the report's rows for the term); vaccine = the report's.
+--   first_mention_rank(report_id, vaccine, term, level, rank, n_ranks)
+--     first_mention plus rank = the number of DISTINCT first-mention levels of the
+--     same report that are < level (0 = earliest stage; dense, so gaps between
+--     levels do not matter) and n_ranks = the number of DISTINCT first-mention
+--     levels in the report. Use it for CONSECUTIVE stages (|a.rank - b.rank| = 1)
+--     and for the EARLIER HALF of a timeline (rank < (n_ranks - 1) / 2.0; a term on
+--     the exact middle rank is in neither half).
+--   report_terms(report_id, vaccine, level_index, terms)
+--     browsing aid: one row per (report, level); the terms at that level joined by ' | '.
+'''
+
+
+def schema_listing(ddl: str | None = None) -> str:
+    """The DDL as the model sees it under ``--ddl-style listing`` (issue 43):
+    the header comments and the CREATE TABLE / INDEX statements verbatim, and the
+    views as column LISTINGS with their semantics in comments -- no SELECT bodies,
+    so there are no view aliases (``lt``, ``f``) to copy into a query where they
+    are undefined. The schema built from ``views.sql`` is unchanged."""
+    ddl = ddl if ddl is not None else load_eval_ddl()
+    cut = ddl.find("\n-- First-mention position")
+    if cut < 0:
+        cut = ddl.find("CREATE VIEW")
+    head = ddl[:cut].rstrip() if cut > 0 else ddl.rstrip()
+    return head + "\n" + VIEW_LISTING
+
+
+def load_eval_ddl(style: str = "definitions") -> str:
+    """``build_eval_db.EVAL_DDL`` (lazy import), else ``views.sql`` next to this file.
+    ``style='listing'`` returns ``schema_listing`` of it."""
+    if style == "listing":
+        return schema_listing(load_eval_ddl("definitions"))
     try:
         mod = importlib.import_module("temporal_hypo.framework.sql.build_eval_db")
         ddl = getattr(mod, "EVAL_DDL", None)
