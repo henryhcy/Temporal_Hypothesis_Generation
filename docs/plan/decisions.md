@@ -3201,3 +3201,18 @@ than their separate rates would predict". New **issue 43**: the `report_id`
 rename raised SQL failures in every SQL-writing row (dangling aliases copied
 from the DDL's view definitions), which explains the old-group drops in A /
 C / D; a listing-style DDL is the controlled fix under test.
+---
+
+## DECIDED: conventions v2.2 -- the association wording is stated (2026-10-08, user; issue 42)
+
+The presence_split stipulation existed, but phrased as "compares an event's
+rate between reports that do and do not contain another event"; the C-V2
+wordings ("occur together more often than their separate rates would predict",
+"people who report A also report B more often than everyone else", "associated
+with B beyond what their individual frequencies imply") were never bridged to
+it, while "occur together" matched the co-occurrence bullet -- so the 32B
+composed one-arm co-occurrence on every record (v1.1 and v1.2 alike). v2.2
+adds the bridge to that bullet, in the same way the adjacency and majority
+wordings are bridged (wording-level information, not a mapping row). Measured
+as a one-sentence controlled change: the S1 zero-shot rows at 32B and 7B are
+re-run on the same slice (`results/v12f_smoke200_*_conv22`).

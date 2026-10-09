@@ -87,7 +87,9 @@ def e2e_messages(row: Mapping[str, Any], claim: StructuredClaim, ddl: str,
         contract = (f"Each statement returns ONE ROW PER REPORT of the arm with EXACTLY these "
                     f"columns, in this order: {', '.join(ARM_COLUMNS)}. report_id INTEGER; "
                     "in_denominator / in_numerator / excluded are 0/1 integers; cell is TEXT or "
-                    "NULL.")
+                    "NULL." "When a statement joins two copies of first_mention (or first_mention_rank), write the id as "
+                    "<alias>.report_id AS report_id -- an unqualified report_id in a self-join is ambiguous "
+                    "in SQLite and the statement fails.")
     reminders = [
         "The view first_mention(report_id, vaccine, term, level) ALREADY applies the first-mention "
         "rule (level = MIN(level_index) per report and term) -- join it, do not re-aggregate "
