@@ -3216,3 +3216,7 @@ adds the bridge to that bullet, in the same way the adjacency and majority
 wordings are bridged (wording-level information, not a mapping row). Measured
 as a one-sentence controlled change: the S1 zero-shot rows at 32B and 7B are
 re-run on the same slice (`results/v12f_smoke200_*_conv22`).
+**Measured (22:46):** S1 toolbox zero-shot 32B 0.897 -> 0.950 (cohort 0.845 ->
+0.922) with only that sentence changed; C-V2 0.00 -> 0.67, H-V3 0.00 -> 1.00,
+P-V2 0.25 -> 0.42, 23/29 groups unchanged record for record. v2.2 is the
+conventions text from here; the S1-dependent rows are re-run on it.

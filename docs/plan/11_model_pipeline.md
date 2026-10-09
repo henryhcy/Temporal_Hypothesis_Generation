@@ -1547,6 +1547,16 @@ full table with stage metrics is `docs/plan/results_v12f_smoke200.md`
    for "more often than their separate rates would predict" (= two arms,
    presence split, equality null). Whether to add that sentence is the
    user's call (it is wording-level information, like the majority sentence).
+   **Decided and measured (conventions v2.2, 22:46):** the bullet now bridges
+   the association wordings; the S1 zero-shot 32B row re-run with ONLY that
+   sentence changed goes **0.897 -> 0.950** (cohort 0.845 -> 0.922; claim EM
+   0.897 -> 0.945; mode accuracy 0.912 -> 0.960; no-shape plans 17 -> 8).
+   23 of 29 groups are unchanged record for record; C-V2 0.00 -> 0.67 (12/18
+   now composed as the two-arm shape), H-V3 0.00 -> 1.00 (the sentence's
+   "only same-stage wording is co-occurrence" also fixed the co-occurrence
+   bar), P-V2 0.25 -> 0.42; one record each lost on P-V3 and Y-V3. Every
+   S1-dependent row (verify-1, registers, cells D / E) is re-run on v2.2 for
+   the final table.
 8. **The `vaers_id -> report_id` rename cost SQL validity -- issue 43.** The
    SQL-writing rows regressed on the OLD 20 groups only (A 0.380 -> 0.275,
    C 0.875 -> 0.758, D r0 0.665 -> 0.523; B unchanged 0.522 -> 0.520; S1
