@@ -3220,3 +3220,18 @@ re-run on the same slice (`results/v12f_smoke200_*_conv22`).
 0.922) with only that sentence changed; C-V2 0.00 -> 0.67, H-V3 0.00 -> 1.00,
 P-V2 0.25 -> 0.42, 23/29 groups unchanged record for record. v2.2 is the
 conventions text from here; the S1-dependent rows are re-run on it.
+
+---
+
+## DECIDED: the final prompt configuration for the v1.2 table (2026-10-10)
+
+Conventions **v2.2** (association wording bridged), schema shown as a column
+**listing** (`--ddl-style listing`, now the default) and the row contract's
+**self-join qualification hint**. Measured one step at a time on the same
+slice (11 §10.3g findings 6 and 8): the listing removed the copied-alias
+failures, the hint removed the ambiguity failures (A 170 -> 34 failed
+statements, A 0.297 -> 0.502), v2.2 fixed the association shape (S1 0.897 ->
+0.950). The 10-08 "v1.2-final" SQL rows (conventions v2.1, definitions DDL)
+stay in `results/` as the record of the artefact; every SQL-writing row is
+re-run under this configuration as `*_final` and those are the paper's
+numbers. Nothing in the data or in S3 changed.

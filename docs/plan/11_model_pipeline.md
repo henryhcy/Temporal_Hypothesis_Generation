@@ -1585,6 +1585,21 @@ full table with stage metrics is `docs/plan/results_v12f_smoke200.md`
    (queued, `_ddl_listing_hint`)**: the row contract now says to select the id
    as `<alias>.report_id AS report_id` in a self-join (uniform across cells);
    A / B / D re-run with listing + hint.
+   **Step 2 result (listing + hint, 00:33):** failed statements A 170 -> 34,
+   B 89 -> 16, D 48 -> 23 (v1.1 D: 17); A 0.297 -> **0.502** (old groups 0.275 ->
+   0.490, ABOVE v1.1's 0.380), B 0.527 -> 0.588, D r0 0.537 -> 0.573 (old groups
+   0.523 -> 0.607; v1.1 0.665). The errors that remain are semantic (co-exist
+   leak A 0.60, B 0.47), which is what the benchmark is about. B and D in this
+   step also carry conventions v2.2 (their prompts include the conventions
+   block), so their gains are hint + v2.2 together; A has no conventions and
+   is the clean hint effect. On the OLD groups the plan frame beats the
+   sentence frame again at rounds 0 (D 0.607 vs B 0.540, as on v1.1); on the
+   NEW families D r0 is below B -- plan -> SQL does not translate the new
+   denominators (consecutive_pair, present_offmid, bars) without the verifier.
+   **Final prompt configuration (2026-10-10): conventions v2.2 + listing DDL +
+   self-join hint**; `--ddl-style listing` is the run_eval default. Every
+   SQL-writing row is re-run under it for the final table
+   (`results/v12f_smoke200_*_final`).
 7. Pre-final -> final drift on the same groups: S1 32B 0.863 -> 0.897 (v2.1
    text + the rewording), S2 32B 0.840 -> 0.810 (rounds 0) and 0.880 -> 0.880
    (rounds 2); the slice changed (cap, pseudonyms), so these are not paired.

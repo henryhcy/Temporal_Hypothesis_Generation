@@ -287,9 +287,10 @@ def main() -> None:
                    help="S2 prompt (audit cell D): 'catalogue' = claim JSON + per-mode rule + "
                         "exclusion + arm plan; 'toolbox' = the composed plan + the stated "
                         "conventions, no per-mode rule")
-    p.add_argument("--ddl-style", choices=("definitions", "listing"), default="definitions",
-                   help="how the SQL prompts show the schema: the views' CREATE bodies (default) or "
-                        "column listings with the semantics in comments (issue 43)")
+    p.add_argument("--ddl-style", choices=("definitions", "listing"), default="listing",
+                   help="how the SQL prompts show the schema: column listings with the semantics in "
+                        "comments (default since 2026-10-10, issue 43) or the views' CREATE bodies "
+                        "(the pre-10-09 prompts)")
     p.add_argument("--verify-rounds", type=int, default=0,
                    help="issue 41: bounded verify-and-repair rounds per stage (S1 in the toolbox "
                         "frame: conventions consistency; S2: executor error + plan consistency). "
