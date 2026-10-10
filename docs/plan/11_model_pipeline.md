@@ -1603,3 +1603,38 @@ full table with stage metrics is `docs/plan/results_v12f_smoke200.md`
 7. Pre-final -> final drift on the same groups: S1 32B 0.863 -> 0.897 (v2.1
    text + the rewording), S2 32B 0.840 -> 0.810 (rounds 0) and 0.880 -> 0.880
    (rounds 2); the slice changed (cap, pseudonyms), so these are not paired.
+
+
+### 10.3h THE v1.2 TABLE: every row under the final prompt configuration (2026-10-10)
+
+Conventions v2.2, listing DDL, self-join hint (decisions.md 2026-10-10); slice
+`smoke_200_v1.2_s0`; `results/v12f_smoke200_*_final` (S1 rows: `*_conv22*`;
+counts rows unchanged). Cohort = vaccine + multi tiers (258 records).
+
+| row | all | cohort | den-F1 | faithfulness | over-abstention |
+|---|---:|---:|---:|---:|---:|
+| S1 catalogue lookup 32B (answer-injected) | 0.998 | 0.996 | 1.000 | -- | -- |
+| S1 toolbox zero-shot 32B / +1 round | 0.950 / 0.955 | 0.922 / 0.930 | 0.946 / 0.954 | -- / -- | -- / 0.04 |
+| S1 toolbox zero-shot 7B / +1 round | 0.595 / 0.657 | 0.558 / 0.655 | 0.638 / 0.721 | -- / -- | -- / 0.10 |
+| C  S2 coder-32B, rounds 0 / +2 | 0.900 / 0.905 | 0.845 / 0.853 | 0.767 / 0.803 | 0.73 / 0.79 | 0.22 / 0.20 |
+| C  S2 coder-7B, rounds 0 / +2 | 0.570 / 0.620 | 0.349 / 0.426 | 0.196 / 0.359 | 0.29 / 0.55 | 0.87 / 0.70 |
+| A  e2e schema only, 32B / 7B | 0.502 / 0.440 | 0.562 / 0.275 | 0.441 / 0.101 | 0.21 / 0.23 | 0.44 / 1.00 |
+| B  e2e + conventions, 32B / 7B | 0.588 / 0.380 | 0.543 / 0.279 | 0.517 / 0.124 | 0.28 / 0.18 | 0.38 / 0.94 |
+| D  plan + conventions 32B, rounds 0 / +2 | 0.573 / 0.645 | 0.453 / 0.566 | 0.525 / 0.611 | 0.35 / 0.71 | 0.57 / 0.42 |
+| E  plan + consistency re-ask, 32B / 7B | 0.652 / 0.263 | 0.578 / 0.171 | 0.615 / 0.234 | 0.71 / 0.48 | 0.40 / 0.72 |
+| D  7B rounds 0 / +2 (C2 7B 0.365) | 0.287 / 0.295 | 0.209 / 0.221 | 0.238 / 0.230 | 0.39 / 0.37 | 0.71 / 0.69 |
+| counts-given judgment 32B / 7B | 0.705 / 0.650 | 0.543 / 0.457 | 1.000 / 1.000 | -- / -- | -- / -- |
+
+**Reading.** (1) Each stage alone is 0.90-0.96 at 32B (planner 0.955 with one
+round, SQL stage 0.905 with two). (2) The composed system WITH the verifier is
+the best end-to-end system: D+2 0.645 / E 0.652 against B 0.588 (cohort 0.566 /
+0.578 vs 0.543) -- a modest verdict margin, and a large evidence margin:
+faithfulness 0.71 vs 0.28, co-exist leak 0.07 vs 0.47. Without the verifier
+the composed system is level with B (0.573 vs 0.588): the loss is in handing
+the plan to the SQL stage, and the repair rounds recover about half of it.
+(3) The 7B tier is a capability floor: the composed pipeline (0.29) is BELOW
+plain sentence->SQL (0.44); stating the conventions to the 7B costs accuracy
+(B 0.38 < A 0.44). (4) Counts-given judgment (0.705) is handed the gold counts
+and is not a competitor; its cohort-tier 0.543 with subtype accuracy 0 is the
+floor of "the model does the statistics itself". (5) Over-abstention: our
+rows 0.40-0.42, B 0.38, A 0.44, S2-alone 0.20; the planner alone 0.04.
