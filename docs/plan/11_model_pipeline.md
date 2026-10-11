@@ -1638,3 +1638,35 @@ plain sentence->SQL (0.44); stating the conventions to the 7B costs accuracy
 and is not a competitor; its cohort-tier 0.543 with subtype accuracy 0 is the
 floor of "the model does the statistics itself". (5) Over-abstention: our
 rows 0.40-0.42, B 0.38, A 0.44, S2-alone 0.20; the planner alone 0.04.
+
+
+### 10.3i eval_core v1.2 -- the full experiment under the final configuration (2026-10-10/11)
+
+`--subset eval_core` (2,350 instances, original register, question + claim =
+4,700 records; cohort tiers 3,080 records), conventions v2.2 + listing DDL +
+hint; `results/core_v12_*`; table also in `docs/plan/results_core_v12.md`.
+Wall time: S1 7.7 h, S2+2 7.7 h, A 7.3 h, B 7.0 h, D+2 19.2 h, E 1.4 h (cached
+S1), D r0 0.6 h (cached), counts 0.3 h -- two GPUs, ~30 h.
+
+| row (32B; eval_core: 2,350 instances, 4,700 records) | all | cohort tiers | report tier | den-F1 | co-exist leak | faithfulness | false-decisive | over-abstain |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| S1 our planner 32B + 1 round (gold S2/S3) | 0.954 | 0.931 | 0.999 | 0.944 | 0.00 | -- | 0.02 | 0.04 |
+| C  S2 coder-32B + 2 rounds (gold plan) | 0.880 | 0.816 | 1.000 | 0.797 | 0.18 | 0.81 | 0.02 | 0.26 |
+| A  e2e sentence->SQL, schema only | 0.466 | 0.494 | 0.412 | 0.455 | 0.64 | 0.21 | 0.22 | 0.49 |
+| B  e2e + conventions | 0.590 | 0.525 | 0.713 | 0.570 | 0.40 | 0.32 | 0.24 | 0.42 |
+| D  our pipeline, no verifier | 0.555 | 0.476 | 0.704 | 0.542 | 0.16 | 0.29 | 0.14 | 0.57 |
+| D+2 our pipeline + 2 verify rounds | 0.646 | 0.615 | 0.704 | 0.663 | 0.08 | 0.74 | 0.13 | 0.36 |
+| E  our pipeline + consistency re-ask | 0.642 | 0.609 | 0.704 | 0.656 | 0.13 | 0.71 | 0.12 | 0.36 |
+| counts-given judgment (gold counts) | 0.739 | 0.602 | 1.000 | 1.000 | 0.00 | 1.00 | 0.18 | 0.48 |
+
+
+**Reading (matches the 200-slice within noise).** Our planner 0.954, our SQL
+stage 0.880; the composed pipeline with the verifier 0.646 (cohort 0.615)
+against the best end-to-end system 0.590 (cohort 0.525): +0.06 on the verdict
+overall and +0.09 on the cohort tiers, and faithfulness 0.74 vs 0.32 with
+co-exist leak 0.08 vs 0.40. Without the verifier the pipeline is below B on the
+verdict (0.555) but already ahead on evidence (leak 0.16, den-F1 0.54 vs 0.57).
+E equals D+2 (0.642). The report tier is where B gains (0.713 vs our 0.704,
+both far below the planner's 0.999: the plan->SQL hand-off loses report-tier
+claims that S1 alone reads perfectly). Counts-given 0.739 overall / 0.602 cohort
+with false-decisiveness 0.18.
