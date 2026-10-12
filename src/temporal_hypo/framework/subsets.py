@@ -126,8 +126,13 @@ def _class_order(present: Iterable[str]) -> list[str]:
     return [v for v in VERDICT_ORDER if v in present] + sorted(present - set(VERDICT_ORDER))
 
 
-def eval_core(release: Release, *, per_group: int = 90, seed: int = 0) -> list[str]:
+def eval_core(release: Release, *, per_group: int = 90, seed: int = 0,
+              exclude: Iterable[str] = ()) -> list[str]:
     """Seeded, verdict-balanced per-group sample; returns sorted ``instance_id``s.
+
+    ``exclude`` (2026-10-12, the HELD-OUT draw): instance ids that may not be
+    drawn, nor pulled in -- every instance sharing a fact with an excluded one is
+    skipped too, so the result is fact-disjoint from the excluded set.
 
     For each group (in sorted order) the cap is split evenly over the verdict
     classes present (30/30/30 at ``per_group=90`` for the cohort tiers, 45/45 at
@@ -142,9 +147,14 @@ def eval_core(release: Release, *, per_group: int = 90, seed: int = 0) -> list[s
         raise ValueError(f"per_group must be >= 0, got {per_group}")
     answers = release.answers
     comp = fact_components(release)
+    banned: set[str] = set()
+    for iid in exclude:
+        banned.update(comp.get(iid, (iid,)))
 
     buckets: dict[str, dict[str, list[str]]] = defaultdict(lambda: defaultdict(list))
     for iid in sorted(answers):
+        if iid in banned:
+            continue
         row = answers[iid]
         buckets[row["group_id"]][row["gold_verdict"]].append(iid)
 
@@ -163,6 +173,8 @@ def eval_core(release: Release, *, per_group: int = 90, seed: int = 0) -> list[s
                 if iid in selected:
                     continue
                 members = comp[iid]
+                if any(m in banned for m in members):
+                    continue
                 selected.update(members)
                 have += sum(1 for m in members
                             if answers[m]["group_id"] == group
