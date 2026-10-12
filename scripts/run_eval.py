@@ -218,7 +218,7 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
 
         retriever = E2ESQLRetriever(sql_client or llm_client, args.sql_model or args.model,
                                     executor, conventions=conventions if args.e2e_conventions else None,
-                                    ddl=prompt_ddl)
+                                    ddl=prompt_ddl, verify_rounds=(args.verify_rounds or None))
     else:
         from temporal_hypo.framework.sql.llm_sql import LLMSQLRetriever
 

@@ -175,10 +175,20 @@ class E2ESQLRetriever(LLMSQLRetriever):
         return e2e_messages(self._row, claim, self.ddl, conventions=self.conventions)
 
     def retrieve(self, claim: StructuredClaim, *, row: Mapping[str, Any] | None = None):
-        from temporal_hypo.framework.sql.retrieve import execute_queries
-
+        # the inherited loop: executor errors + the PLAN-FREE checks (2026-10-11), the
+        # repair instruction phrased on the conventions, never on a plan
         self._row = row
         try:
-            return execute_queries(self.queries_for(claim), self.executor, claim)
+            return super().retrieve(claim)
         finally:
             self._row = None
+
+    def _consistency(self, claim: StructuredClaim, ret: Any) -> list[str]:
+        from temporal_hypo.framework.sql.llm_sql import generic_consistency
+        return generic_consistency(claim, ret)
+
+    def _repair_instruction(self) -> str:
+        return ("Revise the statement(s): a failed statement must execute under the DDL and the "
+                "row contract; the denominator must be exactly the reports the hypothesis is about "
+                "under the stated conventions (present-but-unusable reports get in_denominator = 0, "
+                "excluded = 1) and the numerator the subset where the asserted relation holds.")

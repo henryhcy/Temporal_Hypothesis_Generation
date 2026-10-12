@@ -426,6 +426,24 @@ def _denominator_violations(executor: Any, cond: str, ev: tuple, ids: Any) -> in
     return bad
 
 
+def generic_consistency(claim: StructuredClaim, retrieval: Any) -> list[str]:
+    """The PLAN-FREE checks (2026-10-11, the verified end-to-end control): a degenerate
+    n = k arm and an empty-vs-nonempty arm pair are visible from the returned rows alone;
+    which reports the conditioning forbids is NOT (that needs the plan)."""
+    s = MODE_SPEC[claim.mode]
+    arms = list(getattr(retrieval, "arms", None) or [])
+    problems: list[str] = []
+    for i, a in enumerate(arms):
+        if a.n and a.n == a.k:
+            problems.append(f"arm {i + 1}: the denominator equals the numerator (n = k = {a.n}); "
+                            "the denominator must also contain the reports where the asserted "
+                            "relation does NOT hold")
+    if s.arms == 2 and len(arms) == 2 and (arms[0].n == 0) != (arms[1].n == 0):
+        problems.append("one arm is empty while the other is not; both arms are conditioned the "
+                        "same way inside their own group")
+    return problems
+
+
 def plan_consistency(claim: StructuredClaim, retrieval: Any, executor: Any) -> list[str]:
     """Violations of the claim's own plan by the executed arms (empty = consistent)."""
     s = MODE_SPEC[claim.mode]
@@ -575,7 +593,7 @@ class LLMSQLRetriever:
             problems = [f"statement for arm {q.label!r} failed: {q.error}"
                         for q in ret.queries if q.error]
             if not MODE_SPEC[claim.mode].is_report:
-                problems += plan_consistency(claim, ret, self.executor)
+                problems += self._consistency(claim, ret)
             if not problems:
                 break
             self.last_rounds = rnd
@@ -587,10 +605,7 @@ class LLMSQLRetriever:
                 {"role": "user", "content": "\n".join([
                     "CHECK FAILED:",
                     *[f"- {x}" for x in problems],
-                    "Revise the statement(s): a failed statement must execute under the DDL and the "
-                    "row contract; the denominator must be exactly the reports the plan's denominator "
-                    "primitive names (present-but-unusable reports get in_denominator = 0, excluded = "
-                    "1) and the numerator the subset where the asserted relation holds.",
+                    self._repair_instruction(),
                     'Return {"arms": [...]} now.',
                 ])},
             ]
@@ -601,6 +616,16 @@ class LLMSQLRetriever:
             ret = execute_queries(queries, self.executor, claim)
         ret.queries = logs_so_far + list(ret.queries)
         return ret
+
+    def _consistency(self, claim: StructuredClaim, ret: Any) -> list[str]:
+        """The checks a verify round can make: here the PLAN's (cell E / D+k)."""
+        return plan_consistency(claim, ret, self.executor)
+
+    def _repair_instruction(self) -> str:
+        return ("Revise the statement(s): a failed statement must execute under the DDL and the "
+                "row contract; the denominator must be exactly the reports the plan's denominator "
+                "primitive names (present-but-unusable reports get in_denominator = 0, excluded = "
+                "1) and the numerator the subset where the asserted relation holds.")
 
     # -- accounting ----------------------------------------------------------
 
