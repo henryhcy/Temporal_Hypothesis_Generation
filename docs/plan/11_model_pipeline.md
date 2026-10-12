@@ -1670,3 +1670,60 @@ E equals D+2 (0.642). The report tier is where B gains (0.713 vs our 0.704,
 both far below the planner's 0.999: the plan->SQL hand-off loses report-tier
 claims that S1 alone reads perfectly). Counts-given 0.739 overall / 0.602 cohort
 with false-decisiveness 0.18.
+
+
+### 10.3j The verified end-to-end control, the plan-as-contract pipeline (D'), and EHRAgent on v1.2 (2026-10-11/12)
+
+Slice `smoke_200_v1.2_s0` (400 records; 258 cohort-tier), final prompt
+configuration. The question (user, 10-11): if e2e + verifier matches our
+pipeline + verifier, what is the architecture worth?
+
+| row (32B) | all | cohort | den-F1 | co-exist leak | faithfulness | false-decisive | over-abstain |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| B  e2e + conventions | 0.588 | 0.543 | 0.517 | 0.47 | 0.28 | 0.24 | 0.42 |
+| **B+2  + 2 repair rounds, PLAN-FREE checks** (executor errors, n = k, empty-vs-nonempty arms) | 0.660 | 0.655 | 0.643 | 0.56 | 0.53 | 0.15 | 0.22 |
+| A+2  schema only + 2 rounds | 0.530 | 0.605 | 0.498 | 0.79 | 0.28 | 0.19 | 0.29 |
+| D  our plan -> S2 told the plan in PROSE + conventions | 0.573 | 0.453 | 0.525 | 0.15 | 0.35 | 0.06 | 0.58 |
+| D+2 | 0.645 | 0.566 | 0.611 | 0.07 | 0.71 | 0.04 | 0.42 |
+| **D'  our plan -> the harness resolves the plan's named primitive to its definition for S2** (= the C2 frame at 32B) | 0.855 | 0.775 | 0.717 | 0.15 | 0.75 | 0.01 | 0.27 |
+| **D'+2** | **0.865** | **0.791** | **0.763** | 0.16 | **0.78** | **0.00** | 0.26 |
+| C  gold plan, same frame (+2) | 0.905 | 0.853 | 0.803 | 0.16 | 0.79 | 0.00 | 0.20 |
+| EHRAgent 32B, variant A (minimal; agent picks and RUNS the test; verdict parsed) | 0.743 | 0.624 | n/a | n/a | n/a | **0.64** | 0.07 |
+| EHRAgent 32B, variant B + conventions (agent's counts -> our exact test) | 0.405 (report tier n/a) | 0.628 | n/a | n/a | n/a | 0.23 | 0.22 (no answer 10%) |
+| EHRAgent 32B, variant B minimal | 0.297 | 0.461 | n/a | n/a | n/a | 0.51 | 0.28 |
+
+**Findings.**
+1. **The user's worry was right about the prose pipeline.** Given the plan-free
+   checks, the end-to-end model with the conventions reaches 0.660 / cohort
+   0.655 -- level with (on the cohort tiers above) our prose-plan pipeline
+   with its verifier (0.645 / 0.566). On the verdict, verification alone
+   explains that gap. The evidence does not follow: B+2's faithfulness is
+   0.53 with a co-exist leak of 0.56 (the repaired queries execute and still
+   include same-stage reports), against 0.71 / 0.07 for D+2.
+2. **The architecture gain is real once the plan is used as a CONTRACT.** When
+   the harness resolves the model's plan -- its named denominator primitive --
+   into that primitive's definition for S2, instead of handing S2 the plan as
+   prose plus the whole conventions text, the composed pipeline goes to 0.855
+   (cohort 0.775) and 0.865 with the verifier: +0.20 over the verified
+   end-to-end control, faithfulness 0.78 vs 0.53, false-decisiveness 0.00 vs
+   0.15, within 0.04 of the gold-plan row. Nothing on the baseline side
+   changed; D' uses only the model's own plan. This is the pipeline as it
+   should be built: the plan is a structured object and the stage contract
+   carries it. (Implementation note: today the S2 frame keys the definition by
+   the plan's derived mode, `RULE_BY_MODE`; the paper describes and the code
+   should key it by the plan's primitive -- same text, honest naming.)
+3. **EHRAgent at 32B on v1.2** (4 h per run; the earlier 16-20 h estimate was
+   wrong): variant A 0.743 overall / 0.624 cohort -- competitive with every row
+   except D' on the verdict, but it decides 64% of the claims the data cannot
+   decide (false-decisiveness 0.64; only 37 of 258 cohort answers are
+   'insufficient'), its evidence cannot be audited (the agent returns a verdict,
+   not report sets), and the report tier (0.96) is where most of its overall
+   number comes from. Variant B + conventions (counts -> our test) 0.628 cohort
+   with 10% no answer; minimal 0.461. Stating the conventions is worth +0.17
+   to the agent, as it was to the single-query model.
+4. **Paper claim, revised:** "a plan that is a contract" -- stated conventions,
+   a structured plan resolved by the harness for the retrieval stage, and
+   bounded verification -- beats the strongest verified end-to-end system by
+   0.20 and the agentic baseline by 0.12 on the verdict, and by 0.25-0.50 on
+   whether the evidence is right. Core-set runs of B+2 and D' / D'+2 are
+   running (`core_v12_*`).

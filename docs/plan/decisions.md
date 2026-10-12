@@ -3235,3 +3235,20 @@ statements, A 0.297 -> 0.502), v2.2 fixed the association shape (S1 0.897 ->
 stay in `results/` as the record of the artefact; every SQL-writing row is
 re-run under this configuration as `*_final` and those are the paper's
 numbers. Nothing in the data or in S3 changed.
+
+---
+
+## DECIDED: the pipeline's S2 contract is the plan's named primitive, resolved by the harness (D'; 2026-10-12)
+
+Measured on the slice (11 §10.3j): with the plan handed to S2 as prose plus the
+conventions (D), the pipeline with its verifier (0.645) is matched by the
+end-to-end model given plan-free repair rounds (B+2, 0.660). With the plan's
+named denominator primitive resolved by the harness into its definition for
+S2 (D'), the pipeline reaches 0.855 / 0.865 with the verifier, faithfulness
+0.78, false-decisiveness 0.00. D' is the pipeline from here: the catalogue S2
+frame keyed by the plan's derived mode is retired in favour of keying by the
+plan's primitive (same definitions, honest naming; code change pending). The
+verified end-to-end row (B+2) is kept as the control that shows what
+verification is worth without a contract. EHRAgent 32B on v1.2 (variant A
+0.743 / cohort 0.624, false-decisiveness 0.64; variant B + conventions cohort
+0.628) is the agentic external row; the 7B runs were dropped (user).

@@ -614,19 +614,22 @@ separate study.
 Table~\ref{tab:grid} separates what the prompt tells the model (the stated
 conventions) from what the decomposition adds (a composed plan, a per-stage
 contract, a verifier), on the final v1.2 slice. Reading the 32B columns: stating the
-conventions to the end-to-end model is worth $+0.09$ (A$\rightarrow$B, 0.502
-$\rightarrow$ 0.588); composing a plan first, without a verifier, is level with
-that (D at rounds~0, 0.573 --- on the new families the plan-frame SQL does not
-translate the novel denominators); two bounded verify-and-repair rounds then
-add $+0.07$ (D$+$2: 0.645) and the single plan-consistency re-ask slightly more
-(E: 0.652), which makes the composed system the best end-to-end system by a
-modest verdict margin and a large evidence margin: faithfulness 0.71 against
-0.28 for B, \emph{co-exist} leak 0.07 against 0.47. The contract is what makes
-a stage checkable, and checking is where the gain is. At 7B nothing moves the
-cohort tiers above 0.3 except the catalogue rule (C); the composed pipeline is
-\emph{below} plain sentence-to-SQL (0.29 vs 0.44) and the conventions cost the
-end-to-end 7B accuracy (B $<$ A): a model that cannot compose the plan cannot
-use the stipulations either.
+conventions to the end-to-end model is worth $+0.09$ (A$\rightarrow$B); giving
+it two repair rounds with every check that needs no plan (a rejected query,
+$n=k$, an empty arm beside a full one) is worth another $+0.07$ (B$+$2, 0.660),
+which is level with the composed pipeline when that pipeline hands its plan to
+the SQL stage as prose (D$+$2, 0.645). On the verdict, then, verification alone
+closes that gap --- but not on the evidence: B$+$2 is right for the right
+reason on 53\% of its correct verdicts, D$+$2 on 71\%. The decomposition pays
+once the plan is used as a \emph{contract}: when the harness resolves the
+plan's named denominator primitive into that primitive's definition for S2
+(D$'$), the pipeline reaches 0.855, and 0.865 with the verifier --- $+0.20$
+over the verified end-to-end control, faithfulness 0.78, false-decisiveness
+0.00, within 0.04 of the gold-plan row. Nothing on the baseline side changes
+between these rows; D$'$ uses only the model's own plan. At 7B nothing moves
+the cohort tiers above 0.45; the composed pipeline is \emph{below} plain
+sentence-to-SQL and the conventions cost the end-to-end 7B accuracy (B $<$ A):
+a model that cannot compose the plan cannot use the stipulations either.
 
 \begin{table*}[t]
 \centering
@@ -638,12 +641,17 @@ use the stipulations either.
 cell & what the model is given / asked & all & cohort & den.\ F1 & faith. & all & cohort & den.\ F1 & faith. \\
 \midrule
 A & sentence $\rightarrow$ SQL, schema only & 0.502 & 0.562 & 0.441 & 0.21 & 0.440 & 0.275 & 0.101 & 0.23 \\
+A$+$2 & \quad + two repair rounds, plan-free checks & 0.530 & 0.605 & 0.498 & 0.28 & --- & --- & --- & --- \\
 B & \quad + conventions stated & 0.588 & 0.543 & 0.517 & 0.28 & 0.380 & 0.279 & 0.124 & 0.18 \\
-C2 & composed plan, catalogue rule at S2 & --- & --- & --- & --- & 0.365 & 0.217 & 0.162 & 0.27 \\
-D & composed plan $+$ conventions, no verifier & 0.573 & 0.453 & 0.525 & 0.35 & 0.287 & 0.209 & 0.238 & 0.39 \\
-D$+$2 & \quad + two verify-and-repair rounds & \textbf{0.645} & \textbf{0.566} & 0.611 & 0.71 & 0.295 & 0.221 & 0.230 & 0.37 \\
-E & composed plan $+$ plan-consistency re-ask & \textbf{0.652} & \textbf{0.578} & 0.615 & 0.71 & 0.263 & 0.171 & 0.234 & 0.48 \\
-C & gold plan, catalogue rule at S2 (S2 row) & 0.900 & 0.845 & 0.767 & 0.73 & 0.570 & 0.349 & 0.196 & 0.29 \\
+B$+$2 & \quad + two repair rounds, plan-free checks (verified e2e) & 0.660 & 0.655 & 0.643 & 0.53 & --- & --- & --- & --- \\
+\midrule
+D & composed plan handed to S2 as prose $+$ conventions & 0.573 & 0.453 & 0.525 & 0.35 & 0.287 & 0.209 & 0.238 & 0.39 \\
+D$+$2 & \quad + two verify-and-repair rounds (plan checks) & 0.645 & 0.566 & 0.611 & 0.71 & 0.295 & 0.221 & 0.230 & 0.37 \\
+E & composed plan $+$ plan-consistency re-ask & 0.652 & 0.578 & 0.615 & 0.71 & 0.263 & 0.171 & 0.234 & 0.48 \\
+D$'$ & composed plan, its named primitive resolved for S2 (the contract) & 0.855 & 0.775 & 0.717 & 0.75 & 0.365 & 0.217 & 0.162 & 0.27 \\
+D$'$$+$2 & \quad + two verify-and-repair rounds & \textbf{0.865} & \textbf{0.791} & 0.763 & \textbf{0.78} & --- & --- & --- & --- \\
+\midrule
+C & gold plan, same frame (S2 row) & 0.900 & 0.845 & 0.767 & 0.73 & 0.570 & 0.349 & 0.196 & 0.29 \\
 C$+$2 & \quad + two verify-and-repair rounds & 0.905 & 0.853 & 0.803 & 0.79 & 0.620 & 0.426 & 0.359 & 0.55 \\
 \midrule
 S1 & composed plan, gold S2/S3 (Table~\ref{tab:toolbox}) & 0.950 & 0.922 & --- & --- & 0.595 & 0.558 & --- & --- \\
@@ -655,8 +663,9 @@ counts & gold $n,k$ given; model picks test and verdict & 0.705 & 0.543 & (given
 records; cohort $=$ 258 cohort-tier records) under the final prompt
 configuration (conventions v2.2, schema listing, self-join hint). Den.\ F1 is the denominator-set
 F1 over cohort arms; faith.\ is $P(\text{denominator exact} \mid \text{verdict
-right})$. Cells A--E are the audit's grid; the verify-and-repair rows are the
-system rows (S1: one round; S2: two). The counts-given row has no denominator
+right})$. Cells A--E are the audit's grid; ``$+$2'' rows add two bounded repair rounds
+(for A/B with plan-free checks only; for D/D$'$/C with the plan's checks). D$'$ is
+D with the plan's named primitive resolved by the harness for S2. The counts-given row has no denominator
 to get wrong and still decides at 0.54 on the cohort tiers, with false
 decisiveness 0.17 and subtype accuracy 0.}
 \label{tab:grid}
@@ -730,8 +739,11 @@ with ours). Table~\ref{tab:external} reports them.
 \toprule
 System & Stage & Acc. & Where it fails \\
 \midrule
-EHRAgent, Coder-7B & S1--S3 & 0.103 & 72\% no answer \\
-EHRAgent, 32B & S1--S3 & 0.417 & retrieval; oracle S3 lifts to 0.446; prompts truncated to 2k tokens \\
+EHRAgent, Coder-7B (v1.1) & S1--S3 & 0.103 & 72\% no answer \\
+EHRAgent, 32B (v1.1) & S1--S3 & 0.417 & retrieval; oracle S3 lifts to 0.446; prompts truncated to 2k tokens \\
+EHRAgent, 32B, v1.2: agent runs its own test & S1--S3 & 0.624 & decides 64\% of the undecidable claims (false-decisiveness); evidence not auditable; report tier 0.96 \\
+EHRAgent, 32B, v1.2: counts $\rightarrow$ our test, + conventions & S1--S2 & 0.628 & 10\% no answer; false-decisiveness 0.23 \\
+EHRAgent, 32B, v1.2: counts $\rightarrow$ our test, minimal & S1--S2 & 0.461 & 9\% no answer; false-decisiveness 0.51 \\
 EHRSQL protocol, 32B & S2 & 0.384 & counts exact on 2.9\%; 27\% abstain \\
 StatQA-style, 32B & S3 & 0.364 & two-proportion $z$ where Fisher is required; $\chi^2$ on every argmax task \\
 VERITAS, own tests & S1--S3 & 0.333 & no one-sample test; 14/39 time out \\
@@ -739,7 +751,7 @@ VERITAS, our tests & S1--S3 & 0.308 & picks our test 33\%; denominator wrong \\
 \bottomrule
 \end{tabularx}
 \caption{Published systems on the cohort and multi tiers, verdict accuracy
-(chance $\approx 0.33$). EHRAgent and EHRSQL over the 200-instance slice;
+(chance $\approx 0.33$). EHRAgent v1.1 rows and EHRSQL over the v1.1 slice, EHRAgent v1.2 rows over the final v1.2 slice (258 cohort-tier records, same prompts as Table~\ref{tab:grid});
 StatQA-style over its cohort-tier subset; VERITAS over 3 hypotheses per group,
 balanced over verdicts, with a 40-minute cap per run. Each system received the
 schema and a short data description, not the situation-phrased conventions of
