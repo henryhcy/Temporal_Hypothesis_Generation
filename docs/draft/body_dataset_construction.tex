@@ -650,7 +650,7 @@ B + repair & 2 rounds & 0.660 & 0.655 & 0.643 & 0.56 & 0.53 & 0.15 & \pend{pendi
 \multicolumn{9}{@{}l}{\textit{agentic}} \\
 EHRAgent, counts $\rightarrow$ our test, + conventions & own retries & --- & 0.628 & n/a & n/a & n/a & 0.23 & \pend{pending} \\
 EHRAgent, runs its own test & own retries & 0.743 & 0.624 & n/a & n/a & n/a & 0.64 & \pend{pending} \\
-VERITAS + conventions, our tests & own critic & \pend{pending} & \pend{pending} & n/a & n/a & n/a & \pend{pending} & \pend{pending} \\
+VERITAS + conventions, our tests (claim form, 129 cohort claims) & own critic & --- & 0.349 & n/a & n/a & n/a & 0.19 & \pend{pending} \\
 \midrule
 counts-given judgment (gold $n,k$) & --- & 0.705 & 0.543 & (given) & --- & 1.00 & 0.17 & \pend{pending} \\
 \bottomrule
@@ -661,7 +661,10 @@ Den.\ F1 is the denominator-set F1 over cohort arms; faithfulness is
 $P(\text{denominator exact} \mid \text{verdict right})$; false-dec.\ is the
 share of gold-\emph{insufficient} claims given a decisive verdict. EHRAgent's
 evidence cannot be audited (it returns counts or a verdict, not report sets);
-its report-tier accuracy (0.96) carries its overall number. The last column is
+its report-tier accuracy (0.96) carries its overall number. VERITAS takes the
+claim form only; 50 of its 129 runs completed all three phases within a
+10-minute cap per phase (the rest are scored as misses), and the completed
+runs abstain on 29 of 36 undecidable claims but on 69 of 93 decisive ones. The last column is
 the same row on the test budget subset.}
 \label{tab:main}
 \end{table*}
@@ -677,7 +680,9 @@ same-stage reports into order denominators on 56\% of its arms, and it gives a
 decisive verdict to 15\% of the claims the data cannot decide. The agentic
 baseline that runs its own test reaches 0.743 overall --- mostly on the
 report tier (0.96) --- and 0.624 on the cohort tiers while deciding 64\% of the
-undecidable claims. Verdict accuracy ranks these systems within a few points of
+undecidable claims; the multi-agent VERITAS, given the same conventions and our
+tests, completes 39\% of its runs and scores 0.349, abstaining on most decisive
+claims --- the opposite failure. Verdict accuracy ranks these systems within a few points of
 each other; the evidence metrics do not.
 
 \paragraph{Each stage is nearly solved alone; the hand-off is the loss.} The

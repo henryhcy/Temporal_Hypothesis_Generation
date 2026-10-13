@@ -1745,3 +1745,20 @@ false-decisiveness 0.22 vs 0.13); the plan-as-contract pipeline 0.856 (cohort
 the report tier solved (0.999) because the resolved `single_report` primitive
 is the compiler's whole-report query. Headline rows for the paper: D'+2 vs
 B+2 vs EHRAgent-A, with C+2 and the planner as the stage ceilings.
+
+
+### 10.3k VERITAS (ECCV 2026) on the v1.2 dev slice, final adaptation (2026-10-13)
+
+`~/veritas_baseline`, condition D = exact-test pool pre-bound + conventions v2.2;
+Coder-32B, 8k context (16k offloaded 5% to CPU and halved speed), minimal
+verbosity, 3,072 output tokens, 10-minute phases, no retries; 129 cohort-tier
+claims (claim form), group-interleaved, two shards on the two GPUs, 07:04
+finish (~11 h). **Completed 50/129 (39%)**; verdict accuracy with failures as
+misses **0.349** (ECO label 0.302; binary 0.667); gold supported 45 -> 3 right,
+refuted 48 -> 13, insufficient 36 -> 29; false-decisiveness 7/36 = 0.19; test
+used matches the gold exact test 0.147 (none 95, Fisher 26, runner-up 5,
+binomial 2, t-test 1). Reading: with the same information and tools as the
+other systems, VERITAS mostly cannot get a claim through its three phases in
+30 minutes at 32B, and when it does it abstains -- the opposite failure to
+EHRAgent-A. Near the 0.33-0.37 floors, as on v1.1 (0.333 / 0.308 on 39 claims).
+Test-slice run (120 claims) in progress behind EHRAgent on the test slice.
