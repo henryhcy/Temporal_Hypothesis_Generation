@@ -2,783 +2,149 @@
 % BODY of the paper, \input by the wrapper www2027.tex (ACM sigconf, WWW 2027;
 % the Overleaf main document). Edit the text HERE; the wrapper carries only the
 % preamble, title, abstract and bibliography. Keep it format-neutral: no
-% \usepackage, no \bibliography. (The AAAI wrapper was retired on 2026-10-08;
-% it is in git history, commit 92c63d2 of the Overleaf project.)
+% \usepackage, no \bibliography.
+%
+% 2026-10-13: restructured as a full paper (intro / related / task / dataset /
+% framework / experiments / discussion). Every number is measured: the slice
+% rows under the final prompt configuration (11 §10.3h/j), the core set (10.3i).
+% Numbers marked \pend{...} are runs in flight (held-out set, test slice, VERITAS,
+% frontier) and are to be filled in before submission.
 % ---------------------------------------------------------------------------
+\newcommand{\pend}[1]{\textit{#1}}
+\newcommand{\sys}{\textsc{MedTempo-Hypo}}
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/overview.pdf}
-\caption{Overview. \textbf{Task} (left): verify a temporal--statistical claim about
-annotated vaccine-adverse-event timelines with a three-decision verdict; the
-framework sees the annotations (pseudonymised report ids, first-mention stages),
-never narrative text. \textbf{Dataset}: MedTempo v1.2, 29 groups in seven claim
-families over three cohort tiers, with every stage of the gold computation
-released (plan, evidence sets, exact test). \textbf{Reference framework} (top):
-an instrumented decomposition --- S1 composes a conditional plan from stated
-conventions with the mode mapping withheld, S2 retrieves per-report role rows
-by SQL, S3 runs the exact test against the plan's null --- with a bounded
-verify-and-repair round per stage; the stage-level gold beneath each stage
-yields stage metrics (plan EM, denominator F1 and co-exist leak, p-agreement,
-faithfulness, abstention) in addition to verdict accuracy. \textbf{Baseline
-families} (bottom) are placed on the stages they replace, which is the
-architecture-vs-information grid (cells A--E): end-to-end sentence-to-SQL,
-an agentic tool loop, external protocols adapted at their native stage, and
-counts-given judgment.}
+\caption{Overview. A claim about annotated adverse-event timelines (left) is
+verified by a three-stage reference pipeline (centre): S1 composes a
+\emph{plan} from stated conventions, with the claim-type mapping withheld; the
+harness resolves the plan's named denominator primitive into its definition and
+S2 writes the retrieval query under that contract; S3 runs the exact test.
+Each stage has a bounded verify-and-repair loop and a gold answer, so the stage
+metrics beneath (plan EM; denominator F1, co-exist leak; $p$-agreement,
+faithfulness, abstention) are measured in addition to the verdict. Baseline
+families (bottom) are placed on the stages they replace: end-to-end
+sentence-to-SQL with and without the conventions and with plan-free repair,
+agentic systems, and counts-given judgment.}
 \label{fig:overview}
 \end{figure*}
 
-\section{Source Corpus}
-\label{sec:corpus}
-
-Figure~\ref{fig:overview} summarises the task, the dataset, the instrumented
-reference framework and the baseline families compared in \S\ref{sec:baselines}.
-
-The benchmark is built on MedTempo, a corpus of 3{,}166 VAERS adverse-event
-reports annotated with a \emph{leveled order}: a single totally ordered chain of
-stages in which each stage holds the MedDRA-coded events reported at that point
-of the clinical course. The annotation, not the narrative, is the benchmark's
-ground truth \emph{and} the framework's input --- gold labels are computed
-mechanically from the leveled orders, and released instances reference report
-identifiers rather than text. Table~\ref{tab:corpus} summarises the corpus.
-
-Two annotation conventions are load-bearing. When a term recurs within a report,
-its \emph{first} mention fixes its stage. Reports whose earliest events share a
-stage are never asked order questions they cannot answer
-(\S\ref{sec:realization}).
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lr}
-\toprule
-Reports & 3{,}166 \\
-\quad Janssen / Pfizer / Moderna & 1{,}164 / 1{,}019 / 983 \\
-Distinct event terms (vocabulary) & 1{,}660 \\
-Events per report (mean / median / max) & 7.2 / 6 / 43 \\
-Stages per report (mean / median / max) & 3.4 / 3 / 14 \\
-\bottomrule
-\end{tabular}
-\caption{Source corpus. Stages are the levels of the annotated leveled order;
-events co-reported at one stage are temporally indistinguishable.}
-\label{tab:corpus}
-\end{table}
-
-\section{Hypothesis Space}
-\label{sec:space}
-
-Twenty template groups span four temporal families --- precedes, co-occurs,
-strict sequence, and first/last --- at three scopes: a single report, one vaccine
-cohort, and a contrast between two cohorts (Table~\ref{tab:roster}). Each group
-is realised in four registers (a canonical \textsc{Original} plus
-\textsc{Research}, \textsc{Media}, and \textsc{Clinical}) and two surface formats
-(question and claim) by mechanical slot-filling, with no model-generated
-rewriting, yielding eight text variants per instance. Answers are \textsc{Bool}
-or \textsc{Choice}.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-Family & Report & One cohort & Two \\
-\midrule
-precedes & P-R1, P-R2 & P-V1--P-V4 & P-M2 \\
-co-occurs & C-R1 & C-V1--C-V3 & --- \\
-sequence & S-R1 & S-V1, S-V3 & --- \\
-first/last & F-R1--F-R3 & F-V1--F-V3 & --- \\
-\bottomrule
-\end{tabular}
-\caption{The 20-group roster: 7 report-level, 12 single-cohort, 1 two-cohort.}
-\label{tab:roster}
-\end{table}
-
-Three groups are two-proportion contrasts \emph{within} a single cohort, a shape
-the grid previously lacked: P-V2 asks whether $B$ follows $A$ more often than it
-follows $C$; P-V4 whether $A$ precedes $B$ more often than $C$ precedes $D$; and
-C-V2 whether $A$ and $B$ co-occur more often than their separate rates predict
-(association against independence). Both arms retain the full cohort
-denominator, unlike the two-cohort tier, which partitions the corpus. C-V3 poses
-an argmax --- whether co-occurrence is the \emph{dominant} relation for a pair
---- over the three-cell distribution $\{\textrm{before}, \textrm{after},
-\textrm{co-occur}\}$.
-
-\section{Gold Labels}
-\label{sec:gold}
-
-\paragraph{Conditioning.} Each family fixes its own denominator, and these
-distinctions are the substantive content of the task. \emph{Precedes} counts only
-reports where both events occupy distinct stages, since co-existence is evidence
-in neither direction. \emph{Co-occurs} counts all reports containing both events,
-because co-existence is the event of interest. \emph{Sequence} requires all three
-events at distinct stages. \emph{First/last} requires every candidate present and
-drops tie reports from the denominator entirely. The association group conditions
-on presence alone, comparing $P(B \mid A \textrm{ present})$ against $P(B \mid A
-\textrm{ absent})$.
-
-\paragraph{Tests.} All tests are exact. Majority claims use a one-sided exact
-binomial against $0.5$. Every argmax claim uses modal-versus-runner-up: an exact
-binomial on the named cell against its strongest competitor, null $0.5$. This
-distinction matters --- a goodness-of-fit test against uniform establishes only
-that a distribution is not flat, never that the \emph{named} cell is the mode.
-Two-arm and two-cohort contrasts use Fisher's exact test on the $2\times2$ table.
-No chi-square approximation appears anywhere, and there is no expected-cell
-requirement; the sole gate is a per-family minimum denominator ($n \geq 10$;
-sequence $n \geq 5$), applied to both arms where two exist.
-
-\paragraph{The three-decision rule.} A claim is \emph{supported} only when its own
-one-sided tail is significant at $\alpha = 0.05$, and \emph{refuted} only when the
-\emph{opposite} tail is. Refutation therefore requires positive counter-evidence
-and never means ``failed to prove''; a single claim-direction $p$-value cannot
-separate refutation from indeterminacy, so both tails are computed for every
-instance. All remaining cases are \emph{insufficient}, sub-typed as
-\emph{underpowered} (testable, decisive in neither direction), \emph{sparse}
-($0 < n < \textrm{floor}$), or \emph{not-locatable} ($n = 0$). Report-level claims
-are single exact observations: deterministic, two-class, and carrying no test.
-
-\paragraph{Oriented statistics.} Every released statistic --- both one-sided
-$p$-values, the 95\% Wilson interval (Wilson--Newcombe on the difference for
-two-arm shapes), and Cohen's $h$ against the null the test actually uses ---
-describes the claim \emph{as that instance asserts it}, not the underlying core's
-canonical orientation.
-
-\section{Instance Realisation}
-\label{sec:realization}
-
-Every decisive core is posed \textbf{both ways}: once oriented with its effect,
-yielding \emph{supported}, and once against it, yielding \emph{refuted}. The two
-form a mirror pair over identical evidence and an identical computation, so a
-system answering \emph{supported} to both directions of one fact is detected
-immediately. Consequently the decisive-core count $S$ caps the supported and
-refuted classes jointly, and the per-group budget is ${\approx}3S$.
-
-Re-orientation is not a single operation. Direction-asking groups swap slots ---
-event order, the two arms, or the two cohorts. Symmetric claims (C-V1, C-V2,
-C-V3) admit no such swap, since ``$A$ and $B$ co-occur'' has no $A$/$B$ ordering
-to reverse; these orient by \textbf{authored negation}, with the negated surface
-form written into the template definition rather than derived at generation time.
-Samplers prefer plain wording and negate only to fill a residual deficit, which
-holds negation to 775 of 18{,}492 instances (4.2\%).
-
-\section{Balancing and the Insufficient Third}
-\label{sec:balance}
-
-Each group ships \textbf{equal thirds} --- supported, refuted, insufficient ---
-capped by its own decisive supply, with the insufficient third spread across
-sub-types by round-robin allocation. Balance is enforced per group rather than
-across the benchmark because template wording is fixed per group and therefore
-trivially identifiable from the question text; a group shipped at, say, 40/338
-would let a system learn a text-shape-to-label shortcut and score highly on it
-without any temporal reasoning.
-
-The not-locatable sub-type requires deliberate construction. Enumeration visits
-only combinations the corpus actually contains, so a claim with an empty
-denominator can never arise from it. A seeded sampler therefore mints claims from
-real cohort-vocabulary terms whose joint count is zero --- for the association
-group, a real corpus term absent from that cohort. Every event named is genuine
-vocabulary, so the claim \emph{appears} answerable, and only querying the
-annotation store reveals the empty denominator. This is precisely the capability
-the sub-type is meant to probe: whether a system reports insufficiency or
-fabricates a relationship. Report-level groups ship two balanced classes by
-design, since indeterminacy has no meaning for a single exact observation.
-
-\section{Validity Screens}
-\label{sec:screens}
-
-No group ships on plausibility. Each is screened against a permutation null
-matched to its claim shape: single-cohort order groups against a
-\textbf{level shuffle} (term-to-stage assignment shuffled within each report,
-preserving report size, stage-size multiset, term frequencies, and
-co-occurrence); the presence-based association group against a degree-preserving
-\textbf{edge swap}; two-cohort shapes against a \textbf{label shuffle}. A group
-ships only if its real decisive count beats 2{,}000 shuffled rounds at
-$p_{\textrm{perm}} \leq 0.05$ (Table~\ref{tab:screens}).
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{llrr}
-\toprule
-Group & Null & Dec./cores & $p_{\textrm{perm}}$ \\
-\midrule
-C-V3 & level shuffle & 258 / 959 & 0.0005 \\
-P-V2 & level shuffle & 2{,}302 / 10{,}060 & 0.0005 \\
-P-V4 & level shuffle & 16{,}884 / 49{,}862 & 0.0005 \\
-C-V2 & edge swap & 2{,}098 / 26{,}764 & 0.0005 \\
-P-M2 & label shuffle & 30 / 322 & 0.025 \\
-\bottomrule
-\end{tabular}
-\caption{Permutation screens at 2{,}000 rounds; 0.0005 is the resolution floor.
-Null means were 62.6, 341.3, 1{,}848.9, 924.4 and 18.3 respectively.}
-\label{tab:screens}
-\end{table}
-
-The screening history is itself a result. Seven candidate two-cohort shapes were
-tested and only P-M2 survived, which is why the two-cohort tier ships a single
-group. C-V3's original majority statistic was replaced after the same method
-revealed that its text and its test answered different questions. The rank-test
-track was retired as a verdict driver when the Mann--Whitney normal approximation
-proved anti-conservative on tie-heavy ordinal data, calling ${\sim}11\%$ of cores
-decisive under shuffled labels at a nominal 5\%; rank statistics survive in the
-release as explicitly descriptive attributes.
-
-\section{Release Format and Validation}
-\label{sec:release}
-
-Two files enforce the input/gold boundary mechanically. The questions file
-carries one row per text variant and only the input fields: identifier, group,
-level, answer type, register, format, text, options, and cohort specification.
-The answers file carries one row per instance --- listing its eight question
-identifiers --- with the gold verdict and sub-type, oriented counts, both
-one-sided $p$-values, test name, $\alpha$, floor, interval, effect size,
-orientation provenance, and the \textbf{evidence report identifiers}. Those
-identifiers are the answer to the localisation step, so they are never input. The
-writer raises an error if any non-input field reaches the questions file.
-
-Two identifiers accompany each instance. \texttt{derived\_from\_core\_id} keeps
-mirror pairs together. The group-independent \texttt{fact\_id} keys every split
-and supply claim, because answer-format twins ask the same underlying fact under
-two group identifiers: the release contains 18{,}492 instances over 11{,}828
-cores but only \textbf{8{,}964 distinct facts}, and the latter is the figure that
-belongs in any coverage or power claim.
-
-Gold labels are validated by six mechanical invariant families: evidence
-arithmetic, set algebra, per-family conditioning re-derived from the leveled
-orders, direction (every numerator report satisfies the claim as asserted),
-verdict-against-tails consistency including the minimum-$n$ gate, and independent
-recomputation of the counts through a separate database-backed path. The release
-passes all six. This validator has caught real defects at every earlier stage --- a
-non-deterministic first-mention rule, a wrong-cohort denominator, and a
-wrong-event claim wording --- which is the argument for running it continuously.
-
-\section{Dataset Statistics}
-\label{sec:stats}
-
-Table~\ref{tab:totals} reports aggregate composition and
-Table~\ref{tab:pergroup} the per-group breakdown. Verdict balance is near-exact
-in aggregate (6{,}857 / 6{,}771 / 4{,}864) and exact within every cohort-level
-group by construction.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lr}
-\toprule
-Records (instance $\times$ register $\times$ format) & 147{,}936 \\
-Instances & 18{,}492 \\
-Groups & 20 \\
-Distinct cores & 11{,}828 \\
-Distinct facts (split key) & 8{,}964 \\
-\midrule
-Supported / refuted / insufficient & 6{,}857 / 6{,}771 / 4{,}864 \\
-\quad underpowered & 1{,}729 \\
-\quad sparse & 1{,}505 \\
-\quad not-locatable & 1{,}630 \\
-\midrule
-Mirror pairs & 6{,}664 \\
-Negated instances & 775 \\
-\midrule
-Conditioned $n$, median (IQR) & 26 (16--42) \\
-$|$Cohen's $h|$ on decisive, median & 0.77 \\
-$p$ on supported claims, median & 0.007 \\
-\bottomrule
-\end{tabular}
-\caption{Aggregate statistics for the v1.1 release.}
-\label{tab:totals}
-\end{table}
-
-\begin{table*}[t]
-\centering
-\small
-\begin{tabular}{llllrrrrrlrr}
-\toprule
-Group & Sc. & Claim & Ans. & $S$ & Inst. & Sup. & Ref. & Insuf. & u/s/n & Facts & Med.\ $n$ \\
-\midrule
-F-R1 & R & first & \textsc{Cho} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
-F-R2 & R & last & \textsc{Cho} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
-F-R3 & R & first & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
-P-R1 & R & precedes & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
-P-R2 & R & precedes & \textsc{Cho} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
-S-R1 & R & sequence & \textsc{Boo} & 300 & 600 & 300 & 300 & 0 & --- & 300 & --- \\
-C-R1 & R & co-occurs & \textsc{Boo} & 300 & 300 & 193 & 107 & 0 & --- & 300 & --- \\
-\midrule
-P-V4 & C & pair-vs-pair & \textsc{Boo} & 2{,}857 & 8{,}571 & 2{,}857 & 2{,}857 & 2{,}857 & 952/952/953 & 4{,}163 & 25 \\
-P-V2 & C & antecedent & \textsc{Boo} & 751 & 2{,}253 & 751 & 751 & 751 & 250/250/251 & 1{,}153 & 27 \\
-C-V2 & C & association & \textsc{Boo} & 349 & 1{,}047 & 349 & 349 & 349 & 229/0/120 & 698 & 195 \\
-C-V1 & C & co-occurs majority & \textsc{Boo} & 252 & 756 & 252 & 252 & 252 & 84/84/84 & 504 & 21 \\
-C-V3 & C & co-occurs argmax & \textsc{Boo} & 174 & 522 & 174 & 174 & 174 & 58/58/58 & 348 & 23 \\
-P-V1 & C & precedes & \textsc{Boo} & 167 & 501 & 167 & 167 & 167 & 55/56/56 & 334 & 17 \\
-P-V3 & C & precedes & \textsc{Cho} & 167 & 501 & 167 & 167 & 167 & 55/56/56 & 334 & 17 \\
-F-V2 & C & last argmax & \textsc{Cho} & 46 & 138 & 46 & 46 & 46 & 15/15/16 & 92 & 14 \\
-F-V1 & C & first argmax & \textsc{Cho} & 34 & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
-F-V3 & C & first argmax & \textsc{Boo} & 34 & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
-S-V1 & C & sequence argmax & \textsc{Boo} & 2 & 6 & 2 & 2 & 2 & 0/1/1 & 4 & 5 \\
-S-V3 & C & sequence argmax & \textsc{Cho} & 2 & 6 & 2 & 2 & 2 & 0/1/1 & 4 & 5 \\
-\midrule
-P-M2 & M & precedes, 2 cohorts & \textsc{Cho} & 29 & 87 & 29 & 29 & 29 & 9/10/10 & 58 & 22 \\
-\bottomrule
-\end{tabular}
-\caption{Per-group composition. Scope: R = report, C = one cohort, M = two
-cohorts. $S$ is the decisive-core count at release enumeration, which caps the
-supported and refuted classes jointly. The u/s/n column gives the insufficient
-sub-types (underpowered / sparse / not-locatable). Facts counts distinct
-\texttt{fact\_id} values; median $n$ is the conditioned denominator.}
-\label{tab:pergroup}
-\end{table*}
-
-Two features of Table~\ref{tab:pergroup} are worth reading directly. First,
-supply is extremely uneven: P-V4 alone contributes 46\% of all instances and the
-two new within-cohort contrast groups together contribute 58\%, while the
-sequence cohort tier contributes six instances. Second, C-V2 ships no
-\emph{sparse} instances, because its denominator is the full cohort (median
-$n = 195$) and so essentially never falls below the floor; its insufficient third
-therefore spans two sub-types rather than three.
-
-\section{Baseline Investigation}
-\label{sec:baselines}
-
-The benchmark is accompanied by a harness that decomposes verification into
-three stages: \textbf{S1} reads the hypothesis and emits a structured claim,
-\textbf{S2} retrieves the reports the claim's statistic is computed over, and
-\textbf{S3} applies the exact test and the three-decision rule. Every stage can
-be replaced by its gold value, which is what makes the per-stage failure rates
-marginal rather than conditional on upstream success. Tables~\ref{tab:floors}
-and~\ref{tab:stagebaselines} report what we have measured.
-
-\subsection{No-reasoning floors}
-
-Table~\ref{tab:floors} establishes what a system scores with no temporal
-reasoning at all. The important observation is that the headline metric
-\emph{inverts} the ordering that accuracy suggests. Because balance is equal
-thirds per cohort group, always predicting a group's majority class scores
-0.371 accuracy --- but 0 F1 on the two classes it never predicts, so 0.235 on
-the group-macro. A tier-aware coin flip spreads its predictions across every
-class and scores \textbf{0.397}. Random, not majority, is therefore the honest
-floor; we report majority alongside it only to show what the metric punishes.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lrrr}
-\toprule
-Floor & Acc. & Class-F1 & \textbf{Grp-F1} \\
-\midrule
-Always \emph{insufficient} & 0.263 & 0.139 & 0.102 \\
-Majority per group & 0.371 & 0.180 & 0.235 \\
-Random, uniform 3-way & 0.333 & 0.331 & 0.360 \\
-\textbf{Random, tier-aware} & 0.368 & 0.364 & \textbf{0.397} \\
-\midrule
-B0 oracle (upper bound) & \textbf{1.000} & \textbf{1.000} & \textbf{1.000} \\
-\bottomrule
-\end{tabular}
-\caption{No-reasoning floors and the deterministic upper bound, over all 18{,}492
-instances / 147{,}936 records. Grp-F1 is the headline: group-macro of
-class-macro-F1. Tier-aware random is a guesser that has noticed the visible
-\texttt{level} field --- report-tier rows are never \emph{insufficient} --- which
-costs no reasoning. B0 is the rules parser into the reference SQL compiler: it
-reproduces every gold label, which demonstrates that the harness is correct, not
-that the text entails the label.}
-\label{tab:floors}
-\end{table}
-
-\subsection{Stage isolation}
-
-Each run in Table~\ref{tab:stagebaselines} holds every stage but one at its gold
-value, so the score attributes to that stage alone. All model runs use the same
-200-instance stratified slice, \textsc{Original} register, question and claim
-formats, with the group label withheld and the procedure unspecified.
-
-\begin{table*}[t]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabularx}{\textwidth}{@{}l p{2.5cm} l l r r Y@{}}
-\toprule
-Run & Aspect under test & Setting (S1 / S2 / S3) & Model & Recs & Acc. & Key diagnostic \\
-\midrule
-\multicolumn{7}{@{}l}{\textit{Stage 1 --- hypothesis $\rightarrow$ structured claim, \textbf{catalogue given} (upper bound; capability rows in Table~\ref{tab:toolbox})}} \\
-smoke-1 & lookup, no hints & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.740 & tier confusion: report-tier acc.\ 0.414 \\
-smoke-1b & \quad + tier hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.918 & one prompt line; report-tier 0.414$\rightarrow$0.848 \\
-smoke-1c & \quad + routing hint & LLM / compiler / exact & Qwen2.5-7B & 400 & 0.928 & +0.010, but redistributes errors \\
-\midrule
-\multicolumn{7}{@{}l}{\textit{Stage 2 --- claim $\rightarrow$ conditioning-correct retrieval}} \\
-smoke-2 & retrieval (text-to-SQL) & rules / LLM / exact & Coder-7B & 400 & 0.545 & 128/486 invalid SQL; conditioning wrong 41.5\% \\
-smoke-4 & retrieval (text-to-SQL) & rules / LLM / exact & Opus & 400 & 0.975 & 22/486 invalid; \texttt{not\_loc} FPR 0.18$\rightarrow$0.00 \\
-s2-32b & retrieval (text-to-SQL) & rules / LLM / exact & Coder-32B & 400 & 0.875 & denominator F1 0.695; \emph{co-exist} leak on every comparative-\emph{precedes} record (P-V2/P-V4/P-M2), none on plain \emph{precedes} \\
-s2-32b-inst & retrieval (text-to-SQL) & rules / LLM / exact & 32B-Inst. & 400 & 0.830 & denominator F1 0.705; leak 23\%; two-cohort tier 0.30 (coder 0.90) \\
-\midrule
-\multicolumn{7}{@{}l}{\textit{Stage 3 --- counts $\rightarrow$ verdict}} \\
-counts-llm & the exact test itself & rules / compiler / \textbf{LLM} & Opus & 242 & 0.959 & \textbf{p-values agree only 66\%}; Fisher 52\% \\
-counts-32b & the exact test itself & rules / compiler / \textbf{LLM} & Coder-32B & 242 & 0.545 & p-values agree \textbf{2\%} (7B: 0.430, agree 0\%); verdicts from direction alone \\
-\midrule
-\multicolumn{7}{@{}l}{\textit{Joint --- no structured intermediate}} \\
-e2e-sql & S1+S2 without the claim & \textbf{sentence} / LLM / exact & Opus & 400 & 0.860 & denominator F1 0.95$\rightarrow$0.67; see Table~\ref{tab:e2econd} \\
-\midrule
-\multicolumn{7}{@{}l}{\textit{Full pipeline, catalogue-given S1 (upper bound)}} \\
-smoke-3 & end to end, local & LLM / LLM / exact & Qwen2.5-7B & 400 & 0.292 & errors compound multiplicatively \\
-smoke-5 & end to end, mixed & LLM / LLM / exact & 7B + Opus & 400 & 0.903 & $\approx 0.928 \times 0.975$: stages independent \\
-\multicolumn{7}{@{}l}{\textit{Full pipeline, toolbox zero-shot S1 (mapping withheld; local only)}} \\
-tb-e2e-7b & end to end, local & LLM / LLM / exact & Coder-7B & 400 & 0.320 & S1 0.400; denominator F1 0.17; 170/242 cohort records without a usable plan \\
-tb-e2e-32b & end to end, local & LLM / LLM / exact & Coder-32B & 400 & 0.302 & report tier 0.00 (Table~\ref{tab:toolbox}); cohort tiers 0.46 / 0.90 \\
-tb-e2e-32b-mix & end to end, local & LLM / LLM / exact & 32B-Inst.\,+\,Coder-32B & 400 & \textbf{0.762} & $0.887 \times 0.875 = 0.776$ if independent; denominator F1 0.55 \\
-\bottomrule
-\end{tabularx}
-\caption{Stage-isolation baselines. ``Setting'' names what fills each stage:
-\emph{rules} is the exact reverse-template parser, \emph{compiler} the reference
-SQL, \emph{exact} the deterministic test; a stage in bold is the one under test.
-Every run is blind-group and procedure-blind on a 200-instance slice of the same
-design: the smoke rows on the v1 slice, the 32B and toolbox rows on the v1.1
-slice (104 instances shared; the report tier was resampled in v1.1).
-The Stage-1 and full-pipeline rows use the \emph{catalogue} prompt, which hands
-the model the claim-type table with its null, test and conditioning rule, so
-they measure classification and lookup; the honest Stage-1 numbers, with that
-mapping withheld, are in Table~\ref{tab:toolbox}.
-Accuracy is over answerable records; the counts-only rows cover the 13
-cohort-tier groups (242 records), since the report tier is a single exact
-observation with no counts to reason from.}
-\label{tab:stagebaselines}
-\end{table*}
-
-Three findings carry beyond the individual numbers.
-
-\paragraph{The weak stage is model-dependent, not benchmark-imposed.} The same
-retrieval stage, on identical inputs, prompts and executor, scores 0.545 with a
-7B model and 0.975 with a frontier one. Invalid SQL falls from 128/486 to
-22/486, wrong conditioning from 41.5\% to 2.5\%, and fabricated evidence on
-\emph{not-locatable} claims from 0.18 to 0.00. What looked like benchmark
-difficulty was a capability gap.
-
-\paragraph{Errors compound at 7B and stay independent at the frontier.} The full
-local pipeline scores 0.292, far below either of its stages measured alone. The
-mixed configuration --- local extraction, frontier retrieval --- lands at 0.903,
-almost exactly the product of its two stages ($0.928 \times 0.975 = 0.904$).
-
-\paragraph{The model cannot compute the exact tests, even given the counts.}
-This is the result we did not expect. Handed the conditioned counts, the test,
-its definition, the null, the tail, the floor and $\alpha$ --- with no text and
-no retrieval --- a frontier model returns the right verdict 0.959 of the time
-but p-values that match the exact computation only \textbf{66\%} of the time,
-and only \textbf{52\%} for Fisher's exact test. Both figures are true at once
-because most cores sit far from $\alpha$, so a wrong $p$ still falls on the
-right side of it; the failures concentrate at the decision boundary (gold
-$p=0.0433$ against a reported 0.0555) and on the largest tables. Fisher is the
-test every two-arm group uses, which is 58\% of the release. Notably the model
-\emph{never} fabricated significance: all 54 gold-\emph{insufficient} rows are
-correct in every configuration, and every error is a decisive gold labelled
-\emph{insufficient}.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lrr}
-\toprule
-Retrieval diagnostic & rule given & rule withheld \\
-\midrule
-Denominator set F1 & 0.950 & 0.673 \\
-\emph{co-exist} leak into a \emph{precedes} denominator & 0.000 & 0.198 \\
-Fabricated evidence, \emph{not-locatable} & 0.000 & 0.273 \\
-\midrule
-Verdict accuracy & 0.975 & 0.860 \\
-\bottomrule
-\end{tabular}
-\caption{smoke-4 against e2e-sql: same model, executor and scorer (smoke-4 on the v1 slice, e2e-sql on v1.1); the
-structured claim, the conditioning rule and the arm plan are the only
-differences. Stage 1 is gold-forced in both (\texttt{claim\_em} $=1.0$), so
-every difference is retrieval. The two leak rates are semantic rather than
-formatting errors, which is what identifies the loss as conditioning.}
-\label{tab:e2econd}
-\end{table}
-
-\paragraph{The conditioning rules are not recoverable from the claim text.}
-Withholding three prompt blocks --- the structured claim, the conditioning rule
-and the per-arm plan --- costs 0.115 verdict accuracy (0.975 $\rightarrow$
-0.860), and the retrieval diagnostics locate the loss precisely
-(Table~\ref{tab:e2econd}): the denominator set F1 falls from 0.950 to 0.673, the
-model leaks co-existing reports into a \emph{precedes} denominator on 19.8\% of
-records, and it fabricates evidence for \emph{not-locatable} claims --- whose
-gold denominator is empty --- on 27.3\%. Both leaks are semantic, so this is a
-conditioning failure and not a misread output contract.
-
-The loss is concentrated, and where it falls is the result. The report tier is
-almost untouched (0.981) and the \emph{precedes} family is untouched (1.00): the
-model derives that rule unaided, writing \texttt{la = lb} into \texttt{excluded}
-with nothing having told it to. What collapses is association (C-V2, 0.50),
-first/last (F-V2 0.36, F-V1 0.45) and sequence (S-V3 0.58). The pattern tracks
-how far each rule is \emph{entailed} by the wording. ``$A$ precedes $B$'' does
-imply that reports where the two co-occur cannot settle the question. But
-nothing in ``$A$ and $B$ occur together more often than if independent'' says to
-split the whole cohort on presence rather than condition on co-occurrence, and
-nothing in ``which event comes last'' says that tied reports leave the
-denominator entirely. Those are stipulations about what the statistic means for
-this corpus, not facts about the sentence --- they are what the structured claim
-carries, and a system without it cannot reconstruct them.
-
-%% 2026-10-08: Tables toolbox / registers / attribution / grid carry the FINAL v1.2
-%% numbers (11 §10.3g). The prose of this and the next subsections still quotes
-%% the v1.1 rows and the dataset sections describe v1.1 -- both to be rewritten.
-\subsection{Composing the procedure without the mapping}
-
-The Stage-1 runs above hand the model a catalogue: the 20 claim types with
-their null, test and conditioning rule, so extraction reduces to classification
-and lookup. The \emph{toolbox} frame withholds exactly that mapping and nothing
-else. Every convention is stated, phrased by situation rather than keyed to a
-type (``a report with two events tied for earliest has no answer and is
-excluded''), together with a computed dataset card and the test definitions;
-the model then composes a conditional plan --- quantity, denominator, arms,
-null recipe, tail, test family and a selection rule that S3 resolves on the
-retrieved counts --- and the harness derives the claim type from the plan by
-reverse lookup. Table~\ref{tab:toolbox} compares the two frames on the same
-slice.
-
-\begin{table*}[t]
-\centering
-\small
-\begin{tabular}{lrrrr}
-\toprule
- & \multicolumn{2}{c}{\textbf{32B-Inst.}} & \multicolumn{2}{c}{7B-Inst.} \\
-S1 condition (S2, S3 at gold) & all & cohort tiers & all & cohort tiers \\
-\midrule
-Catalogue + hints (lookup; answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
-\textbf{Toolbox, zero-shot} & 0.950 & 0.922 & 0.595 & 0.558 \\
-\quad + one verify-and-repair round & \textbf{0.955} & \textbf{0.930} & 0.657 & 0.655 \\
-\bottomrule
-\end{tabular}
-\caption{Verdict accuracy when the claim-type mapping is withheld, on the final
-v1.2 release (slice \texttt{smoke\_200\_v1.2\_s0}: 200 instances over all 29
-groups, 400 records; blind-group, procedure-blind; S2 and S3 at gold;
-conventions v2.2). ``Cohort tiers'' is the statistical headline (258 records);
-the report tier is a reading task scored separately (32B: 1.000). The verify
-round re-asks only plans that violate a stated convention. Few-shot rows are
-not reported: a worked plan is a mapping row. On the v1.1 slice the frontier
-model (Opus) reached 0.958 zero-shot against 0.887 for the same 32B under the
-earlier conventions; it is re-run on v1.2 when the API budget allows.}
-\label{tab:toolbox}
-\end{table*}
-
-The gap is model-tier, not task ambiguity. Withholding the mapping costs the 7B
-model 24--28 points, almost all of it whole-shape misreads (110--125 of 400
-plans match no claim type), while the composed fields that do land are right
-(quantity 0.978, denominator 0.935, tail 0.993). It costs the frontier model
-nothing with three worked examples and 0.042 without them, while the 7B model
-falls to 0.490 (179 of 400 plans match no type); the examples were propping up
-both. A worked plan is itself a mapping row, so zero-shot is the honest headline
-and few-shot a reported dial. Under it, all 36 frontier claim errors (17 verdict errors) are two shapes
-(association composed as plain co-occurrence; antecedent composed as the
-four-event contrast). Stage 1 on the released shapes is therefore near-solved
-at the frontier without the catalogue; remaining S1 difficulty has to come from
-nulls that cannot be looked up, which is the v1.2 expansion.
-A local 32B model sits in between, and which 32B matters: the instruct
-variant composes at 0.887 zero-shot (report tier 1.000, cohort tiers 0.814),
-0.07 below Opus, while the coder variant of the same size reaches 0.678 on
-cohort claims but never selects the single-report denominator for a report-level
-claim, which zeroes 39.5\% of the slice (Table~\ref{tab:toolbox}). Three worked
-examples are worth 0.03 to the instruct model, 0.17 to the coder model and 0.04
-to Opus: the few-shot leak is largest where composition is weakest. Downstream, the same model retrieves
-the right verdict at 0.875 with the wrong denominator (set F1 0.695; co-exist
-reports leak into every comparative-\emph{precedes} denominator) and, handed the counts, matches the
-exact $p$-value on 2\% of records (Table~\ref{tab:stagebaselines}).
-
-\paragraph{Paraphrase sensitivity.} Every instance ships in four templated
-registers, so the same claims can be posed in research, media and clinical
-wording with the gold unchanged. Table~\ref{tab:registers} re-runs the zero-shot
-toolbox condition on each register.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lrrrr}
-\toprule
-S1, toolbox zero-shot (1 round) & Original & Research & Media & Clinical \\
-\midrule
-7B-Instruct & 0.657 & 0.662 & 0.595 & 0.575 \\
-32B-Instruct & 0.955 & 0.838 & 0.877 & 0.935 \\
-\bottomrule
-\end{tabular}
-\caption{Verdict accuracy by register on the final v1.2 slice; same 200
-instances, S2 and S3 at gold, mapping withheld, no worked examples, one
-verify-and-repair round, conventions v2.2.}
-\label{tab:registers}
-\end{table}
-
-The 32B model loses 0.03--0.12 to a change of wording, most on the research
-register (claim EM 0.870 $\rightarrow$ 0.728; no-shape plans 25 $\rightarrow$
-55), and the loss sits on the cohort tiers, where the register rewrites the
-statistical situation rather than the event names. The 7B swings by $\pm$0.11
-in both directions, which is noise around a low mean rather than sensitivity.
-Templated paraphrase is therefore a real but bounded perturbation for a capable
-model, and the release's four registers make it a standard row rather than a
-separate study.
-
-\subsection{Architecture versus information, with and without verification}
-\label{sec:grid}
-
-Table~\ref{tab:grid} separates what the prompt tells the model (the stated
-conventions) from what the decomposition adds (a composed plan, a per-stage
-contract, a verifier), on the final v1.2 slice. Reading the 32B columns: stating the
-conventions to the end-to-end model is worth $+0.09$ (A$\rightarrow$B); giving
-it two repair rounds with every check that needs no plan (a rejected query,
-$n=k$, an empty arm beside a full one) is worth another $+0.07$ (B$+$2, 0.660),
-which is level with the composed pipeline when that pipeline hands its plan to
-the SQL stage as prose (D$+$2, 0.645). On the verdict, then, verification alone
-closes that gap --- but not on the evidence: B$+$2 is right for the right
-reason on 53\% of its correct verdicts, D$+$2 on 71\%. The decomposition pays
-once the plan is used as a \emph{contract}: when the harness resolves the
-plan's named denominator primitive into that primitive's definition for S2
-(D$'$), the pipeline reaches 0.855, and 0.865 with the verifier --- $+0.20$
-over the verified end-to-end control, faithfulness 0.78, false-decisiveness
-0.00, within 0.04 of the gold-plan row. Nothing on the baseline side changes
-between these rows; D$'$ uses only the model's own plan. At 7B nothing moves
-the cohort tiers above 0.45; the composed pipeline is \emph{below} plain
-sentence-to-SQL and the conventions cost the end-to-end 7B accuracy (B $<$ A):
-a model that cannot compose the plan cannot use the stipulations either.
-
-\begin{table*}[t]
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrrrrrrr}
-\toprule
- & & \multicolumn{4}{c}{32B (Inst.\ for S1, Coder for SQL)} & \multicolumn{4}{c}{7B} \\
-cell & what the model is given / asked & all & cohort & den.\ F1 & faith. & all & cohort & den.\ F1 & faith. \\
-\midrule
-A & sentence $\rightarrow$ SQL, schema only & 0.502 & 0.562 & 0.441 & 0.21 & 0.440 & 0.275 & 0.101 & 0.23 \\
-A$+$2 & \quad + two repair rounds, plan-free checks & 0.530 & 0.605 & 0.498 & 0.28 & --- & --- & --- & --- \\
-B & \quad + conventions stated & 0.588 & 0.543 & 0.517 & 0.28 & 0.380 & 0.279 & 0.124 & 0.18 \\
-B$+$2 & \quad + two repair rounds, plan-free checks (verified e2e) & 0.660 & 0.655 & 0.643 & 0.53 & --- & --- & --- & --- \\
-\midrule
-D & composed plan handed to S2 as prose $+$ conventions & 0.573 & 0.453 & 0.525 & 0.35 & 0.287 & 0.209 & 0.238 & 0.39 \\
-D$+$2 & \quad + two verify-and-repair rounds (plan checks) & 0.645 & 0.566 & 0.611 & 0.71 & 0.295 & 0.221 & 0.230 & 0.37 \\
-E & composed plan $+$ plan-consistency re-ask & 0.652 & 0.578 & 0.615 & 0.71 & 0.263 & 0.171 & 0.234 & 0.48 \\
-D$'$ & composed plan, its named primitive resolved for S2 (the contract) & 0.855 & 0.775 & 0.717 & 0.75 & 0.365 & 0.217 & 0.162 & 0.27 \\
-D$'$$+$2 & \quad + two verify-and-repair rounds & \textbf{0.865} & \textbf{0.791} & 0.763 & \textbf{0.78} & --- & --- & --- & --- \\
-\midrule
-C & gold plan, same frame (S2 row) & 0.900 & 0.845 & 0.767 & 0.73 & 0.570 & 0.349 & 0.196 & 0.29 \\
-C$+$2 & \quad + two verify-and-repair rounds & 0.905 & 0.853 & 0.803 & 0.79 & 0.620 & 0.426 & 0.359 & 0.55 \\
-\midrule
-S1 & composed plan, gold S2/S3 (Table~\ref{tab:toolbox}) & 0.950 & 0.922 & --- & --- & 0.595 & 0.558 & --- & --- \\
-S1$+$1 & \quad + one verify-and-repair round & 0.955 & 0.930 & --- & --- & 0.657 & 0.655 & --- & --- \\
-counts & gold $n,k$ given; model picks test and verdict & 0.705 & 0.543 & (given) & --- & 0.650 & 0.457 & (given) & --- \\
-\bottomrule
-\end{tabular}
-\caption{The architecture-vs-information grid on the final v1.2 slice (400
-records; cohort $=$ 258 cohort-tier records) under the final prompt
-configuration (conventions v2.2, schema listing, self-join hint). Den.\ F1 is the denominator-set
-F1 over cohort arms; faith.\ is $P(\text{denominator exact} \mid \text{verdict
-right})$. Cells A--E are the audit's grid; ``$+$2'' rows add two bounded repair rounds
-(for A/B with plan-free checks only; for D/D$'$/C with the plan's checks). D$'$ is
-D with the plan's named primitive resolved by the harness for S2. The counts-given row has no denominator
-to get wrong and still decides at 0.54 on the cohort tiers, with false
-decisiveness 0.17 and subtype accuracy 0.}
-\label{tab:grid}
-\end{table*}
-
-\subsection{Where retrieval fails: attribution and faithfulness}
-
-Every prediction records the report ids it placed in each denominator, and the
-compiler gives the gold ids for the same record, so each wrongly included or
-dropped report can be checked against the claim's own rule in the database and
-named. Table~\ref{tab:attribution} does this for the local S2 runs. The largest
-named cause had been invisible to every aggregate metric: the query defines the
-eligible set as the supporting set (\texttt{in\_denominator} as $a.\mathit{level} <
-b.\mathit{level}$), so $n = k$ and the claim is supported for free. The last row
-is the \emph{faithfulness} score, $P(\text{denominator exact} \mid \text{verdict
-right})$: a third to a half of the correct 32B verdicts, and nine in ten of
-the 7B's, rest on a wrong or failed denominator, which is the quantity verdict
-accuracy cannot see.
-
-\begin{table*}[t]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrrrr}
-\toprule
- & \multicolumn{3}{c}{S1 at gold (rules)} & \multicolumn{3}{c}{S1 composed (32B-Inst., toolbox)} \\
-S2 failure cause (258 cohort records) & Coder-7B & Coder-32B & \quad+2 rounds & D plan+conv. & \quad+2 rounds & E re-ask \\
-\midrule
-no plan from S1 (S2 not run) & 0 & 0 & 0 & 8 & 6 & 8 \\
-SQL failed to execute & 150 & 50 & 38 & 54 & 25 & 43 \\
-denominator $=$ numerator ($n=k$) & 4 & 8 & 4 & 103 & 40 & 41 \\
-event absent from report & 2 & 26 & 24 & 9 & 7 & 5 \\
-\emph{co-exist} leak into \emph{precedes} & 0 & 4 & 2 & 4 & 0 & 0 \\
-tie leak into a first/last denominator & 0 & 0 & 0 & 19 & 3 & 13 \\
-non-consecutive pair in an \emph{immediate} denominator & 0 & 0 & 0 & 0 & 10 & 3 \\
-wrong cohort & 0 & 6 & 6 & 0 & 0 & 0 \\
-presence split narrowed to co-occurrence & 0 & 0 & 0 & 0 & 3 & 0 \\
-other omission & 72 & 0 & 4 & 11 & 40 & 25 \\
-\midrule
-wrong or missing denominators & 228 & 94 & 78 & 208 & 134 & 138 \\
-\quad of which verdict still right & 16 & 40 & 36 & 58 & 33 & 26 \\
-\textbf{faithfulness} $P(\text{den.\ exact} \mid \text{verdict right})$ & 0.29 & 0.73 & 0.79 & 0.35 & 0.71 & 0.71 \\
-\bottomrule
-\end{tabular}
-\caption{Attribution of denominator failures to the conditioning rule violated,
-and the faithfulness score, on the final v1.2 slice under the final prompt
-configuration. A record takes its dominant cause; ``SQL failed'' counts
-records whose statement did not execute (empty arms); ``other omission'' is
-under-inclusion not yet matched to a rule. The verify-and-repair rounds remove
-most failed statements and $n=k$ queries; the tie and \emph{co-exist} leaks are
-what remains.}
-\label{tab:attribution}
-\end{table*}
-
-\subsection{External systems}
-
-We also ran four published systems on the same data, with local models
-(Qwen2.5-Coder-32B unless stated) and no API access: EHRAgent
-(end-to-end code agent over the eval DB, 400 records), the EHRSQL
-protocol (one text-to-SQL query per hypothesis, executed and
-scored against the gold counts; 242 cohort-tier records), a StatQA-style test
-selector (the gold counts and hypothesis, pick the test; 242
-records), and VERITAS (multi-agent plan / statistics /
-interpretation, 39 balanced hypotheses, once with its own test pool and once
-with ours). Table~\ref{tab:external} reports them.
-
-\begin{table*}[t]
-\centering
-\small
-\begin{tabularx}{\textwidth}{@{}l l r Y@{}}
-\toprule
-System & Stage & Acc. & Where it fails \\
-\midrule
-EHRAgent, Coder-7B (v1.1) & S1--S3 & 0.103 & 72\% no answer \\
-EHRAgent, 32B (v1.1) & S1--S3 & 0.417 & retrieval; oracle S3 lifts to 0.446; prompts truncated to 2k tokens \\
-EHRAgent, 32B, v1.2: agent runs its own test & S1--S3 & 0.624 & decides 64\% of the undecidable claims (false-decisiveness); evidence not auditable; report tier 0.96 \\
-EHRAgent, 32B, v1.2: counts $\rightarrow$ our test, + conventions & S1--S2 & 0.628 & 10\% no answer; false-decisiveness 0.23 \\
-EHRAgent, 32B, v1.2: counts $\rightarrow$ our test, minimal & S1--S2 & 0.461 & 9\% no answer; false-decisiveness 0.51 \\
-EHRSQL protocol, 32B & S2 & 0.384 & counts exact on 2.9\%; 27\% abstain \\
-StatQA-style, 32B & S3 & 0.364 & two-proportion $z$ where Fisher is required; $\chi^2$ on every argmax task \\
-VERITAS, own tests & S1--S3 & 0.333 & no one-sample test; 14/39 time out \\
-VERITAS, our tests & S1--S3 & 0.308 & picks our test 33\%; denominator wrong \\
-\bottomrule
-\end{tabularx}
-\caption{Published systems on the cohort and multi tiers, verdict accuracy
-(chance $\approx 0.33$). EHRAgent v1.1 rows and EHRSQL over the v1.1 slice, EHRAgent v1.2 rows over the final v1.2 slice (258 cohort-tier records, same prompts as Table~\ref{tab:grid});
-StatQA-style over its cohort-tier subset; VERITAS over 3 hypotheses per group,
-balanced over verdicts, with a 40-minute cap per run. Each system received the
-schema and a short data description, not the situation-phrased conventions of
-the toolbox frame.}
-\label{tab:external}
-\end{table*}
-
-None of them clears chance by much, and they fail in the same place. The
-EHRSQL query returns the gold counts on 2.9\% of records although its verdict
-is right 38\% of the time, because most cores sit far from $\alpha$; EHRAgent's
-gain from a 7B to a 32B model is retrieval, not statistics; and VERITAS, given
-our exact tests, adopts them a third of the time without gaining accuracy,
-since its plan conditions on the whole cohort ($n = 1{,}164$) where the gold
-denominator has six reports. The denominator is where systems fail, which is
-why it is a scored stage here. Two caveats are stated rather than hidden: these
-runs are at 32B while our own frontier rows are Opus, and the conventions were
-not supplied to them in the toolbox form, so the numbers are a
-conventions-withheld condition in the sense of Table~\ref{tab:e2econd}.
-
-\section{Related Work and Positioning}
+\section{Introduction}
+\label{sec:intro}
+
+A growing class of language-model systems promises to test scientific
+hypotheses against data: given a claim and a dataset, they choose a statistical
+method, run it and report a conclusion. Benchmarks for this ability
+\cite{miao2026fisher,zhu2024statqa,zhu2026statabench} score the final answer ---
+a $p$-value, a reject/fail-to-reject decision --- and hand the system the
+relevant data already assembled. In most real settings that is the easy half.
+Consider the claim \emph{``after the Pfizer vaccine, headache tends to precede
+fatigue''} against a corpus of annotated adverse-event reports. Before any test
+can run, a system has to decide \emph{which reports count}: those in which both
+events occur at different stages (a report where they co-occur witnesses
+neither order), \emph{what ``no effect'' means} (a 50/50 split of the ordered
+reports), and \emph{which test applies} (a one-sided exact binomial with a
+minimum-count floor). Each of those decisions is a stipulation about what the
+sentence means for this corpus, each can be wrong independently of the others,
+and a verdict can be right while all of them are wrong.
+
+This paper makes that chain of decisions the object of evaluation. We release
+\sys{}, a benchmark of temporal--statistical claims over MedTempo, a corpus of
+3{,}166 vaccine adverse-event reports whose clinical course is annotated as a
+\emph{leveled order} of events. Every instance carries not only its gold
+verdict --- \emph{supported}, \emph{refuted} or \emph{insufficient}, the last
+sub-typed --- but the gold of every stage that produced it: the structured plan
+(events, quantity, denominator rule, null, test), the exact set of report
+identifiers in the denominator and numerator, and the exact $p$-values. Gold is
+computed mechanically from the annotations, validated by six families of
+invariants, and reproduced to 1.000 by a deterministic oracle, so a system's
+intermediate outputs can be scored, not only its answer.
+
+We pair the benchmark with an \emph{instrumented reference pipeline}: a plan
+stage, a retrieval stage and a deterministic test stage, each with an explicit
+output contract and a bounded verify-and-repair loop. The pipeline is a
+measuring instrument as much as a method: its stages can be filled with gold,
+its prompts can state or withhold the corpus conventions, and its plan can be
+handed to the next stage either as prose or as a contract that the harness
+resolves. That lets us separate two things that end-to-end evaluation
+conflates --- the \emph{information} a system is told and the
+\emph{architecture} it is given --- and ask what each is worth.
+
+Three findings organise the results. First, \emph{the denominator is where
+systems fail, and verdict accuracy hides it}: the strongest end-to-end
+text-to-SQL baseline is right 59\% of the time but stands on the correct
+evidence for only 28\% of its right answers; an agentic baseline reaches 0.62
+on the cohort tiers while deciding 64\% of the claims the data cannot decide.
+Second, \emph{stated conventions are worth as much as any architecture}: one
+missing stipulation cost a 32B planner a whole claim family (0 of 18) and the
+sentence that supplied it moved the planner from 0.897 to 0.950 with 23 of 29
+groups unchanged record for record. Third, \emph{decomposition pays only when
+the plan is a contract}: with the plan handed to retrieval as prose, the
+pipeline with a verifier is matched by a verified end-to-end model (0.645 vs.\
+0.660); with the plan resolved by the harness it reaches 0.865 on the
+development slice and 0.856 on the 2{,}350-instance development set, 0.19 above
+the verified end-to-end control, while being right for the right reason 78\%
+of the time against 53\%.
+
+Our contributions are: (i) a benchmark of 8{,}763 claim instances
+(70{,}104 renderings) in 29 groups and seven claim families over three cohort
+tiers, with stage-level gold, exact-test labels, a three-decision verdict with
+sub-typed abstention, pseudonymised identifiers and declared splits
+(\S\ref{sec:dataset}); (ii) an evaluation framework whose stage contracts turn
+the verdict into five auditable quantities --- plan agreement, evidence-set
+agreement, $p$-agreement, faithfulness and abstention --- and whose prompt
+frames make information and architecture separately controllable
+(\S\ref{sec:framework}); (iii) an experimental study of local and agentic
+systems under that framework, including a one-change-at-a-time account of what
+the conventions, the schema presentation and the plan contract are each worth
+(\S\ref{sec:experiments}).
+
+\section{Related Work}
 \label{sec:related}
 
-Table~\ref{tab:related} places the benchmark against the systems and benchmarks
-it overlaps with, on the dimensions that decide what it can claim. The four
-closest works were read against one rubric --- what the model is given, what it
-must formulate, who computes the statistic, whether the data carry event order,
-whether intermediate stages have gold, and whether new datasets can be fed in.
+\paragraph{Statistical reasoning benchmarks.} StatQA \cite{zhu2024statqa}
+scores whether a model knows which test applies; StatFormBench
+\cite{wang2026statformbench} scores the formulation of a test family from a
+description; StatABench \cite{zhu2026statabench} adds fixed tool functions and
+scores the final answer. P-Bench and Fisher-R1 \cite{miao2026fisher} come
+closest to our setting: 425 tasks in which an agent receives a hypothesis with
+its null stated, a CSV of the relevant data and a glossary, writes R to compute
+a $p$-value, and is scored on the decision and on the $p$-value's distance to
+a reference. In all of these the data are already the relevant subset and the
+null is given or trivial. The step we score first --- deciding which records a
+statistic is computed over --- has no counterpart, and no intermediate stage
+has gold.
+
+\paragraph{Hypothesis-testing agents.} VERITAS \cite{veritas2026} is a
+multi-agent co-scientist that formulates, analyses and interprets a hypothesis
+with a deterministic evidence classifier, built for image-derived cohorts; LATCH
+\cite{gim2026latch} runs LLM-chosen analyses through deterministic R pipelines
+on EHR data with the method given; DiscoveryBench and BLADE
+\cite{majumder2025discoverybench,gu2024blade} evaluate open-ended data-driven
+discovery agents against rubrics. These systems share our plan-then-execute
+shape and our insistence on auditable computation; none of them scores the
+conditioning of the evidence, and none has hypotheses about the order of
+events within a record. We run two of them (EHRAgent \cite{shi2024ehragent},
+VERITAS) on our data as end-to-end baselines.
+
+\paragraph{Clinical text-to-SQL and timelines.} EHRSQL \cite{lee2022ehrsql}
+scores one query per question with an abstention option; EHRAgent
+\cite{shi2024ehragent} solves EHR questions with a code-writing agent and
+error-driven retries. The sentence-to-SQL baselines in \S\ref{sec:baselines}
+follow that protocol over our schema. MedTempo and the CRAFT/TIMER line
+\cite{craft2026,timer2025} extract clinical timelines from narratives; we start
+where extraction ends, taking the expert-annotated timelines as given and
+asking what can be claimed about them.
+
+\paragraph{Positioning.} Table~\ref{tab:related} compares the closest work on
+the dimensions that decide what can be claimed. Two things are not new: a
+plan-then-execute loop with a deterministic statistics layer is the LATCH
+architecture, and ``hypothesis and data in, method and $p$ out'' is P-Bench.
+What is new is the combination of a model-formulated null executed
+deterministically with gold at every stage, a scored eligibility rule, and
+claims about event order with the conditioning semantics (first mention,
+co-existence, ties) those claims carry.
 
 \begin{table*}[t]
 \centering
@@ -797,116 +163,813 @@ StatQA \cite{zhu2024statqa} & applicability only & nothing computed & no & no & 
 DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & open-ended hypothesis & agent code & no & no & rubric / expert & no \\
 EHRAgent / EHRSQL \cite{shi2024ehragent,lee2022ehrsql} & no (QA / SQL) & agent code / SQL & no & yes (EHR) & answer / execution & schema \\
 VERITAS \cite{veritas2026} & plans the analysis & own code + deterministic classifier & no & yes (imaging) & verdict vs.\ reference & data + description \\
-CRAFT / TIMER \cite{timer2025} & n/a (extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
+CRAFT / TIMER \cite{craft2026,timer2025} & n/a (extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
 \midrule
-\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last & \textbf{yes}: annotated VAERS timelines & \textbf{every stage}: claim, evidence set (denominator), counts, $p$, verdict & dataset card (one corpus so far) \\
+\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last, position, proximity, threshold & \textbf{yes}: annotated VAERS timelines & \textbf{every stage}: plan, evidence set, counts, $p$, verdict & stated conventions + dataset card \\
 \bottomrule
 \end{tabularx}
-\caption{Positioning against the closest benchmarks and systems. The four
-closest (P-Bench, LATCH, StatFormBench, StatABench) were read in full; the rest
-from abstracts. ``Gold at intermediate stages'' is what makes per-stage
-attribution possible; ``event-order claims'' means hypotheses about the order or
-timing of events within a record.}
+\caption{Positioning against the closest benchmarks and systems. ``Gold at
+intermediate stages'' is what makes per-stage attribution possible;
+``event-order claims'' means hypotheses about the order or timing of events
+within a record.}
 \label{tab:related}
 \end{table*}
 
-\paragraph{What is not new.} A plan-then-execute loop with a deterministic
-statistics layer is the LATCH architecture, on clinical data, with a schema
-interface, seven months earlier; and ``hypothesis plus dataset in, method choice
-and $p$ out'' is P-Bench. Our harness is the reference implementation that the
-instrument evaluates, not the contribution. Nor is Stage~1 hard for a frontier
-model on the released claim types: with the mapping withheld and every
-convention stated, a frontier model composes the procedure at 0.958 zero-shot
-(Table~\ref{tab:toolbox}); the difficulty at Stage~1 is a small-model gap.
+\section{Task}
+\label{sec:task}
 
-\paragraph{What is.} No prior work combines a model-formulated null that is then
-executed deterministically with gold at every stage; none scores the
-eligibility rule --- which reports the statistic is computed over --- and that is
-where systems fail (Tables~\ref{tab:e2econd} and~\ref{tab:external}); and none
-poses hypotheses about the order of events within patient timelines, with the
-conditioning semantics (first mention, co-existence, ties) those hypotheses
-carry. The findings that follow from the instrument are correspondingly about
-retrieval and arithmetic rather than reading: a frontier model handed the exact
-counts reproduces the exact $p$-value only 66\% of the time
-(Table~\ref{tab:stagebaselines}), and the denominator, not the test, is what
-external systems get wrong. Two caveats are stated with the claim. Null
-diversity is thin in this release (three cohort-tier null signatures), so
-``formulates the null'' is a modest inference until the data-derived nulls of
-the next expansion; and portability rests on one corpus until the benchmark is
-run on an external hypothesis set with its stated null hidden.
+\paragraph{Input and output.} A \emph{record} is a claim in natural language
+--- a question or a declarative sentence, in one of four registers --- about a
+\emph{cohort} (the reports of one vaccine), a \emph{contrast} of two cohorts, or
+one named \emph{report}; and the annotations: for every report, its vaccine
+and the stage at which each event term is first mentioned. The system must
+return a verdict in $\{\emph{supported}, \emph{refuted}, \emph{insufficient}\}$,
+the last sub-typed as \emph{not-locatable} (no report qualifies),
+\emph{sparse} (too few qualify) or \emph{underpowered} (enough qualify, neither
+tail significant). It never sees report text.
 
-\section{Limitations}
-\label{sec:limitations}
+\paragraph{What a verdict rests on.} For a cohort-tier claim the gold is
+computed in three steps that are themselves released: (1) a \emph{plan} ---
+the events named, the quantity compared, the \emph{denominator primitive}
+(which reports count), the number of arms, the null (a fixed proportion, a bar
+stated in the text, a rate derived from the data, or equality of two arms), the
+tail and the test family; (2) the \emph{evidence} --- the identifiers of the
+reports in each arm's denominator and numerator; (3) the exact test with a
+per-family minimum-count floor and $\alpha = 0.05$ one-sided in the claim's
+direction. \emph{Refuted} requires significance in the opposite direction, never
+``failed to prove''. A report-tier claim is a single deterministic observation
+over one report and carries no test.
 
-Several limitations are inherent to the construction and are stated rather than
-mitigated.
+\paragraph{Conventions are part of the task.} Whether a report with both
+events at the same stage counts for ``precedes'', what ``typically'' means,
+whether a tie for ``first'' leaves the denominator, what ``more often than their
+separate rates would predict'' compares --- these are stipulations about the
+corpus, not facts about the sentence, and a system that was never told them
+cannot infer them. The benchmark therefore ships its conventions as a
+situation-phrased text that any system may be given (\S\ref{sec:frames}), and
+the experiments treat ``conventions stated'' as a controlled condition. The
+claim-type \emph{mapping} --- which rule and which test go with which wording
+--- is what we withhold: a system is scored on composing it.
 
-\paragraph{Enumeration ceiling.} $S$ in Table~\ref{tab:pergroup} is the decisive
-supply reached by the release enumeration, which visits pairs and triples drawn
-from the most frequent cohort terms (25 and 16 respectively), not the corpus
-maximum. Exhaustive enumeration yields substantially more
-(Table~\ref{tab:ceiling}), so the shipped dataset is bounded by enumeration
-breadth rather than by statistical power. Two qualifications follow. The
-sequence tier was taken ``in full'' at $S = 2$ when the corpus supports 4.
-And because the surplus is concentrated in the already-dominant groups --- P-V4
-alone would rise from 2{,}857 to 16{,}884 --- exhaustive regeneration requires a
-per-group cap decided jointly with it, or the composition imbalance below grows
-rather than shrinks.
+\paragraph{Metrics.} Verdict accuracy and class-macro F1 are reported on the
+cohort tiers (the statistical headline) and on the report tier (a reading
+task) separately. Because every stage has gold, we also report plan agreement
+(exact match on the plan's fields), denominator-set F1 and the \emph{co-exist
+leak} (same-stage reports wrongly admitted to an order denominator),
+$p$-agreement with the exact computation, \emph{faithfulness} --- the share of
+correct verdicts whose denominator is exactly the gold set --- and three
+abstention measures: false-decisiveness (a decisive verdict on a gold
+\emph{insufficient} claim), over-abstention and sub-type accuracy.
+
+\section{The \sys{} Benchmark}
+\label{sec:dataset}
+
+\subsection{Source corpus}
+\label{sec:corpus}
+
+MedTempo is a corpus of 3{,}166 VAERS adverse-event reports for three COVID-19
+vaccines, annotated with a \emph{leveled order}: a single totally ordered chain
+of stages in which each stage holds the MedDRA-coded events reported at that
+point of the clinical course (Table~\ref{tab:corpus}). Two annotation
+conventions are load-bearing: when a term recurs, its \emph{first} mention
+fixes its stage; events at one stage are temporally indistinguishable
+(\emph{co-exist}). The annotation, not the narrative, is both the benchmark's
+ground truth and the systems' input.
 
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lrrr}
+\begin{tabular}{lr}
 \toprule
-Group & Released $S$ & Exhaustive & Share \\
-\midrule
-C-V2 & 349 & 2{,}098 & 17\% \\
-P-V2 & 751 & 2{,}302 & 33\% \\
-S-V1 & 2 & 4 & 50\% \\
-C-V1 & 252 & 378 & 67\% \\
-C-V3 & 174 & 258 & 67\% \\
-P-V1 & 167 & 220 & 76\% \\
-F-V2 & 46 & 59 & 78\% \\
-F-V1 & 34 & 36 & 94\% \\
-P-M2 & 29 & 30 & 97\% \\
+Reports & 3{,}166 \\
+\quad Janssen / Pfizer / Moderna & 1{,}164 / 1{,}019 / 983 \\
+Distinct event terms (vocabulary) & 1{,}660 \\
+Events per report (mean / median / max) & 7.2 / 6 / 43 \\
+Stages per report (mean / median / max) & 3.4 / 3 / 14 \\
 \bottomrule
 \end{tabular}
-\caption{Decisive supply released against the exhaustive enumeration of all
-pairs and triples clearing the minimum denominator.}
-\label{tab:ceiling}
+\caption{Source corpus. Stages are the levels of the annotated leveled order.}
+\label{tab:corpus}
 \end{table}
 
-\paragraph{Class balance is per group, not per family.} Aggregate thirds coexist
-with a composition dominated by two groups; consumers reporting a single accuracy
-figure should macro-average over groups.
+\subsection{Hypothesis space}
+\label{sec:space}
 
-\paragraph{Report level has no insufficient class.} Seven groups and 3{,}900
-instances (16\% of the release) are two-class by design, so that fraction of the
-benchmark cannot exercise indeterminacy. Six of the seven sit at exactly 300/300
-by enumeration cap rather than by data; C-R1 ships 193/107 because its symmetric
-claim admits no orientation operator and no negated wording was authored for it.
+Twenty-nine template groups span seven claim families at three scopes
+(Table~\ref{tab:roster}). Four families concern order and co-occurrence ---
+\emph{precedes}, \emph{co-occurs}, strict \emph{sequence} of three events,
+\emph{first/last} among candidates --- and three, added to diversify the null,
+concern \emph{position} (an event in the earlier half of a timeline),
+\emph{proximity} (two events at consecutive stages) and \emph{threshold} (a
+rate at least a stated bar). Scopes are a single report, one vaccine cohort,
+and a contrast of two cohorts. Within a cohort, three groups are two-arm
+contrasts: whether $B$ follows $A$ more often than it follows $C$; whether $A$
+precedes $B$ more often than $C$ precedes $D$; and whether $A$ and $B$ occur
+together more often than their separate rates predict (association). Each
+group is realised in four registers (a canonical \textsc{Original} plus
+\textsc{Research}, \textsc{Media} and \textsc{Clinical}) and two formats
+(question and claim) by mechanical slot-filling with no model-generated
+rewriting; answers are \textsc{Bool} or \textsc{Choice}.
 
-\paragraph{Report-level vaccine coverage.} The report tier is bounded at 300
-cores per group so that seven report groups do not outweigh the cohort tier. In
-v1 that bound was applied by taking the lowest report identifiers, and because
-identifiers are chronological the window predated one vaccine's authorisation
-(Janssen supplied 8.8\% of report-level instances against 36.8\% of the
-corpus). v1.1 draws the same bound by a seeded shuffle: Janssen 35.1\%, Moderna
-31.2\%, Pfizer 33.8\% against corpus shares of 36.8 / 31.0 / 32.2. Cohort-level
-instances are unchanged between the two releases. The stage-isolation smoke rows
-(smoke-1 to smoke-5) were measured on v1 and its 200-instance slice; every other
-number is on v1.1, whose slice shares 104 of those 200 instances.
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{llll}
+\toprule
+Family & Report & One cohort & Two cohorts \\
+\midrule
+precedes & P-R1, P-R2 & P-V1--P-V4 & P-M2 \\
+co-occurs & C-R1 & C-V1--C-V3 & --- \\
+sequence & S-R1 & S-V1, S-V3 & --- \\
+first/last & F-R1--F-R3 & F-V1--F-V3 & --- \\
+position & T-R1 & T-V1 & --- \\
+proximity & Y-R1 & Y-V1--Y-V3 & --- \\
+threshold & --- & H-V1, H-V3, H-V5 & --- \\
+\bottomrule
+\end{tabular}
+\caption{The 29-group roster: 9 report-level, 19 single-cohort, 1 two-cohort.}
+\label{tab:roster}
+\end{table}
 
-\paragraph{No lexical variation.} Slot fillers are raw MedDRA terms; a synonym
-table is future work, so surface variation comes entirely from the register and
-format axes.
+\paragraph{Five kinds of null.} Order claims test a proportion against the
+symmetry value $0.5$; argmax claims (``most common first'', ``most common
+ordering'') test the named cell against its strongest competitor; two-arm
+claims test the equality of two rates; threshold claims read their null off
+the text (``in at least two thirds''); and the position and proximity-rate
+claims use a null \emph{derived from the data} --- the structural early-rate of
+the denominator reports, or the chance $2/L$ that two events of an $L$-stage
+report are adjacent --- which no lookup table can supply. The last two kinds
+are what make ``formulate the null'' a scored capability rather than a
+classification.
 
-\paragraph{False positives are structural.} Decisive labels carry
-$\alpha$-rate false positives by construction. Exact tests are conservative at
-small $n$, so the realised rate is below nominal, but it is not zero and cannot be
-removed by any screen: a group clearing its permutation null establishes
-group-level validity, not per-core validity.
+\subsection{Gold labels}
+\label{sec:gold}
 
-\paragraph{Positional attributes are descriptive.} The rank statistics released
-alongside each instance use approximations retired as verdict drivers and must
-not be read as labels.
+\paragraph{Conditioning.} Each family fixes its denominator, and these
+distinctions are the substantive content of the task. \emph{Precedes} counts
+only reports where both events occupy distinct stages. \emph{Co-occurs} counts
+all reports containing both, because co-existence is the event of interest.
+\emph{Sequence} requires all three events at distinct stages. \emph{First/last}
+requires every candidate present and drops tie reports entirely. Association
+conditions on presence alone, comparing $P(B \mid A)$ against $P(B \mid \neg
+A)$ over the whole cohort. \emph{Immediate} order counts reports where the two
+events are at consecutive occupied stages; \emph{position} drops single-stage
+reports and events on the exact middle stage.
+
+\paragraph{Tests.} All tests are exact. Majority and bar claims use a one-sided
+exact binomial against $p_0$; argmax claims use modal-versus-runner-up, an exact
+binomial on the named cell against its strongest competitor; two-arm and
+two-cohort contrasts use Fisher's exact test. No $\chi^2$ approximation
+appears; the sole gate is a per-family minimum denominator ($n \geq 10$;
+sequence $n \geq 5$), applied to both arms where two exist.
+
+\paragraph{The three-decision rule and oriented statistics.} A claim is
+\emph{supported} only when its own one-sided tail is significant at
+$\alpha = 0.05$, \emph{refuted} only when the opposite tail is, and otherwise
+\emph{insufficient} (\emph{underpowered}, \emph{sparse}: $0 < n <$ floor, or
+\emph{not-locatable}: $n = 0$). Both tails are computed for every instance.
+Every released statistic --- both $p$-values, the Wilson interval, Cohen's $h$
+against the null actually used --- describes the claim as that instance asserts
+it.
+
+\subsection{Instance realisation and composition}
+\label{sec:realization}
+
+Every decisive core is posed \emph{both ways}: oriented with its effect
+(\emph{supported}) and against it (\emph{refuted}), a mirror pair over
+identical evidence, so a system answering \emph{supported} to both directions
+of one fact is caught immediately. Direction-asking groups re-orient by
+swapping slots; symmetric claims re-orient by authored negation, written into
+the template rather than derived; threshold claims are tested per orientation
+(both directions can be refuted) and carry no mirror. Each cohort group ships
+equal thirds --- supported, refuted, insufficient --- balanced \emph{per group}
+because template wording is fixed per group and a skewed group would teach a
+text-shape-to-label shortcut; the insufficient third is spread over its
+sub-types. \emph{Not-locatable} instances are minted deliberately from real
+cohort vocabulary whose joint count is zero, so the claim appears answerable and
+only querying the annotations reveals the empty denominator. Groups are capped
+at 600 instances (200 per class) by a seeded draw that keeps mirror pairs
+together; report groups ship two classes of 200.
+
+\subsection{Validity screens}
+\label{sec:screens}
+
+No group ships on plausibility. Each is screened against a permutation null
+matched to its claim shape at 2{,}000 rounds: a \emph{level shuffle}
+(term-to-stage assignment permuted within each report, preserving report size,
+stage-size multiset, term frequencies and co-occurrence) for order, position
+and proximity groups; a degree-preserving \emph{edge swap} for association; a
+\emph{label shuffle} for two-cohort contrasts (Table~\ref{tab:screens}). The
+screening history is itself a result: seven candidate two-cohort shapes were
+tested and one survived; a majority statistic was replaced after the screen
+showed its text and its test answered different questions; and a rank-test
+track was retired when the Mann--Whitney approximation proved anti-conservative
+on tie-heavy ordinal data (${\sim}11\%$ of cores decisive under shuffled labels
+at a nominal 5\%).
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrr}
+\toprule
+Group & Null & Decisive & Null mean $\pm$ sd & $p_{\textrm{perm}}$ \\
+\midrule
+P-V4 & level shuffle & 16{,}884 & 1{,}848.9 & $<$0.0005 \\
+P-V2 & level shuffle & 2{,}302 & 341.3 & $<$0.0005 \\
+C-V3 & level shuffle & 258 & 62.6 & $<$0.0005 \\
+C-V2 & edge swap & 2{,}098 & 924.4 & $<$0.0005 \\
+P-M2 & label shuffle & 30 & 18.3 & 0.025 \\
+Y-V1/Y-V2 & level shuffle & 68 & 14.9 $\pm$ 3.8 & $<$0.0005 \\
+Y-V3 & level shuffle & 35 & 15.5 $\pm$ 3.8 & $<$0.0005 \\
+T-V1 & level shuffle & 34 & 4.4 $\pm$ 2.0 & $<$0.0005 \\
+H-V1 & level shuffle & 402 & 351.3 $\pm$ 9.4 & $<$0.0005 \\
+H-V5 & level shuffle & 228 & 196.9 $\pm$ 10.3 & 0.002 \\
+H-V3 & level shuffle & 4 sup. & 0.0 sup. & $<$0.0005 \\
+\bottomrule
+\end{tabular}
+\caption{Permutation screens at 2{,}000 rounds (0.0005 is the resolution
+floor). ``Decisive'' is the group's decisive-core supply at its shipping
+universe; for the threshold groups the supported count is the screened
+statistic, since a bar claim can be refuted by chance in either direction.}
+\label{tab:screens}
+\end{table}
+
+\subsection{Release, splits and leakage}
+\label{sec:release}
+
+\paragraph{Two files.} The questions file carries one row per rendering and
+only the input fields (identifier, group, level, answer type, register, format,
+text, options, cohort); the answers file carries one row per instance with the
+gold verdict and sub-type, the oriented counts, both $p$-values, the test, the
+floor, interval and effect size, and the \emph{evidence identifiers}. The writer
+refuses to emit a gold field into the questions file. A group-independent
+\texttt{fact\_id} keys every split, because answer-format twins pose the same
+fact under two groups.
+
+\paragraph{Pseudonymised identifiers.} Every report identifier a system can
+see --- in the claim texts, in the released evidence and in the database --- is
+a keyed permutation of the public VAERS identifier. VAERS is public and in
+pretraining corpora; removing the lookup key removes the shortcut without
+touching the annotations.
+
+\paragraph{Splits.} The release declares a \emph{development set} of 2{,}350
+instances (a seeded, class-balanced draw of at most 90 per group, mirror pairs
+and facts kept together) and a \emph{test set} of 1{,}742 instances drawn by the
+same recipe from the remainder, fact-disjoint from the development set. Each
+contains a 200-instance \emph{budget subset} stratified over groups for
+systems whose cost is paid per call. All prompt and design decisions in this
+paper were made on the development subset; the test set was run once.
+
+\paragraph{Validation.} Six families of mechanical invariants --- evidence
+arithmetic, set algebra, per-family conditioning re-derived from the leveled
+orders, direction, verdict-against-tails including the floor, and independent
+recomputation through a separate database path --- are checked over the whole
+enumerated universe (56{,}138 instances). A deterministic oracle (reverse
+template parser into the reference SQL compiler) reproduces every gold label of
+the release: the harness is correct, whatever the text entails.
+
+\subsection{Statistics}
+\label{sec:stats}
+
+Tables~\ref{tab:totals} and~\ref{tab:pergroup} summarise the release. The
+earlier, uncapped version of the benchmark let one group contribute 46\% of all
+instances; the cap makes the eleven largest groups equal in size, and
+class balance is exact within every cohort group by construction.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+Records (instance $\times$ register $\times$ format) & 70{,}104 \\
+Instances & 8{,}763 \\
+Groups / families / tiers & 29 / 7 / 3 \\
+Distinct cores & 5{,}703 \\
+Distinct facts (split key) & 4{,}761 \\
+\midrule
+Supported / refuted / insufficient & 3{,}521 / 3{,}521 / 1{,}721 \\
+\quad underpowered / sparse / not-locatable & 605 / 498 / 618 \\
+Mirror pairs & 3{,}060 \\
+Negated instances & 643 \\
+\midrule
+Conditioned $n$, median (IQR) & 21 (14--41) \\
+$|$Cohen's $h|$ on decisive, median & 0.65 \\
+$p$ on supported claims, median & 0.008 \\
+\bottomrule
+\end{tabular}
+\caption{Aggregate statistics of the release.}
+\label{tab:totals}
+\end{table}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{llllrrrrrlrr}
+\toprule
+Group & Sc. & Claim & Ans. & Null & Inst. & Sup. & Ref. & Insuf. & u/s/n & Facts & Med.\ $n$ \\
+\midrule
+P-R1 & R & precedes & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
+P-R2 & R & precedes & \textsc{Cho} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
+C-R1 & R & co-occur & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 400 & --- \\
+S-R1 & R & sequence & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
+F-R1 & R & first & \textsc{Cho} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
+F-R2 & R & last & \textsc{Cho} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
+F-R3 & R & first & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
+T-R1 & R & early half & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 400 & --- \\
+Y-R1 & R & immediately before & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
+\midrule
+P-V1 & C & precedes & \textsc{Boo} & sym.\ 0.5 & 501 & 167 & 167 & 167 & 55/56/56 & 334 & 17 \\
+P-V3 & C & precedes & \textsc{Cho} & sym.\ 0.5 & 501 & 167 & 167 & 167 & 55/56/56 & 334 & 17 \\
+P-V2 & C & antecedent contrast & \textsc{Boo} & two-arm & 600 & 200 & 200 & 200 & 66/67/67 & 375 & 22 \\
+P-V4 & C & pair-vs-pair contrast & \textsc{Boo} & two-arm & 600 & 200 & 200 & 200 & 66/67/67 & 393 & 24 \\
+C-V1 & C & co-occur majority & \textsc{Boo} & sym.\ 0.5 & 600 & 200 & 200 & 200 & 66/67/67 & 400 & 19 \\
+C-V2 & C & association & \textsc{Boo} & two-arm & 600 & 200 & 200 & 200 & 100/0/100 & 400 & 229 \\
+C-V3 & C & co-occur argmax & \textsc{Boo} & runner-up & 522 & 174 & 174 & 174 & 58/58/58 & 348 & 23 \\
+S-V1 & C & sequence argmax & \textsc{Boo} & runner-up & 6 & 2 & 2 & 2 & 0/1/1 & 4 & 5 \\
+S-V3 & C & sequence argmax & \textsc{Cho} & runner-up & 6 & 2 & 2 & 2 & 0/1/1 & 4 & 5 \\
+F-V1 & C & first argmax & \textsc{Cho} & runner-up & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
+F-V2 & C & last argmax & \textsc{Cho} & runner-up & 138 & 46 & 46 & 46 & 15/15/16 & 92 & 14 \\
+F-V3 & C & first argmax & \textsc{Boo} & runner-up & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
+T-V1 & C & early half vs.\ structural rate & \textsc{Boo} & data-derived & 102 & 34 & 34 & 34 & 19/0/15 & 68 & 145 \\
+Y-V1 & C & immediate order & \textsc{Boo} & sym.\ 0.5 & 204 & 68 & 68 & 68 & 22/23/23 & 136 & 17 \\
+Y-V2 & C & immediate order & \textsc{Cho} & sym.\ 0.5 & 204 & 68 & 68 & 68 & 22/23/23 & 136 & 17 \\
+Y-V3 & C & adjacency vs.\ $2/L$ & \textsc{Boo} & data-derived & 105 & 35 & 35 & 35 & 11/12/12 & 70 & 26 \\
+H-V1 & C & precedes $\geq 2/3$ & \textsc{Boo} & text 0.667 & 105 & 35 & 35 & 35 & 11/12/12 & 101 & 16 \\
+H-V3 & C & co-occur $\geq 2/3$ & \textsc{Boo} & text 0.667 & 12 & 4 & 4 & 4 & 1/1/2 & 12 & 26.5 \\
+H-V5 & C & first $\geq 1/2$ & \textsc{Boo} & text 0.5 & 66 & 22 & 22 & 22 & 7/7/8 & 61 & 13.5 \\
+\midrule
+P-M2 & M & precedes, 2 cohorts & \textsc{Boo} & two-arm & 87 & 29 & 29 & 29 & 9/10/10 & 58 & 21.5 \\
+\bottomrule
+\end{tabular}
+\caption{Per-group composition. Scope: R = report, C = one cohort, M = two
+cohorts. Null: sym.\ = symmetric $0.5$; runner-up = named cell vs.\ strongest
+competitor; two-arm = equality of two rates; text = bar read off the wording;
+data-derived = computed from the denominator reports. u/s/n gives the
+insufficient sub-types (underpowered / sparse / not-locatable); Facts counts
+distinct \texttt{fact\_id}; median $n$ is the conditioned denominator.}
+\label{tab:pergroup}
+\end{table*}
+
+\section{Evaluation Framework}
+\label{sec:framework}
+
+\subsection{Stage contracts}
+\label{sec:contracts}
+
+The reference pipeline decomposes verification into three stages with explicit
+output contracts (Figure~\ref{fig:overview}).
+
+\textbf{S1 --- plan.} From the record (text, level, cohort) the model composes
+a plan: \texttt{events}, \texttt{quantity}, \texttt{denominator} (a named
+primitive: \emph{ordered\_pair}, \emph{both\_present},
+\emph{all\_present\_unique\_first}, \emph{consecutive\_pair},
+\emph{present\_offmid}, \emph{presence\_split}, \emph{single\_report}, \ldots),
+\texttt{arms}, \texttt{null\_kind} with $p_0$ or a reference population,
+\texttt{tail}, \texttt{test\_family} and a rule for the floor. The harness
+derives the claim type from the plan by reverse lookup over the plan's fields;
+a plan that names no known shape is \emph{underdetermined} and scored as
+insufficient. Two normalisation folds are applied before lookup: a
+consecutive-pair denominator implies the immediate-order quantity, and a
+stated or derived null on a shape with no such twin keeps the shape and costs
+one field.
+
+\textbf{S2 --- retrieve.} For each arm the model writes one SQL statement over
+the annotation database (two tables, two views) that returns \emph{one row per
+report} with four flags: in the denominator, in the numerator, excluded, and an
+optional cell label for argmax claims. The harness executes it in a read-only
+sandbox and aggregates the rows into $(n, k)$ per arm together with the
+identifier sets, so the evidence is auditable against the gold sets.
+
+\textbf{S3 --- test.} A deterministic function runs the plan's test on the
+counts: the exact binomial against the plan's $p_0$ (for a data-derived null,
+against the chance sum over the retrieved denominator), Fisher's test for two
+arms, modal-versus-runner-up for argmax; applies the floor; and returns the
+verdict with both tails. Nothing is inferred at S3.
+
+\subsection{Information: what the model is told}
+\label{sec:frames}
+
+The S1 prompt comes in two frames. The \emph{catalogue} frame hands the model
+the table of claim types with their conditioning rule, null and test, so
+planning reduces to classification and lookup; it is an answer-injected upper
+bound. The \emph{toolbox} frame withholds that mapping and states every
+convention by situation --- ``a report with two events tied for earliest has no
+answer and is excluded''; ``order words are distance-blind; only wording that
+says the two are adjacent conditions on consecutive stages''; ``association
+wording compares the rate of $B$ among reports with $A$ against reports without
+$A$'' --- together with a computed dataset card, the null sources and the test
+definitions, and the model composes the plan. Zero-shot is the headline
+condition: a worked plan is a mapping row.
+
+The S2 prompt is where the plan is handed over, and it can be handed over in
+two ways. As \emph{prose}: the plan's JSON and the full conventions text, from
+which the SQL model must work out what the named primitive means. As a
+\emph{contract}: the harness resolves the plan's claim type and supplies that
+type's conditioning rule and arm plan in the prompt --- the same stipulation,
+stated once, for the one primitive the plan names. The second is the
+pipeline's design; the first is the ablation that shows why.
+
+\subsection{Verification}
+\label{sec:verify}
+
+Each stage has a bounded verify-and-repair loop that reads only the contract,
+the stated conventions and the data --- never the gold. At S1 the plan is
+checked for consistency with the conventions (a quantity against its
+denominator, a null kind against its situation, a stated bar against the
+wording, a valid test family) and re-asked once with the violations named. At
+S2 a statement that the database rejects, an arm whose denominator equals its
+numerator, an empty arm beside a full one, and --- when a plan exists --- rows
+that violate the plan's primitive (co-existing reports in an order
+denominator, ties in a first/last denominator, non-consecutive pairs in an
+immediate denominator) trigger a re-ask, up to two rounds. The end-to-end
+baselines receive the same loop with the checks that need no plan, which is
+the control for what verification is worth without a contract. The planner
+alone settles after one round; the SQL stage after two.
+
+\subsection{Baselines}
+\label{sec:baselines}
+
+\emph{Sentence-to-SQL} (cells A and B): the same SQL model writes the
+per-report rows directly from the sentence, given the schema only (A) or the
+schema and the conventions (B); S3 is the harness's. \emph{Agentic}: EHRAgent
+\cite{shi2024ehragent}, a code-writing agent with error-driven retries over the
+same database, in a variant that returns counts to our test and one that runs
+its own test; VERITAS \cite{veritas2026}, run through its hypothesis,
+statistics and interpretation agents with imaging bypassed, given our exact-test
+functions and, in one condition, the conventions. \emph{Counts-given judgment}:
+the model receives the gold counts and must name the test and the verdict ---
+not a competitor but the floor of ``the model does the statistics itself''.
+\emph{Ceilings}: the planner alone (gold S2/S3) and the SQL stage alone (gold
+plan). Chance on the three-class cohort tiers is $\approx 0.33$; a per-group
+majority guesser scores at most 0.37.
+
+\section{Experiments}
+\label{sec:experiments}
+
+\subsection{Setup}
+
+Local models are Qwen2.5-32B-Instruct for planning and Qwen2.5-Coder-32B for
+SQL (7B variants for the small-model floor), served locally; agentic baselines
+use Coder-32B. All rows use the \textsc{Original} register in both formats
+(200 instances $=$ 400 records; 258 cohort-tier records), blind to the group
+label and with the procedure unspecified, under one frozen prompt
+configuration (conventions v2.2, schema shown as column listings, one
+self-join hint in the row contract; \S\ref{sec:ablations}). The main table
+reports the development budget subset, on which every system can be run, and
+the test budget subset; our rows and the end-to-end rows are also run on the
+full development set (2{,}350 instances) and the test set (1{,}742).
+
+\subsection{Main results}
+\label{sec:main}
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrrr}
+\toprule
+ & & \multicolumn{2}{c}{verdict acc.} & & & & & \\
+system (32B) & verifier & all & cohort & den.\ F1 & co-exist leak & faithfulness & false-dec. & test slice \\
+\midrule
+\multicolumn{9}{@{}l}{\textit{stage ceilings}} \\
+planner alone (gold S2/S3) & 1 round & 0.955 & 0.930 & 0.954 & 0.00 & --- & 0.03 & \pend{pending} \\
+SQL stage alone (gold plan) & 2 rounds & 0.905 & 0.853 & 0.803 & 0.16 & 0.79 & 0.00 & \pend{pending} \\
+\midrule
+\multicolumn{9}{@{}l}{\textit{ours: plan as contract}} \\
+D$'$ & none & 0.855 & 0.775 & 0.717 & 0.15 & 0.75 & 0.01 & \pend{pending} \\
+\textbf{D$'$ + verifier} & 2 rounds & \textbf{0.865} & \textbf{0.791} & \textbf{0.763} & 0.16 & \textbf{0.78} & \textbf{0.00} & \pend{pending} \\
+\midrule
+\multicolumn{9}{@{}l}{\textit{end-to-end sentence $\rightarrow$ SQL, same model and S3}} \\
+A: schema only & none & 0.502 & 0.562 & 0.441 & 0.60 & 0.21 & 0.10 & \pend{pending} \\
+A + repair & 2 rounds & 0.530 & 0.605 & 0.498 & 0.79 & 0.28 & 0.19 & \pend{pending} \\
+B: + conventions & none & 0.588 & 0.543 & 0.517 & 0.47 & 0.28 & 0.18 & \pend{pending} \\
+B + repair & 2 rounds & 0.660 & 0.655 & 0.643 & 0.56 & 0.53 & 0.15 & \pend{pending} \\
+\midrule
+\multicolumn{9}{@{}l}{\textit{agentic}} \\
+EHRAgent, counts $\rightarrow$ our test, + conventions & own retries & --- & 0.628 & n/a & n/a & n/a & 0.23 & \pend{pending} \\
+EHRAgent, runs its own test & own retries & 0.743 & 0.624 & n/a & n/a & n/a & 0.64 & \pend{pending} \\
+VERITAS + conventions, our tests & own critic & \pend{pending} & \pend{pending} & n/a & n/a & n/a & \pend{pending} & \pend{pending} \\
+\midrule
+counts-given judgment (gold $n,k$) & --- & 0.705 & 0.543 & (given) & --- & 1.00 & 0.17 & \pend{pending} \\
+\bottomrule
+\end{tabular}
+\caption{Main results on the development budget subset (200 instances, 400
+records; cohort $=$ 258 cohort-tier records) under the frozen configuration.
+Den.\ F1 is the denominator-set F1 over cohort arms; faithfulness is
+$P(\text{denominator exact} \mid \text{verdict right})$; false-dec.\ is the
+share of gold-\emph{insufficient} claims given a decisive verdict. EHRAgent's
+evidence cannot be audited (it returns counts or a verdict, not report sets);
+its report-tier accuracy (0.96) carries its overall number. The last column is
+the same row on the test budget subset.}
+\label{tab:main}
+\end{table*}
+
+Table~\ref{tab:main} reports every system on the same 400 records. Three
+observations carry the paper.
+
+\paragraph{The denominator is where systems fail, and the verdict hides it.}
+The best end-to-end baseline (B + repair) is right on 66\% of records; on the
+cohort tiers it is within 0.01 of our pipeline without the verifier. But its
+right answers stand on the exact gold evidence only 53\% of the time, it admits
+same-stage reports into order denominators on 56\% of its arms, and it gives a
+decisive verdict to 15\% of the claims the data cannot decide. The agentic
+baseline that runs its own test reaches 0.743 overall --- mostly on the
+report tier (0.96) --- and 0.624 on the cohort tiers while deciding 64\% of the
+undecidable claims. Verdict accuracy ranks these systems within a few points of
+each other; the evidence metrics do not.
+
+\paragraph{Each stage is nearly solved alone; the hand-off is the loss.} The
+planner alone scores 0.955 with one repair round and the SQL stage alone 0.905
+with the gold plan, so the composed product should be near 0.86. Handing the
+plan to the SQL stage as prose gives 0.573 (Table~\ref{tab:grid}); resolving
+it as a contract gives 0.855, and 0.865 with the verifier --- within 0.04 of
+the gold-plan ceiling. The remaining gap is the planner's own errors.
+
+\paragraph{Verification without a contract has little to check.} The end-to-end
+model gains $+0.07$ from two repair rounds, almost all of it from statements
+that previously failed to execute; the conditioning errors remain, because
+nothing in a sentence-to-SQL system states which reports its query should have
+excluded. The same rounds on our pipeline check the rows against the plan's
+primitive and remove most of the co-exist and tie leaks
+(Table~\ref{tab:attribution}).
+
+\subsection{Scale and generalisation}
+\label{sec:scale}
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{3.5pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+ & \multicolumn{3}{c}{development set (2{,}350)} & \multicolumn{3}{c}{test set (1{,}742)} \\
+system (32B) & all & cohort & faith. & all & cohort & faith. \\
+\midrule
+planner alone, 1 round & 0.954 & 0.931 & --- & \pend{---} & \pend{---} & --- \\
+SQL stage alone, 2 rounds & 0.880 & 0.816 & 0.81 & \pend{---} & \pend{---} & \pend{---} \\
+D$'$ & 0.831 & 0.743 & 0.75 & \pend{---} & \pend{---} & \pend{---} \\
+\textbf{D$'$ + verifier} & \textbf{0.856} & \textbf{0.781} & \textbf{0.78} & \pend{---} & \pend{---} & \pend{---} \\
+A: schema only & 0.466 & 0.494 & 0.21 & \pend{---} & \pend{---} & \pend{---} \\
+B: + conventions & 0.590 & 0.525 & 0.32 & \pend{---} & \pend{---} & \pend{---} \\
+B + repair & 0.669 & 0.645 & 0.64 & \pend{---} & \pend{---} & \pend{---} \\
+counts-given judgment & 0.739 & 0.602 & 1.00 & \pend{---} & \pend{---} & --- \\
+\bottomrule
+\end{tabular}
+\caption{The same rows on the full development set (3{,}080 cohort-tier
+records) and on the fact-disjoint test set, which no prompt decision was made
+on.}
+\label{tab:scale}
+\end{table}
+
+The development-subset numbers hold on the full development set within 0.03
+(Table~\ref{tab:scale}): D$'$ with the verifier 0.856, the verified end-to-end
+control 0.669, the planner 0.954. Because every prompt decision was made on the
+development subset, the test set is the honest check of those decisions; its
+numbers are \pend{pending at the time of writing}.
+
+\subsection{Stage analysis}
+\label{sec:stages}
+
+\paragraph{Planning without the mapping.} Table~\ref{tab:toolbox} compares the
+two S1 frames. With the catalogue, a 32B model scores 0.998: given the mapping,
+planning is lookup. With the mapping withheld the same model composes the plan
+at 0.950 zero-shot and 0.955 with one repair round; the 7B model falls to
+0.595, almost entirely whole-shape misreads, while the fields that do land are
+right. Paraphrase is a bounded perturbation for the capable model
+(Table~\ref{tab:registers}): $-0.02$ to $-0.12$ across registers, largest on
+the research register, where the wording rewrites the statistical situation
+rather than the event names.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+ & \multicolumn{2}{c}{\textbf{32B-Inst.}} & \multicolumn{2}{c}{7B-Inst.} \\
+S1 condition (S2, S3 at gold) & all & cohort & all & cohort \\
+\midrule
+Catalogue (answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
+\textbf{Toolbox, zero-shot} & 0.950 & 0.922 & 0.595 & 0.558 \\
+\quad + one verify-and-repair round & \textbf{0.955} & \textbf{0.930} & 0.657 & 0.655 \\
+\bottomrule
+\end{tabular}
+\caption{Planning with the claim-type mapping given (catalogue) and withheld
+(toolbox); development subset; report tier 1.000 at 32B.}
+\label{tab:toolbox}
+\end{table}
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+S1, toolbox zero-shot (1 round) & Original & Research & Media & Clinical \\
+\midrule
+7B-Instruct & 0.657 & 0.662 & 0.595 & 0.575 \\
+32B-Instruct & 0.955 & 0.838 & 0.877 & 0.935 \\
+\bottomrule
+\end{tabular}
+\caption{Verdict accuracy by register; the same 200 instances, S2 and S3 at
+gold.}
+\label{tab:registers}
+\end{table}
+
+\paragraph{Retrieval: attribution and faithfulness.} Every prediction records
+the report identifiers it placed in each arm, so every wrongly included or
+dropped report can be checked against the claim's rule in the database and
+named (Table~\ref{tab:attribution}). The largest single cause in the
+end-to-end rows had been invisible to every aggregate metric: the query
+defines the eligible set as the supporting set, so $n = k$ and the claim is
+supported for free (87 of 258 records for B). Repair rounds remove failed
+statements and most $n = k$ queries; what remains for the end-to-end model is
+semantic --- co-existing reports in order denominators, ties, presence splits
+narrowed to co-occurrence --- and what remains for the contract pipeline is
+mostly its planner's errors.
+
+\begin{table*}[t]
+\centering
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrrrrr}
+\toprule
+ & \multicolumn{3}{c}{S1 at gold} & \multicolumn{3}{c}{end-to-end} & \multicolumn{2}{c}{ours (D$'$)} \\
+S2 failure cause (258 cohort records) & Coder-7B & Coder-32B & \quad+2 & A & B & B+2 & no verifier & +2 \\
+\midrule
+no plan from S1 (S2 not run) & 0 & 0 & 0 & 0 & 0 & 0 & 8 & 6 \\
+SQL failed to execute & 150 & 50 & 38 & 72 & 25 & 4 & 50 & 35 \\
+denominator $=$ numerator ($n=k$) & 4 & 8 & 4 & 11 & 87 & 25 & 12 & 9 \\
+event absent from report & 2 & 26 & 24 & 57 & 45 & 47 & 19 & 16 \\
+\emph{co-exist} leak into an order denominator & 0 & 4 & 2 & 40 & 23 & 33 & 4 & 2 \\
+non-consecutive pair in an \emph{immediate} denominator & 0 & 0 & 0 & 10 & 13 & 13 & 0 & 10 \\
+tie leak into a first/last denominator & 0 & 0 & 0 & 1 & 7 & 7 & 0 & 0 \\
+presence split narrowed to co-occurrence & 0 & 0 & 0 & 18 & 2 & 2 & 0 & 0 \\
+wrong cohort / other & 72 & 6 & 10 & 14 & 10 & 26 & 10 & 14 \\
+\midrule
+wrong or missing denominators & 228 & 94 & 78 & 223 & 212 & 157 & 103 & 92 \\
+\quad of which verdict still right & 16 & 40 & 36 & 89 & 96 & 80 & 32 & 37 \\
+\textbf{faithfulness} & 0.29 & 0.73 & 0.79 & 0.21 & 0.28 & 0.53 & 0.75 & 0.78 \\
+\bottomrule
+\end{tabular}
+\caption{Attribution of denominator failures to the rule violated, and the
+faithfulness score, on the development subset. A record takes its dominant
+cause; ``SQL failed'' counts records whose statement did not execute.}
+\label{tab:attribution}
+\end{table*}
+
+\paragraph{The test, given the counts.} Handed the gold counts, the test
+definitions, the null and $\alpha$, the 32B model returns the right verdict on
+0.705 of records but matches the exact $p$-value on 3\%, decides 17\% of the
+undecidable claims and never names the right sub-type. On the development set
+the frontier model of an earlier release matched the exact $p$ on 66\%
+(52\% for Fisher's test), with the errors at the decision boundary. The
+statistics stage is a function, and it should be computed as one.
+
+\subsection{Architecture versus information}
+\label{sec:grid}
+
+Table~\ref{tab:grid} separates what the prompt tells the model from what the
+decomposition adds. Reading the 32B columns: stating the conventions to the
+end-to-end model is worth $+0.09$ (A$\rightarrow$B); two plan-free repair
+rounds are worth another $+0.07$ (B$+$2, 0.660), which is level with the
+composed pipeline when its plan is handed over as prose (D$+$2, 0.645). On the
+verdict, verification alone closes that gap --- not on the evidence (faithfulness
+0.53 vs.\ 0.71). The decomposition pays once the plan is a contract: D$'$
+reaches 0.855, and 0.865 with the verifier, $+0.20$ over the verified
+end-to-end control and within 0.04 of the gold-plan row, with nothing on the
+baseline side changed. At 7B nothing moves the cohort tiers above 0.45: the
+composed pipeline is \emph{below} plain sentence-to-SQL and the conventions
+cost the end-to-end 7B accuracy (B $<$ A) --- a model that cannot compose the
+plan cannot use the stipulations either.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrrrr}
+\toprule
+ & & \multicolumn{4}{c}{32B (Inst.\ for S1, Coder for SQL)} & \multicolumn{4}{c}{7B} \\
+cell & what the model is given / asked & all & cohort & den.\ F1 & faith. & all & cohort & den.\ F1 & faith. \\
+\midrule
+A & sentence $\rightarrow$ SQL, schema only & 0.502 & 0.562 & 0.441 & 0.21 & 0.440 & 0.275 & 0.101 & 0.23 \\
+A$+$2 & \quad + two repair rounds, plan-free checks & 0.530 & 0.605 & 0.498 & 0.28 & --- & --- & --- & --- \\
+B & \quad + conventions stated & 0.588 & 0.543 & 0.517 & 0.28 & 0.380 & 0.279 & 0.124 & 0.18 \\
+B$+$2 & \quad + two repair rounds, plan-free checks & 0.660 & 0.655 & 0.643 & 0.53 & --- & --- & --- & --- \\
+\midrule
+D & composed plan handed to S2 as prose $+$ conventions & 0.573 & 0.453 & 0.525 & 0.35 & 0.287 & 0.209 & 0.238 & 0.39 \\
+D$+$2 & \quad + two verify-and-repair rounds (plan checks) & 0.645 & 0.566 & 0.611 & 0.71 & 0.295 & 0.221 & 0.230 & 0.37 \\
+E & composed plan $+$ plan-consistency re-ask & 0.652 & 0.578 & 0.615 & 0.71 & 0.263 & 0.171 & 0.234 & 0.48 \\
+D$'$ & composed plan resolved to its primitive's rule (the contract) & 0.855 & 0.775 & 0.717 & 0.75 & 0.365 & 0.217 & 0.162 & 0.27 \\
+D$'$$+$2 & \quad + two verify-and-repair rounds & \textbf{0.865} & \textbf{0.791} & 0.763 & \textbf{0.78} & --- & --- & --- & --- \\
+\midrule
+C & gold plan, same frame (SQL stage alone) & 0.900 & 0.845 & 0.767 & 0.73 & 0.570 & 0.349 & 0.196 & 0.29 \\
+C$+$2 & \quad + two verify-and-repair rounds & 0.905 & 0.853 & 0.803 & 0.79 & 0.620 & 0.426 & 0.359 & 0.55 \\
+\midrule
+S1 & composed plan, gold S2/S3 & 0.950 & 0.922 & --- & --- & 0.595 & 0.558 & --- & --- \\
+S1$+$1 & \quad + one verify-and-repair round & 0.955 & 0.930 & --- & --- & 0.657 & 0.655 & --- & --- \\
+counts & gold $n,k$ given; model picks test and verdict & 0.705 & 0.543 & (given) & --- & 0.650 & 0.457 & (given) & --- \\
+\bottomrule
+\end{tabular}
+\caption{The architecture-vs-information grid on the development subset under
+the frozen configuration. ``$+$2'' rows add two bounded repair rounds (for A/B
+with plan-free checks only; for D/D$'$/C with the plan's checks). D$'$ is D
+with the plan resolved by the harness for S2.}
+\label{tab:grid}
+\end{table*}
+
+\subsection{Conventions as information: one change at a time}
+\label{sec:ablations}
+
+Three prompt-level decisions were each made as a single controlled change on
+the development subset, with everything else fixed.
+
+\paragraph{One missing stipulation.} Under an earlier conventions text the 32B
+planner composed every association claim (C-V2) as one-arm co-occurrence ---
+0 of 18 records, and 22 of 22 on the previous release --- although the
+``compare the rate with and without $A$'' situation was stated; the three
+association wordings were never bridged to it, while ``occur together''
+matched the co-occurrence stipulation. Adding that bridge moved the planner
+from 0.897 to 0.950, with 23 of 29 groups unchanged record for record (C-V2
+0.00 $\rightarrow$ 0.67; a co-occurrence bar group 0.00 $\rightarrow$ 1.00).
+A model is not wrong about a situation it was never told exists.
+
+\paragraph{Schema presentation.} Showing the SQL model the \texttt{CREATE
+VIEW} bodies of the helper views led it to copy the views' internal aliases
+into its own queries (117 rejected statements of 466 in cell A); listing the
+views as columns with their semantics in comments removed that error but left
+an ambiguous unqualified identifier in self-joins (157 rejected); one sentence
+in the row contract removed that too (34 rejected). Cell A went 0.297
+$\rightarrow$ 0.378 $\rightarrow$ 0.502 and the SQL stage with the gold plan
+0.810 $\rightarrow$ 0.830 $\rightarrow$ 0.900. None of these changed the data,
+the models or the method; they are the cost of a prompt artefact that would
+otherwise have read as a finding about the new claim families.
+
+\paragraph{Prose versus contract.} The S2 hand-off (\S\ref{sec:frames}) is the
+third: 0.573 as prose, 0.855 as a contract, with the same plan.
+
+\subsection{Abstention}
+\label{sec:abstention}
+
+The planner alone almost never decides an undecidable claim
+(false-decisiveness 0.03) and names the right sub-type when it abstains
+(1.00); the SQL stage with the gold plan over-abstains (0.20) --- a failed or
+over-narrow query reads as \emph{insufficient} --- but never fabricates a
+decision. The end-to-end models decide 15--19\% of undecidable claims even
+with repair and name the sub-type right 59--80\% of the time; the agentic
+baseline that runs its own test decides 64\%. Our full pipeline with the
+verifier decides none of them (false-decisiveness 0.00; over-abstention 0.26,
+mostly the planner's underdetermined plans).
+
+\section{Discussion and Limitations}
+\label{sec:limitations}
+
+\paragraph{What the instrument shows.} The verdict is a poor proxy for the
+reasoning it is supposed to certify: systems a few points apart on accuracy are
+a factor of two apart on whether their evidence is right, and the end-to-end
+systems' best gains came from fixing execution failures, not conditioning. The
+stage-level gold is what makes this visible, and it is the dataset's main
+contribution.
+
+\paragraph{What is and is not architecture.} The reference pipeline is a
+simple decomposition; its value is that each stage is checkable. Handing the
+plan to the next stage as prose discarded that value. We therefore claim
+``stated conventions, a plan that is a contract, and bounded verification''
+--- not decomposition as such.
+
+\paragraph{Conventions are dataset-specific by design.} Porting the framework
+to another corpus means writing its conventions and primitive definitions, not
+retraining anything; whether that is cheap in general is untested here, and the
+one external hypothesis set with reference $p$-values (P-Bench) tests the
+statistics stage, not the conditioning, so we do not claim transfer.
+
+\paragraph{Scale of the comparison.} The agentic baselines take minutes per
+hypothesis, so they are compared on the 200-instance budget subsets; our rows
+and the end-to-end rows are run on the full development and test sets and
+agree with the subsets within 0.03. The budget subsets are stratified over
+groups and classes, not random draws.
+
+\paragraph{Floors and ceilings.} Decisive labels carry $\alpha$-rate false
+positives by construction; exact tests are conservative, so the realised rate
+is below nominal but not zero. The release is bounded by enumeration breadth
+(the most frequent cohort terms), not by statistical power, and five small
+groups are entirely inside the development set. The 7B tier is a capability
+floor: nothing in the framework helps a model that cannot compose a plan.
+
+\paragraph{No lexical variation.} Slot fillers are raw MedDRA terms and the
+registers are templated; the paraphrase result is a bounded, not a general,
+robustness claim.
+
+\section{Conclusion}
+\label{sec:conclusion}
+
+\sys{} turns a temporal--statistical claim into a chain of scored decisions ---
+which reports count, what the null is, which test applies, what the evidence
+was --- and shows that the first of those is where systems fail and the last is
+what the verdict cannot see. Under one frozen configuration, a 32B pipeline
+whose plan is a contract between its stages verifies claims at 0.86 with its
+evidence right 78\% of the time, against 0.67 and 53\% for the strongest
+verified end-to-end system; and one missing stipulation, or one prompt
+artefact, moves these numbers by more than most architectural choices do.
+Benchmarks of this kind should publish their conventions with their data, and
+score the evidence with the answer.

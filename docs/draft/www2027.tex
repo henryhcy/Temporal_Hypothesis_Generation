@@ -26,9 +26,8 @@
 
 \begin{document}
 
-\title{Verifying Temporal--Statistical Claims over Annotated Clinical Timelines:
-A Benchmark with Stage-Level Ground Truth}
-%% working title -- replace
+\title{Which Reports Count? Verifying Temporal--Statistical Claims over Annotated Clinical Timelines with Stage-Level Ground Truth}
+%% working title
 
 \author{Anonymous Author(s)}
 \affiliation{%
@@ -38,25 +37,34 @@ A Benchmark with Stage-Level Ground Truth}
 }
 
 \begin{abstract}
-%% DRAFT abstract written from the project's framing (docs/plan, 2026-10-08);
-%% every number is a v1.2 release statistic. Rewrite before submission.
-We study the verification of temporal--statistical claims --- ``after vaccine
-$v$, event $A$ tends to precede event $B$'' --- against expert-annotated
-timelines of vaccine adverse-event reports, where a verdict must rest on an
-explicit denominator, a stated null and an exact test. We release MedTempo
-v1.2, a benchmark of 8,763 claim instances (70,104 renderings across four
-registers and two formats) in 29 groups and seven claim families over report,
-cohort and two-cohort tiers, in which every stage of the gold computation ---
-the plan, the evidence sets and the exact test --- is released alongside the
-three-decision verdict (supported / refuted / insufficient), and report
-identifiers are pseudonymised so that no public lookup is possible. We
-evaluate systems with an instrumented reference decomposition (plan, retrieve,
-test) whose stage-level ground truth yields stage metrics beyond verdict
-accuracy, including denominator agreement, faithfulness and abstention, and we
-place end-to-end, agentic, counts-given and externally adapted baselines on the
-stages they replace. Across local and frontier models the dominant failure is
-the denominator, which verdict accuracy alone conceals; a bounded
-verify-and-repair round per stage recovers part of it.
+Language-model systems increasingly promise to test hypotheses against data,
+and benchmarks score them on the final $p$-value or decision with the relevant
+data already assembled. For a claim such as ``after the Pfizer vaccine,
+headache tends to precede fatigue'' over a corpus of annotated adverse-event
+timelines, that final step is the easy one: a system must first decide which
+reports count, what ``no effect'' means and which test applies, and a verdict
+can be right while every one of those decisions is wrong. We release
+\textsc{MedTempo-Hypo}, a benchmark of 8{,}763 temporal--statistical claims
+(70{,}104 renderings) in 29 groups and seven claim families over three cohort
+tiers, built on expert-annotated timelines of 3{,}166 vaccine adverse-event
+reports, in which every stage of the gold computation is released with the
+three-decision verdict: the plan (events, denominator rule, null, test), the
+exact evidence sets, and the exact $p$-values. Identifiers are pseudonymised and
+the corpus conventions are shipped as part of the task. We pair it with an
+instrumented reference pipeline --- plan, retrieve, test --- whose stage
+contracts turn the verdict into auditable quantities (plan agreement, evidence-set
+agreement, faithfulness, abstention) and whose prompt frames make the
+\emph{information} a system is told and the \emph{architecture} it is given
+separately controllable. Across local and agentic systems the denominator is
+where verification fails and the verdict hides it: the strongest end-to-end
+text-to-SQL baseline is right 66\% of the time but stands on the correct
+evidence for 53\% of its right answers, and an agentic baseline decides 64\%
+of the claims the data cannot decide. Decomposition pays only when the plan is
+a contract between stages: a 32B pipeline whose plan the harness resolves for
+retrieval verifies claims at 0.865 with its evidence right 78\% of the time,
+0.20 above a verified end-to-end control; one missing stipulation in the
+stated conventions moved the same planner by 0.05 and a whole claim family by
+0.67.
 \end{abstract}
 
 \begin{CCSXML}
