@@ -1770,3 +1770,12 @@ Same adaptation as 10.3j. Variant B + conventions (counts -> our test): cohort
 0.58 (139/240; report tier n/a; 44% no parseable counts). Variant A (runs its
 own test): 0.743 overall, cohort 0.63 (151/240), report 0.91, 3% no answer.
 Dev slice was 0.628 / 0.624 cohort -- the agentic baseline's numbers transfer.
+
+
+### 10.3m VERITAS on the TEST slice (test_200_v1.2, 120 cohort claims; 2026-10-13 23:01)
+
+Same condition as 10.3k. Completed 47/120 (39%); verdict accuracy with failures
+as misses **0.317** (binary 0.642); supported 48 -> 8 right, refuted 46 -> 9,
+insufficient 26 -> 21; test matches gold 0.142. Dev slice 0.349: consistent.
+The held-out run of our rows was HELD (user, 23:00) pending the new split
+design (dev = the 200-instance slice; test ~1,200 fact-disjoint; train = rest).
