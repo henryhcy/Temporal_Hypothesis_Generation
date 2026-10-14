@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import socket
 import time
 import urllib.error
@@ -488,7 +489,8 @@ class OpenAIClient:
 
     def __init__(self, api_key: str, *, base_url: str = DEFAULT_OPENAI_URL,
                  cache: CacheDir | None = None, timeout_s: float = 120.0,
-                 min_max_tokens: int = API_MIN_MAX_TOKENS) -> None:
+                 min_max_tokens: int = API_MIN_MAX_TOKENS,
+                 reasoning_effort: str | None = None) -> None:
         if not api_key:
             raise ProviderError("OpenAIClient needs an api_key (set OPENAI_API_KEY)")
         self.api_key = api_key
@@ -497,6 +499,11 @@ class OpenAIClient:
         self.timeout_s = float(timeout_s)
         self.min_max_tokens = int(min_max_tokens)
         self._sampling_rejected: set[str] = set()  # models that 400 on temperature
+        self.reasoning_effort: str | None = (reasoning_effort
+                                             or os.environ.get("OPENAI_REASONING_EFFORT") or None)
+        # running token split over this client's live calls (billing only)
+        self.cache_usage: dict[str, int] = {"uncached": 0, "cache_read": 0, "cache_write": 0,
+                                            "output": 0, "reasoning": 0}
 
     def complete(self, messages: list[dict], *, schema: dict | None, model: str,
                  temperature: float = 0.0, max_tokens: int = 800) -> Completion:
@@ -510,6 +517,10 @@ class OpenAIClient:
                                    "max_completion_tokens": max(int(max_tokens),
                                                                 self.min_max_tokens),
                                    "temperature": float(temperature)}
+        if self.reasoning_effort:
+            # reasoning models spend hidden tokens from the same output budget;
+            # OPENAI_REASONING_EFFORT pins the level for a run (unset = provider default)
+            payload["reasoning_effort"] = self.reasoning_effort
         if schema is not None:
             payload["response_format"] = {
                 "type": "json_schema",
@@ -542,12 +553,24 @@ class OpenAIClient:
         if not isinstance(text, str) or not text:
             raise ProviderError(f"OpenAI reply has no message content: {str(d)[:200]!r}")
         usage = d.get("usage") or {}
-        out = Completion(text=text, prompt_tokens=usage.get("prompt_tokens"),
+        # OpenAI's prompt_tokens already INCLUDE the cached prefix (reported in
+        # prompt_tokens_details.cached_tokens, no write charge); completion_tokens
+        # include hidden reasoning tokens (completion_tokens_details.reasoning_tokens).
+        cached = int((usage.get("prompt_tokens_details") or {}).get("cached_tokens") or 0)
+        prompt = usage.get("prompt_tokens")
+        self.cache_usage["uncached"] += max(int(prompt or 0) - cached, 0)
+        self.cache_usage["cache_read"] += cached
+        self.cache_usage["output"] += int(usage.get("completion_tokens") or 0)
+        self.cache_usage["reasoning"] += int(
+            (usage.get("completion_tokens_details") or {}).get("reasoning_tokens") or 0)
+        out = Completion(text=text, prompt_tokens=prompt,
                          completion_tokens=usage.get("completion_tokens"), ms=ms, cached=False)
         if self.cache is not None and key is not None:
             self.cache.put(key, out, meta={"model": model, "provider": "openai",
                                            "temperature": payload.get("temperature"),
-                                           "max_tokens": payload["max_completion_tokens"]})
+                                           "max_tokens": payload["max_completion_tokens"],
+                                           "cached_tokens": cached,
+                                           "reasoning_effort": self.reasoning_effort})
         return out
 
 

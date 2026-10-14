@@ -536,3 +536,29 @@ def test_temperature_rejection_is_remembered_per_model(monkeypatch):
     assert len(posts) == 3
     assert "temperature" in posts[0] and "temperature" not in posts[1]
     assert "temperature" not in posts[2]
+
+
+def test_openai_client_accounts_cached_and_reasoning_tokens(monkeypatch):
+    """prompt_tokens already include the cached prefix; completion_tokens include reasoning."""
+    payloads = []
+
+    def fake_urlopen(req, timeout=None):
+        payloads.append(json.loads(req.data.decode("utf-8")))
+        reply = {"choices": [{"message": {"content": '{"x": 1}'}, "finish_reason": "stop"}],
+                 "usage": {"prompt_tokens": 3040, "completion_tokens": 900,
+                           "prompt_tokens_details": {"cached_tokens": 3000},
+                           "completion_tokens_details": {"reasoning_tokens": 850}}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    monkeypatch.delenv("OPENAI_REASONING_EFFORT", raising=False)
+    client = OpenAIClient("k-test", timeout_s=5.0, reasoning_effort="low")
+    out = client.complete(MSGS, schema=SCHEMA, model="gpt-x")
+    assert out.prompt_tokens == 3040 and out.completion_tokens == 900
+    assert payloads[0]["reasoning_effort"] == "low"
+    assert client.cache_usage == {"uncached": 40, "cache_read": 3000, "cache_write": 0,
+                                  "output": 900, "reasoning": 850}
+    # unset by default: no reasoning_effort key goes out
+    client2 = OpenAIClient("k-test", timeout_s=5.0)
+    client2.complete(MSGS, schema=None, model="gpt-x")
+    assert "reasoning_effort" not in payloads[1]
