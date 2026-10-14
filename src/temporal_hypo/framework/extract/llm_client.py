@@ -157,13 +157,18 @@ class OllamaClient:
 
     def __init__(self, base_url: str = DEFAULT_OLLAMA_URL, *,
                  cache: CacheDir | None = None, timeout_s: float = 120.0,
-                 num_ctx: int | None = None, keep_alive: str | int | None = None) -> None:
+                 num_ctx: int | None = None, keep_alive: str | int | None = None,
+                 think: bool | str | None = None) -> None:
         self.base_url = base_url.rstrip("/")
         self.cache = cache
         self.timeout_s = float(timeout_s)
         # context window; Ollama's default (a few thousand tokens) truncates the
         # catalogue + few-shot prompt silently, so runs should set it explicitly
         self.num_ctx = int(num_ctx) if num_ctx is not None else None
+        # thinking switch for models that think by default (qwen3.x, gpt-oss):
+        # False = off (parity with the no-thinking rows), "low"/"medium"/"high" =
+        # a level, None = leave the model's default alone
+        self.think = think
         self.keep_alive = keep_alive
 
     # -- transport -----------------------------------------------------------
@@ -229,6 +234,8 @@ class OllamaClient:
         }
         if self.num_ctx is not None:
             payload["options"]["num_ctx"] = self.num_ctx
+        if self.think is not None:
+            payload["think"] = self.think
         if self.keep_alive is not None:
             payload["keep_alive"] = self.keep_alive
         t0 = time.perf_counter()
@@ -579,11 +586,12 @@ PROVIDERS = ("ollama", "anthropic", "openai")
 
 def client_for(provider: str, *, api_key: str | None = None, base_url: str | None = None,
                cache: CacheDir | None = None, timeout_s: float = 120.0,
-               num_ctx: int | None = None, keep_alive: str | int | None = None) -> Provider:
+               num_ctx: int | None = None, keep_alive: str | int | None = None,
+               think: bool | str | None = None) -> Provider:
     """Construct the backend for ``provider`` behind the one ``Provider`` interface."""
     if provider == "ollama":
         return OllamaClient(base_url or DEFAULT_OLLAMA_URL, cache=cache, timeout_s=timeout_s,
-                            num_ctx=num_ctx, keep_alive=keep_alive)
+                            num_ctx=num_ctx, keep_alive=keep_alive, think=think)
     if provider == "anthropic":
         return AnthropicClient(api_key or "", base_url=base_url or DEFAULT_ANTHROPIC_URL,
                                cache=cache, timeout_s=timeout_s)

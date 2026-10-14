@@ -562,3 +562,17 @@ def test_openai_client_accounts_cached_and_reasoning_tokens(monkeypatch):
     client2 = OpenAIClient("k-test", timeout_s=5.0)
     client2.complete(MSGS, schema=None, model="gpt-x")
     assert "reasoning_effort" not in payloads[1]
+
+
+def test_ollama_client_passes_think_switch(monkeypatch):
+    seen = {}
+
+    def fake_request(self, method, path, payload, **kw):
+        seen["payload"] = payload
+        return {"message": {"content": '{"x": 1}'}, "prompt_eval_count": 3, "eval_count": 2}
+
+    monkeypatch.setattr(llm_client.OllamaClient, "_request", fake_request)
+    llm_client.OllamaClient("http://x", think=False).complete(MSGS, schema=None, model="m")
+    assert seen["payload"]["think"] is False
+    llm_client.OllamaClient("http://x").complete(MSGS, schema=None, model="m")
+    assert "think" not in seen["payload"]

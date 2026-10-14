@@ -131,9 +131,10 @@ def _make_client(provider, args, cache):
     from temporal_hypo.framework.extract.llm_client import client_for
 
     api_key = _resolve_api_key(provider, args) if provider in _KEY_ENV else None
+    think = {None: None, "off": False, "low": "low", "medium": "medium", "high": "high"}[args.think]
     client = client_for(provider, api_key=api_key,
                         base_url=args.ollama_url if provider == "ollama" else None,
-                        cache=cache, timeout_s=args.llm_timeout, num_ctx=args.num_ctx)
+                        cache=cache, timeout_s=args.llm_timeout, num_ctx=args.num_ctx, think=think)
     if provider in _KEY_ENV:
         _API_CLIENTS.append(client)
     return client
@@ -287,6 +288,9 @@ def main() -> None:
                    help="read the API key from this env var instead of "
                         "ANTHROPIC_API_KEY/OPENAI_API_KEY")
     p.add_argument("--num-ctx", type=int, default=8192)
+    p.add_argument("--think", choices=("off", "low", "medium", "high"), default=None,
+                   help="Ollama thinking switch for models that think by default (qwen3.x, gpt-oss); "
+                        "'off' for parity with the no-thinking rows; unset = model default")
     p.add_argument("--llm-timeout", type=float, default=300.0)
     p.add_argument("--k-shot", type=int, default=3)
     p.add_argument("--tier-hint", action="store_true",
@@ -391,7 +395,7 @@ def main() -> None:
         "e2e_conventions": args.e2e_conventions, "s2_frame": args.s2_frame, "s2_replan": args.s2_replan,
         "verify_rounds": args.verify_rounds,
         "ddl_style": args.ddl_style,
-        "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx,
+        "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx, "think": args.think,
         "n_records": len(records),
         **(_model_provenance(args) if "llm" in args.pipeline else {}),
         "release": str(args.release),
