@@ -3252,3 +3252,21 @@ verified end-to-end row (B+2) is kept as the control that shows what
 verification is worth without a contract. EHRAgent 32B on v1.2 (variant A
 0.743 / cohort 0.624, false-decisiveness 0.64; variant B + conventions cohort
 0.628) is the agentic external row; the 7B runs were dropped (user).
+
+## DECIDED: prompt caching on the Anthropic client is a billing device only (2026-10-14)
+
+Measured on 60 dev claims: the S1 toolbox system prompt is ~3.3k tokens and
+identical for every record (the per-record turn is ~70 tokens); the S2 system
+prompt (DDL listing + row contract) is ~1.2k tokens in two variants (cohort /
+report tier) against ~240 per record. `AnthropicClient` now sends the system
+text as one block marked `cache_control: ephemeral`, so the server bills the
+prefix (tools, then system) at the cache-read rate (10%) after the first call
+of each window; OpenAI caches the same prefix automatically. The text the
+model reads is byte-identical, the disk cache key (messages + schema) does not
+see the flag, and the Ollama rows are untouched -- so no local or baseline
+number moves. `prompt_tokens` keeps the WHOLE prompt (fresh + cached) so token
+accounting stays comparable across providers; the split is written to
+`api_cache_usage.json` per run. `results/chains/frontier_dev.sh` orders the
+rows so the disk cache does the rest: planner after D' is free (same S1
+calls), each +2 row costs only its repairs. Opus runs by default; the OpenAI
+rows are opt-in (`RUN_GPT=1`, `OPENAI_MODEL`).

@@ -309,6 +309,38 @@ def _post_json(url: str, payload: Mapping[str, Any], headers: Mapping[str, str],
     raise ProviderError(f"{provider}: retries exhausted")  # pragma: no cover
 
 
+_NATIVE_SCHEMA_UNSUPPORTED = frozenset({
+    "minItems", "maxItems", "uniqueItems", "minLength", "maxLength", "pattern",
+    "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum", "multipleOf",
+    "minProperties", "maxProperties", "format",
+})
+
+
+def _native_schema(schema: Any) -> Any:
+    """``schema`` without the length/range keywords the native structured-output
+    grammar rejects (e.g. ``maxItems``). Shape, types, enums and required keys are
+    kept; the dropped constraints are re-checked by the callers' own validation,
+    exactly as they are for every other backend."""
+    if isinstance(schema, dict):
+        out = {}
+        for k, v in schema.items():
+            if k in _NATIVE_SCHEMA_UNSUPPORTED:
+                continue
+            if k == "properties" and isinstance(v, dict):
+                # property NAMES are not keywords: never drop a field called "format"
+                out[k] = {name: _native_schema(sub) for name, sub in v.items()}
+            else:
+                out[k] = _native_schema(v)
+        if out.get("type") == "object" and "properties" in out:
+            # the native grammar requires closed objects; callers never read
+            # keys outside ``properties``, so nothing parsed downstream changes
+            out["additionalProperties"] = False
+        return out
+    if isinstance(schema, list):
+        return [_native_schema(x) for x in schema]
+    return schema
+
+
 class AnthropicClient:
     """``Provider`` over ``POST {base_url}/v1/messages`` (stdlib urllib).
 
@@ -330,6 +362,32 @@ class AnthropicClient:
         self.timeout_s = float(timeout_s)
         self.min_max_tokens = int(min_max_tokens)
         self._sampling_rejected: set[str] = set()  # models that 400 on temperature
+        self._forced_tool_rejected: set[str] = set()  # models that 400 on tool_choice=tool
+        # running token split over this client's live calls (billing only)
+        self.cache_usage: dict[str, int] = {"uncached": 0, "cache_read": 0,
+                                            "cache_write": 0, "output": 0}
+
+    @staticmethod
+    def _bind_schema(payload: dict[str, Any], schema: dict, *, forced_tool: bool) -> None:
+        """Ask for a schema-conforming reply one of two equivalent ways.
+
+        Older models: a FORCED TOOL CALL (``tool_choice={"type": "tool"}``) whose
+        ``input_schema`` is the schema. Claude 5.5-era models return HTTP 400 on
+        forced tool use (a model-level restriction, not a thinking setting), so
+        they get the native structured-output route instead:
+        ``output_config.format = {"type": "json_schema", "schema": ...}`` and
+        the JSON arrives as text. Same schema, same prompt text, same JSON
+        parsed downstream -- only the transport differs.
+        """
+        payload.pop("tools", None); payload.pop("tool_choice", None); payload.pop("output_config", None)
+        if forced_tool:
+            payload["tools"] = [{"name": _STRUCTURED_TOOL,
+                                 "description": "Return the structured output.",
+                                 "input_schema": schema}]
+            payload["tool_choice"] = {"type": "tool", "name": _STRUCTURED_TOOL}
+        else:
+            payload["output_config"] = {"format": {"type": "json_schema",
+                                                   "schema": _native_schema(schema)}}
 
     def complete(self, messages: list[dict], *, schema: dict | None, model: str,
                  temperature: float = 0.0, max_tokens: int = 800) -> Completion:
@@ -345,28 +403,41 @@ class AnthropicClient:
                                    "max_tokens": max(int(max_tokens), self.min_max_tokens),
                                    "messages": chat, "temperature": float(temperature)}
         if system:
-            payload["system"] = system
+            # Prompt caching (2026-10-14): the system text is identical across
+            # records (S1: the whole toolbox prompt; S2: DDL + contract), so it
+            # is sent as one block marked ephemeral. The server then bills the
+            # prefix -- tools, then system -- at the cache-read rate on every
+            # later call within the window. This is a BILLING hint only: the
+            # text the model reads, and therefore its reply, is unchanged, and
+            # the disk cache key (messages + schema) does not see it.
+            payload["system"] = [{"type": "text", "text": system,
+                                  "cache_control": {"type": "ephemeral"}}]
         if schema is not None:
-            payload["tools"] = [{"name": _STRUCTURED_TOOL,
-                                 "description": "Return the structured output.",
-                                 "input_schema": schema}]
-            payload["tool_choice"] = {"type": "tool", "name": _STRUCTURED_TOOL}
+            self._bind_schema(payload, schema,
+                              forced_tool=model not in self._forced_tool_rejected)
         url = f"{self.base_url}/v1/messages"
         hdrs = {"x-api-key": self.api_key, "anthropic-version": _ANTHROPIC_VERSION}
         if model in self._sampling_rejected:
             payload.pop("temperature", None)
         t0 = time.perf_counter()
-        try:
-            d = _post_json(url, payload, hdrs, timeout_s=self.timeout_s, provider="Anthropic")
-        except ProviderError as exc:
-            # current Claude models reject sampling params outright (HTTP 400)
-            if _rejected_param(exc, payload, "temperature"):
-                payload.pop("temperature")
-                self._sampling_rejected.add(model)
-                d = _post_json(url, payload, hdrs, timeout_s=self.timeout_s,
-                               provider="Anthropic")
-            else:
+        for _attempt in range(3):  # at most one adjustment per rejected parameter
+            try:
+                d = _post_json(url, payload, hdrs, timeout_s=self.timeout_s, provider="Anthropic")
+                break
+            except ProviderError as exc:
+                # current Claude models reject sampling params outright (HTTP 400)
+                if _rejected_param(exc, payload, "temperature"):
+                    payload.pop("temperature")
+                    self._sampling_rejected.add(model)
+                    continue
+                # Claude 5.5-era models reject forced tool use: switch transport
+                if schema is not None and _rejected_param(exc, payload, "tool_choice"):
+                    self._forced_tool_rejected.add(model)
+                    self._bind_schema(payload, schema, forced_tool=False)
+                    continue
                 raise
+        else:  # pragma: no cover - three rejections in a row
+            raise ProviderError("Anthropic: request rejected after parameter adjustments")
         ms = (time.perf_counter() - t0) * 1000.0
         stop = d.get("stop_reason")
         if stop == "max_tokens":
@@ -384,12 +455,25 @@ class AnthropicClient:
         if not text:
             raise ProviderError(f"Anthropic reply has no usable content: {str(d)[:200]!r}")
         usage = d.get("usage") or {}
-        out = Completion(text=text, prompt_tokens=usage.get("input_tokens"),
+        # Anthropic reports the cached prefix separately from ``input_tokens``;
+        # ``prompt_tokens`` stays the WHOLE prompt so token accounting is
+        # comparable across providers, and the split is kept for the bill.
+        cache_read = int(usage.get("cache_read_input_tokens") or 0)
+        cache_write = int(usage.get("cache_creation_input_tokens") or 0)
+        fresh = usage.get("input_tokens")
+        prompt_tokens = (int(fresh) + cache_read + cache_write) if fresh is not None else None
+        self.cache_usage["uncached"] += int(fresh or 0)
+        self.cache_usage["cache_read"] += cache_read
+        self.cache_usage["cache_write"] += cache_write
+        self.cache_usage["output"] += int(usage.get("output_tokens") or 0)
+        out = Completion(text=text, prompt_tokens=prompt_tokens,
                          completion_tokens=usage.get("output_tokens"), ms=ms, cached=False)
         if self.cache is not None and key is not None:
             self.cache.put(key, out, meta={"model": model, "provider": "anthropic",
                                            "temperature": payload.get("temperature"),
-                                           "max_tokens": payload["max_tokens"]})
+                                           "max_tokens": payload["max_tokens"],
+                                           "cache_read_input_tokens": cache_read,
+                                           "cache_creation_input_tokens": cache_write})
         return out
 
 

@@ -266,13 +266,74 @@ def test_anthropic_client_posts_forced_tool_and_parses_tool_use(monkeypatch):
     assert seen["url"] == "https://api.anthropic.com/v1/messages"
     assert seen["key"] == "k-test" and seen["version"] == "2023-06-01"
     pl = seen["payload"]
-    assert pl["system"] == "s"
+    # the system text goes as ONE block marked for prompt caching (a billing
+    # hint: the text itself is unchanged, so the reply cannot differ)
+    assert pl["system"] == [{"type": "text", "text": "s",
+                             "cache_control": {"type": "ephemeral"}}]
     assert pl["messages"] == [{"role": "user", "content": "u"}]
     assert pl["tools"][0]["input_schema"] == SCHEMA
     assert pl["tool_choice"] == {"type": "tool", "name": "structured_output"}
     assert pl["max_tokens"] == 8192  # API_MIN_MAX_TOKENS floor (thinking headroom)
     assert json.loads(out.text) == {"x": 1}
     assert out.prompt_tokens == 10 and out.completion_tokens == 5 and out.cached is False
+
+
+def test_anthropic_client_counts_cached_prefix_in_prompt_tokens(monkeypatch):
+    """Cache hits are reported outside ``input_tokens``; prompt_tokens is the whole prompt."""
+    def fake_urlopen(req, timeout=None):
+        reply = {"content": [{"type": "text", "text": "hi"}], "stop_reason": "end_turn",
+                 "usage": {"input_tokens": 40, "output_tokens": 5,
+                           "cache_read_input_tokens": 3000,
+                           "cache_creation_input_tokens": 0}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    client = AnthropicClient("k-test", timeout_s=5.0)
+    out = client.complete(MSGS, schema=None, model="claude-x")
+    assert out.prompt_tokens == 3040
+    assert client.cache_usage == {"uncached": 40, "cache_read": 3000, "cache_write": 0,
+                                  "output": 5}
+
+
+def test_native_schema_drops_length_keywords_but_not_property_names():
+    s = {"type": "object", "additionalProperties": False, "required": ["format", "arms"],
+         "properties": {"format": {"type": "string", "enum": ["a", "b"], "maxLength": 3},
+                        "arms": {"type": "array", "minItems": 1, "maxItems": 2,
+                                 "items": {"type": "string", "pattern": "x"}}}}
+    out = llm_client._native_schema(s)
+    assert out == {"type": "object", "additionalProperties": False, "required": ["format", "arms"],
+                   "properties": {"format": {"type": "string", "enum": ["a", "b"]},
+                                  "arms": {"type": "array", "items": {"type": "string"}}}}
+    assert s["properties"]["arms"]["maxItems"] == 2  # input untouched
+
+
+def test_anthropic_client_falls_back_to_output_config_when_forced_tool_rejected(monkeypatch):
+    """Claude 5.5-era models 400 on tool_choice=tool: same schema via output_config, JSON as text."""
+    payloads = []
+
+    def fake_urlopen(req, timeout=None):
+        pl = json.loads(req.data.decode("utf-8"))
+        payloads.append(pl)
+        if "tool_choice" in pl:
+            raise llm_client.urllib.error.HTTPError(
+                req.full_url, 400, "Bad Request", {},
+                io.BytesIO(b'{"type":"error","error":{"type":"invalid_request_error",'
+                           b'"message":"tool_choice: type \\"tool\\" and \\"any\\" are not '
+                           b'supported for this model."}}'))
+        reply = {"content": [{"type": "text", "text": '{"x": 7}'}], "stop_reason": "end_turn",
+                 "usage": {"input_tokens": 10, "output_tokens": 3}}
+        return _FakeResponse(json.dumps(reply).encode("utf-8"))
+
+    monkeypatch.setattr(llm_client.urllib.request, "urlopen", fake_urlopen)
+    client = AnthropicClient("k-test", timeout_s=5.0)
+    out = client.complete(MSGS, schema=SCHEMA, model="claude-new")
+    assert json.loads(out.text) == {"x": 7}
+    assert len(payloads) == 2
+    assert "tools" not in payloads[1] and "tool_choice" not in payloads[1]
+    assert payloads[1]["output_config"] == {"format": {"type": "json_schema", "schema": llm_client._native_schema(SCHEMA)}}
+    # the rejection is remembered: the next call goes straight to output_config
+    client.complete([{"role": "user", "content": "again"}], schema=SCHEMA, model="claude-new")
+    assert len(payloads) == 3 and "output_config" in payloads[2]
 
 
 def test_anthropic_client_returns_text_blocks_without_schema(monkeypatch):

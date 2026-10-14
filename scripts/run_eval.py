@@ -124,13 +124,28 @@ def _resolve_api_key(provider, args):
     return key
 
 
+_API_CLIENTS: list = []  # live API clients of this run, for the prompt-cache bill at the end
+
+
 def _make_client(provider, args, cache):
     from temporal_hypo.framework.extract.llm_client import client_for
 
     api_key = _resolve_api_key(provider, args) if provider in _KEY_ENV else None
-    return client_for(provider, api_key=api_key,
-                      base_url=args.ollama_url if provider == "ollama" else None,
-                      cache=cache, timeout_s=args.llm_timeout, num_ctx=args.num_ctx)
+    client = client_for(provider, api_key=api_key,
+                        base_url=args.ollama_url if provider == "ollama" else None,
+                        cache=cache, timeout_s=args.llm_timeout, num_ctx=args.num_ctx)
+    if provider in _KEY_ENV:
+        _API_CLIENTS.append(client)
+    return client
+
+
+def _api_cache_usage() -> dict | None:
+    """Prompt-token split (uncached / cache_read / cache_write) summed over API clients."""
+    totals: dict[str, int] = {}
+    for c in _API_CLIENTS:
+        for k, v in (getattr(c, "cache_usage", None) or {}).items():
+            totals[k] = totals.get(k, 0) + int(v)
+    return totals or None
 
 
 def _model_provenance(args) -> dict:
@@ -398,6 +413,10 @@ def main() -> None:
     metrics = evaluate(rows, release, seed=args.seed)
     metrics["run_config"] = config      # evaluate() owns metrics["config"]
     write_report(metrics, args.out, rows=rows, release=release)
+    usage = _api_cache_usage()
+    if usage:  # API rows only: what the prompt cache absorbed (billing, not a metric)
+        (args.out / "api_cache_usage.json").write_text(json.dumps(usage, indent=2), encoding="utf-8")
+        print(f"API prompt tokens: {usage}", file=sys.stderr)
     v = metrics.get("verdict", {})
     gm = v.get("group_macro") or {}
     ex = metrics.get("extraction", {})

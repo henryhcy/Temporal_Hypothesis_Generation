@@ -1779,3 +1779,98 @@ as misses **0.317** (binary 0.642); supported 48 -> 8 right, refuted 46 -> 9,
 insufficient 26 -> 21; test matches gold 0.142. Dev slice 0.349: consistent.
 The held-out run of our rows was HELD (user, 23:00) pending the new split
 design (dev = the 200-instance slice; test ~1,200 fact-disjoint; train = rest).
+
+### 10.3n Case studies for the dev slice: repair rounds, and paraphrase for the full pipeline (2026-10-14 00:50)
+
+Both run on the 200-instance dev slice, final configuration, 32B-Instruct S1 +
+32B-Coder S2. Decided 2026-10-13 (user): these are case studies, not main-table
+rows; the main table is the original register, claim form only.
+
+**(a) How many repair rounds?** D' with 0 / 1 / 2 / 3 verify-and-repair rounds
+(400 records, both forms; claim-only in brackets). `verify_rounds` governs both
+stages, so round 0 has no S1 check either.
+
+| rounds | verdict | den-F1 | faithfulness | lucky (right verdict, wrong denominator) | over-abstention | S2 repair fired | tokens / record |
+|---|---|---|---|---|---|---|---|
+| 0 | 0.855 [0.865] | 0.717 | 0.75 | 32 | 0.265 | 0 / 400 | 4.9k |
+| 1 | 0.843 [0.850] | 0.764 | 0.86 | 18 | 0.306 | 91 / 400 | 6.8k |
+| 2 | 0.865 [0.870] | 0.763 | 0.78 | 37 | 0.257 | 93 / 400 (77 again) | 8.7k |
+| 3 | 0.850 [0.855] | 0.768 | 0.83 | 25 | 0.290 | 91 / 400 (75, 71) | 10.7k |
+
+Runs: `v12f_smoke200_cellC2_catalogueS2_instruct32b_coder32b_final` (0),
+`v12f_smoke200_dprime_verify1_final` (1), `..._verify2_final` (2),
+`v12f_smoke200_dprime_verify3_final` (3); faithfulness and abstention from
+`scripts/s2_attribution.py` / `scripts/abstention_metrics.py` against
+`v12f_smoke200_gold_sets`. Per-record transitions: each extra round changes
+6-19 of 400 verdicts; the net verdict change never exceeds 0.012 (5 records),
+inside the slice's noise. What the rounds buy is retrieval: den-F1 0.717 ->
+0.764 at one round and flat after, faithfulness 0.75 -> 0.78-0.86. The
+records that flip from right to wrong flip almost entirely INTO abstention (r0
+-> r1: 12 right->wrong, 13 became insufficient; r2 -> r3: 6 and 6): a repair
+that cannot produce a clean statement ends in `insufficient`, which trades a
+lucky verdict for an honest one. The S2 check fires on 23% of records and 71
+of the 91 are still flagged after three rounds -- the persistent cases are
+genuine n = k situations and absent events, which no rewrite can fix. Two
+rounds remain the operating point (best verdict, +3.9k tokens per record over
+round 0); the third round adds cost without retrieval gain. Rows 0/2 and 1/3
+were produced on different days, so part of the 1/3 vs 0/2 contrast is
+run-to-run variance of a temperature-0 32B model, not a parity effect.
+
+**(b) Paraphrase, full pipeline.** D' on the research / media / clinical
+registers (claim form, 200 instances each):
+
+| register | D' (0 rounds) | D' + 2 |
+|---|---|---|
+| original | 0.865 | 0.870 |
+| research | 0.790 | 0.815 |
+| media | 0.755 | 0.770 |
+| clinical | 0.825 | 0.840 |
+
+Runs `v12f_smoke200_dprime_registers_final` (0.790 over 600) and
+`..._verify2_final` (0.808). The drop (-0.03 to -0.11 at two rounds) matches the
+planner-alone drop on the same registers (-0.02 to -0.12, 10.3h): the
+paraphrase cost is paid at planning and passes through the contract unchanged,
+S2 adds no register sensitivity of its own. B / B+2 on the same registers
+(`night2_gpu1.sh`, done 02:24): B 0.587 / 0.600 / 0.557 (research / media /
+clinical; 0.640 original), B+2 0.679 / 0.690 / 0.599 (0.715 original). The
+end-to-end control loses 0.04-0.12 under paraphrase, the same band as D'; the
+D' - B+2 gap stays 0.08-0.24 on every register.
+
+### 10.3o Claude Opus 5.5 on the dev slice (200 claims, original register; 2026-10-14 01:35)
+
+Same prompts and flags as the local main-table rows (`results/chains/
+frontier_dev.sh`); API via the native structured-output route (Opus 5.5
+rejects forced tool calls; `llm_client.py` falls back per model, same schema,
+same JSON). Prompt caching on (billing only). Cost from the real token counts
+at the 2026-10-14 list price ($4 in / $20 out / cache read $0.20):
+
+| row | Opus 5.5 | 32B local (claim-only) | den-F1 (Opus) | cost |
+|---|---|---|---|---|
+| planner alone (S1, gold S2/S3) | 0.990 (claim EM 0.975) | 0.965 | -- | $0 (cached from D') |
+| D' | **0.990** | 0.865 | 1.000 | $2.51 |
+| D' + 2 | 0.990 (claim EM 0.955) | 0.870 | 1.000 | +$0.31 |
+| B (end-to-end + conventions) | **1.000** | ~0.64 | 1.000 | $2.14 |
+| B + 2 | 0.990 | 0.715 | 0.986 | +$0.16 |
+| counts-given (S3) | 1.000 | 0.705 | -- | $0.81 |
+
+Total $5.92 for six rows; about 20 min per 200-record row, 4-6 s per call.
+Per tier (D'): vaccine 124/124, report 70/71, multi 4/5. The SQL is genuinely
+right -- e.g. the precedes arm excludes `a.level = b.level` from the
+denominator and flags it `excluded` -- so the conventions, stated once, are
+sufficient for a frontier model with no contract at all. Verified by reading
+statements against gold n/k; no error rows, no API failures.
+
+What it means (the user's question of 2026-10-14): the dev slice is SOLVED by
+Opus 5.5 end-to-end. The contract's measurable value is for open 32B models
+(0.87 vs 0.66-0.72 end-to-end, at zero API cost) and for faithfulness; the
+benchmark's difficulty at the frontier must come from the test set, the
+paraphrase registers, or the no-conventions condition. Cell A (no
+conventions) at Opus (`frontier_dev_A.sh`, done 01:55, +$2.31, total $8.24):
+**A 0.945** (den-F1 0.903, den-EM 0.787; vaccine tier 0.911, report 1.000),
+A+2 0.935 (den-F1 0.882). So a frontier model infers most of the stipulations
+from the schema and the claim wording alone and still misses 11 of 124 cohort
+verdicts and a fifth of the denominators; stating the conventions closes that
+to 1.000. The conventions ARE information, worth +0.055 verdict / +0.21
+denominator exactness at the frontier (vs +0.14 / +0.3 at 32B). Repair hurts
+slightly at Opus in cell A (-0.01): without a contract the plan-free checks
+flag correct n = k statements.

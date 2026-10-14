@@ -735,6 +735,46 @@ control 0.669, the planner 0.954. Because every prompt decision was made on the
 development subset, the test set is the honest check of those decisions; its
 numbers are \pend{pending at the time of writing}.
 
+\paragraph{A frontier model.} The same rows, prompts and flags with Claude
+Opus~5.5 in every model slot (Table~\ref{tab:frontier}) put the development
+subset within reach of a frontier model with no contract at all: end-to-end
+with the conventions stated it scores 1.000 with every denominator exact, and
+the contract pipeline 0.990. The statements are right for the right reason
+--- the precedes arm, for instance, excludes same-level reports from the
+denominator and flags them as such --- so the stipulations, stated once, are
+sufficient information for a model that can hold them. Without them
+(cell~A) the same model scores 0.945 and gets 79\% of denominators exactly:
+it infers most of the stipulations from the schema and the wording, and the
+stated conventions close the rest. The whole table cost \$8.24 at list price
+with prompt caching, about 20~minutes per row.
+What the contract buys, then, is not accuracy a frontier model lacks but
+accuracy an open 32B model lacks (0.87 against 0.66--0.72 end-to-end at zero
+API cost) and a verdict whose denominator can be audited; and the test set,
+which no prompt decision was made on, is where frontier difficulty has to be
+measured.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrr}
+\toprule
+system, development subset (200 claims) & Opus 5.5 & 32B & den-F1 (Opus) \\
+\midrule
+planner alone (S2, S3 at gold) & 0.990 & 0.965 & --- \\
+D$'$ & 0.990 & 0.865 & 1.000 \\
+D$'$ + verifier & 0.990 & 0.870 & 1.000 \\
+A: schema only & 0.945 & 0.505 & 0.903 \\
+A + repair & 0.935 & 0.545 & 0.882 \\
+B: + conventions & \textbf{1.000} & 0.64 & 1.000 \\
+B + repair & 0.990 & 0.715 & 0.986 \\
+counts-given judgment & 1.000 & 0.705 & --- \\
+\bottomrule
+\end{tabular}
+\caption{Claude Opus 5.5 in every model slot against the local 32B models,
+same prompts; claim form, original register.}
+\label{tab:frontier}
+\end{table}
+
 \subsection{Stage analysis}
 \label{sec:stages}
 
@@ -771,14 +811,21 @@ Catalogue (answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
 \small
 \begin{tabular}{lrrrr}
 \toprule
-S1, toolbox zero-shot (1 round) & Original & Research & Media & Clinical \\
+ & Original & Research & Media & Clinical \\
 \midrule
+\multicolumn{5}{l}{\textit{Planner alone (S2, S3 at gold), one round}} \\
 7B-Instruct & 0.657 & 0.662 & 0.595 & 0.575 \\
 32B-Instruct & 0.955 & 0.838 & 0.877 & 0.935 \\
+\midrule
+\multicolumn{5}{l}{\textit{Full pipeline, 32B, claim form}} \\
+D$'$ & 0.865 & 0.790 & 0.755 & 0.825 \\
+D$'$$+$2 & 0.870 & 0.815 & 0.770 & 0.840 \\
+B$+$2 (end-to-end control) & 0.715 & 0.679 & 0.690 & 0.599 \\
 \bottomrule
 \end{tabular}
-\caption{Verdict accuracy by register; the same 200 instances, S2 and S3 at
-gold.}
+\caption{Verdict accuracy by register on the same 200 development instances.
+The full-pipeline drop ($-0.03$ to $-0.11$) matches the planner's: the cost of
+paraphrase is paid at planning and passes through the contract unchanged.}
 \label{tab:registers}
 \end{table}
 
@@ -793,6 +840,20 @@ statements and most $n = k$ queries; what remains for the end-to-end model is
 semantic --- co-existing reports in order denominators, ties, presence splits
 narrowed to co-occurrence --- and what remains for the contract pipeline is
 mostly its planner's errors.
+
+\paragraph{How many repair rounds?} Running D$'$ with zero to three rounds on
+the development subset separates what repair buys from what it costs. The
+verdict barely moves (0.855, 0.843, 0.865, 0.850; no two rounds differ by more
+than five records of 400), but retrieval does: denominator F1 rises from 0.717
+to 0.764 after one round and stays there, and faithfulness, the probability
+that a right verdict rests on the right denominator, from 0.75 to 0.78--0.86.
+The S2 check fires on 23\% of records; the verdicts it changes from right to
+wrong move almost entirely into \textit{insufficient} (12 of 12 at one round,
+6 of 6 at the third), because a statement that cannot be repaired is not
+executed --- a lucky verdict becomes an honest abstention. Most flagged
+records (71 of 91) are still flagged after three rounds: genuine $n = k$
+situations and absent events that no rewrite can fix. Two rounds is the
+operating point; the third costs 2k tokens per record and buys nothing.
 
 \begin{table*}[t]
 \centering
