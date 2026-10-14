@@ -1762,3 +1762,11 @@ other systems, VERITAS mostly cannot get a claim through its three phases in
 30 minutes at 32B, and when it does it abstains -- the opposite failure to
 EHRAgent-A. Near the 0.33-0.37 floors, as on v1.1 (0.333 / 0.308 on 39 claims).
 Test-slice run (120 claims) in progress behind EHRAgent on the test slice.
+
+
+### 10.3l EHRAgent 32B on the TEST slice (test_200_v1.2; 2026-10-13)
+
+Same adaptation as 10.3j. Variant B + conventions (counts -> our test): cohort
+0.58 (139/240; report tier n/a; 44% no parseable counts). Variant A (runs its
+own test): 0.743 overall, cohort 0.63 (151/240), report 0.91, 3% no answer.
+Dev slice was 0.628 / 0.624 cohort -- the agentic baseline's numbers transfer.

@@ -648,8 +648,8 @@ B: + conventions & none & 0.588 & 0.543 & 0.517 & 0.47 & 0.28 & 0.18 & \pend{pen
 B + repair & 2 rounds & 0.660 & 0.655 & 0.643 & 0.56 & 0.53 & 0.15 & \pend{pending} \\
 \midrule
 \multicolumn{9}{@{}l}{\textit{agentic}} \\
-EHRAgent, counts $\rightarrow$ our test, + conventions & own retries & --- & 0.628 & n/a & n/a & n/a & 0.23 & \pend{pending} \\
-EHRAgent, runs its own test & own retries & 0.743 & 0.624 & n/a & n/a & n/a & 0.64 & \pend{pending} \\
+EHRAgent, counts $\rightarrow$ our test, + conventions & own retries & --- & 0.628 & n/a & n/a & n/a & 0.23 & 0.58 \\
+EHRAgent, runs its own test & own retries & 0.743 & 0.624 & n/a & n/a & n/a & 0.64 & 0.63 \\
 VERITAS + conventions, our tests (claim form, 129 cohort claims) & own critic & --- & 0.349 & n/a & n/a & n/a & 0.19 & \pend{pending} \\
 \midrule
 counts-given judgment (gold $n,k$) & --- & 0.705 & 0.543 & (given) & --- & 1.00 & 0.17 & \pend{pending} \\
@@ -665,7 +665,8 @@ its report-tier accuracy (0.96) carries its overall number. VERITAS takes the
 claim form only; 50 of its 129 runs completed all three phases within a
 10-minute cap per phase (the rest are scored as misses), and the completed
 runs abstain on 29 of 36 undecidable claims but on 69 of 93 decisive ones. The last column is
-the same row on the test budget subset.}
+the same row's cohort-tier accuracy on the test budget subset (EHRAgent: 240
+cohort-tier records; its own-test variant scores 0.743 overall there too).}
 \label{tab:main}
 \end{table*}
 
