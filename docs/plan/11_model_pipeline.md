@@ -1874,3 +1874,30 @@ to 1.000. The conventions ARE information, worth +0.055 verdict / +0.21
 denominator exactness at the frontier (vs +0.14 / +0.3 at 32B). Repair hurts
 slightly at Opus in cell A (-0.01): without a contract the plan-free checks
 flag correct n = k statements.
+
+**gpt-5.6-sol (OpenAI; 2026-10-14 19:01).** Chosen as the peer of Opus 5.5:
+"GPT-5.6 flagship model for complex professional work", the same $4 / $20
+price point (cached input $0.40). Same eight rows, same order
+(`results/chains/frontier_dev_gpt.sh`); reasoning effort left at the provider
+default (it reasons adaptively: 12k hidden tokens on D', 42k on each
+end-to-end row, 105k on counts-given). Total $8.75.
+
+| row | gpt-5.6-sol | Opus 5.5 | 32B local | den-F1 (GPT) | cost |
+|---|---|---|---|---|---|
+| planner alone | 0.995 (claim EM 0.980) | 0.990 (0.975) | 0.965 | -- | $0 (cached) |
+| D' | 0.995 | 0.990 | 0.865 | 1.000 | $2.00 |
+| D' + 2 | 0.990 | 0.990 | 0.870 | 0.992 | +$0.30 |
+| A: schema only | 0.925 | 0.945 | 0.505 | 0.913 (EM 0.829) | $1.76 |
+| A + 2 | 0.910 | 0.935 | 0.545 | 0.891 | +$0.08 |
+| B: + conventions | 0.995 | 1.000 | 0.640 | 1.000 | $1.88 |
+| B + 2 | 0.990 | 0.990 | 0.715 | 0.985 | +$0.23 |
+| counts-given | 1.000 | 1.000 | 0.705 | -- | $2.51 |
+
+Per tier (D'): vaccine 124/124, report 71/71, multi 4/5; cell A: vaccine
+0.887, report 0.986. The two frontier models agree to within one record on
+every row: the conventions, stated once, are sufficient for both; without
+them both lose 0.05-0.07 verdict and 17-21% of denominators. Repair at the
+frontier is neutral to slightly negative in every cell (-0.005 to -0.015),
+for the same reason as at Opus (plan-free checks flag correct n = k
+statements). The slice is saturated for frontier models at this price point;
+the open-weight sweep (10.3p) and the test set are where the spread is.

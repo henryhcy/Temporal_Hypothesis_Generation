@@ -735,18 +735,19 @@ control 0.669, the planner 0.954. Because every prompt decision was made on the
 development subset, the test set is the honest check of those decisions; its
 numbers are \pend{pending at the time of writing}.
 
-\paragraph{A frontier model.} The same rows, prompts and flags with Claude
-Opus~5.5 in every model slot (Table~\ref{tab:frontier}) put the development
-subset within reach of a frontier model with no contract at all: end-to-end
-with the conventions stated it scores 1.000 with every denominator exact, and
-the contract pipeline 0.990. The statements are right for the right reason
+\paragraph{Frontier models.} The same rows, prompts and flags with Claude
+Opus~5.5 and GPT-5.6 in every model slot (Table~\ref{tab:frontier}) put the
+development subset within reach of a frontier model with no contract at all:
+end-to-end with the conventions stated they score 1.000 and 0.995 with every
+denominator exact, and the contract pipeline 0.990 and 0.995. The two models
+agree to within one record on every row. The statements are right for the right reason
 --- the precedes arm, for instance, excludes same-level reports from the
 denominator and flags them as such --- so the stipulations, stated once, are
 sufficient information for a model that can hold them. Without them
-(cell~A) the same model scores 0.945 and gets 79\% of denominators exactly:
-it infers most of the stipulations from the schema and the wording, and the
-stated conventions close the rest. The whole table cost \$8.24 at list price
-with prompt caching, about 20~minutes per row.
+(cell~A) the same models score 0.945 and 0.925 and get 79--83\% of
+denominators exactly: they infer most of the stipulations from the schema and
+the wording, and the stated conventions close the rest. Each column cost
+under \$9 at list price with prompt caching, about 20~minutes per row.
 What the contract buys, then, is not accuracy a frontier model lacks but
 accuracy an open 32B model lacks (0.87 against 0.66--0.72 end-to-end at zero
 API cost) and a verdict whose denominator can be audited; and the test set,
@@ -756,22 +757,24 @@ measured.
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lrrr}
+\begin{tabular}{lrrrr}
 \toprule
-system, development subset (200 claims) & Opus 5.5 & 32B & den-F1 (Opus) \\
+system, development subset (200 claims) & Opus 5.5 & GPT-5.6 & 32B & den-F1 \\
 \midrule
-planner alone (S2, S3 at gold) & 0.990 & 0.965 & --- \\
-D$'$ & 0.990 & 0.865 & 1.000 \\
-D$'$ + verifier & 0.990 & 0.870 & 1.000 \\
-A: schema only & 0.945 & 0.505 & 0.903 \\
-A + repair & 0.935 & 0.545 & 0.882 \\
-B: + conventions & \textbf{1.000} & 0.64 & 1.000 \\
-B + repair & 0.990 & 0.715 & 0.986 \\
-counts-given judgment & 1.000 & 0.705 & --- \\
+planner alone (S2, S3 at gold) & 0.990 & 0.995 & 0.965 & --- \\
+D$'$ & 0.990 & 0.995 & 0.865 & 1.000 / 1.000 \\
+D$'$ + verifier & 0.990 & 0.990 & 0.870 & 1.000 / 0.992 \\
+A: schema only & 0.945 & 0.925 & 0.505 & 0.903 / 0.913 \\
+A + repair & 0.935 & 0.910 & 0.545 & 0.882 / 0.891 \\
+B: + conventions & \textbf{1.000} & \textbf{0.995} & 0.640 & 1.000 / 1.000 \\
+B + repair & 0.990 & 0.990 & 0.715 & 0.986 / 0.985 \\
+counts-given judgment & 1.000 & 1.000 & 0.705 & --- \\
 \bottomrule
 \end{tabular}
-\caption{Claude Opus 5.5 in every model slot against the local 32B models,
-same prompts; claim form, original register.}
+\caption{Claude Opus 5.5 and GPT-5.6 (Sol) in every model slot against the
+local 32B models, same prompts; claim form, original register. Denominator F1
+is given for the two frontier models in that order. Each frontier column cost
+under \$9 at list price with prompt caching.}
 \label{tab:frontier}
 \end{table}
 
