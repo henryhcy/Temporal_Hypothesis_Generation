@@ -644,9 +644,48 @@ def _group_macro(recs: Sequence[_Rec], *, min_group_size: int, bootstrap: int,
             "bootstrap": bootstrap, "seed": seed}
 
 
+def _pct_ci95(draws: list[float]) -> list[float] | None:
+    """Percentile 95% interval of bootstrap draws (None when there are none)."""
+    if not draws:
+        return None
+    d = sorted(draws)
+    last = len(d) - 1
+    return [d[int(math.floor(0.025 * last))], d[int(math.ceil(0.975 * last))]]
+
+
+def _instance_bootstrap(recs: Sequence[_Rec], *, bootstrap: int, seed: int) -> dict:
+    """Instance-level bootstrap of verdict accuracy and class-macro F1.
+
+    Resamples INSTANCES (all of an instance's records move together, so the
+    claim and question renderings of one instance are never split), ``bootstrap``
+    times, and returns the percentile 95% intervals. This is the interval for
+    "how much would this number move on another sample of the same size", the
+    one reviewers ask for on a 200-instance subset; it says nothing about the
+    model's run-to-run variance.
+    """
+    if not bootstrap or not recs:
+        return {"accuracy_ci95": None, "class_macro_f1_ci95": None}
+    per_inst: dict[str, list[_Rec]] = defaultdict(list)
+    for r in recs:
+        per_inst[r.iid].append(r)
+    insts = [per_inst[i] for i in sorted(per_inst)]
+    classes = _classes_for(recs)
+    rng = random.Random(f"instance:{seed}")
+    accs: list[float] = []
+    f1s: list[float] = []
+    for _ in range(bootstrap):
+        sample = [r for cl in rng.choices(insts, k=len(insts)) for r in cl]
+        accs.append(sum(1 for r in sample if r.correct) / len(sample))
+        _, m = _prf_from_confusion(_confusion(sample), classes)
+        f1s.append(m if m is not None else 0.0)
+    return {"accuracy_ci95": _pct_ci95(accs), "class_macro_f1_ci95": _pct_ci95(f1s),
+            "n_instances_resampled": len(insts), "bootstrap": bootstrap}
+
+
 def _verdict_block(recs: Sequence[_Rec], *, min_group_size: int, bootstrap: int,
                    seed: int) -> dict:
     out = _verdict_summary(recs, VERDICTS)
+    out.update(_instance_bootstrap(recs, bootstrap=bootstrap, seed=seed))
     out["group_macro"] = _group_macro(recs, min_group_size=min_group_size,
                                       bootstrap=bootstrap, seed=seed)
     by_fact: dict[str, list[bool]] = defaultdict(list)
@@ -947,7 +986,7 @@ def _score_all(rows: Iterable[Mapping[str, Any]], release: Any, *, options_seed:
 
 
 def evaluate(rows: Iterable[Mapping[str, Any]], release: Any, *, options_seed: int = 0,
-             min_group_size: int = 30, bootstrap: int = 200, seed: int = 0) -> dict:
+             min_group_size: int = 30, bootstrap: int = 1000, seed: int = 0) -> dict:
     """Score prediction rows against the gold ``release.answer_for`` returns.
 
     Returns the ``metrics.json`` content (JSON-serialisable; all keys strings).

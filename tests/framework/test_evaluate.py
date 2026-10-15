@@ -521,3 +521,16 @@ def test_write_report_without_rows(metrics, tmp_path):
     failures = (tmp_path / "bare" / "failures.md").read_text(encoding="utf-8")
     assert "prediction rows not supplied" in failures
     assert (tmp_path / "bare" / "report.md").exists()
+
+
+def test_instance_bootstrap_ci_brackets_the_point_estimate(metrics, rows, release):
+    v = metrics["verdict"]
+    lo, hi = v["accuracy_ci95"]
+    assert lo <= v["accuracy"] <= hi and 0.0 <= lo < hi <= 1.0
+    flo, fhi = v["class_macro_f1_ci95"]
+    assert flo <= v["class_macro_f1"] <= fhi
+    assert v["n_instances_resampled"] == metrics["n"]["instances"]
+    # seeded: the same seed reproduces the interval, another seed need not
+    again = evaluate(rows, release, min_group_size=2, bootstrap=50, seed=0)["verdict"]
+    assert again["accuracy_ci95"] == v["accuracy_ci95"]
+    assert evaluate(rows, release, bootstrap=0)["verdict"]["accuracy_ci95"] is None

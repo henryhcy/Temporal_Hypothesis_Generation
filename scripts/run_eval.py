@@ -425,7 +425,9 @@ def main() -> None:
     gm = v.get("group_macro") or {}
     ex = metrics.get("extraction", {})
     rt = metrics.get("retrieval", {}).get("denominator", {})
-    print(f"\nverdict acc={v.get('accuracy')}  class-macro-F1={v.get('class_macro_f1')}  "
+    ci = v.get("accuracy_ci95")
+    ci_s = f" [{ci[0]:.3f}, {ci[1]:.3f}]" if ci else ""
+    print(f"\nverdict acc={v.get('accuracy')}{ci_s}  class-macro-F1={v.get('class_macro_f1')}  "
           f"group-macro-F1={gm.get('f1')} CI={gm.get('ci95')}  "
           f"S1 claim_em={ex.get('claim_em')}  S2 den-F1={rt.get('f1')}  "
           f"underdetermined={metrics.get('n', {}).get('underdetermined')}  "
