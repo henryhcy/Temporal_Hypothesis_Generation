@@ -754,7 +754,13 @@ margin therefore shrinks as models improve, from $+0.155$ at the Qwen2.5-32B
 pair to $+0.045$ at gemma4 and within the interval at qwen3.8; its
 faithfulness margin does not: with the contract 96\% of right verdicts rest on
 the exact denominator for both models, against 81--89\% end-to-end, and
-false-decisiveness halves. The statements are right for the right reason
+false-decisiveness halves. The boundary of the method is also in the
+table: gpt-oss-20B, a reasoning model at its lowest effort, misreads the plan
+shape on a quarter of the claims, the pipeline then abstains rather than
+guess (37\% of cohort records unanswered), and the verified end-to-end
+control, which always answers, scores higher (0.850 against 0.715) while
+being less faithful (0.80 against 0.92). The contract needs a planner that
+can compose the plan; below that floor it trades verdicts for honesty. The statements are right for the right reason
 --- the precedes arm, for instance, excludes same-level reports from the
 denominator and flags them as such --- so the stipulations, stated once, are
 sufficient information for a model that can hold them. Without them
@@ -771,27 +777,29 @@ measured.
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lrrrrr}
+\begin{tabular}{lrrrrrr}
 \toprule
-system, development subset (200 claims) & Opus 5.5 & GPT-5.6 & gemma4-31B & qwen3.8-27B & Qwen2.5-32B \\
+system, development subset (200 claims) & Opus 5.5 & GPT-5.6 & gemma4-31B & qwen3.8-27B & Qwen2.5-32B & gpt-oss-20B \\
 \midrule
-planner alone (S2, S3 at gold) & 0.990 & 0.995 & 0.985 & 0.945 & 0.965 \\
-D$'$ & 0.990 & 0.995 & 0.890 & 0.845 & 0.865 \\
-D$'$ + verifier & 0.990 & 0.990 & \textbf{0.970} & \textbf{0.905} & \textbf{0.870} \\
-A: schema only & 0.945 & 0.925 & --- & --- & 0.505 \\
-A + repair & 0.935 & 0.910 & --- & --- & 0.545 \\
-B: + conventions & \textbf{1.000} & \textbf{0.995} & 0.875 & 0.840 & 0.640 \\
-B + repair & 0.990 & 0.990 & 0.925 & 0.895 & 0.715 \\
-counts-given judgment & 1.000 & 1.000 & 0.810 & 0.700 & 0.705 \\
+planner alone (S2, S3 at gold) & 0.990 & 0.995 & 0.985 & 0.945 & 0.965 & 0.740 \\
+D$'$ & 0.990 & 0.995 & 0.890 & 0.845 & 0.865 & 0.675 \\
+D$'$ + verifier & 0.990 & 0.990 & \textbf{0.970} & \textbf{0.905} & \textbf{0.870} & 0.715 \\
+A: schema only & 0.945 & 0.925 & --- & --- & 0.505 & --- \\
+A + repair & 0.935 & 0.910 & --- & --- & 0.545 & --- \\
+B: + conventions & \textbf{1.000} & \textbf{0.995} & 0.875 & 0.840 & 0.640 & 0.800 \\
+B + repair & 0.990 & 0.990 & 0.925 & 0.895 & 0.715 & \textbf{0.850} \\
+counts-given judgment & 1.000 & 1.000 & 0.810 & 0.700 & 0.705 & 0.740 \\
 \midrule
-denominator F1, D$'$ + verifier & 1.000 & 0.992 & 0.965 & 0.898 & 0.763 \\
-denominator F1, B + repair & 0.986 & 0.985 & 0.886 & 0.818 & 0.643 \\
-faithfulness, D$'$ + verifier / B + repair & --- & --- & 0.96 / 0.89 & 0.96 / 0.81 & 0.78 / 0.64 \\
+denominator F1, D$'$ + verifier & 1.000 & 0.992 & 0.965 & 0.898 & 0.763 & 0.618 \\
+denominator F1, B + repair & 0.986 & 0.985 & 0.886 & 0.818 & 0.643 & 0.850 \\
+faithfulness, D$'$ + verifier / B + repair & --- & --- & 0.96 / 0.89 & 0.96 / 0.81 & 0.78 / 0.64 & 0.92 / 0.80 \\
+no answer, D$'$ + verifier / B + repair & 0 / 0 & 0 / 0 & 0 / 0 & 0.02 / 0 & 0.02 / 0 & 0.37 / 0 \\
 \bottomrule
 \end{tabular}
-\caption{Two frontier models and three open-weight models in every model slot,
+\caption{Two frontier models and four open-weight models in every model slot,
 same prompts; claim form, original register. Open-weight models run with
-thinking off on one RTX A5000. Each frontier column cost under \$9 at list
+thinking off (gpt-oss at its lowest reasoning level; it cannot switch it off)
+on one RTX A5000. Each frontier column cost under \$9 at list
 price with prompt caching. Intervals: $\pm 0.02$ at 0.97, $\pm 0.04$ at 0.90,
 $\pm 0.06$ at 0.65.}
 \label{tab:frontier}
@@ -825,6 +833,7 @@ B & GPT-5.6 & 5.5 & 2{,}980 & 0.0094 \\
 B & Qwen2.5-Coder-32B & \pend{x} & 3{,}960 & 0 \\
 B & gemma4-31B & 4.7 & 2{,}950 & 0 \\
 B & qwen3.8-27B & 4.6 & 2{,}890 & 0 \\
+D$'$ & gpt-oss-20B & 6.0 & 5{,}940 & 0 \\
 counts-given & Opus 5.5 & 2.8 & 930 & 0.0040 \\
 counts-given & GPT-5.6 & 9.1 & 980 & 0.0125 \\
 \bottomrule

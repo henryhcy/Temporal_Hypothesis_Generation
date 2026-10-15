@@ -1945,3 +1945,20 @@ in the SQL slot loses 0.10 that two repair rounds recover (0.905); the Coder
 in the 32B pair is what makes D' r0 land. gpt-oss:20b (reasoning model,
 `--think low`) queued on GPU0 (first attempt aborted: the pull had not
 completed).
+
+**gpt-oss-20b (OpenAI open-weight reasoning model, `--think low`; 22:28).**
+planner 0.740 (claim EM 0.74), D' 0.675, D'+2 0.715 [0.645, 0.780], B 0.800,
+B+2 **0.850** [0.800, 0.895], counts 0.740. The one model where the verified
+end-to-end row beats the contract pipeline -- and the reason is visible in
+the abstention block: at D'+2, 37% of cohort records have NO answer (plan
+composition failed, so S2 never ran), against 0% for B+2. When it does
+answer, the contract is the more faithful system as everywhere else:
+faithfulness 0.92 vs 0.80, false-decisiveness 0.043 vs 0.083,
+over-abstention 0.069 vs 0.194. Per tier (D'+2 / B+2): vaccine 0.556 / 0.798,
+report 0.986 / 0.930. Latency 6.0 s (D') / 3.5 s (B) per record, 12.9 GB.
+Reading: the contract needs a planner that can compose the plan; a 20B
+reasoning model at low effort misreads the plan shape on a quarter of the
+claims (the 7B failure mode), and the pipeline then abstains rather than
+guess, which is the designed behaviour but costs verdict accuracy against a
+baseline that always answers. This goes in the paper as the boundary
+condition of the method, not hidden.
