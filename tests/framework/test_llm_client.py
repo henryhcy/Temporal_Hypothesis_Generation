@@ -576,3 +576,18 @@ def test_ollama_client_passes_think_switch(monkeypatch):
     assert seen["payload"]["think"] is False
     llm_client.OllamaClient("http://x").complete(MSGS, schema=None, model="m")
     assert "think" not in seen["payload"]
+
+
+def test_ollama_think_switch_is_part_of_the_cache_key(tmp_path, monkeypatch):
+    calls = []
+
+    def fake_request(self, method, path, payload, **kw):
+        calls.append(payload.get("think"))
+        return {"message": {"content": '{"x": 1}'}, "prompt_eval_count": 3, "eval_count": 2}
+
+    monkeypatch.setattr(llm_client.OllamaClient, "_request", fake_request)
+    cache = llm_client.CacheDir(tmp_path)
+    llm_client.OllamaClient("http://x", cache=cache).complete(MSGS, schema=None, model="m")
+    llm_client.OllamaClient("http://x", cache=cache, think=False).complete(MSGS, schema=None, model="m")
+    llm_client.OllamaClient("http://x", cache=cache, think=False).complete(MSGS, schema=None, model="m")
+    assert calls == [None, False]  # third call: cache hit under the think=off key

@@ -221,7 +221,10 @@ class OllamaClient:
                  temperature: float = 0.0, max_tokens: int = 800) -> Completion:
         key = None
         if self.cache is not None:
-            key = self.cache.key(model, messages, schema)
+            # the thinking switch changes the reply, so it is part of the key
+            # (unset keeps the historical keys of every run before 2026-10-14)
+            keyed_model = model if self.think is None else f"{model}|think={self.think}"
+            key = self.cache.key(keyed_model, messages, schema)
             hit = self.cache.get(key)
             if hit is not None:
                 return hit
