@@ -3277,7 +3277,7 @@ rows are opt-in (`RUN_GPT=1`, `OPENAI_MODEL`).
 cohort/multi group as a CAP** (user, 23:30): the seeded verdict-balanced draw
 (`eval_core(per_group=90, exclude=dev)`) where a group yields 90, and EVERY
 fact-disjoint leftover where it cannot (F-V1 86, F-V3 86, H-V5 61, P-M2 82).
-17 groups, **1,500 instances** (505/504/491), FACT-DISJOINT from the
+17 groups, **1,500 instances** (498/497/505), FACT-DISJOINT from the
 200-instance dev slice; dev = 10.6% of dev + test + report case study (1,880).
 (An earlier 60-per-group cut of 1,026 was written at 23:00 and superseded
 before any row completed.) The **dev set stays the 200-instance
