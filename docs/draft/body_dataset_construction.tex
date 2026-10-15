@@ -740,12 +740,21 @@ control 0.669, the planner 0.954. Because every prompt decision was made on the
 development subset, the test set is the honest check of those decisions; its
 numbers are \pend{pending at the time of writing}.
 
-\paragraph{Frontier models.} The same rows, prompts and flags with Claude
-Opus~5.5 and GPT-5.6 in every model slot (Table~\ref{tab:frontier}) put the
-development subset within reach of a frontier model with no contract at all:
-end-to-end with the conventions stated they score 1.000 and 0.995 with every
-denominator exact, and the contract pipeline 0.990 and 0.995. The two models
-agree to within one record on every row. The statements are right for the right reason
+\paragraph{Frontier and open-weight models.} The same rows, prompts and
+flags with Claude Opus~5.5 and GPT-5.6 in every model slot
+(Table~\ref{tab:frontier}) put the development subset within reach of a
+frontier model with no contract at all: end-to-end with the conventions
+stated they score 1.000 and 0.995 with every denominator exact, and the
+contract pipeline 0.990 and 0.995. The two models agree to within one record
+on every row. The newest open-weight generation, run with thinking off on one
+workstation GPU, closes most of that distance \emph{with} the contract:
+gemma4-31B reaches 0.970 and qwen3.8-27B 0.905 with the verifier, against
+0.925 and 0.895 for the verified end-to-end control. The contract's verdict
+margin therefore shrinks as models improve, from $+0.155$ at the Qwen2.5-32B
+pair to $+0.045$ at gemma4 and within the interval at qwen3.8; its
+faithfulness margin does not: with the contract 96\% of right verdicts rest on
+the exact denominator for both models, against 81--89\% end-to-end, and
+false-decisiveness halves. The statements are right for the right reason
 --- the precedes arm, for instance, excludes same-level reports from the
 denominator and flags them as such --- so the stipulations, stated once, are
 sufficient information for a model that can hold them. Without them
@@ -762,24 +771,29 @@ measured.
 \begin{table}[t]
 \centering
 \small
-\begin{tabular}{lrrrr}
+\begin{tabular}{lrrrrr}
 \toprule
-system, development subset (200 claims) & Opus 5.5 & GPT-5.6 & 32B & den-F1 \\
+system, development subset (200 claims) & Opus 5.5 & GPT-5.6 & gemma4-31B & qwen3.8-27B & Qwen2.5-32B \\
 \midrule
-planner alone (S2, S3 at gold) & 0.990 & 0.995 & 0.965 & --- \\
-D$'$ & 0.990 & 0.995 & 0.865 & 1.000 / 1.000 \\
-D$'$ + verifier & 0.990 & 0.990 & 0.870 & 1.000 / 0.992 \\
-A: schema only & 0.945 & 0.925 & 0.505 & 0.903 / 0.913 \\
-A + repair & 0.935 & 0.910 & 0.545 & 0.882 / 0.891 \\
-B: + conventions & \textbf{1.000} & \textbf{0.995} & 0.640 & 1.000 / 1.000 \\
-B + repair & 0.990 & 0.990 & 0.715 & 0.986 / 0.985 \\
-counts-given judgment & 1.000 & 1.000 & 0.705 & --- \\
+planner alone (S2, S3 at gold) & 0.990 & 0.995 & 0.985 & 0.945 & 0.965 \\
+D$'$ & 0.990 & 0.995 & 0.890 & 0.845 & 0.865 \\
+D$'$ + verifier & 0.990 & 0.990 & \textbf{0.970} & \textbf{0.905} & \textbf{0.870} \\
+A: schema only & 0.945 & 0.925 & --- & --- & 0.505 \\
+A + repair & 0.935 & 0.910 & --- & --- & 0.545 \\
+B: + conventions & \textbf{1.000} & \textbf{0.995} & 0.875 & 0.840 & 0.640 \\
+B + repair & 0.990 & 0.990 & 0.925 & 0.895 & 0.715 \\
+counts-given judgment & 1.000 & 1.000 & 0.810 & 0.700 & 0.705 \\
+\midrule
+denominator F1, D$'$ + verifier & 1.000 & 0.992 & 0.965 & 0.898 & 0.763 \\
+denominator F1, B + repair & 0.986 & 0.985 & 0.886 & 0.818 & 0.643 \\
+faithfulness, D$'$ + verifier / B + repair & --- & --- & 0.96 / 0.89 & 0.96 / 0.81 & 0.78 / 0.64 \\
 \bottomrule
 \end{tabular}
-\caption{Claude Opus 5.5 and GPT-5.6 (Sol) in every model slot against the
-local 32B models, same prompts; claim form, original register. Denominator F1
-is given for the two frontier models in that order. Each frontier column cost
-under \$9 at list price with prompt caching.}
+\caption{Two frontier models and three open-weight models in every model slot,
+same prompts; claim form, original register. Open-weight models run with
+thinking off on one RTX A5000. Each frontier column cost under \$9 at list
+price with prompt caching. Intervals: $\pm 0.02$ at 0.97, $\pm 0.04$ at 0.90,
+$\pm 0.06$ at 0.65.}
 \label{tab:frontier}
 \end{table}
 
@@ -789,8 +803,9 @@ exchanged and the dollar cost from the providers' own usage counts at list
 price with prompt caching; local rows cost GPU time only. The contract
 pipeline makes two calls per record where the end-to-end baseline makes one,
 so it exchanges about twice the tokens; the repair rounds add 10--20\% on top.
-At the frontier a full 200-claim row costs two to three dollars; a local 27B
-model answers a record in \pend{x}~s on one workstation GPU.
+At the frontier a full 200-claim row costs two to three dollars; a local
+27B model answers a record in 9~s and a 31B one in 13~s on one workstation
+GPU, with the verifier adding four to five seconds.
 
 \begin{table}[t]
 \centering
@@ -803,11 +818,13 @@ system & model & s / record & tokens / record & USD / record \\
 D$'$ & Opus 5.5 & 6.0 & 8{,}940 & 0.0125 \\
 D$'$ & GPT-5.6 & 5.1 & 5{,}470 & 0.0100 \\
 D$'$ & Qwen2.5-32B pair & \pend{x} & 8{,}720 & 0 \\
-D$'$ & qwen3.8-27B & \pend{x} & \pend{x} & 0 \\
-D$'$ & gemma4-31B & \pend{x} & \pend{x} & 0 \\
+D$'$ & qwen3.8-27B & 8.8 & 5{,}020 & 0 \\
+D$'$ & gemma4-31B & 13.2 & 5{,}130 & 0 \\
 B & Opus 5.5 & 4.6 & 4{,}600 & 0.0107 \\
 B & GPT-5.6 & 5.5 & 2{,}980 & 0.0094 \\
 B & Qwen2.5-Coder-32B & \pend{x} & 3{,}960 & 0 \\
+B & gemma4-31B & 4.7 & 2{,}950 & 0 \\
+B & qwen3.8-27B & 4.6 & 2{,}890 & 0 \\
 counts-given & Opus 5.5 & 2.8 & 930 & 0.0040 \\
 counts-given & GPT-5.6 & 9.1 & 980 & 0.0125 \\
 \bottomrule

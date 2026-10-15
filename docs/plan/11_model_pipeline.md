@@ -1901,3 +1901,47 @@ frontier is neutral to slightly negative in every cell (-0.005 to -0.015),
 for the same reason as at Opus (plan-free checks flag correct n = k
 statements). The slice is saturated for frontier models at this price point;
 the open-weight sweep (10.3p) and the test set are where the spread is.
+
+### 10.3p Open-weight sweep on the dev slice: qwen3.8-27B and gemma4-31B (2026-10-14 21:38)
+
+Same prompts and flags as the 32B rows, ONE model in both stages, thinking
+OFF (`--think off`; both think by default -- gemma4 despite its library page),
+claim form, original register, 200 instances. Served by Ollama v0.40.4 from a
+user install with NVIDIA's CUDA forward-compat library (driver 535 on the
+box; `results/chains/ollama_servers.sh`); models fully resident on one A5000
+at 8k context. Chains: `results/chains/openweight_dev.sh`. 95% bootstrap
+intervals over instances in brackets.
+
+| row | qwen3.8-27B | gemma4-31B | Qwen2.5-32B pair | Opus 5.5 / GPT-5.6 |
+|---|---|---|---|---|
+| planner alone | 0.945 [0.910, 0.975] | 0.985 [0.965, 1.000] | 0.965 | 0.990 / 0.995 |
+| D' | 0.845 (den-F1 0.774) | 0.890 (0.898) | 0.865 (0.72) | 0.990 / 0.995 |
+| D' + 2 | **0.905** [0.865, 0.945] (0.898) | **0.970** [0.945, 0.990] (0.965) | 0.870 (0.76) | 0.990 / 0.990 |
+| B | 0.840 (0.731) | 0.875 (0.779) | 0.640 | 1.000 / 0.995 |
+| B + 2 | 0.895 [0.850, 0.935] (0.818) | 0.925 [0.890, 0.960] (0.886) | 0.715 | 0.990 / 0.990 |
+| counts-given | 0.700 | 0.810 | 0.705 | 1.000 / 1.000 |
+
+Faithfulness P(den exact | verdict right), cohort tier (129): qwen3.8 D'
+0.867 -> D'+2 **0.964**, B 0.701 -> B+2 0.806; gemma4 D' 0.972 -> D'+2
+0.960, B 0.837 -> B+2 0.886. False-decisiveness at +2: D' 0.086 / 0.028 vs
+B 0.111 / 0.083; over-abstention D' 0.065 / 0.043 vs B 0.108 / 0.108.
+Per tier (D'+2): vaccine 0.855 / 0.968, report 1.000 / 0.986, multi 0.8 / 0.8.
+Live latency (sequential, one A5000): D' 8.8 s / 13.2 s per record (4.7k /
+4.8k prompt tokens), B 4.6 / 4.7 s; D'+2 adds ~4-5 s; counts ~1 s.
+
+Reading. (1) The newest open generation closes most of the verdict gap to
+the frontier with the contract: gemma4-31B D'+2 at 0.970 is within 0.02 of
+Opus, at zero API cost and 13 s per record on a workstation GPU. (2) The
+contract's VERDICT advantage over verified end-to-end shrinks as models
+improve: +0.155 at the Qwen2.5-32B pair, +0.045 at gemma4 (borderline on 200),
++0.010 at qwen3.8 (not resolved). (3) The FAITHFULNESS advantage does not
+shrink: denominator F1 0.90 vs 0.82 (qwen3.8) and 0.97 vs 0.89 (gemma4) at
+two rounds; faithfulness 0.96 vs 0.81 and 0.96 vs 0.89; false-decisiveness
+halves or better. This is the paper's claim from here: the contract is what
+makes an open model's verdict auditable, and it is worth 0.15 verdict at the
+32B generation and ~0.05 at the newest, while the denominator gap persists.
+(4) qwen3.8 D' at 0 rounds (0.845) is below its planner (0.945): a 27B model
+in the SQL slot loses 0.10 that two repair rounds recover (0.905); the Coder
+in the 32B pair is what makes D' r0 land. gpt-oss:20b (reasoning model,
+`--think low`) queued on GPU0 (first attempt aborted: the pull had not
+completed).
