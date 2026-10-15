@@ -3270,3 +3270,32 @@ accounting stays comparable across providers; the split is written to
 rows so the disk cache does the rest: planner after D' is free (same S1
 calls), each +2 row costs only its repairs. Opus runs by default; the OpenAI
 rows are opt-in (`RUN_GPT=1`, `OPENAI_MODEL`).
+
+## DECIDED: the test set, the roster for the paper, and the report tier (2026-10-14, user)
+
+**Test set** = `results/subsets/test_cohort_v1.2_s0.json`: 60 instances per
+cohort/multi group (17 groups, 1,026 instances, 343/342/341), seeded,
+verdict-balanced, FACT-DISJOINT from the 200-instance dev slice
+(`eval_core(per_group=60, exclude=dev)`). The **dev set stays the 200-instance
+slice as tuned** (all tiers, all groups); it is the tuning set and is not the
+main table. Main-table numbers are test-set, cohort/multi tiers, claim form,
+original register.
+
+**Report tier is a case study, not part of the main evaluation**: 20 per group
+(9 groups, 180 instances, `test_report_v1.2_s0.json`), reported separately.
+Every model above 7B scores 0.99-1.00 there; its content is which systems
+fail at reading one report. `test_v1.2_s0.json` is the union (1,206).
+
+**Three groups leave the paper**: S-V1 and S-V3 (4 distinct cores each in the
+whole corpus; 6 instances, all in dev) and H-V3 (12 cores, 4 supported). The
+corpus cannot populate them under the locked min-n gate; they stay in the
+release files and in this record as FUTURE WORK for a larger corpus (issue
+45 in 09_next_steps), and are simply absent from the paper's roster (26
+groups: 17 cohort/multi + 9 report).
+
+**Release = dev + test** (1,406 instances); the extended pool is
+supplementary. **Prompts are frozen** at this commit for the test run (conv
+v2.2, listing DDL, self-join hint, D' resolver as is; the primitive-keyed
+resolver change stays parked). Ollama v0.40.4 serves every test row
+(provenance in each config.json); the dev rows of the 32B pair were served by
+0.5.7. gpt-oss-20b dropped from the paper (user).
