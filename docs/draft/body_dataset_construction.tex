@@ -88,7 +88,7 @@ the verified end-to-end control, while being right for the right reason 78\%
 of the time against 53\%.
 
 Our contributions are: (i) a benchmark of 8{,}763 claim instances
-(70{,}104 renderings) in 29 groups and seven claim families over three cohort
+(70{,}104 renderings) in 26 groups and seven claim families over three cohort
 tiers, with stage-level gold, exact-test labels, a three-decision verdict with
 sub-typed abstention, pseudonymised identifiers and declared splits
 (\S\ref{sec:dataset}); (ii) an evaluation framework whose stage contracts turn
@@ -280,14 +280,14 @@ Family & Report & One cohort & Two cohorts \\
 \midrule
 precedes & P-R1, P-R2 & P-V1--P-V4 & P-M2 \\
 co-occurs & C-R1 & C-V1--C-V3 & --- \\
-sequence & S-R1 & S-V1, S-V3 & --- \\
+sequence & S-R1 & --- & --- \\
 first/last & F-R1--F-R3 & F-V1--F-V3 & --- \\
 position & T-R1 & T-V1 & --- \\
 proximity & Y-R1 & Y-V1--Y-V3 & --- \\
-threshold & --- & H-V1, H-V3, H-V5 & --- \\
+threshold & --- & H-V1, H-V5 & --- \\
 \bottomrule
 \end{tabular}
-\caption{The 29-group roster: 9 report-level, 19 single-cohort, 1 two-cohort.}
+\caption{The 26-group roster: 9 report-level, 16 single-cohort, 1 two-cohort.}
 \label{tab:roster}
 \end{table}
 
@@ -385,7 +385,6 @@ Y-V3 & level shuffle & 35 & 15.5 $\pm$ 3.8 & $<$0.0005 \\
 T-V1 & level shuffle & 34 & 4.4 $\pm$ 2.0 & $<$0.0005 \\
 H-V1 & level shuffle & 402 & 351.3 $\pm$ 9.4 & $<$0.0005 \\
 H-V5 & level shuffle & 228 & 196.9 $\pm$ 10.3 & 0.002 \\
-H-V3 & level shuffle & 4 sup. & 0.0 sup. & $<$0.0005 \\
 \bottomrule
 \end{tabular}
 \caption{Permutation screens at 2{,}000 rounds (0.0005 is the resolution
@@ -487,8 +486,6 @@ P-V4 & C & pair-vs-pair contrast & \textsc{Boo} & two-arm & 600 & 200 & 200 & 20
 C-V1 & C & co-occur majority & \textsc{Boo} & sym.\ 0.5 & 600 & 200 & 200 & 200 & 66/67/67 & 400 & 19 \\
 C-V2 & C & association & \textsc{Boo} & two-arm & 600 & 200 & 200 & 200 & 100/0/100 & 400 & 229 \\
 C-V3 & C & co-occur argmax & \textsc{Boo} & runner-up & 522 & 174 & 174 & 174 & 58/58/58 & 348 & 23 \\
-S-V1 & C & sequence argmax & \textsc{Boo} & runner-up & 6 & 2 & 2 & 2 & 0/1/1 & 4 & 5 \\
-S-V3 & C & sequence argmax & \textsc{Cho} & runner-up & 6 & 2 & 2 & 2 & 0/1/1 & 4 & 5 \\
 F-V1 & C & first argmax & \textsc{Cho} & runner-up & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
 F-V2 & C & last argmax & \textsc{Cho} & runner-up & 138 & 46 & 46 & 46 & 15/15/16 & 92 & 14 \\
 F-V3 & C & first argmax & \textsc{Boo} & runner-up & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
@@ -497,7 +494,6 @@ Y-V1 & C & immediate order & \textsc{Boo} & sym.\ 0.5 & 204 & 68 & 68 & 68 & 22/
 Y-V2 & C & immediate order & \textsc{Cho} & sym.\ 0.5 & 204 & 68 & 68 & 68 & 22/23/23 & 136 & 17 \\
 Y-V3 & C & adjacency vs.\ $2/L$ & \textsc{Boo} & data-derived & 105 & 35 & 35 & 35 & 11/12/12 & 70 & 26 \\
 H-V1 & C & precedes $\geq 2/3$ & \textsc{Boo} & text 0.667 & 105 & 35 & 35 & 35 & 11/12/12 & 101 & 16 \\
-H-V3 & C & co-occur $\geq 2/3$ & \textsc{Boo} & text 0.667 & 12 & 4 & 4 & 4 & 1/1/2 & 12 & 26.5 \\
 H-V5 & C & first $\geq 1/2$ & \textsc{Boo} & text 0.5 & 66 & 22 & 22 & 22 & 7/7/8 & 61 & 13.5 \\
 \midrule
 P-M2 & M & precedes, 2 cohorts & \textsc{Boo} & two-arm & 87 & 29 & 29 & 29 & 9/10/10 & 58 & 21.5 \\
@@ -1018,7 +1014,7 @@ planner composed every association claim (C-V2) as one-arm co-occurrence ---
 ``compare the rate with and without $A$'' situation was stated; the three
 association wordings were never bridged to it, while ``occur together''
 matched the co-occurrence stipulation. Adding that bridge moved the planner
-from 0.897 to 0.950, with 23 of 29 groups unchanged record for record (C-V2
+from 0.897 to 0.950, with 23 of 26 groups unchanged record for record (C-V2
 0.00 $\rightarrow$ 0.67; a co-occurrence bar group 0.00 $\rightarrow$ 1.00).
 A model is not wrong about a situation it was never told exists.
 
