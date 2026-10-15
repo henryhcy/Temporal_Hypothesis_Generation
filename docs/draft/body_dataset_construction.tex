@@ -644,9 +644,7 @@ D$'$ & none & 0.855 & 0.775 & 0.717 & 0.15 & 0.75 & 0.01 & \pend{pending} \\
 \midrule
 \multicolumn{9}{@{}l}{\textit{end-to-end sentence $\rightarrow$ SQL, same model and S3}} \\
 A: schema only & none & 0.502 & 0.562 & 0.441 & 0.60 & 0.21 & 0.10 & \pend{pending} \\
-A + repair & 2 rounds & 0.530 & 0.605 & 0.498 & 0.79 & 0.28 & 0.19 & \pend{pending} \\
 B: + conventions & none & 0.588 & 0.543 & 0.517 & 0.47 & 0.28 & 0.18 & \pend{pending} \\
-B + repair & 2 rounds & 0.660 & 0.655 & 0.643 & 0.56 & 0.53 & 0.15 & \pend{pending} \\
 \midrule
 \multicolumn{9}{@{}l}{\textit{agentic}} \\
 EHRAgent, counts $\rightarrow$ our test, + conventions & own retries & --- & 0.628 & n/a & n/a & n/a & 0.23 & 0.58 \\
@@ -720,7 +718,6 @@ D$'$ & 0.831 & 0.743 & 0.75 & \pend{---} & \pend{---} & \pend{---} \\
 \textbf{D$'$ + verifier} & \textbf{0.856} & \textbf{0.781} & \textbf{0.78} & \pend{---} & \pend{---} & \pend{---} \\
 A: schema only & 0.466 & 0.494 & 0.21 & \pend{---} & \pend{---} & \pend{---} \\
 B: + conventions & 0.590 & 0.525 & 0.32 & \pend{---} & \pend{---} & \pend{---} \\
-B + repair & 0.669 & 0.645 & 0.64 & \pend{---} & \pend{---} & \pend{---} \\
 counts-given judgment & 0.739 & 0.602 & 1.00 & \pend{---} & \pend{---} & --- \\
 \bottomrule
 \end{tabular}
@@ -775,14 +772,11 @@ planner alone (S2, S3 at gold) & 0.990 & 0.995 & 0.985 & 0.945 & 0.965 \\
 D$'$ & 0.990 & 0.995 & 0.890 & 0.845 & 0.865 \\
 D$'$ + verifier & 0.990 & 0.990 & \textbf{0.970} & \textbf{0.905} & \textbf{0.870} \\
 A: schema only & 0.945 & 0.925 & --- & --- & 0.505 \\
-A + repair & 0.935 & 0.910 & --- & --- & 0.545 \\
 B: + conventions & \textbf{1.000} & \textbf{0.995} & 0.875 & 0.840 & 0.640 \\
-B + repair & 0.990 & 0.990 & 0.925 & 0.895 & 0.715 \\
 counts-given judgment & 1.000 & 1.000 & 0.810 & 0.700 & 0.705 \\
 \midrule
 denominator F1, D$'$ + verifier & 1.000 & 0.992 & 0.965 & 0.898 & 0.763 \\
-denominator F1, B + repair & 0.986 & 0.985 & 0.886 & 0.818 & 0.643 \\
-faithfulness, D$'$ + verifier / B + repair & --- & --- & 0.96 / 0.89 & 0.96 / 0.81 & 0.78 / 0.64 \\
+faithfulness, D$'$ + verifier & --- & --- & 0.96 & 0.96 & 0.78 \\
 \bottomrule
 \end{tabular}
 \caption{Two frontier models and three open-weight models in every model slot,
@@ -877,7 +871,7 @@ Catalogue (answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
 \multicolumn{5}{l}{\textit{Full pipeline, 32B, claim form}} \\
 D$'$ & 0.865 & 0.790 & 0.755 & 0.825 \\
 D$'$$+$2 & 0.870 & 0.815 & 0.770 & 0.840 \\
-B$+$2 (end-to-end control) & 0.715 & 0.679 & 0.690 & 0.599 \\
+B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy by register on the same 200 development instances.
@@ -977,9 +971,7 @@ plan cannot use the stipulations either.
 cell & what the model is given / asked & all & cohort & den.\ F1 & faith. & all & cohort & den.\ F1 & faith. \\
 \midrule
 A & sentence $\rightarrow$ SQL, schema only & 0.502 & 0.562 & 0.441 & 0.21 & 0.440 & 0.275 & 0.101 & 0.23 \\
-A$+$2 & \quad + two repair rounds, plan-free checks & 0.530 & 0.605 & 0.498 & 0.28 & --- & --- & --- & --- \\
 B & \quad + conventions stated & 0.588 & 0.543 & 0.517 & 0.28 & 0.380 & 0.279 & 0.124 & 0.18 \\
-B$+$2 & \quad + two repair rounds, plan-free checks & 0.660 & 0.655 & 0.643 & 0.53 & --- & --- & --- & --- \\
 \midrule
 D & composed plan handed to S2 as prose $+$ conventions & 0.573 & 0.453 & 0.525 & 0.35 & 0.287 & 0.209 & 0.238 & 0.39 \\
 D$+$2 & \quad + two verify-and-repair rounds (plan checks) & 0.645 & 0.566 & 0.611 & 0.71 & 0.295 & 0.221 & 0.230 & 0.37 \\
