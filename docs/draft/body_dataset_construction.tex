@@ -620,6 +620,11 @@ self-join hint in the row contract; \S\ref{sec:ablations}). The main table
 reports the development budget subset, on which every system can be run, and
 the test budget subset; our rows and the end-to-end rows are also run on the
 full development set (2{,}350 instances) and the test set (1{,}742).
+Every verdict accuracy is reported with a 95\% bootstrap interval over
+instances (1{,}000 resamples; an instance's renderings move together). On the
+200-instance subset the interval is about $\pm 0.05$ at 0.85 and $\pm 0.06$
+at 0.6, so differences under 0.06 between rows are not resolved there; the
+full sets resolve 0.02.
 
 \subsection{Main results}
 \label{sec:main}
@@ -776,6 +781,42 @@ local 32B models, same prompts; claim form, original register. Denominator F1
 is given for the two frontier models in that order. Each frontier column cost
 under \$9 at list price with prompt caching.}
 \label{tab:frontier}
+\end{table}
+
+\paragraph{Cost and latency.} Table~\ref{tab:cost} gives, per record of the
+development subset, the wall time of the sequential harness, the tokens
+exchanged and the dollar cost from the providers' own usage counts at list
+price with prompt caching; local rows cost GPU time only. The contract
+pipeline makes two calls per record where the end-to-end baseline makes one,
+so it exchanges about twice the tokens; the repair rounds add 10--20\% on top.
+At the frontier a full 200-claim row costs two to three dollars; a local 27B
+model answers a record in \pend{x}~s on one workstation GPU.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrr}
+\toprule
+system & model & s / record & tokens / record & USD / record \\
+\midrule
+D$'$ & Opus 5.5 & 6.0 & 8{,}940 & 0.0125 \\
+D$'$ & GPT-5.6 & 5.1 & 5{,}470 & 0.0100 \\
+D$'$ & Qwen2.5-32B pair & \pend{x} & 8{,}720 & 0 \\
+D$'$ & qwen3.8-27B & \pend{x} & \pend{x} & 0 \\
+D$'$ & gemma4-31B & \pend{x} & \pend{x} & 0 \\
+B & Opus 5.5 & 4.6 & 4{,}600 & 0.0107 \\
+B & GPT-5.6 & 5.5 & 2{,}980 & 0.0094 \\
+B & Qwen2.5-Coder-32B & \pend{x} & 3{,}960 & 0 \\
+counts-given & Opus 5.5 & 2.8 & 930 & 0.0040 \\
+counts-given & GPT-5.6 & 9.1 & 980 & 0.0125 \\
+\bottomrule
+\end{tabular}
+\caption{Cost and latency per record on the development subset (claim form).
+Tokens are prompt plus visible completion; GPT-5.6's hidden reasoning tokens
+are billed but not shown (60 per record on D$'$, 525 on counts-given). Local
+latencies are measured on one RTX A5000 with the model fully resident.}
+\label{tab:cost}
 \end{table}
 
 \subsection{Stage analysis}
