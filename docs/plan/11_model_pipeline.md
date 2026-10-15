@@ -1962,3 +1962,6 @@ claims (the 7B failure mode), and the pipeline then abstains rather than
 guess, which is the designed behaviour but costs verdict accuracy against a
 baseline that always answers. This goes in the paper as the boundary
 condition of the method, not hidden.
+
+**2026-10-14 22:45 (user): gpt-oss-20b is DROPPED from the paper** (results
+kept in `results/dev_gptoss_20b_*`; not in the sweep table or the draft).
