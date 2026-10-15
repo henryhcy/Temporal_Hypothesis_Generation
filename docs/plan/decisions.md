@@ -3303,3 +3303,15 @@ v2.2, listing DDL, self-join hint, D' resolver as is; the primitive-keyed
 resolver change stays parked). Ollama v0.40.4 serves every test row
 (provenance in each config.json); the dev rows of the 32B pair were served by
 0.5.7. gpt-oss-20b dropped from the paper (user).
+
+## DECIDED: agentic baselines on the test set (2026-10-15, user)
+
+EHRAgent 32B **variant A only** (own test, end to end) on the 1,500-instance
+cohort test set, queued on GPU0 behind the local rows; variant B + conventions
+runs later ON THE USER'S CALL (`RUN_B=1`), the dev result (A 0.624 vs B+conv
+0.628 cohort) stands in for it meanwhile. VERITAS condition D on a 200-claim
+subsample of the test cohort set (12 per group, `MEDTEMPO_SLICE=testcohort`),
+GPU1 behind the local rounds; it cannot cover 1,500 at ~5 min per claim.
+Neither agentic baseline runs on the report tier. A + verifier and B +
+verifier are REMOVED from the paper's tables (user); the verifier case study
+covers our method's 0/1/2/3-round curve only.
