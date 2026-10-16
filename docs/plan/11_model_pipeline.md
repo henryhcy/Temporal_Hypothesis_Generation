@@ -2020,3 +2020,16 @@ at the frontier is slightly negative (0.999 -> 0.983-0.993): flagged correct
 n = k statements become abstentions. (5) Report tier: every system reads a
 single report at 1.000 except the 2024 Coder end to end (0.750 with
 conventions, 0.433 without).
+
+**Update 2026-10-16 08:07 -- frontier chains complete; local repair rounds complete.**
+Opus 5.5 (total **$79.84**): B 1.000, counts 0.999, report D'+2 0.983 (3 of 180
+abstained), report B 1.000. GPT-5.6 (total **$88.91**, under the $90 cap): B
+0.984, counts 0.999, report D'+2 1.000, report B 1.000. Faithfulness of B at
+the frontier 1.000 / 1.000; false-decisiveness 0.000 / 0.000. Repair rounds,
+D' 0/1/2/3: gemma4 0.844 / 0.971 / 0.981 / 0.985; qwen3.8 0.735 / 0.869 /
+0.872 / 0.875; pair 0.761 / 0.775 / 0.810 / 0.814; Opus 0.999 / 0.993 /
+0.993 / 0.992; GPT 0.999 / 0.991 / 0.983 / 0.983. So for the open models the
+first round does most of the work (gemma4 +0.13, qwen3.8 +0.13) and rounds 2-3
+add 0.01; at the frontier every round costs 0.005-0.015 (correct statements
+flagged into abstention). EHRAgent A at 1,248/1,500 (08:07); VERITAS D at
+36/204 (~3.3 min per claim, ~9 h to go).
