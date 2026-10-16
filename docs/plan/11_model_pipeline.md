@@ -1965,3 +1965,58 @@ condition of the method, not hidden.
 
 **2026-10-14 22:45 (user): gpt-oss-20b is DROPPED from the paper** (results
 kept in `results/dev_gptoss_20b_*`; not in the sweep table or the draft).
+
+### 10.3q TEST SET: local models complete; frontier in progress (2026-10-15 23:55)
+
+Test set = `test_cohort_v1.2_s0` (1,500 cohort/multi instances, 17 groups, claim
+form, original register, fact-disjoint from dev; decisions.md 2026-10-14).
+Report-tier case study = `test_report_v1.2_s0` (180). Prompts frozen. 95%
+bootstrap intervals over instances are about +/-0.02 on 1,500. Gold sets for
+attribution: `results/test_gold_sets` (rules+compiler, 1.000).
+
+| row | Qwen2.5-32B pair | gemma4-31B | qwen3.8-27B | Opus 5.5 | GPT-5.6 |
+|---|---|---|---|---|---|
+| planner alone, 1 round | 0.953 | 0.995 | 0.917 | 0.993 | 0.993 |
+| SQL stage alone (gold plan), 2 rounds | 0.836 | -- | -- | -- | -- |
+| D' (0 rounds) | 0.761 | 0.844 | 0.735 | **0.999** | **0.999** |
+| D' + 1 | 0.775 | 0.971 | pending | 0.993 | 0.991 |
+| D' + 2 | **0.810** | **0.981** | **0.872** | 0.993 | 0.983 |
+| D' + 3 | 0.814 | pending | pending | 0.992 | 0.983 |
+| A: schema only | 0.529 | -- | -- | 0.878 | 0.876 |
+| B: + conventions | 0.575 | 0.859 | 0.748 | running | running |
+| counts-given (S3) | 0.611 | 0.777 | 0.619 | pending | pending |
+| report case study: D' + 2 / B (+2) / A | 1.000 / 0.750 / 0.433 | 1.000 / 1.000 / -- | 1.000 / -- / -- | pending | pending |
+
+(A + verifier and B + verifier were run for the pair and gemma4 before the
+user removed them: pair 0.539 / 0.638, gemma4 B+2 0.900; not in the paper.)
+
+Faithfulness P(den exact | verdict right), 1,500 cohort: pair D' 0.768 ->
+D'+2 0.859, B 0.405; gemma4 D' 0.903 -> 0.945, B 0.859; qwen3.8 D' 0.865 ->
+**0.972**, B 0.693; Opus D' 1.000 (one wrong denominator in 1,500), A 0.856;
+GPT D' 1.000, A 0.908. Abstention at D'+2: false-decisiveness pair 0.033 /
+gemma4 0.010 / qwen3.8 0.047 vs B 0.234 / 0.036 / 0.141; over-abstention
+0.223 / 0.023 / 0.068 vs B 0.388 / 0.182 / 0.224. No-answer rate: pair 0.031,
+qwen3.8 0.025, others 0.
+
+Per family (D'+2 vs B): the pair's loss is first/last (0.435 vs 0.332), P-V2
+(0.417) and H-V5 (0.410) -- argmax and tie rules in SQL; gemma4 holds 0.95-1.0
+on every family (`scripts/group_table.py`).
+
+Live latency on one A5000 (sequential): D' 12.3 s (pair, with model swaps) /
+14.1 s (gemma4) / 10.1 s (qwen3.8) per record; B 6 s. Frontier cost so far
+(real usage, list price): Opus $50.0 after D' (21.4), planner, 1/2/3 rounds
+(2.0-2.3 each), A (21.8); GPT $39.9 after the same rows. B, counts and the two
+report rows remain; GPT's counts row spends hidden reasoning tokens (dev: 105k
+per 200) and may push it past the $90 cap, in which case the two report rows
+run separately.
+
+Reading, dev -> test: every dev conclusion transfers. (1) Frontier models with
+the conventions solve the test set (0.999) and lose 0.12 without them. (2)
+gemma4-31B with the contract and two rounds reaches 0.981 on 1,500 instances
+at zero API cost, 14 s per record. (3) The contract beats the end-to-end
+control on every open model: +0.235 (pair), +0.122 (gemma4), +0.124
+(qwen3.8) in verdict, and 0.86-0.97 vs 0.41-0.86 in faithfulness. (4) Repair
+at the frontier is slightly negative (0.999 -> 0.983-0.993): flagged correct
+n = k statements become abstentions. (5) Report tier: every system reads a
+single report at 1.000 except the 2024 Coder end to end (0.750 with
+conventions, 0.433 without).
