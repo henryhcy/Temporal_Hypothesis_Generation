@@ -663,7 +663,7 @@ counts-given judgment (gold $n,k$; S3 alone) & 0.611 & 0.619 & 0.777 & 0.999 & 0
 A: sentence $\rightarrow$ SQL, schema only & 0.529 & --- & --- & 0.878 & 0.876 \\
 B: \quad + conventions stated & 0.575 & 0.748 & 0.859 & 1.000 & 0.984 \\
 EHRAgent, runs its own test (Coder-32B) & 0.605 & --- & --- & --- & --- \\
-VERITAS + conventions, our tests (204-claim subsample) & \pend{pending} & --- & --- & --- & --- \\
+VERITAS + conventions, our tests (204-claim subsample) & 0.402 & --- & --- & --- & --- \\
 \midrule
 D$'$: plan as contract, no verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 \textbf{D$'$ + verifier} (2 rounds) & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & \textbf{0.993} & \textbf{0.983} \\
@@ -673,8 +673,10 @@ D$'$: plan as contract, no verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 conventions, schema presentation and exact-test stage; only the model changes
 across columns. Intervals are $\pm 0.02$ (0.6--0.9) and $\pm 0.01$ (above
 0.98). EHRAgent returns a verdict from its own code and is run as published;
-VERITAS, at about five minutes per claim, is run on a 204-claim subsample
-(12 per group).}
+VERITAS, at about four minutes per claim through three agent phases, is run
+on a 204-claim subsample (12 per group); 95 of its 204 runs completed every
+phase within a 10-minute cap per phase, the rest are scored as misses, and it
+answers \emph{insufficient} on 166 of the 204.}
 \label{tab:main}
 \end{table*}
 
@@ -736,7 +738,10 @@ per claim on one workstation GPU.
 The published agentic baseline reaches 0.605, within 0.03 of the end-to-end
 control, but its evidence cannot be audited (it returns a verdict from its own
 code) and on the development set it decided 64\% of the claims the data cannot
-decide. The end-to-end control with the 2024 Coder is right on 57\% of claims
+decide; the multi-agent VERITAS, given the same conventions and our exact
+tests, completes fewer than half its runs within a 10-minute cap per phase
+and scores 0.402, abstaining on most decisive claims --- the opposite
+failure. The end-to-end control with the 2024 Coder is right on 57\% of claims
 and right for the right reason on 40\% of those: it admits same-stage reports
 into order denominators, defines the eligible set as the supporting set, and
 narrows presence splits to co-occurrence (Table~\ref{tab:attribution}). The
@@ -801,7 +806,7 @@ stages filled by the model (the others at gold) & Qwen2.5-32B pair & qwen3.8-27B
 \midrule
 none (deterministic oracle) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 S1 alone: model plan, gold retrieval and test (1 round) & 0.953 & 0.917 & 0.995 & 0.993 & 0.993 \\
-S2 alone: gold plan, model SQL (2 rounds) & 0.836 & \pend{pending} & \pend{pending} & --- & --- \\
+S2 alone: gold plan, model SQL (2 rounds) & 0.836 & 0.944 & 0.989 & $\geq$0.999 & $\geq$0.999 \\
 S3 alone: gold counts, model test and verdict & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
 \midrule
 S1 + S2 + S3, plan as contract & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
@@ -812,7 +817,10 @@ S1 + S2 + S3, plan as contract & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 at gold, on the test set. The oracle (every stage at gold) reproduces the
 labels exactly. S2 alone is run under the same resolved contract the full
 pipeline uses, so the difference between the S2 row and the full row is the
-cost of the model's own plan.}
+cost of the model's own plan. The frontier S2 cells are not run separately:
+with their own plans both models retrieved every denominator exactly
+(denominator F1 1.000 in Table~\ref{tab:evidence}), which bounds the
+gold-plan row from below.}
 \label{tab:modular}
 \end{table*}
 
@@ -821,14 +829,15 @@ the others at gold, so each row is the loss attributable to that stage
 alone. Planning is nearly solved by every model (0.92--0.995): with the
 mapping withheld and the conventions stated, the plan is composed right on at
 least nine claims in ten, and the gemma4 planner matches the frontier.
-Retrieval is the open models' loss: the 2024 Coder with the gold plan scores
+Retrieval is the 2024 pair's loss: its Coder with the gold plan scores
 0.836, so the full pipeline's 0.761 is the planner's errors compounded on a
-retrieval stage that was already losing a sixth of the claims. The test stage
-is a function and the open models cannot compute it (0.61--0.78 given the
-exact counts); the pipeline does not ask them to. The two gold-adjacent rows
-bracket the full pipeline: with the verifier it reaches 0.810, within 0.03 of
-its own gold-plan ceiling for the 2024 pair, and 0.981 against a 0.995 planner
-ceiling for gemma4. The remaining loss is the plan, not the execution.
+retrieval stage that was already losing a sixth of the claims. The 2026
+models retrieve well with the gold plan (0.944 and 0.989), so for them the
+remaining loss is the plan: gemma4 with the verifier (0.981) is within 0.01 of
+its own retrieval ceiling, and qwen3.8 (0.872) sits 0.07 below its retrieval
+ceiling and 0.05 below its planner ceiling. The test stage is a function and
+the open models cannot compute it (0.61--0.78 given the exact counts); the
+pipeline does not ask them to.
 
 \paragraph{Prose versus contract.} The hand-off between S1 and S2 is the
 decision the modular rows cannot see, because S2 alone is given the gold plan
@@ -880,9 +889,8 @@ one report by its pseudonymous identifier and read an ordering from its
 annotated timeline; the plan has one arm and the test stage is a
 deterministic rule. Every system with a 2026 model does this at 0.98--1.00
 with or without the contract (Table~\ref{tab:report}). The 2024 Coder end to
-end does not: 0.433 without the conventions and \pend{0.xx} with them,
-against 1.000 for the same Coder under the contract and 1.000 for its
-planner. The tier is trivial as statistics and still separates systems that
+end does not: 0.433 without the conventions and 0.750 with them, against
+1.000 for the same Coder under the contract and 1.000 for its planner. The tier is trivial as statistics and still separates systems that
 read what the contract asks them to read from systems that do not.
 
 \begin{table}[t]
@@ -894,7 +902,7 @@ read what the contract asks them to read from systems that do not.
 system (180 single-report claims) & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \midrule
 A: schema only & 0.433 & --- & --- & --- & --- \\
-B: + conventions & \pend{xx} & \pend{xx} & \pend{xx} & 1.000 & 1.000 \\
+B: + conventions & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
 planner alone & 1.000 & --- & --- & --- & --- \\
 D$'$ + verifier & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
 \bottomrule
