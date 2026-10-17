@@ -2033,3 +2033,18 @@ first round does most of the work (gemma4 +0.13, qwen3.8 +0.13) and rounds 2-3
 add 0.01; at the frontier every round costs 0.005-0.015 (correct statements
 flagged into abstention). EHRAgent A at 1,248/1,500 (08:07); VERITAS D at
 36/204 (~3.3 min per claim, ~9 h to go).
+
+**Update 2026-10-17 09:30 -- every test cell is in except EHRAgent B.**
+VERITAS D on the 204-claim test subsample (12 per group; 09:16): verdict
+accuracy **0.402** with incomplete runs scored as misses (95 of 204 runs
+completed all three phases within the 10-min phase caps; ~12 h on one GPU);
+binary supported-vs-not 0.696; exact test matched 0.216; it answers
+insufficient on 166 of 204. Dev 0.349, old test slice 0.317: consistent.
+S2 alone (gold plan, model SQL, 2 rounds): gemma4 **0.989** (den-F1 0.98),
+qwen3.8 **0.944** (den-F1 0.946); so the full pipeline's gap to its own S2
+ceiling is 0.008 (gemma4) and 0.072 (qwen3.8) -- the plan is the remaining
+loss, and for qwen3.8 the planner-alone row (0.917) says the same. Report-tier
+B without repair: pair 0.750, gemma4 1.000, qwen3.8 1.000. Frontier S2-alone
+not run: bounded below by the D' denominator F1 (1.000 / 1.000 with the
+model's own plan), written as ">= 0.999" in the paper. EHRAgent B + conventions
+at 1,184/1,500 (09:28; ~1.5 h to go).
