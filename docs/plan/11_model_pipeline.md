@@ -2048,3 +2048,12 @@ B without repair: pair 0.750, gemma4 1.000, qwen3.8 1.000. Frontier S2-alone
 not run: bounded below by the D' denominator F1 (1.000 / 1.000 with the
 model's own plan), written as ">= 0.999" in the paper. EHRAgent B + conventions
 at 1,184/1,500 (09:28; ~1.5 h to go).
+
+**Update 2026-10-17 12:34 -- EHRAgent variant B + conventions on the test set
+(repo record only; user 2026-10-16).** Counts -> our exact test, conventions in
+its prompt: **0.649** on the 1,500 (A, own test: 0.605); cohort tier 0.63,
+multi 0.94; 65 of 1,500 (4.3%) unparseable. On dev the two variants agreed
+(0.624 vs 0.628); on test B+conv is +0.044 over A, i.e. giving EHRAgent our
+exact test and the stipulations buys it four points, still 0.16 below the 2024
+pair under the contract (0.810) and 0.07 above the end-to-end control with
+the same Coder (0.575). Both GPUs idle from 12:34; every planned run is done.
