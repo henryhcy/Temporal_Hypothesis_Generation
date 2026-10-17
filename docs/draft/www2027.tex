@@ -44,27 +44,28 @@ headache tends to precede fatigue'' over a corpus of annotated adverse-event
 timelines, that final step is the easy one: a system must first decide which
 reports count, what ``no effect'' means and which test applies, and a verdict
 can be right while every one of those decisions is wrong. We release
-\textsc{MedTempo-Hypo}, a benchmark of 8{,}763 temporal--statistical claims
-(70{,}104 renderings) in 29 groups and seven claim families over three cohort
-tiers, built on expert-annotated timelines of 3{,}166 vaccine adverse-event
-reports, in which every stage of the gold computation is released with the
-three-decision verdict: the plan (events, denominator rule, null, test), the
-exact evidence sets, and the exact $p$-values. Identifiers are pseudonymised and
-the corpus conventions are shipped as part of the task. We pair it with an
-instrumented reference pipeline --- plan, retrieve, test --- whose stage
-contracts turn the verdict into auditable quantities (plan agreement, evidence-set
-agreement, faithfulness, abstention) and whose prompt frames make the
-\emph{information} a system is told and the \emph{architecture} it is given
-separately controllable. Across local and agentic systems the denominator is
-where verification fails and the verdict hides it: the strongest end-to-end
-text-to-SQL baseline is right 66\% of the time but stands on the correct
-evidence for 53\% of its right answers, and an agentic baseline decides 64\%
-of the claims the data cannot decide. Decomposition pays only when the plan is
-a contract between stages: a 32B pipeline whose plan the harness resolves for
-retrieval verifies claims at 0.865 with its evidence right 78\% of the time,
-0.20 above a verified end-to-end control; one missing stipulation in the
-stated conventions moved the same planner by 0.05 and a whole claim family by
-0.67.
+\textsc{MedTempo-Hypo}, a benchmark of temporal--statistical claims in 26
+groups and seven claim families over three cohort tiers, built on
+expert-annotated timelines of 3{,}166 vaccine adverse-event reports, in which
+every stage of the gold computation is released with the three-decision
+verdict: the plan (events, denominator rule, null, test), the exact evidence
+sets and the exact $p$-values. The corpus conventions are shipped as part of
+the task, identifiers are pseudonymised, and the release is a development set
+and a fact-disjoint 1{,}500-claim test set. We pair it with an instrumented
+reference pipeline --- plan, retrieve, test --- whose stage contracts turn the
+verdict into auditable quantities (plan agreement, evidence-set agreement,
+faithfulness, abstention) and whose prompt frames make the \emph{information}
+a system is told and the \emph{architecture} it is given separately
+controllable. On the test set, with five models from a 2024 open 32B pair to
+Claude Opus~5.5 and GPT-5.6, the stated conventions are the information the
+task measures: frontier models verify 1.000 and 0.984 of claims end to end
+with them and 0.88 without. For open models the plan contract is what makes a
+verdict stand on the right evidence: a 2024 pair goes from 0.575 end to end to
+0.810, a 2026 31B model from 0.859 to 0.981 --- within 0.02 of the frontier at
+zero API cost --- and the share of right verdicts resting on the exact
+denominator rises from 40--86\% to 86--97\%. A published agentic baseline
+reaches 0.605 while deciding most of the claims the data cannot decide. The
+denominator is where systems fail, and the verdict hides it.
 \end{abstract}
 
 \begin{CCSXML}

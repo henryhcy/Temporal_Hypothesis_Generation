@@ -71,33 +71,36 @@ resolves. That lets us separate two things that end-to-end evaluation
 conflates --- the \emph{information} a system is told and the
 \emph{architecture} it is given --- and ask what each is worth.
 
-Three findings organise the results. First, \emph{the denominator is where
-systems fail, and verdict accuracy hides it}: the strongest end-to-end
-text-to-SQL baseline is right 59\% of the time but stands on the correct
-evidence for only 28\% of its right answers; an agentic baseline reaches 0.62
-on the cohort tiers while deciding 64\% of the claims the data cannot decide.
-Second, \emph{stated conventions are worth as much as any architecture}: one
-missing stipulation cost a 32B planner a whole claim family (0 of 18) and the
-sentence that supplied it moved the planner from 0.897 to 0.950 with 23 of 26
-groups unchanged record for record. Third, \emph{decomposition pays only when
-the plan is a contract}: with the plan handed to retrieval as prose, the
-pipeline with a verifier is matched by a verified end-to-end model (0.645 vs.\
-0.660); with the plan resolved by the harness it reaches 0.865 on the
-development slice and 0.856 on the 2{,}350-instance development set, 0.19 above
-the verified end-to-end control, while being right for the right reason 78\%
-of the time against 53\%.
+Three findings organise the results, all on a 1{,}500-claim test set that no
+prompt decision was made on, with five models from the 2024 open generation
+to the 2026 frontier in every model slot. First, \emph{the stated conventions
+are the information the task measures}: with them in the prompt, Claude
+Opus~5.5 and GPT-5.6 verify 1.000 and 0.984 of the claims end to end with
+every denominator exact; without them the same models fall to 0.88 and get a
+fifth of their denominators wrong. Second, \emph{for open models the plan
+contract is what makes the verdict stand on the right evidence}: a 2024
+32B pair goes from 0.575 end to end to 0.810 with the contract and the
+verifier, the 2026 gemma4-31B from 0.859 to 0.981 --- within 0.02 of the
+frontier at zero API cost --- and the share of right verdicts that rest on the
+exact denominator rises from 40--86\% to 86--97\%. Third, \emph{the denominator
+is where systems fail, and verdict accuracy hides it}: a published agentic
+baseline reaches 0.605, within 0.03 of the end-to-end control, while deciding
+64\% of the claims the data cannot decide on the development set; handed the
+exact counts, the open models still return the wrong verdict on a quarter to a
+third of claims.
 
-Our contributions are: (i) a benchmark of 8{,}763 claim instances
-(70{,}104 renderings) in 26 groups and seven claim families over three cohort
-tiers, with stage-level gold, exact-test labels, a three-decision verdict with
-sub-typed abstention, pseudonymised identifiers and declared splits
-(\S\ref{sec:dataset}); (ii) an evaluation framework whose stage contracts turn
-the verdict into five auditable quantities --- plan agreement, evidence-set
-agreement, $p$-agreement, faithfulness and abstention --- and whose prompt
-frames make information and architecture separately controllable
-(\S\ref{sec:framework}); (iii) an experimental study of local and agentic
-systems under that framework, including a one-change-at-a-time account of what
-the conventions, the schema presentation and the plan contract are each worth
+Our contributions are: (i) a benchmark of temporal--statistical claims in 26
+groups and seven claim families over three cohort tiers, released as a
+200-instance development set and a 1{,}500-claim fact-disjoint test set (plus
+a 180-claim single-report case study), with stage-level gold, exact-test
+labels, a three-decision verdict with sub-typed abstention and pseudonymised
+identifiers (\S\ref{sec:dataset}); (ii) an evaluation framework whose stage
+contracts turn the verdict into auditable quantities --- plan agreement,
+evidence-set agreement, faithfulness, abstention --- and whose prompt frames
+make information and architecture separately controllable
+(\S\ref{sec:framework}); (iii) a study of five models, two agentic systems and
+the modular ceilings of each stage under that framework, with results by
+temporal family and case studies of repair, single reports and paraphrase
 (\S\ref{sec:experiments}).
 
 \section{Related Work}
@@ -412,13 +415,20 @@ a keyed permutation of the public VAERS identifier. VAERS is public and in
 pretraining corpora; removing the lookup key removes the shortcut without
 touching the annotations.
 
-\paragraph{Splits.} The release declares a \emph{development set} of 2{,}350
-instances (a seeded, class-balanced draw of at most 90 per group, mirror pairs
-and facts kept together) and a \emph{test set} of 1{,}742 instances drawn by the
-same recipe from the remainder, fact-disjoint from the development set. Each
-contains a 200-instance \emph{budget subset} stratified over groups for
-systems whose cost is paid per call. All prompt and design decisions in this
-paper were made on the development subset; the test set was run once.
+\paragraph{Splits.} The release is an evaluation benchmark with no training
+split: a \emph{development set} of 200 instances (a seeded, class-balanced
+draw over every group and tier, in both formats and all four registers) on
+which every prompt and design decision in this paper was made, and a
+\emph{test set} of 1{,}500 cohort- and multi-tier instances in claim form,
+90 per group where the corpus allows it and every eligible instance where it
+does not, class-balanced, mirror pairs and facts kept together, and
+fact-disjoint from the development set. A further 180 single-report instances
+(20 per report group) form a case study rather than part of the test set,
+because that tier is read at 0.98--1.00 by every capable system. The full
+enumerated pool (Table~\ref{tab:totals}) is released as supplementary
+material with the generator, so larger or differently balanced draws can be
+made with the same recipe. The test set was run once, after the prompts were
+frozen.
 
 \paragraph{Validation.} Six families of mechanical invariants --- evidence
 arithmetic, set algebra, per-family conditioning re-derived from the leveled
@@ -441,6 +451,12 @@ class balance is exact within every cohort group by construction.
 \small
 \begin{tabular}{lr}
 \toprule
+\multicolumn{2}{l}{\textit{released evaluation sets}} \\
+Development set (all tiers, 2 formats, 4 registers) & 200 instances \\
+Test set (cohort/multi tiers, claim form) & 1{,}500 instances \\
+Single-report case study (claim form) & 180 instances \\
+\midrule
+\multicolumn{2}{l}{\textit{enumerated pool (supplementary)}} \\
 Records (instance $\times$ register $\times$ format) & 70{,}104 \\
 Instances & 8{,}763 \\
 Groups / families / tiers & 26 / 7 / 3 \\
@@ -605,22 +621,32 @@ majority guesser scores at most 0.37.
 \label{sec:experiments}
 
 \subsection{Setup}
+\label{sec:setup}
 
-Local models are Qwen2.5-32B-Instruct for planning and Qwen2.5-Coder-32B for
-SQL (7B variants for the small-model floor), served locally; agentic baselines
-use Coder-32B. All rows use the \textsc{Original} register in both formats
-(200 instances $=$ 400 records; 258 cohort-tier records), blind to the group
-label and with the procedure unspecified, under one frozen prompt
-configuration (conventions v2.2, schema shown as column listings, one
-self-join hint in the row contract; \S\ref{sec:ablations}). The main table
-reports the development budget subset, on which every system can be run, and
-the test budget subset; our rows and the end-to-end rows are also run on the
-full development set (2{,}350 instances) and the test set (1{,}742).
-Every verdict accuracy is reported with a 95\% bootstrap interval over
-instances (1{,}000 resamples; an instance's renderings move together). On the
-200-instance subset the interval is about $\pm 0.05$ at 0.85 and $\pm 0.06$
-at 0.6, so differences under 0.06 between rows are not resolved there; the
-full sets resolve 0.02.
+\paragraph{Splits.} The \emph{development set} is the 200-instance slice on
+which every prompt decision was made (all three tiers, both forms, four
+registers); it is a tuning set and no number from it enters the main table.
+The \emph{test set} is 1{,}500 cohort- and multi-tier instances over the 17
+cohort groups, 90 per group where the corpus allows it and every eligible
+instance where it does not (four groups contribute 61--86), balanced over the
+three verdicts (498 / 497 / 505) and fact-disjoint from the development set:
+no instance in the test set shares a core with one that was tuned on. The
+report tier is evaluated separately as a case study on 180 single-report
+instances (20 per report group), because every capable system reads a single
+report at 0.98--1.00 and the tier would only flatter weak rows. All test rows
+use the \textsc{Original} register in claim form; prompts were frozen before
+the first test record was run.
+
+\paragraph{Systems and models.} Every system is run with each of five models
+in every model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
+Qwen2.5-Coder-32B (SQL); the 2026 open models qwen3.8-27B and gemma4-31B, one
+model for both stages, thinking off; and the frontier models Claude Opus~5.5
+and GPT-5.6. Open models run fully resident on one RTX A5000 with an 8k
+context; frontier models over their APIs with prompt caching. The agentic
+baselines run with Coder-32B as published. Verdict accuracies carry 95\%
+bootstrap intervals over instances (1{,}000 resamples), about $\pm 0.02$ on
+the test set and $\pm 0.01$ above 0.98; differences under 0.03 between test
+rows are not resolved.
 
 \subsection{Main results}
 \label{sec:main}
@@ -628,216 +654,339 @@ full sets resolve 0.02.
 \begin{table*}[t]
 \centering
 \small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrrrrrr}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrr}
 \toprule
- & & \multicolumn{2}{c}{verdict acc.} & & & & & \\
-system (32B) & verifier & all & cohort & den.\ F1 & co-exist leak & faithfulness & false-dec. & test slice \\
+system (test set, 1{,}500 cohort claims) & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
-\multicolumn{9}{@{}l}{\textit{stage ceilings}} \\
-planner alone (gold S2/S3) & 1 round & 0.955 & 0.930 & 0.954 & 0.00 & --- & 0.03 & \pend{pending} \\
-SQL stage alone (gold plan) & 2 rounds & 0.905 & 0.853 & 0.803 & 0.16 & 0.79 & 0.00 & \pend{pending} \\
+counts-given judgment (gold $n,k$; S3 alone) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
+A: sentence $\rightarrow$ SQL, schema only & 0.529 & --- & --- & 0.878 & 0.876 \\
+B: \quad + conventions stated & 0.575 & 0.748 & 0.859 & 1.000 & 0.984 \\
+EHRAgent, runs its own test (Coder-32B) & 0.605 & --- & --- & --- & --- \\
+VERITAS + conventions, our tests (204-claim subsample) & \pend{pending} & --- & --- & --- & --- \\
 \midrule
-\multicolumn{9}{@{}l}{\textit{ours: plan as contract}} \\
-D$'$ & none & 0.855 & 0.775 & 0.717 & 0.15 & 0.75 & 0.01 & \pend{pending} \\
-\textbf{D$'$ + verifier} & 2 rounds & \textbf{0.865} & \textbf{0.791} & \textbf{0.763} & 0.16 & \textbf{0.78} & \textbf{0.00} & \pend{pending} \\
-\midrule
-\multicolumn{9}{@{}l}{\textit{end-to-end sentence $\rightarrow$ SQL, same model and S3}} \\
-A: schema only & none & 0.502 & 0.562 & 0.441 & 0.60 & 0.21 & 0.10 & \pend{pending} \\
-B: + conventions & none & 0.588 & 0.543 & 0.517 & 0.47 & 0.28 & 0.18 & \pend{pending} \\
-\midrule
-\multicolumn{9}{@{}l}{\textit{agentic}} \\
-EHRAgent, counts $\rightarrow$ our test, + conventions & own retries & --- & 0.628 & n/a & n/a & n/a & 0.23 & 0.58 \\
-EHRAgent, runs its own test & own retries & 0.743 & 0.624 & n/a & n/a & n/a & 0.64 & 0.63 \\
-VERITAS + conventions, our tests (claim form, 129 cohort claims) & own critic & --- & 0.349 & n/a & n/a & n/a & 0.19 & 0.317 \\
-\midrule
-counts-given judgment (gold $n,k$) & --- & 0.705 & 0.543 & (given) & --- & 1.00 & 0.17 & \pend{pending} \\
+D$'$: plan as contract, no verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
+\textbf{D$'$ + verifier} (2 rounds) & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & \textbf{0.993} & \textbf{0.983} \\
 \bottomrule
 \end{tabular}
-\caption{Main results on the development budget subset (200 instances, 400
-records; cohort $=$ 258 cohort-tier records) under the frozen configuration.
-Den.\ F1 is the denominator-set F1 over cohort arms; faithfulness is
-$P(\text{denominator exact} \mid \text{verdict right})$; false-dec.\ is the
-share of gold-\emph{insufficient} claims given a decisive verdict. EHRAgent's
-evidence cannot be audited (it returns counts or a verdict, not report sets);
-its report-tier accuracy (0.96) carries its overall number. VERITAS takes the
-claim form only; 50 of its 129 runs completed all three phases within a
-10-minute cap per phase (the rest are scored as misses), and the completed
-runs abstain on 29 of 36 undecidable claims but on 69 of 93 decisive ones. The last column is
-the same row's cohort-tier accuracy on the test budget subset (EHRAgent: 240
-cohort-tier records; its own-test variant scores 0.743 overall there too).}
+\caption{Verdict accuracy on the test set. Every row uses the same prompts,
+conventions, schema presentation and exact-test stage; only the model changes
+across columns. Intervals are $\pm 0.02$ (0.6--0.9) and $\pm 0.01$ (above
+0.98). EHRAgent returns a verdict from its own code and is run as published;
+VERITAS, at about five minutes per claim, is run on a 204-claim subsample
+(12 per group).}
 \label{tab:main}
 \end{table*}
-
-Table~\ref{tab:main} reports every system on the same 400 records. Three
-observations carry the paper.
-
-\paragraph{The denominator is where systems fail, and the verdict hides it.}
-The best end-to-end baseline (B + repair) is right on 66\% of records; on the
-cohort tiers it is within 0.01 of our pipeline without the verifier. But its
-right answers stand on the exact gold evidence only 53\% of the time, it admits
-same-stage reports into order denominators on 56\% of its arms, and it gives a
-decisive verdict to 15\% of the claims the data cannot decide. The agentic
-baseline that runs its own test reaches 0.743 overall --- mostly on the
-report tier (0.96) --- and 0.624 on the cohort tiers while deciding 64\% of the
-undecidable claims; the multi-agent VERITAS, given the same conventions and our
-tests, completes 39\% of its runs and scores 0.349, abstaining on most decisive
-claims --- the opposite failure. Verdict accuracy ranks these systems within a few points of
-each other; the evidence metrics do not.
-
-\paragraph{Each stage is nearly solved alone; the hand-off is the loss.} The
-planner alone scores 0.955 with one repair round and the SQL stage alone 0.905
-with the gold plan, so the composed product should be near 0.86. Handing the
-plan to the SQL stage as prose gives 0.573 (Table~\ref{tab:grid}); resolving
-it as a contract gives 0.855, and 0.865 with the verifier --- within 0.04 of
-the gold-plan ceiling. The remaining gap is the planner's own errors.
-
-\paragraph{Verification without a contract has little to check.} The end-to-end
-model gains $+0.07$ from two repair rounds, almost all of it from statements
-that previously failed to execute; the conditioning errors remain, because
-nothing in a sentence-to-SQL system states which reports its query should have
-excluded. The same rounds on our pipeline check the rows against the plan's
-primitive and remove most of the co-exist and tie leaks
-(Table~\ref{tab:attribution}).
-
-\subsection{Scale and generalisation}
-\label{sec:scale}
-
-\begin{table}[t]
-\centering
-\small
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{lrrrrrr}
-\toprule
- & \multicolumn{3}{c}{development set (2{,}350)} & \multicolumn{3}{c}{test set (1{,}742)} \\
-system (32B) & all & cohort & faith. & all & cohort & faith. \\
-\midrule
-planner alone, 1 round & 0.954 & 0.931 & --- & \pend{---} & \pend{---} & --- \\
-SQL stage alone, 2 rounds & 0.880 & 0.816 & 0.81 & \pend{---} & \pend{---} & \pend{---} \\
-D$'$ & 0.831 & 0.743 & 0.75 & \pend{---} & \pend{---} & \pend{---} \\
-\textbf{D$'$ + verifier} & \textbf{0.856} & \textbf{0.781} & \textbf{0.78} & \pend{---} & \pend{---} & \pend{---} \\
-A: schema only & 0.466 & 0.494 & 0.21 & \pend{---} & \pend{---} & \pend{---} \\
-B: + conventions & 0.590 & 0.525 & 0.32 & \pend{---} & \pend{---} & \pend{---} \\
-counts-given judgment & 0.739 & 0.602 & 1.00 & \pend{---} & \pend{---} & --- \\
-\bottomrule
-\end{tabular}
-\caption{The same rows on the full development set (3{,}080 cohort-tier
-records) and on the fact-disjoint test set, which no prompt decision was made
-on.}
-\label{tab:scale}
-\end{table}
-
-The development-subset numbers hold on the full development set within 0.03
-(Table~\ref{tab:scale}): D$'$ with the verifier 0.856, the verified end-to-end
-control 0.669, the planner 0.954. Because every prompt decision was made on the
-development subset, the test set is the honest check of those decisions; its
-numbers are \pend{pending at the time of writing}.
-
-\paragraph{Frontier and open-weight models.} The same rows, prompts and
-flags with Claude Opus~5.5 and GPT-5.6 in every model slot
-(Table~\ref{tab:frontier}) put the development subset within reach of a
-frontier model with no contract at all: end-to-end with the conventions
-stated they score 1.000 and 0.995 with every denominator exact, and the
-contract pipeline 0.990 and 0.995. The two models agree to within one record
-on every row. The newest open-weight generation, run with thinking off on one
-workstation GPU, closes most of that distance \emph{with} the contract:
-gemma4-31B reaches 0.970 and qwen3.8-27B 0.905 with the verifier, against
-0.925 and 0.895 for the verified end-to-end control. The contract's verdict
-margin therefore shrinks as models improve, from $+0.155$ at the Qwen2.5-32B
-pair to $+0.045$ at gemma4 and within the interval at qwen3.8; its
-faithfulness margin does not: with the contract 96\% of right verdicts rest on
-the exact denominator for both models, against 81--89\% end-to-end, and
-false-decisiveness halves. The statements are right for the right reason
---- the precedes arm, for instance, excludes same-level reports from the
-denominator and flags them as such --- so the stipulations, stated once, are
-sufficient information for a model that can hold them. Without them
-(cell~A) the same models score 0.945 and 0.925 and get 79--83\% of
-denominators exactly: they infer most of the stipulations from the schema and
-the wording, and the stated conventions close the rest. Each column cost
-under \$9 at list price with prompt caching, about 20~minutes per row.
-What the contract buys, then, is not accuracy a frontier model lacks but
-accuracy an open 32B model lacks (0.87 against 0.66--0.72 end-to-end at zero
-API cost) and a verdict whose denominator can be audited; and the test set,
-which no prompt decision was made on, is where frontier difficulty has to be
-measured.
 
 \begin{table*}[t]
 \centering
 \small
-\begin{tabular}{lrrrrr}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{llrrrrr}
 \toprule
-system, development subset (200 claims) & Opus 5.5 & GPT-5.6 & gemma4-31B & qwen3.8-27B & Qwen2.5-32B \\
+metric & system & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
-planner alone (S2, S3 at gold) & 0.990 & 0.995 & 0.985 & 0.945 & 0.965 \\
-D$'$ & 0.990 & 0.995 & 0.890 & 0.845 & 0.865 \\
-D$'$ + verifier & 0.990 & 0.990 & \textbf{0.970} & \textbf{0.905} & \textbf{0.870} \\
-A: schema only & 0.945 & 0.925 & --- & --- & 0.505 \\
-B: + conventions & \textbf{1.000} & \textbf{0.995} & 0.875 & 0.840 & 0.640 \\
-counts-given judgment & 1.000 & 1.000 & 0.810 & 0.700 & 0.705 \\
-\midrule
-denominator F1, D$'$ + verifier & 1.000 & 0.992 & 0.965 & 0.898 & 0.763 \\
-faithfulness, D$'$ + verifier & --- & --- & 0.96 & 0.96 & 0.78 \\
+denominator F1 & B & 0.643 & 0.751 & 0.836 & 1.000 & 1.000 \\
+ & D$'$ + verifier & 0.789 & 0.914 & 0.975 & 0.998 & 0.993 \\
+faithfulness & B & 0.40 & 0.69 & 0.86 & 1.00 & 1.00 \\
+ & D$'$ + verifier & 0.86 & 0.97 & 0.94 & 1.00 & 1.00 \\
+false-decisiveness & B & 0.234 & 0.141 & 0.036 & 0.000 & 0.000 \\
+ & D$'$ + verifier & 0.033 & 0.047 & 0.010 & 0.004 & 0.020 \\
+over-abstention & B & 0.388 & 0.224 & 0.182 & 0.000 & 0.001 \\
+ & D$'$ + verifier & 0.223 & 0.068 & 0.023 & 0.009 & 0.011 \\
 \bottomrule
 \end{tabular}
-\caption{Two frontier models and three open-weight models in every model slot,
-same prompts; claim form, original register. Open-weight models run with
-thinking off on one RTX A5000. Each frontier column cost under \$9 at list
-price with prompt caching. Intervals: $\pm 0.02$ at 0.97, $\pm 0.04$ at 0.90,
-$\pm 0.06$ at 0.65.}
-\label{tab:frontier}
+\caption{Evidence and abstention on the test set for the end-to-end control
+(B) and our pipeline. Denominator F1 is over the report sets each arm
+retrieved; faithfulness is $P(\text{denominator exact} \mid \text{verdict
+right})$; false-decisiveness is the share of gold-\emph{insufficient} claims
+given a decisive verdict; over-abstention the share of decisive claims
+answered \emph{insufficient}.}
+\label{tab:evidence}
 \end{table*}
 
-\paragraph{Cost and latency.} Table~\ref{tab:cost} gives, per record of the
-development subset, the wall time of the sequential harness, the tokens
-exchanged and the dollar cost from the providers' own usage counts at list
-price with prompt caching; local rows cost GPU time only. The contract
-pipeline makes two calls per record where the end-to-end baseline makes one,
-so it exchanges about twice the tokens; the repair rounds add 10--20\% on top.
-At the frontier a full 200-claim row costs two to three dollars; a local
-27B model answers a record in 9~s and a 31B one in 13~s on one workstation
-GPU, with the verifier adding four to five seconds.
+Table~\ref{tab:main} reports every system on the same 1{,}500 claims and
+Table~\ref{tab:evidence} what their verdicts stand on. Three observations
+carry the paper.
+
+\paragraph{With the conventions stated, frontier models solve the task;
+without them they do not.} Opus~5.5 and GPT-5.6 verify 1.000 and 0.984 of the
+claims end to end once the corpus stipulations are in the prompt, with every
+denominator exact. Remove the stipulations (row A) and the same models fall to
+0.878 and 0.876 and get a fifth of their denominators wrong: they infer most
+of the conventions from the schema and the wording and miss the rest. The
+benchmark is therefore not hard for a frontier model with the information; it
+measures whether the information is used. Our pipeline adds nothing to such a
+model (0.999), and its verifier costs it a little (0.993, 0.983): the plan
+checks flag a few correct $n = k$ statements and the pipeline abstains rather
+than guess.
+
+\paragraph{For open models the contract is what makes the verdict stand on the
+right evidence.} The 2024 pair verifies 0.575 of claims end to end with the
+conventions and 0.810 with the contract and the verifier; the 2026 models
+0.748 $\rightarrow$ 0.872 (qwen3.8) and 0.859 $\rightarrow$ 0.981 (gemma4).
+The verdict margin is $+0.12$ to $+0.24$. The evidence margin is larger and
+does not shrink with model quality: with the contract 86--97\% of right
+verdicts rest on the exact denominator against 40--86\% end to end, and
+false-decisiveness falls from 0.04--0.23 to 0.01--0.05. gemma4-31B with the
+contract is within 0.02 of the frontier models at zero API cost, 14~seconds
+per claim on one workstation GPU.
+
+\paragraph{The denominator is where systems fail, and the verdict hides it.}
+The published agentic baseline reaches 0.605, within 0.03 of the end-to-end
+control, but its evidence cannot be audited (it returns a verdict from its own
+code) and on the development set it decided 64\% of the claims the data cannot
+decide. The end-to-end control with the 2024 Coder is right on 57\% of claims
+and right for the right reason on 40\% of those: it admits same-stage reports
+into order denominators, defines the eligible set as the supporting set, and
+narrows presence splits to co-occurrence (Table~\ref{tab:attribution}). The
+counts-given row shows the same thing from the other side: handed the exact
+counts, the open models still pick the wrong test or read it wrong on a
+quarter to a third of claims (0.611--0.777), so a correct verdict from them is
+not evidence of a correct computation.
+
+\subsection{Results by temporal family}
+\label{sec:families}
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrrr}
+\toprule
+family (D$'$ + verifier / B) & $n$ & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
+\midrule
+precedes (P-V1--P-V4, P-M2) & 455 & 0.80 / 0.57 & 0.81 / 0.74 & 1.00 / 0.93 & 1.00 / 1.00 & 0.99 / 1.00 \\
+co-occurs (C-V1--C-V3) & 270 & 0.97 / 0.57 & 0.96 / 0.88 & 1.00 / 0.93 & 1.00 / 1.00 & 1.00 / 0.91 \\
+first/last (F-V1--F-V3) & 262 & 0.44 / 0.33 & 0.80 / 0.58 & 0.95 / 0.56 & 1.00 / 1.00 & 0.97 / 1.00 \\
+proximity (Y-V1--Y-V3) & 271 & 0.99 / 0.75 & 1.00 / 0.80 & 0.97 / 0.96 & 1.00 / 1.00 & 1.00 / 1.00 \\
+threshold (H-V1, H-V5) & 152 & 0.76 / 0.61 & 0.90 / 0.74 & 0.96 / 0.75 & 0.94 / 1.00 & 0.91 / 1.00 \\
+position (T-V1) & 90 & 1.00 / 0.72 & 0.69 / 0.72 & 1.00 / 1.00 & 1.00 / 1.00 & 1.00 / 1.00 \\
+\bottomrule
+\end{tabular}
+\caption{Verdict accuracy by claim family on the test set, our pipeline with
+the verifier against the end-to-end control, same model. The sequence family
+has no cohort-tier group in the test set (its two cohort groups have four
+cores each in the corpus) and appears in the report-tier case study only.}
+\label{tab:families}
+\end{table*}
+
+The families do not fail together (Table~\ref{tab:families}). For the 2024
+pair the contract lifts \emph{precedes} and \emph{co-occurs} by 0.23 and 0.40,
+because the rule those families need --- exclude the same-stage reports, count
+the ordered ones --- is exactly what the resolved contract states; it lifts
+\emph{first/last} by only 0.11, to 0.44, because the argmax over three
+candidates with ties dropped from the denominator is a rule the 2024 Coder
+cannot write even when it is handed to it (the gold-plan row scores the same
+groups at 0.44). The 2026 models write that rule: gemma4 reaches 0.95 on
+first/last with the contract and 0.56 without it, the largest single gain in
+the table. \emph{Threshold} is the family where the contract helps least at the
+frontier (0.91--0.94 against 1.00 end to end): the text-stated bar
+(``at least two thirds'') is composed into the plan as a null, and a few plans
+place it on the wrong side; the end-to-end model never has to represent it.
+\emph{Position} is the one family where qwen3.8 does worse with the contract
+than without (0.69 against 0.72): its planner mis-composes the early-half
+denominator and the contract then faithfully retrieves the wrong set.
+
+\subsection{Modular analysis against gold}
+\label{sec:modular}
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{lrrrrr}
+\toprule
+stages filled by the model (the others at gold) & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
+\midrule
+none (deterministic oracle) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+S1 alone: model plan, gold retrieval and test (1 round) & 0.953 & 0.917 & 0.995 & 0.993 & 0.993 \\
+S2 alone: gold plan, model SQL (2 rounds) & 0.836 & \pend{pending} & \pend{pending} & --- & --- \\
+S3 alone: gold counts, model test and verdict & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
+\midrule
+S1 + S2 + S3, plan as contract & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
+\quad + verifier (2 rounds) & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & 0.993 & 0.983 \\
+\bottomrule
+\end{tabular}
+\caption{Each stage of the pipeline filled by the model with the other stages
+at gold, on the test set. The oracle (every stage at gold) reproduces the
+labels exactly. S2 alone is run under the same resolved contract the full
+pipeline uses, so the difference between the S2 row and the full row is the
+cost of the model's own plan.}
+\label{tab:modular}
+\end{table*}
+
+Table~\ref{tab:modular} fills one stage at a time with the model and leaves
+the others at gold, so each row is the loss attributable to that stage
+alone. Planning is nearly solved by every model (0.92--0.995): with the
+mapping withheld and the conventions stated, the plan is composed right on at
+least nine claims in ten, and the gemma4 planner matches the frontier.
+Retrieval is the open models' loss: the 2024 Coder with the gold plan scores
+0.836, so the full pipeline's 0.761 is the planner's errors compounded on a
+retrieval stage that was already losing a sixth of the claims. The test stage
+is a function and the open models cannot compute it (0.61--0.78 given the
+exact counts); the pipeline does not ask them to. The two gold-adjacent rows
+bracket the full pipeline: with the verifier it reaches 0.810, within 0.03 of
+its own gold-plan ceiling for the 2024 pair, and 0.981 against a 0.995 planner
+ceiling for gemma4. The remaining loss is the plan, not the execution.
+
+\paragraph{Prose versus contract.} The hand-off between S1 and S2 is the
+decision the modular rows cannot see, because S2 alone is given the gold plan
+already resolved. On the development set (Table~\ref{tab:grid}) the same
+composed plan handed to S2 as prose with the conventions gives 0.573 for the
+2024 pair, and 0.645 with two verify-and-repair rounds --- level with the
+verified end-to-end model (0.660) --- while resolving the plan's named
+primitive into its rule gives 0.855 and 0.865 with the same plan and the same
+model. The decomposition pays only when the plan is a contract.
+
+\subsection{Case studies}
+\label{sec:cases}
+
+\paragraph{How many repair rounds?} Table~\ref{tab:rounds} runs our pipeline
+with zero to three verify-and-repair rounds on the test set. For the open
+models the first round does almost all of the work: $+0.13$ for qwen3.8 and
+gemma4, with denominator F1 rising by 0.06--0.11, and the second and third
+rounds add about 0.01 each. The 2024 pair gains little per round (0.761
+$\rightarrow$ 0.814) because its Coder resubmits the same mistake when told
+what was wrong. At the frontier every round costs 0.005--0.015: the checks
+fire on statements that are already correct (a genuine $n = k$, an absent
+event) and the pipeline turns a right verdict into an abstention. Records
+that flip from right to wrong under repair flip almost entirely into
+\emph{insufficient}; records that cannot be repaired (a quarter of those
+flagged) are not executed. Two rounds is the operating point for every open
+model; a model that does not need the verifier is not helped by it.
 
 \begin{table}[t]
 \centering
 \small
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrr}
+\begin{tabular}{lrrrrr}
 \toprule
-system & model & s / record & tokens / record & USD / record \\
+rounds & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \midrule
-D$'$ & Opus 5.5 & 6.0 & 8{,}940 & 0.0125 \\
-D$'$ & GPT-5.6 & 5.1 & 5{,}470 & 0.0100 \\
-D$'$ & Qwen2.5-32B pair & \pend{x} & 8{,}720 & 0 \\
-D$'$ & qwen3.8-27B & 8.8 & 5{,}020 & 0 \\
-D$'$ & gemma4-31B & 13.2 & 5{,}130 & 0 \\
-B & Opus 5.5 & 4.6 & 4{,}600 & 0.0107 \\
-B & GPT-5.6 & 5.5 & 2{,}980 & 0.0094 \\
-B & Qwen2.5-Coder-32B & \pend{x} & 3{,}960 & 0 \\
-B & gemma4-31B & 4.7 & 2{,}950 & 0 \\
-B & qwen3.8-27B & 4.6 & 2{,}890 & 0 \\
-counts-given & Opus 5.5 & 2.8 & 930 & 0.0040 \\
-counts-given & GPT-5.6 & 9.1 & 980 & 0.0125 \\
+0 & 0.761 / 0.73 & 0.735 / 0.80 & 0.844 / 0.89 & 0.999 / 1.00 & 0.999 / 1.00 \\
+1 & 0.775 / 0.77 & 0.869 / 0.91 & 0.971 / 0.95 & 0.993 / 1.00 & 0.991 / 1.00 \\
+2 & 0.810 / 0.79 & 0.872 / 0.91 & 0.981 / 0.97 & 0.993 / 1.00 & 0.983 / 0.99 \\
+3 & 0.814 / 0.79 & 0.875 / 0.92 & 0.985 / 0.98 & 0.992 / 1.00 & 0.983 / 1.00 \\
 \bottomrule
 \end{tabular}
-\caption{Cost and latency per record on the development subset (claim form).
-Tokens are prompt plus visible completion; GPT-5.6's hidden reasoning tokens
-are billed but not shown (60 per record on D$'$, 525 on counts-given). Local
-latencies are measured on one RTX A5000 with the model fully resident.}
-\label{tab:cost}
+\caption{Our pipeline with 0--3 verify-and-repair rounds on the test set:
+verdict accuracy / denominator F1.}
+\label{tab:rounds}
 \end{table}
 
-\subsection{Stage analysis}
-\label{sec:stages}
+\paragraph{Single reports.} The report tier asks whether a system can locate
+one report by its pseudonymous identifier and read an ordering from its
+annotated timeline; the plan has one arm and the test stage is a
+deterministic rule. Every system with a 2026 model does this at 0.98--1.00
+with or without the contract (Table~\ref{tab:report}). The 2024 Coder end to
+end does not: 0.433 without the conventions and \pend{0.xx} with them,
+against 1.000 for the same Coder under the contract and 1.000 for its
+planner. The tier is trivial as statistics and still separates systems that
+read what the contract asks them to read from systems that do not.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrrrrr}
+\toprule
+system (180 single-report claims) & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
+\midrule
+A: schema only & 0.433 & --- & --- & --- & --- \\
+B: + conventions & \pend{xx} & \pend{xx} & \pend{xx} & 1.000 & 1.000 \\
+planner alone & 1.000 & --- & --- & --- & --- \\
+D$'$ + verifier & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
+\bottomrule
+\end{tabular}
+\caption{The report-tier case study. Opus abstains on three of the 180
+(an event it judged absent); EHRAgent on the development set read this tier
+at 0.96.}
+\label{tab:report}
+\end{table}
+
+\paragraph{Paraphrase.} The development set carries three paraphrase
+registers of every instance (research, media, clinical). For the 2024 pair
+the planner alone loses 0.02--0.12 across registers and the full pipeline the
+same (Table~\ref{tab:registers}): the cost of paraphrase is paid at planning
+and passes through the contract unchanged, and the end-to-end control loses
+the same 0.04--0.12 from a lower base. Paraphrase does not change the ranking
+of systems or the size of the contract's margin.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+development set, 32B pair & Original & Research & Media & Clinical \\
+\midrule
+planner alone (S2, S3 at gold), 1 round & 0.955 & 0.838 & 0.877 & 0.935 \\
+D$'$ & 0.865 & 0.790 & 0.755 & 0.825 \\
+D$'$ + verifier & 0.870 & 0.815 & 0.770 & 0.840 \\
+B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
+\bottomrule
+\end{tabular}
+\caption{Verdict accuracy by register on the 200 development instances
+(claim form).}
+\label{tab:registers}
+\end{table}
+
+\subsection{Information versus architecture on the development set}
+\label{sec:grid}
+
+The test set fixes the prompt; the development set is where the prompt was
+varied one decision at a time. Table~\ref{tab:grid} separates what the prompt
+tells the 2024 pair from what the decomposition adds. Stating the conventions
+to the end-to-end model is worth $+0.09$ (A$\rightarrow$B); two plan-free
+repair rounds another $+0.07$; handing the composed plan to S2 as prose is
+\emph{below} the end-to-end control (0.573) and level with it after repair
+(0.645); resolving the plan into its rule gives 0.855 with nothing else
+changed. At 7B nothing moves the cohort tiers above 0.45, and the conventions
+cost the end-to-end 7B model accuracy (B $<$ A): a model that cannot compose
+the plan cannot use the stipulations either.
+
+\begin{table*}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrrrrrrr}
+\toprule
+ & & \multicolumn{4}{c}{32B (Inst.\ for S1, Coder for SQL)} & \multicolumn{4}{c}{7B} \\
+cell & what the model is given / asked & all & cohort & den.\ F1 & faith. & all & cohort & den.\ F1 & faith. \\
+\midrule
+A & sentence $\rightarrow$ SQL, schema only & 0.502 & 0.562 & 0.441 & 0.21 & 0.440 & 0.275 & 0.101 & 0.23 \\
+B & \quad + conventions stated & 0.588 & 0.543 & 0.517 & 0.28 & 0.380 & 0.279 & 0.124 & 0.18 \\
+B$+$2 & \quad + two repair rounds, plan-free checks & 0.660 & 0.655 & 0.643 & 0.53 & --- & --- & --- & --- \\
+\midrule
+D & composed plan handed to S2 as prose $+$ conventions & 0.573 & 0.453 & 0.525 & 0.35 & 0.287 & 0.209 & 0.238 & 0.39 \\
+D$+$2 & \quad + two verify-and-repair rounds (plan checks) & 0.645 & 0.566 & 0.611 & 0.71 & 0.295 & 0.221 & 0.230 & 0.37 \\
+E & composed plan $+$ plan-consistency re-ask & 0.652 & 0.578 & 0.615 & 0.71 & 0.263 & 0.171 & 0.234 & 0.48 \\
+\midrule
+C & gold plan, same frame (SQL stage alone) & 0.900 & 0.845 & 0.767 & 0.73 & 0.570 & 0.349 & 0.196 & 0.29 \\
+C$+$2 & \quad + two verify-and-repair rounds & 0.905 & 0.853 & 0.803 & 0.79 & 0.620 & 0.426 & 0.359 & 0.55 \\
+S1 & composed plan, gold S2/S3 & 0.950 & 0.922 & --- & --- & 0.595 & 0.558 & --- & --- \\
+S1$+$1 & \quad + one verify-and-repair round & 0.955 & 0.930 & --- & --- & 0.657 & 0.655 & --- & --- \\
+counts & gold $n,k$ given; model picks test and verdict & 0.705 & 0.543 & (given) & --- & 0.650 & 0.457 & (given) & --- \\
+\midrule
+D$'$ & composed plan resolved to its primitive's rule (the contract) & 0.855 & 0.775 & 0.717 & 0.75 & 0.365 & 0.217 & 0.162 & 0.27 \\
+D$'$$+$2 & \quad + two verify-and-repair rounds & \textbf{0.865} & \textbf{0.791} & 0.763 & \textbf{0.78} & --- & --- & --- & --- \\
+\bottomrule
+\end{tabular}
+\caption{The information-versus-architecture grid on the development subset
+(200 instances, both forms, 400 records; cohort $=$ 258 cohort-tier records)
+under the frozen configuration. ``$+$2'' rows add two bounded repair rounds
+(for A/B with plan-free checks only; for D/D$'$/C with the plan's checks).
+D$'$ is D with the plan resolved by the harness for S2. B$+$2 is kept here as
+the control for the repair rounds; it is not a system in the main table.}
+\label{tab:grid}
+\end{table*}
 
 \paragraph{Planning without the mapping.} Table~\ref{tab:toolbox} compares the
 two S1 frames. With the catalogue, a 32B model scores 0.998: given the mapping,
 planning is lookup. With the mapping withheld the same model composes the plan
 at 0.950 zero-shot and 0.955 with one repair round; the 7B model falls to
 0.595, almost entirely whole-shape misreads, while the fields that do land are
-right. Paraphrase is a bounded perturbation for the capable model
-(Table~\ref{tab:registers}): $-0.02$ to $-0.12$ across registers, largest on
-the research register, where the wording rewrites the statistical situation
-rather than the event names.
+right.
 
 \begin{table}[t]
 \centering
@@ -857,54 +1006,16 @@ Catalogue (answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
 \label{tab:toolbox}
 \end{table}
 
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lrrrr}
-\toprule
- & Original & Research & Media & Clinical \\
-\midrule
-\multicolumn{5}{l}{\textit{Planner alone (S2, S3 at gold), one round}} \\
-7B-Instruct & 0.657 & 0.662 & 0.595 & 0.575 \\
-32B-Instruct & 0.955 & 0.838 & 0.877 & 0.935 \\
-\midrule
-\multicolumn{5}{l}{\textit{Full pipeline, 32B, claim form}} \\
-D$'$ & 0.865 & 0.790 & 0.755 & 0.825 \\
-D$'$$+$2 & 0.870 & 0.815 & 0.770 & 0.840 \\
-B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
-\bottomrule
-\end{tabular}
-\caption{Verdict accuracy by register on the same 200 development instances.
-The full-pipeline drop ($-0.03$ to $-0.11$) matches the planner's: the cost of
-paraphrase is paid at planning and passes through the contract unchanged.}
-\label{tab:registers}
-\end{table}
-
-\paragraph{Retrieval: attribution and faithfulness.} Every prediction records
-the report identifiers it placed in each arm, so every wrongly included or
-dropped report can be checked against the claim's rule in the database and
-named (Table~\ref{tab:attribution}). The largest single cause in the
-end-to-end rows had been invisible to every aggregate metric: the query
-defines the eligible set as the supporting set, so $n = k$ and the claim is
-supported for free (87 of 258 records for B). Repair rounds remove failed
-statements and most $n = k$ queries; what remains for the end-to-end model is
-semantic --- co-existing reports in order denominators, ties, presence splits
-narrowed to co-occurrence --- and what remains for the contract pipeline is
-mostly its planner's errors.
-
-\paragraph{How many repair rounds?} Running D$'$ with zero to three rounds on
-the development subset separates what repair buys from what it costs. The
-verdict barely moves (0.855, 0.843, 0.865, 0.850; no two rounds differ by more
-than five records of 400), but retrieval does: denominator F1 rises from 0.717
-to 0.764 after one round and stays there, and faithfulness, the probability
-that a right verdict rests on the right denominator, from 0.75 to 0.78--0.86.
-The S2 check fires on 23\% of records; the verdicts it changes from right to
-wrong move almost entirely into \textit{insufficient} (12 of 12 at one round,
-6 of 6 at the third), because a statement that cannot be repaired is not
-executed --- a lucky verdict becomes an honest abstention. Most flagged
-records (71 of 91) are still flagged after three rounds: genuine $n = k$
-situations and absent events that no rewrite can fix. Two rounds is the
-operating point; the third costs 2k tokens per record and buys nothing.
+\paragraph{Retrieval: attribution.} Every prediction records the report
+identifiers it placed in each arm, so every wrongly included or dropped report
+can be checked against the claim's rule in the database and named
+(Table~\ref{tab:attribution}). The largest single cause in the end-to-end rows
+had been invisible to every aggregate metric: the query defines the eligible
+set as the supporting set, so $n = k$ and the claim is supported for free (87
+of 258 records for B). Repair rounds remove failed statements and most $n = k$
+queries; what remains for the end-to-end model is semantic --- co-existing
+reports in order denominators, ties, presence splits narrowed to co-occurrence
+--- and what remains for the contract pipeline is mostly its planner's errors.
 
 \begin{table*}[t]
 \centering
@@ -936,106 +1047,68 @@ cause; ``SQL failed'' counts records whose statement did not execute.}
 \label{tab:attribution}
 \end{table*}
 
-\paragraph{The test, given the counts.} Handed the gold counts, the test
-definitions, the null and $\alpha$, the 32B model returns the right verdict on
-0.705 of records but matches the exact $p$-value on 3\%, decides 17\% of the
-undecidable claims and never names the right sub-type. On the development set
-the frontier model of an earlier release matched the exact $p$ on 66\%
-(52\% for Fisher's test), with the errors at the decision boundary. The
-statistics stage is a function, and it should be computed as one.
-
-\subsection{Architecture versus information}
-\label{sec:grid}
-
-Table~\ref{tab:grid} separates what the prompt tells the model from what the
-decomposition adds. Reading the 32B columns: stating the conventions to the
-end-to-end model is worth $+0.09$ (A$\rightarrow$B); two plan-free repair
-rounds are worth another $+0.07$ (B$+$2, 0.660), which is level with the
-composed pipeline when its plan is handed over as prose (D$+$2, 0.645). On the
-verdict, verification alone closes that gap --- not on the evidence (faithfulness
-0.53 vs.\ 0.71). The decomposition pays once the plan is a contract: D$'$
-reaches 0.855, and 0.865 with the verifier, $+0.20$ over the verified
-end-to-end control and within 0.04 of the gold-plan row, with nothing on the
-baseline side changed. At 7B nothing moves the cohort tiers above 0.45: the
-composed pipeline is \emph{below} plain sentence-to-SQL and the conventions
-cost the end-to-end 7B accuracy (B $<$ A) --- a model that cannot compose the
-plan cannot use the stipulations either.
-
-\begin{table*}[t]
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrrrrrrr}
-\toprule
- & & \multicolumn{4}{c}{32B (Inst.\ for S1, Coder for SQL)} & \multicolumn{4}{c}{7B} \\
-cell & what the model is given / asked & all & cohort & den.\ F1 & faith. & all & cohort & den.\ F1 & faith. \\
-\midrule
-A & sentence $\rightarrow$ SQL, schema only & 0.502 & 0.562 & 0.441 & 0.21 & 0.440 & 0.275 & 0.101 & 0.23 \\
-B & \quad + conventions stated & 0.588 & 0.543 & 0.517 & 0.28 & 0.380 & 0.279 & 0.124 & 0.18 \\
-\midrule
-D & composed plan handed to S2 as prose $+$ conventions & 0.573 & 0.453 & 0.525 & 0.35 & 0.287 & 0.209 & 0.238 & 0.39 \\
-D$+$2 & \quad + two verify-and-repair rounds (plan checks) & 0.645 & 0.566 & 0.611 & 0.71 & 0.295 & 0.221 & 0.230 & 0.37 \\
-E & composed plan $+$ plan-consistency re-ask & 0.652 & 0.578 & 0.615 & 0.71 & 0.263 & 0.171 & 0.234 & 0.48 \\
-D$'$ & composed plan resolved to its primitive's rule (the contract) & 0.855 & 0.775 & 0.717 & 0.75 & 0.365 & 0.217 & 0.162 & 0.27 \\
-D$'$$+$2 & \quad + two verify-and-repair rounds & \textbf{0.865} & \textbf{0.791} & 0.763 & \textbf{0.78} & --- & --- & --- & --- \\
-\midrule
-C & gold plan, same frame (SQL stage alone) & 0.900 & 0.845 & 0.767 & 0.73 & 0.570 & 0.349 & 0.196 & 0.29 \\
-C$+$2 & \quad + two verify-and-repair rounds & 0.905 & 0.853 & 0.803 & 0.79 & 0.620 & 0.426 & 0.359 & 0.55 \\
-\midrule
-S1 & composed plan, gold S2/S3 & 0.950 & 0.922 & --- & --- & 0.595 & 0.558 & --- & --- \\
-S1$+$1 & \quad + one verify-and-repair round & 0.955 & 0.930 & --- & --- & 0.657 & 0.655 & --- & --- \\
-counts & gold $n,k$ given; model picks test and verdict & 0.705 & 0.543 & (given) & --- & 0.650 & 0.457 & (given) & --- \\
-\bottomrule
-\end{tabular}
-\caption{The architecture-vs-information grid on the development subset under
-the frozen configuration. ``$+$2'' rows add two bounded repair rounds (for A/B
-with plan-free checks only; for D/D$'$/C with the plan's checks). D$'$ is D
-with the plan resolved by the harness for S2.}
-\label{tab:grid}
-\end{table*}
-
-\subsection{Conventions as information: one change at a time}
-\label{sec:ablations}
-
-Three prompt-level decisions were each made as a single controlled change on
-the development subset, with everything else fixed.
-
-\paragraph{One missing stipulation.} Under an earlier conventions text the 32B
-planner composed every association claim (C-V2) as one-arm co-occurrence ---
-0 of 18 records, and 22 of 22 on the previous release --- although the
-``compare the rate with and without $A$'' situation was stated; the three
-association wordings were never bridged to it, while ``occur together''
-matched the co-occurrence stipulation. Adding that bridge moved the planner
-from 0.897 to 0.950, with 23 of 26 groups unchanged record for record (C-V2
-0.00 $\rightarrow$ 0.67; a co-occurrence bar group 0.00 $\rightarrow$ 1.00).
-A model is not wrong about a situation it was never told exists.
-
-\paragraph{Schema presentation.} Showing the SQL model the \texttt{CREATE
-VIEW} bodies of the helper views led it to copy the views' internal aliases
-into its own queries (117 rejected statements of 466 in cell A); listing the
-views as columns with their semantics in comments removed that error but left
-an ambiguous unqualified identifier in self-joins (157 rejected); one sentence
-in the row contract removed that too (34 rejected). Cell A went 0.297
+\paragraph{Conventions as information, one change at a time.} Three
+prompt-level decisions were each made as a single controlled change on the
+development subset, with everything else fixed. \emph{One missing
+stipulation:} under an earlier conventions text the 32B planner composed every
+association claim (C-V2) as one-arm co-occurrence --- 0 of 18 records ---
+although the ``compare the rate with and without $A$'' situation was stated;
+the three association wordings were never bridged to it, while ``occur
+together'' matched the co-occurrence stipulation. Adding that bridge moved the
+planner from 0.897 to 0.950, with 23 of 26 groups unchanged record for record
+(C-V2 0.00 $\rightarrow$ 0.67; a co-occurrence bar group 0.00 $\rightarrow$
+1.00). A model is not wrong about a situation it was never told exists.
+\emph{Schema presentation:} showing the SQL model the \texttt{CREATE VIEW}
+bodies of the helper views led it to copy the views' internal aliases into its
+own queries (117 rejected statements of 466 in cell A); listing the views as
+columns with their semantics in comments removed that error but left an
+ambiguous unqualified identifier in self-joins (157 rejected); one sentence in
+the row contract removed that too (34 rejected). Cell A went 0.297
 $\rightarrow$ 0.378 $\rightarrow$ 0.502 and the SQL stage with the gold plan
 0.810 $\rightarrow$ 0.830 $\rightarrow$ 0.900. None of these changed the data,
 the models or the method; they are the cost of a prompt artefact that would
 otherwise have read as a finding about the new claim families.
 
-\paragraph{Prose versus contract.} The S2 hand-off (\S\ref{sec:frames}) is the
-third: 0.573 as prose, 0.855 as a contract, with the same plan.
+\subsection{Cost and latency}
+\label{sec:cost}
 
-\subsection{Abstention}
-\label{sec:abstention}
+Table~\ref{tab:cost} gives, per test record, the wall time of the sequential
+harness, the tokens exchanged and the dollar cost from the providers' own
+usage counts at list price with prompt caching; local rows cost GPU time only.
+The contract pipeline makes two calls per record where the end-to-end
+baseline makes one, so it exchanges about twice the tokens, and the verifier
+adds 10--20\% on top. A full ten-row frontier column on the test set cost
+\$80 (Opus) and \$89 (GPT-5.6, which spends hidden reasoning tokens on the
+test-stage judgment); a 31B open model answers a test claim in 14~seconds on
+one workstation GPU and a 27B one in 10.
 
-The planner alone almost never decides an undecidable claim
-(false-decisiveness 0.03) and names the right sub-type when it abstains
-(1.00); the SQL stage with the gold plan over-abstains (0.20) --- a failed or
-over-narrow query reads as \emph{insufficient} --- but never fabricates a
-decision. The end-to-end models decide 15--19\% of undecidable claims even
-with repair and name the sub-type right 59--80\% of the time; the agentic
-baseline that runs its own test decides 64\%. Our full pipeline with the
-verifier decides none of them (false-decisiveness 0.00; over-abstention 0.26,
-mostly the planner's underdetermined plans).
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{llrrr}
+\toprule
+system & model & s / record & tokens / record & USD / record \\
+\midrule
+D$'$ & Opus 5.5 & 6.0 & 8{,}900 & 0.014 \\
+D$'$ & GPT-5.6 & 5.1 & 5{,}500 & 0.011 \\
+D$'$ & Qwen2.5-32B pair & 12.3 & 5{,}000 & 0 \\
+D$'$ & qwen3.8-27B & 10.1 & 5{,}100 & 0 \\
+D$'$ & gemma4-31B & 14.1 & 5{,}300 & 0 \\
+B & Opus 5.5 & 4.6 & 4{,}600 & 0.011 \\
+B & GPT-5.6 & 5.5 & 3{,}000 & 0.009 \\
+B & Qwen2.5-Coder-32B & 2.8 & 2{,}850 & 0 \\
+B & qwen3.8-27B & 6.2 & 3{,}000 & 0 \\
+B & gemma4-31B & 6.1 & 3{,}100 & 0 \\
+\bottomrule
+\end{tabular}
+\caption{Cost and latency per record (test set for the local models, usage
+counts from the test runs for the frontier models). Tokens are prompt plus
+visible completion. Local latencies are measured on one RTX A5000 with the
+model fully resident; the Qwen2.5 pair's includes swapping the two models
+between stages.}
+\label{tab:cost}
+\end{table}
 
 \section{Discussion and Limitations}
 \label{sec:limitations}
@@ -1051,7 +1124,11 @@ contribution.
 simple decomposition; its value is that each stage is checkable. Handing the
 plan to the next stage as prose discarded that value. We therefore claim
 ``stated conventions, a plan that is a contract, and bounded verification''
---- not decomposition as such.
+--- not decomposition as such. The claim is also bounded by model class: a
+frontier model that holds the conventions needs no contract to verify the
+claims (0.999 either way) and is slightly hurt by the verifier; the contract
+is what lets an open model, run locally on clinical data, reach the same
+accuracy with an auditable denominator.
 
 \paragraph{Conventions are dataset-specific by design.} Porting the framework
 to another corpus means writing its conventions and primitive definitions, not
@@ -1059,17 +1136,20 @@ retraining anything; whether that is cheap in general is untested here, and the
 one external hypothesis set with reference $p$-values (P-Bench) tests the
 statistics stage, not the conditioning, so we do not claim transfer.
 
-\paragraph{Scale of the comparison.} The agentic baselines take minutes per
-hypothesis, so they are compared on the 200-instance budget subsets; our rows
-and the end-to-end rows are run on the full development and test sets and
-agree with the subsets within 0.03. The budget subsets are stratified over
-groups and classes, not random draws.
+\paragraph{Scale of the comparison.} Every system except VERITAS is run on
+the full 1{,}500-claim test set. VERITAS takes about five minutes per claim
+through its three phases and is compared on a 204-claim subsample (12 per
+group, verdict-balanced), stated as such. Development-set numbers transfer to
+the test set within 0.03 for every row we checked, so the prompt decisions
+did not overfit the 200 instances they were made on.
 
 \paragraph{Floors and ceilings.} Decisive labels carry $\alpha$-rate false
 positives by construction; exact tests are conservative, so the realised rate
 is below nominal but not zero. The release is bounded by enumeration breadth
-(the most frequent cohort terms), not by statistical power, and five small
-groups are entirely inside the development set. The 7B tier is a capability
+(the most frequent cohort terms), not by statistical power: three designed
+groups (two three-event sequence groups and one co-occurrence threshold) have
+only four to twelve cores in the corpus and are left out of the roster
+rather than reported on a handful of instances. The 7B tier is a capability
 floor: nothing in the framework helps a model that cannot compose a plan.
 
 \paragraph{No lexical variation.} Slot fillers are raw MedDRA terms and the
@@ -1082,10 +1162,10 @@ robustness claim.
 \sys{} turns a temporal--statistical claim into a chain of scored decisions ---
 which reports count, what the null is, which test applies, what the evidence
 was --- and shows that the first of those is where systems fail and the last is
-what the verdict cannot see. Under one frozen configuration, a 32B pipeline
-whose plan is a contract between its stages verifies claims at 0.86 with its
-evidence right 78\% of the time, against 0.67 and 53\% for the strongest
-verified end-to-end system; and one missing stipulation, or one prompt
-artefact, moves these numbers by more than most architectural choices do.
+what the verdict cannot see. On a 1{,}500-claim test set no prompt decision
+was made on, frontier models verify the claims once the corpus conventions are
+stated and not before; open models need the plan to be a contract between the
+stages, and with it a 31B model run on one workstation GPU reaches 0.981 with
+its evidence right 94\% of the time, against 0.859 and 86\% end to end.
 Benchmarks of this kind should publish their conventions with their data, and
 score the evidence with the answer.
