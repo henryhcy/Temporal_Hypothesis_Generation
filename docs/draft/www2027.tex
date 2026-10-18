@@ -26,7 +26,7 @@
 
 \begin{document}
 
-\title{Which Reports Count? Verifying Temporal--Statistical Claims over Annotated Clinical Timelines with Stage-Level Ground Truth}
+\title{STRATA: Staged Evaluation of Temporal--Statistical Claims over Annotated Clinical Timelines}
 %% working title
 
 \author{Anonymous Author(s)}
@@ -37,35 +37,30 @@
 }
 
 \begin{abstract}
-Language-model systems increasingly promise to test hypotheses against data,
-and benchmarks score them on the final $p$-value or decision with the relevant
-data already assembled. For a claim such as ``after the Pfizer vaccine,
-headache tends to precede fatigue'' over a corpus of annotated adverse-event
-timelines, that final step is the easy one: a system must first decide which
-reports count, what ``no effect'' means and which test applies, and a verdict
-can be right while every one of those decisions is wrong. We release
-\textsc{MedTempo-Hypo}, a benchmark of temporal--statistical claims in 26
-groups and seven claim families over three cohort tiers, built on
-expert-annotated timelines of 3{,}166 vaccine adverse-event reports, in which
-every stage of the gold computation is released with the three-decision
-verdict: the plan (events, denominator rule, null, test), the exact evidence
-sets and the exact $p$-values. The corpus conventions are shipped as part of
-the task, identifiers are pseudonymised, and the release is a development set
-and a fact-disjoint 1{,}500-claim test set. We pair it with an instrumented
-reference pipeline --- plan, retrieve, test --- whose stage contracts turn the
-verdict into auditable quantities (plan agreement, evidence-set agreement,
-faithfulness, abstention) and whose prompt frames make the \emph{information}
-a system is told and the \emph{architecture} it is given separately
-controllable. On the test set, with five models from a 2024 open 32B pair to
-Claude Opus~5.5 and GPT-5.6, the stated conventions are the information the
-task measures: frontier models verify 1.000 and 0.984 of claims end to end
-with them and 0.88 without. For open models the plan contract is what makes a
-verdict stand on the right evidence: a 2024 pair goes from 0.575 end to end to
-0.810, a 2026 31B model from 0.859 to 0.981 --- within 0.02 of the frontier at
-zero API cost --- and the share of right verdicts resting on the exact
-denominator rises from 40--86\% to 86--97\%. A published agentic baseline
-reaches 0.605 while deciding most of the claims the data cannot decide. The
-denominator is where systems fail, and the verdict hides it.
+Language-model systems increasingly claim to test hypotheses against data,
+but existing benchmarks score only the final answer and hand the system the
+relevant records already assembled. Over a corpus of annotated clinical
+timelines, a claim such as ``after the Pfizer vaccine, headache tends to
+precede fatigue'' first requires deciding \emph{which reports count}, what the
+null is and which exact test applies; each decision can be wrong while the
+verdict is right. Statistical-reasoning benchmarks and hypothesis-testing
+agents score none of these steps. We present \textsc{Strata}, a staged
+evaluation framework and benchmark for temporal--statistical claims. The
+benchmark releases, for every claim, the gold of every stage: the plan, the
+exact evidence sets and the exact $p$-values, with a three-decision verdict
+and sub-typed abstention; the corpus conventions are shipped as part of the
+task. The framework orchestrates verification as plan, retrieve, test, each
+stage with an output contract, a bounded verify-and-repair loop and a gold
+counterpart, so a system is scored on plan agreement, evidence-set agreement,
+faithfulness and abstention, not the verdict alone, and so stages can be
+filled with gold to measure each one's loss. On a 1{,}500-claim test set with
+five models from a 2024 open 32B pair to Claude Opus~5.5 and GPT-5.6, the
+stated conventions are what frontier models need (1.000 and 0.984 with them,
+0.88 without), while open models need the plan to be a contract between
+stages: a 31B model rises from 0.859 end to end to 0.981, within 0.02 of the
+frontier at zero API cost, with the share of right verdicts resting on the
+exact evidence rising from 86\% to 94\%. The denominator is where systems
+fail, and the verdict hides it.
 \end{abstract}
 
 \begin{CCSXML}
