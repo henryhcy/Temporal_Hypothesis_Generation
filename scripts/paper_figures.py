@@ -120,71 +120,97 @@ def fig_rounds():
     save(fig, "rounds")
 
 
-# ---- 2. heatmap: faithfulness by claim family -----------------------------------------------
-def _exact_flags(run: Path, gold: dict):
-    """Per cohort-tier record: (family, verdict right, denominator exact in every arm)."""
+# ---- 2. heatmaps: the four evidence metrics by claim family, as the contract's change over B ----
+def _records(run: Path, gold: dict):
+    """Per cohort-tier record: family code, gold verdict, predicted verdict, denominator F1 (mean over
+    arms), denominator exact (every arm)."""
     out = []
     for line in (run / "predictions.jsonl").open():
         x = json.loads(line)
         g = gold.get(x["hypothesis_id"])
         if not g or not g.get("retrieval", {}).get("arms"):
             continue
-        right = (x.get("prediction") or {}).get("verdict") == g["prediction"]["verdict"]
+        gv = g["prediction"]["verdict"]; pv = (x.get("prediction") or {}).get("verdict")
         rt = x.get("retrieval") or {}
         parms = rt.get("arms") or []
-        exact = bool(parms) and rt.get("ok") is not False and all(
-            set(pa.get("denominator_ids") or []) == set(ga["denominator_ids"])
-            for ga, pa in zip(g["retrieval"]["arms"], parms))
-        out.append((x["group_id"].split("-")[0], right, exact))
+        f1s, exact = [], bool(parms) and rt.get("ok") is not False
+        for ga, pa in zip(g["retrieval"]["arms"], parms):
+            G = set(ga["denominator_ids"]); P = set(pa.get("denominator_ids") or [])
+            tp = len(G & P); prec = tp / len(P) if P else 0.0; rec = tp / len(G) if G else 0.0
+            f1s.append(2 * prec * rec / (prec + rec) if prec + rec else 0.0)
+            exact = exact and (G == P)
+        if not parms or rt.get("ok") is False:
+            f1s, exact = [0.0], False
+        out.append((x["group_id"].split("-")[0], gv, pv, sum(f1s) / len(f1s), exact))
+    return out
+
+
+def _family_metrics(recs):
+    """{family: (den_f1, faithfulness, false_decisiveness, over_abstention)}"""
+    from collections import defaultdict
+    by = defaultdict(list)
+    for r in recs:
+        by[r[0]].append(r)
+    out = {}
+    for fam, rs in by.items():
+        den = sum(r[3] for r in rs) / len(rs)
+        right = [r for r in rs if r[1] == r[2]]
+        faith = (sum(1 for r in right if r[4]) / len(right)) if right else float("nan")
+        insuf = [r for r in rs if r[1] == "insufficient"]
+        fdec = (sum(1 for r in insuf if r[2] in ("supported", "refuted")) / len(insuf)) if insuf else float("nan")
+        dec = [r for r in rs if r[1] != "insufficient"]
+        oabs = (sum(1 for r in dec if r[2] == "insufficient") / len(dec)) if dec else float("nan")
+        out[fam] = (den, faith, fdec, oabs)
     return out
 
 
 def fig_families():
-    import sys
-    sys.path.insert(0, str(REPO / "scripts"))
-    from group_table import FAMILY  # noqa: E402
     gold = {json.loads(l)["hypothesis_id"]: json.loads(l) for l in (R / "test_gold_sets" / "predictions.jsonl").open()}
     fams = [("P", "precedes"), ("C", "co-occurs"), ("F", "first/last"), ("Y", "proximity"), ("H", "threshold"), ("T", "position")]
-    panels = [("ours: D$'$ + verifier", "dprime_verify2"), ("B: end-to-end + conventions", "cellB")]
-    mats = []
-    for _, suffix in panels:
-        M = np.full((len(fams), len(MODELS)), np.nan); N = np.zeros_like(M)
-        for j, (key, _, _) in enumerate(MODELS):
-            flags = _exact_flags(R / f"test_{key}_{suffix}", gold)
-            for i, (code, _) in enumerate(fams):
-                right = [e for c, r, e in flags if c == code and r]
-                if right:
-                    M[i, j] = sum(right) / len(right); N[i, j] = len(right)
-        mats.append((M, N))
-    cmap = LinearSegmentedColormap.from_list("avocado_seq", [A_BROWN, A_TAN, A_CREAM, A_LIME, A_AVO, A_OLIVE])
-    fig, axes = plt.subplots(1, 2, figsize=(7.6, 3.1), sharey=True)
+    metrics = [("denominator F1", 0, +1), ("faithfulness", 1, +1),
+               ("false-decisiveness (lower is better)", 2, -1), ("over-abstention (lower is better)", 3, -1)]
+    ours = {k: _family_metrics(_records(R / f"test_{k}_dprime_verify2", gold)) for k, _, _ in MODELS}
+    ctrl = {k: _family_metrics(_records(R / f"test_{k}_cellB", gold)) for k, _, _ in MODELS}
+    cmap = LinearSegmentedColormap.from_list("avocado", [A_BROWN, A_TAN, A_CREAM, A_LIME, A_AVO, A_OLIVE])
+    norm = TwoSlopeNorm(vmin=-0.25, vcenter=0.0, vmax=0.8)
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
-    for ax, (title, _), (M, N) in zip(axes, panels, mats):
+    fig, axes = plt.subplots(2, 2, figsize=(7.4, 5.8))
+    fig.subplots_adjust(hspace=0.32, wspace=0.28)
+    for ax, (title, idx, sign) in zip(axes.flat, metrics):
+        D = np.full((len(fams), len(MODELS)), np.nan); O = D.copy(); C = D.copy()
+        for j, (k, _, _) in enumerate(MODELS):
+            for i, (code, _) in enumerate(fams):
+                o = ours[k].get(code, (np.nan,) * 4)[idx]; c = ctrl[k].get(code, (np.nan,) * 4)[idx]
+                O[i, j], C[i, j] = o, c
+                D[i, j] = sign * (o - c)
         ax.grid(False)
-        im = ax.imshow(M, cmap=cmap, vmin=0.3, vmax=1.0, aspect="auto")
-        ax.set_xticks(range(len(MODELS))); ax.set_xticklabels([short[m[0]] for m in MODELS])
-        ax.set_yticks(range(len(fams))); ax.set_yticklabels([f[1] for f in fams])
-        boldify(ax, size=8.5)
+        im = ax.imshow(D, cmap=cmap, norm=norm, aspect="auto")
+        ax.set_xticks(range(len(MODELS)))
+        ax.set_xticklabels([short[m[0]] for m in MODELS] if ax in axes[1] else [""] * len(MODELS))
+        ax.set_yticks(range(len(fams))); ax.set_yticklabels([f[1] for f in fams] if ax in axes[:, 0] else [""] * len(fams))
+        boldify(ax, size=8)
         for lab in ax.get_xticklabels():
-            lab.set_fontsize(7.4)
+            lab.set_fontsize(7)
         for sp in ax.spines.values():
             sp.set_visible(False)
         ax.tick_params(length=0)
         for i in range(len(fams)):
             for j in range(len(MODELS)):
-                v = M[i, j]
-                if np.isnan(v):
+                d = D[i, j]
+                if np.isnan(d):
                     continue
-                dark = v > 0.85 or v < 0.45
-                ax.text(j, i - 0.12, f"{v:.3f}", ha="center", va="center", fontsize=8, fontweight="bold",
+                dark = d > 0.45 or d < -0.15
+                dtxt = f"{d:+.3f}" if abs(d) >= 0.0005 else "0.000"
+                ax.text(j, i - 0.14, dtxt, ha="center", va="center", fontsize=7.2, fontweight="bold",
                         color="white" if dark else CHARCOAL)
-                ax.text(j, i + 0.22, f"n = {int(N[i, j])}", ha="center", va="center", fontsize=6,
+                ax.text(j, i + 0.22, f"{O[i, j]:.2f} vs {C[i, j]:.2f}", ha="center", va="center", fontsize=5.6,
                         color="white" if dark else "#6B6F73")
-        ax.set_title(title, loc="left")
+        ax.set_title(title, loc="left", fontsize=9)
     cb = fig.colorbar(im, ax=axes, fraction=0.025, pad=0.02)
     cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=7)
-    cb.set_label("faithfulness: P(denominator exact | verdict right)", fontsize=7)
-    save(fig, "families")
+    cb.set_label("improvement of the contract over the end-to-end control\n(ours $-$ B; sign flipped for the two lower-is-better metrics)", fontsize=7)
+    fig.savefig(OUT / "families.pdf", bbox_inches="tight"); fig.savefig(OUT / "families.png", bbox_inches="tight", dpi=200)
+    plt.close(fig); print("wrote", OUT / "families.pdf")
 
 
 # ---- 3. modular analysis: grouped bars, ceilings as outlined bars ---------------------------------

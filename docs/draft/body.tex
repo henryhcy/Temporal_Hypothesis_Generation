@@ -677,19 +677,20 @@ cores each in the corpus) and appears in the report-tier case study only.}
 \label{tab:families}
 \end{table*}
 
-\begin{figure}[t]
+\begin{figure*}[t]
 \centering
-\includegraphics[width=\columnwidth]{Figures/families.pdf}
-\caption{Faithfulness by claim family on the test set: among the claims a
-system gets right, the share whose denominator is exactly the gold set, for
-our pipeline (left) and the end-to-end control (right), with the number of
-right verdicts in each cell. Table~\ref{tab:families} gives the verdict
-accuracies; this is what those verdicts stand on. The end-to-end control's
-right answers on position claims rest on the right evidence one time in five
-for the two Qwen models, and its first/last verdicts almost never do; under
-the contract the exception is gemma4's proximity claims.}
+\includegraphics[width=0.92\textwidth]{Figures/families.pdf}
+\caption{The evidence and abstention metrics of Table~\ref{tab:evidence} by
+claim family, as the contract's improvement over the end-to-end control on
+one scale (ours minus B; the sign is flipped for false-decisiveness and
+over-abstention so that green is better everywhere), with the two values
+beneath each cell. The contract's largest gains are in faithfulness and
+false-decisiveness on exactly the families whose rule it states (position,
+threshold, first/last, co-occurs); the cells where it loses are the 2024 pair's
+over-abstention on first/last, where it abstains rather than decide, and
+gemma4's faithfulness on proximity.}
 \label{fig:families}
-\end{figure}
+\end{figure*}
 
 The families do not fail together (Table~\ref{tab:families}; Figure~\ref{fig:families} gives the faithfulness behind these verdicts). For the 2024
 pair the contract lifts \emph{precedes} and \emph{co-occurs} by 0.23 and 0.40,
