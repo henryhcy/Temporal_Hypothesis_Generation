@@ -714,7 +714,7 @@ denominator and the contract then faithfully retrieves the wrong set.
 \toprule
 stages filled by the model (the others at gold) & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
-S1: plan & 0.953 & 0.917 & 0.995 & 0.993 & 0.993 \\
+S1: plan, with the verifier (2 repair rounds) & 0.953 & 0.917 & 0.992 & 0.993 & 0.993 \\
 S2: retrieval, with the verifier (2 repair rounds) & 0.836 & 0.944 & 0.989 & $\geq$0.999 & $\geq$0.999 \\
 LLM verdict from the gold counts (S1, S2 at gold; replaces S3) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
 S1 + S2 with the verifier + LLM verdict from the model's own counts & \pend{queued} & \pend{queued} & \pend{queued} & --- & --- \\
@@ -739,15 +739,17 @@ below.}
 
 Table~\ref{tab:modular} fills one stage at a time with the model and leaves
 the others at gold, so each row is the loss attributable to that stage
-alone; the lower rows then compose the stages as the pipeline does. Planning is nearly solved by every model (0.92--0.995): with the
-mapping withheld and the conventions stated, the plan is composed right on at
-least nine claims in ten, and the gemma4 planner matches the frontier.
+alone; the lower rows then compose the stages as the pipeline does, and every
+row that has a verifier uses the pipeline's budget, two repair rounds at each
+stage it fills. Planning is nearly solved by every model (0.917--0.993): with
+the mapping withheld and the conventions stated, the plan is composed right on
+at least nine claims in ten, and the gemma4 planner matches the frontier.
 Retrieval is the 2024 pair's loss: its Coder with the gold plan scores
 0.836, so the full pipeline's 0.761 is the planner's errors compounded on a
 retrieval stage that was already losing a sixth of the claims. The 2026
 models retrieve well with the gold plan (0.944 and 0.989), so for them the
 remaining loss is the plan: gemma4 with the verifier (0.981) is within 0.01 of
-its own retrieval ceiling, and qwen3.8 (0.872) sits 0.07 below its retrieval
+both its ceilings, and qwen3.8 (0.872) sits 0.07 below its retrieval
 ceiling and 0.05 below its planner ceiling. The test stage is a function and
 the open models cannot compute it (0.61--0.78 when asked to judge from the
 exact counts); the pipeline does not ask them to, and the row that replaces
