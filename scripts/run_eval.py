@@ -244,7 +244,9 @@ def build_pipeline(args, release, subset_ids, executor, vocabulary) -> Pipeline:
                                     verify_rounds=(args.verify_rounds or None), ddl=prompt_ddl)
 
     tester = None
-    if args.pipeline == "counts-llm":
+    if args.pipeline == "counts-llm" or args.s3_llm:
+        # --s3-llm (2026-10-20, modular analysis): the model also fills the TEST stage on top of its own
+        # plan and retrieval (S1+S2+S3 all model), instead of the deterministic exact test.
         from temporal_hypo.framework.counts_llm import CountsVerdictTester
 
         tester = CountsVerdictTester(sql_client or llm_client, args.sql_model or args.model)
@@ -288,6 +290,8 @@ def main() -> None:
                    help="read the API key from this env var instead of "
                         "ANTHROPIC_API_KEY/OPENAI_API_KEY")
     p.add_argument("--num-ctx", type=int, default=8192)
+    p.add_argument("--s3-llm", action="store_true",
+                   help="model fills the test stage too (counts -> model verdict) on top of its own plan and SQL")
     p.add_argument("--think", choices=("off", "low", "medium", "high"), default=None,
                    help="Ollama thinking switch for models that think by default (qwen3.x, gpt-oss); "
                         "'off' for parity with the no-thinking rows; unset = model default")
@@ -395,7 +399,7 @@ def main() -> None:
         "e2e_conventions": args.e2e_conventions, "s2_frame": args.s2_frame, "s2_replan": args.s2_replan,
         "verify_rounds": args.verify_rounds,
         "ddl_style": args.ddl_style,
-        "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx, "think": args.think,
+        "k_shot_exclude_groups": args.k_shot_exclude_groups, "k_shot_registers": args.k_shot_registers, "seed": args.seed, "num_ctx": args.num_ctx, "think": args.think, "s3_llm": args.s3_llm,
         "n_records": len(records),
         **(_model_provenance(args) if "llm" in args.pipeline else {}),
         "release": str(args.release),
