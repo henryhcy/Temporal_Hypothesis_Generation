@@ -2085,3 +2085,12 @@ D'+2 0.887 (0.872); gemma4 D'+2 0.980 (0.981); Opus D' 1.000 (0.999). Every
 full-set number lies inside its own 204 interval. In the paper: main table
 keeps VERITAS with a dagger; a main-results paragraph explains the subsample;
 Appendix "The agentic subsample" carries the paired table (user, 2026-10-20).
+
+**2026-10-20 18:30 -- verifier budget made uniform in the modular table.** `--verify-rounds N`
+gives BOTH stages up to N rounds (S1: conventions-consistency re-ask; S2: executor /
+n=k / plan-primitive checks). In D'+2 the S1 check fired on 960 of 1,500 records
+(gemma4) and S2 on 382. Planner-alone rows re-scored at 2 rounds (all S1 calls were
+disk-cache hits from D'+2; zero API cost): pair 0.953, qwen3.8 0.917, gemma4 0.992
+(0.995 at 1 round), Opus 0.993, GPT 0.993. The modular table now states the budget on
+every verified row. The model-judged verdict from counts is named as an ablation that
+REPLACES S3 (user): S3 is the pipeline's exact-test stage.
