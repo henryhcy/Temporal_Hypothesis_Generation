@@ -26,7 +26,7 @@ metrics beneath (plan EM; denominator F1, co-exist leak; $p$-agreement,
 faithfulness, abstention) are measured in addition to the verdict. Baseline
 families (bottom) are placed on the stages they replace: end-to-end
 sentence-to-SQL with and without the conventions and with plan-free repair,
-agentic systems, and counts-given judgment.}
+agentic systems, and an LLM verdict from the gold counts.}
 \label{fig:overview}
 \end{figure*}
 
@@ -550,7 +550,7 @@ rows are not resolved.
 \toprule
 system (test set, 1{,}500 cohort claims) & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
-counts-given judgment (gold $n,k$; S3 alone) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
+LLM verdict from the gold counts (replaces S3) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
 A: sentence $\rightarrow$ SQL, schema only & 0.529 & \pend{running} & \pend{running} & 0.878 & 0.876 \\
 B: \quad + conventions stated & 0.575 & 0.748 & 0.859 & 1.000 & 0.984 \\
 EHRAgent, runs its own test & 0.605 & \pend{running} & --- & --- & --- \\
@@ -716,22 +716,24 @@ stages filled by the model (the others at gold) & Qwen2.5-32B pair & qwen3.8-27B
 \midrule
 S1: plan & 0.953 & 0.917 & 0.995 & 0.993 & 0.993 \\
 S2: retrieval, 2 rounds & 0.836 & 0.944 & 0.989 & $\geq$0.999 & $\geq$0.999 \\
-S3: test and verdict from the gold counts & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
-S1 + S2 + S3: all three by the model, 2 rounds & \pend{queued} & \pend{queued} & \pend{queued} & \pend{---} & \pend{---} \\
+LLM verdict from the gold counts (S1, S2 at gold; replaces S3) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
+S1 + S2 + LLM verdict from the model's own counts, 2 rounds & \pend{queued} & \pend{queued} & \pend{queued} & --- & --- \\
 \midrule
-S1 + S2, exact test (ours, no verifier) & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
-\textbf{S1 + S2, exact test + verifier (ours)} & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & 0.993 & 0.983 \\
+S1 + S2 + S3 (ours, no verifier) & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
+\textbf{S1 + S2 + S3 + verifier (ours)} & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & 0.993 & 0.983 \\
 \bottomrule
 \end{tabular}
-\caption{Modular analysis on the test set: each row names the stages the
-model fills, with every other stage at gold; with all three stages at gold
-the harness reproduces the labels exactly (1.000). S2 is run under the same
-resolved contract the full pipeline uses, so the difference between the S2 row
-and the S1$+$S2 rows is the cost of the model's own plan. The frontier S2
-cells are not run separately: with their own plans both models retrieved every
-denominator exactly (Table~\ref{tab:evidence}), which bounds the gold-plan row
-from below. The S1$+$S2$+$S3 row is the pipeline with the model, rather than
-the exact test, deciding the verdict from its own counts.}
+\caption{Modular analysis on the test set. S1, S2 and S3 are the pipeline's
+plan, retrieval and exact-test stages; S3 is deterministic, so the rows
+that replace it with an LLM verdict from the counts are ablations of the
+design, not stages of it. Each row names what the model fills, with every
+other stage at gold; with all stages at gold the harness reproduces the
+labels exactly (1.000). S2 is run under the same resolved contract the full
+pipeline uses, so the difference between the S2 row and the S1$+$S2$+$S3 rows
+is the cost of the model's own plan. The frontier S2 cells are not run
+separately: with their own plans both models retrieved every denominator
+exactly (Table~\ref{tab:evidence}), which bounds the gold-plan row from
+below.}
 \label{tab:modular}
 \end{table*}
 
@@ -747,9 +749,10 @@ models retrieve well with the gold plan (0.944 and 0.989), so for them the
 remaining loss is the plan: gemma4 with the verifier (0.981) is within 0.01 of
 its own retrieval ceiling, and qwen3.8 (0.872) sits 0.07 below its retrieval
 ceiling and 0.05 below its planner ceiling. The test stage is a function and
-the open models cannot compute it (0.61--0.78 given the exact counts); the
-pipeline does not ask them to, and the S1$+$S2$+$S3 row shows what the same
-pipeline loses when it does.
+the open models cannot compute it (0.61--0.78 when asked to judge from the
+exact counts); the pipeline does not ask them to, and the row that replaces
+S3 with an LLM verdict on the model's own counts shows what the same pipeline
+loses when it does.
 
 \paragraph{Prose versus contract.} The hand-off between S1 and S2 is the
 decision the modular rows cannot see, because S2 alone is given the gold plan
