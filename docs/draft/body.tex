@@ -550,7 +550,6 @@ rows are not resolved.
 \toprule
 system (test set, 1{,}500 cohort claims) & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
-LLM verdict from the gold counts (replaces S3) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
 A: sentence $\rightarrow$ SQL, schema only & 0.529 & \pend{running} & \pend{running} & 0.878 & 0.876 \\
 B: \quad + conventions stated & 0.575 & 0.748 & 0.859 & 1.000 & 0.984 \\
 EHRAgent, runs its own test & 0.605 & \pend{running} & --- & --- & --- \\
@@ -641,10 +640,10 @@ failure. The end-to-end control with the 2024 Coder is right on 57\% of claims
 and right for the right reason on 40\% of those: it admits same-stage reports
 into order denominators, defines the eligible set as the supporting set, and
 narrows presence splits to co-occurrence (Table~\ref{tab:attribution}). The
-LLM-verdict row shows the same thing from the other side: handed the exact
-counts, the open models still pick the wrong test or read it wrong on a
-quarter to a third of claims (0.611--0.777), so a correct verdict from them is
-not evidence of a correct computation.
+modular analysis (\S\ref{sec:modular}) shows the same thing from the other
+side: handed the exact counts and asked only for the verdict, the open models
+still pick the wrong test or read it wrong on a quarter to a third of claims,
+so a correct verdict from them is not evidence of a correct computation.
 
 \paragraph{On the VERITAS subsample.} VERITAS is the one system that could
 not be run on the full test set: its three agent phases take nine minutes per
