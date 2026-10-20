@@ -2057,3 +2057,31 @@ multi 0.94; 65 of 1,500 (4.3%) unparseable. On dev the two variants agreed
 exact test and the stipulations buys it four points, still 0.16 below the 2024
 pair under the contract (0.810) and 0.07 above the end-to-end control with
 the same Coder (0.575). Both GPUs idle from 12:34; every planned run is done.
+
+### 10.3r Agentic baselines with the open models; the 204-claim subsample (2026-10-20)
+
+**EHRAgent's paper (EMNLP 2024) used only GPT-4 (gpt-4-0613) and
+GPT-3.5-turbo (0613); open models were a stated future direction.** So the
+Coder-32B is our adaptation, and a reviewer can ask for the best open model
+inside the agent. EHRAgent with gemma4-31B (thinking off via
+`reasoning_effort=none` on the OpenAI-compatible endpoint; 8k tag) ran at
+~5 min per claim (3 of 5 first outputs unparseable; the agent's twelve-round
+repair loop absorbs the time) -- 5 days for 1,500 -- and was STOPPED at 5/1,500
+(user, 17:00). EHRAgent with qwen3.8-27B started on the full set at 17:04 on
+GPU0; the pace decides full set vs the 204-claim subsample.
+
+**Why 204.** VERITAS: 12 per cohort group x 17 groups, verdict-balanced
+round-robin (4/4/4) -- the smallest balanced per-group count that sums to
+about 200, the budget VERITAS can cover in ~30 h at its measured 9 min per
+claim (mean 534 s, median 560 s on the 204; many runs hit the 10-min phase
+cap). A full 1,500 would need 192 GPU-h (the remaining 1,296 claims) -- not
+feasible before the 25th. The queued VERITAS runs with gemma4 / qwen3.8
+(~30 h each) are CANCELLED (canceller armed on the GPU1 chain).
+
+**Paired check on the identical 204 claims** (bootstrap over claims, 2,000):
+VERITAS 0.402 [0.33, 0.47]; EHRAgent A 0.559 [0.49, 0.62] (full 0.605);
+B 0.593 [0.53, 0.66] (0.575); pair D'+2 0.804 [0.75, 0.86] (0.810); qwen3.8
+D'+2 0.887 (0.872); gemma4 D'+2 0.980 (0.981); Opus D' 1.000 (0.999). Every
+full-set number lies inside its own 204 interval. In the paper: main table
+keeps VERITAS with a dagger; a main-results paragraph explains the subsample;
+Appendix "The agentic subsample" carries the paired table (user, 2026-10-20).
