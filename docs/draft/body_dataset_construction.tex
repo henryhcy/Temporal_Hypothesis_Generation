@@ -230,35 +230,20 @@ abstention measures: false-decisiveness (a decisive verdict on a gold
 \subsection{Source corpus}
 \label{sec:corpus}
 
-MedTempo is a corpus of 3{,}166 VAERS adverse-event reports for three COVID-19
-vaccines, annotated with a \emph{leveled order}: a single totally ordered chain
-of stages in which each stage holds the MedDRA-coded events reported at that
-point of the clinical course (Table~\ref{tab:corpus}). Two annotation
+MedTempo~\cite{medtempo2026} is a corpus of 3{,}166 VAERS adverse-event
+reports for three COVID-19 vaccines, annotated with a \emph{leveled order}: a
+single totally ordered chain of stages in which each stage holds the
+MedDRA-coded events reported at that point of the clinical course
+(Table~\ref{tab:corpus} in the appendix summarises the corpus). Two annotation
 conventions are load-bearing: when a term recurs, its \emph{first} mention
 fixes its stage; events at one stage are temporally indistinguishable
 (\emph{co-exist}). The annotation, not the narrative, is both the benchmark's
 ground truth and the systems' input.
 
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lr}
-\toprule
-Reports & 3{,}166 \\
-\quad Janssen / Pfizer / Moderna & 1{,}164 / 1{,}019 / 983 \\
-Distinct event terms (vocabulary) & 1{,}660 \\
-Events per report (mean / median / max) & 7.2 / 6 / 43 \\
-Stages per report (mean / median / max) & 3.4 / 3 / 14 \\
-\bottomrule
-\end{tabular}
-\caption{Source corpus. Stages are the levels of the annotated leveled order.}
-\label{tab:corpus}
-\end{table}
-
 \subsection{Hypothesis space}
 \label{sec:space}
 
-Twenty-nine template groups span seven claim families at three scopes
+Twenty-six template groups span seven claim families at three scopes
 (Table~\ref{tab:roster}). Four families concern order and co-occurrence ---
 \emph{precedes}, \emph{co-occurs}, strict \emph{sequence} of three events,
 \emph{first/last} among candidates --- and three, added to diversify the null,
@@ -273,26 +258,6 @@ group is realised in four registers (a canonical \textsc{Original} plus
 \textsc{Research}, \textsc{Media} and \textsc{Clinical}) and two formats
 (question and claim) by mechanical slot-filling with no model-generated
 rewriting; answers are \textsc{Bool} or \textsc{Choice}.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{llll}
-\toprule
-Family & Report & One cohort & Two cohorts \\
-\midrule
-precedes & P-R1, P-R2 & P-V1--P-V4 & P-M2 \\
-co-occurs & C-R1 & C-V1--C-V3 & --- \\
-sequence & S-R1 & --- & --- \\
-first/last & F-R1--F-R3 & F-V1--F-V3 & --- \\
-position & T-R1 & T-V1 & --- \\
-proximity & Y-R1 & Y-V1--Y-V3 & --- \\
-threshold & --- & H-V1, H-V5 & --- \\
-\bottomrule
-\end{tabular}
-\caption{The 26-group roster: 9 report-level, 16 single-cohort, 1 two-cohort.}
-\label{tab:roster}
-\end{table}
 
 \paragraph{Five kinds of null.} Order claims test a proportion against the
 symmetry value $0.5$; argmax claims (``most common first'', ``most common
@@ -370,33 +335,6 @@ track was retired when the Mann--Whitney approximation proved anti-conservative
 on tie-heavy ordinal data (${\sim}11\%$ of cores decisive under shuffled labels
 at a nominal 5\%).
 
-\begin{table}[t]
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrr}
-\toprule
-Group & Null & Decisive & Null mean $\pm$ sd & $p_{\textrm{perm}}$ \\
-\midrule
-P-V4 & level shuffle & 16{,}884 & 1{,}848.9 & $<$0.0005 \\
-P-V2 & level shuffle & 2{,}302 & 341.3 & $<$0.0005 \\
-C-V3 & level shuffle & 258 & 62.6 & $<$0.0005 \\
-C-V2 & edge swap & 2{,}098 & 924.4 & $<$0.0005 \\
-P-M2 & label shuffle & 30 & 18.3 & 0.025 \\
-Y-V1/Y-V2 & level shuffle & 68 & 14.9 $\pm$ 3.8 & $<$0.0005 \\
-Y-V3 & level shuffle & 35 & 15.5 $\pm$ 3.8 & $<$0.0005 \\
-T-V1 & level shuffle & 34 & 4.4 $\pm$ 2.0 & $<$0.0005 \\
-H-V1 & level shuffle & 402 & 351.3 $\pm$ 9.4 & $<$0.0005 \\
-H-V5 & level shuffle & 228 & 196.9 $\pm$ 10.3 & 0.002 \\
-\bottomrule
-\end{tabular}
-\caption{Permutation screens at 2{,}000 rounds (0.0005 is the resolution
-floor). ``Decisive'' is the group's decisive-core supply at its shipping
-universe; for the threshold groups the supported count is the screened
-statistic, since a bar claim can be refuted by chance in either direction.}
-\label{tab:screens}
-\end{table}
-
 \subsection{Release, splits and leakage}
 \label{sec:release}
 
@@ -441,7 +379,7 @@ the release: the harness is correct, whatever the text entails.
 \subsection{Statistics}
 \label{sec:stats}
 
-Tables~\ref{tab:totals} and~\ref{tab:pergroup} summarise the release. The
+Table~\ref{tab:totals} summarises the release; the corpus, the group roster, the validity screens and the per-group statistics are tabulated in Appendix~\ref{app:stats}. The
 earlier, uncapped version of the benchmark let one group contribute 46\% of all
 instances; the cap makes the eleven largest groups equal in size, and
 class balance is exact within every cohort group by construction.
@@ -476,53 +414,6 @@ $p$ on supported claims, median & 0.008 \\
 \caption{Aggregate statistics of the release.}
 \label{tab:totals}
 \end{table}
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3.5pt}
-\begin{tabular}{llllrrrrrlrr}
-\toprule
-Group & Sc. & Claim & Ans. & Null & Inst. & Sup. & Ref. & Insuf. & u/s/n & Facts & Med.\ $n$ \\
-\midrule
-P-R1 & R & precedes & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
-P-R2 & R & precedes & \textsc{Cho} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
-C-R1 & R & co-occur & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 400 & --- \\
-S-R1 & R & sequence & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
-F-R1 & R & first & \textsc{Cho} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
-F-R2 & R & last & \textsc{Cho} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
-F-R3 & R & first & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
-T-R1 & R & early half & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 400 & --- \\
-Y-R1 & R & immediately before & \textsc{Boo} & --- & 400 & 200 & 200 & 0 & --- & 200 & --- \\
-\midrule
-P-V1 & C & precedes & \textsc{Boo} & sym.\ 0.5 & 501 & 167 & 167 & 167 & 55/56/56 & 334 & 17 \\
-P-V3 & C & precedes & \textsc{Cho} & sym.\ 0.5 & 501 & 167 & 167 & 167 & 55/56/56 & 334 & 17 \\
-P-V2 & C & antecedent contrast & \textsc{Boo} & two-arm & 600 & 200 & 200 & 200 & 66/67/67 & 375 & 22 \\
-P-V4 & C & pair-vs-pair contrast & \textsc{Boo} & two-arm & 600 & 200 & 200 & 200 & 66/67/67 & 393 & 24 \\
-C-V1 & C & co-occur majority & \textsc{Boo} & sym.\ 0.5 & 600 & 200 & 200 & 200 & 66/67/67 & 400 & 19 \\
-C-V2 & C & association & \textsc{Boo} & two-arm & 600 & 200 & 200 & 200 & 100/0/100 & 400 & 229 \\
-C-V3 & C & co-occur argmax & \textsc{Boo} & runner-up & 522 & 174 & 174 & 174 & 58/58/58 & 348 & 23 \\
-F-V1 & C & first argmax & \textsc{Cho} & runner-up & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
-F-V2 & C & last argmax & \textsc{Cho} & runner-up & 138 & 46 & 46 & 46 & 15/15/16 & 92 & 14 \\
-F-V3 & C & first argmax & \textsc{Boo} & runner-up & 102 & 34 & 34 & 34 & 11/11/12 & 68 & 14 \\
-T-V1 & C & early half vs.\ structural rate & \textsc{Boo} & data-derived & 102 & 34 & 34 & 34 & 19/0/15 & 68 & 145 \\
-Y-V1 & C & immediate order & \textsc{Boo} & sym.\ 0.5 & 204 & 68 & 68 & 68 & 22/23/23 & 136 & 17 \\
-Y-V2 & C & immediate order & \textsc{Cho} & sym.\ 0.5 & 204 & 68 & 68 & 68 & 22/23/23 & 136 & 17 \\
-Y-V3 & C & adjacency vs.\ $2/L$ & \textsc{Boo} & data-derived & 105 & 35 & 35 & 35 & 11/12/12 & 70 & 26 \\
-H-V1 & C & precedes $\geq 2/3$ & \textsc{Boo} & text 0.667 & 105 & 35 & 35 & 35 & 11/12/12 & 101 & 16 \\
-H-V5 & C & first $\geq 1/2$ & \textsc{Boo} & text 0.5 & 66 & 22 & 22 & 22 & 7/7/8 & 61 & 13.5 \\
-\midrule
-P-M2 & M & precedes, 2 cohorts & \textsc{Boo} & two-arm & 87 & 29 & 29 & 29 & 9/10/10 & 58 & 21.5 \\
-\bottomrule
-\end{tabular}
-\caption{Per-group composition. Scope: R = report, C = one cohort, M = two
-cohorts. Null: sym.\ = symmetric $0.5$; runner-up = named cell vs.\ strongest
-competitor; two-arm = equality of two rates; text = bar read off the wording;
-data-derived = computed from the denominator reports. u/s/n gives the
-insufficient sub-types (underpowered / sparse / not-locatable); Facts counts
-distinct \texttt{fact\_id}; median $n$ is the conditioned denominator.}
-\label{tab:pergroup}
-\end{table*}
 
 \section{Evaluation Framework}
 \label{sec:framework}
