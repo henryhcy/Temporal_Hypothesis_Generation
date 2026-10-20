@@ -551,10 +551,10 @@ rows are not resolved.
 system (test set, 1{,}500 cohort claims) & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
 counts-given judgment (gold $n,k$; S3 alone) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
-A: sentence $\rightarrow$ SQL, schema only & 0.529 & --- & --- & 0.878 & 0.876 \\
+A: sentence $\rightarrow$ SQL, schema only & 0.529 & \pend{running} & \pend{running} & 0.878 & 0.876 \\
 B: \quad + conventions stated & 0.575 & 0.748 & 0.859 & 1.000 & 0.984 \\
-EHRAgent, runs its own test (Coder-32B) & 0.605 & --- & --- & --- & --- \\
-VERITAS + conventions, our tests (204-claim subsample) & 0.402 & --- & --- & --- & --- \\
+EHRAgent, runs its own test & 0.605 & \pend{running} & \pend{running} & --- & --- \\
+VERITAS + conventions, our tests (204-claim subsample) & 0.402 & \pend{queued} & \pend{queued} & --- & --- \\
 \midrule
 D$'$: plan as contract, no verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 \textbf{D$'$ + verifier} (2 rounds) & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & \textbf{0.993} & \textbf{0.983} \\
@@ -563,11 +563,13 @@ D$'$: plan as contract, no verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 \caption{Verdict accuracy on the test set. Every row uses the same prompts,
 conventions, schema presentation and exact-test stage; only the model changes
 across columns. Intervals are $\pm 0.02$ (0.6--0.9) and $\pm 0.01$ (above
-0.98). EHRAgent returns a verdict from its own code and is run as published;
-VERITAS, at about four minutes per claim through three agent phases, is run
-on a 204-claim subsample (12 per group); 95 of its 204 runs completed every
-phase within a 10-minute cap per phase, the rest are scored as misses, and it
-answers \emph{insufficient} on 166 of the 204.}
+0.98). EHRAgent returns a verdict from its own code and is run as published with
+each open model (thinking off); VERITAS, at about four minutes per claim
+through three agent phases, is run on a 204-claim subsample (12 per group);
+with Coder-32B, 95 of its 204 runs completed every phase within a 10-minute
+cap per phase, the rest are scored as misses, and it answers
+\emph{insufficient} on 166 of the 204. The agentic baselines are local-only
+by their design and are not run with the API models.}
 \label{tab:main}
 \end{table*}
 
@@ -792,9 +794,9 @@ read what the contract asks them to read from systems that do not.
 \toprule
 system (180 single-report claims) & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \midrule
-A: schema only & 0.433 & --- & --- & --- & --- \\
+A: schema only & 0.433 & \pend{running} & \pend{running} & --- & --- \\
 B: + conventions & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
-planner alone & 1.000 & --- & --- & --- & --- \\
+planner alone & 1.000 & \pend{running} & \pend{running} & --- & --- \\
 D$'$ + verifier & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
 \bottomrule
 \end{tabular}
@@ -804,169 +806,6 @@ at 0.96.}
 \label{tab:report}
 \end{table}
 
-\paragraph{Paraphrase.} The development set carries three paraphrase
-registers of every instance (research, media, clinical). For the 2024 pair
-the planner alone loses 0.02--0.12 across registers and the full pipeline the
-same (Table~\ref{tab:registers}): the cost of paraphrase is paid at planning
-and passes through the contract unchanged, and the end-to-end control loses
-the same 0.04--0.12 from a lower base. Paraphrase does not change the ranking
-of systems or the size of the contract's margin.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lrrrr}
-\toprule
-development set, 32B pair & Original & Research & Media & Clinical \\
-\midrule
-planner alone (S2, S3 at gold), 1 round & 0.955 & 0.838 & 0.877 & 0.935 \\
-D$'$ & 0.865 & 0.790 & 0.755 & 0.825 \\
-D$'$ + verifier & 0.870 & 0.815 & 0.770 & 0.840 \\
-B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
-\bottomrule
-\end{tabular}
-\caption{Verdict accuracy by register on the 200 development instances
-(claim form).}
-\label{tab:registers}
-\end{table}
-
-\subsection{Information versus architecture on the development set}
-\label{sec:grid}
-
-The test set fixes the prompt; the development set is where the prompt was
-varied one decision at a time. Table~\ref{tab:grid} separates what the prompt
-tells the 2024 pair from what the decomposition adds. Stating the conventions
-to the end-to-end model is worth $+0.09$ (A$\rightarrow$B); two plan-free
-repair rounds another $+0.07$; handing the composed plan to S2 as prose is
-\emph{below} the end-to-end control (0.573) and level with it after repair
-(0.645); resolving the plan into its rule gives 0.855 with nothing else
-changed. At 7B nothing moves the cohort tiers above 0.45, and the conventions
-cost the end-to-end 7B model accuracy (B $<$ A): a model that cannot compose
-the plan cannot use the stipulations either.
-
-\begin{table*}[t]
-\centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{llrrrrrrrr}
-\toprule
- & & \multicolumn{4}{c}{32B (Inst.\ for S1, Coder for SQL)} & \multicolumn{4}{c}{7B} \\
-cell & what the model is given / asked & all & cohort & den.\ F1 & faith. & all & cohort & den.\ F1 & faith. \\
-\midrule
-A & sentence $\rightarrow$ SQL, schema only & 0.502 & 0.562 & 0.441 & 0.21 & 0.440 & 0.275 & 0.101 & 0.23 \\
-B & \quad + conventions stated & 0.588 & 0.543 & 0.517 & 0.28 & 0.380 & 0.279 & 0.124 & 0.18 \\
-B$+$2 & \quad + two repair rounds, plan-free checks & 0.660 & 0.655 & 0.643 & 0.53 & --- & --- & --- & --- \\
-\midrule
-D & composed plan handed to S2 as prose $+$ conventions & 0.573 & 0.453 & 0.525 & 0.35 & 0.287 & 0.209 & 0.238 & 0.39 \\
-D$+$2 & \quad + two verify-and-repair rounds (plan checks) & 0.645 & 0.566 & 0.611 & 0.71 & 0.295 & 0.221 & 0.230 & 0.37 \\
-E & composed plan $+$ plan-consistency re-ask & 0.652 & 0.578 & 0.615 & 0.71 & 0.263 & 0.171 & 0.234 & 0.48 \\
-\midrule
-C & gold plan, same frame (SQL stage alone) & 0.900 & 0.845 & 0.767 & 0.73 & 0.570 & 0.349 & 0.196 & 0.29 \\
-C$+$2 & \quad + two verify-and-repair rounds & 0.905 & 0.853 & 0.803 & 0.79 & 0.620 & 0.426 & 0.359 & 0.55 \\
-S1 & composed plan, gold S2/S3 & 0.950 & 0.922 & --- & --- & 0.595 & 0.558 & --- & --- \\
-S1$+$1 & \quad + one verify-and-repair round & 0.955 & 0.930 & --- & --- & 0.657 & 0.655 & --- & --- \\
-counts & gold $n,k$ given; model picks test and verdict & 0.705 & 0.543 & (given) & --- & 0.650 & 0.457 & (given) & --- \\
-\midrule
-D$'$ & composed plan resolved to its primitive's rule (the contract) & 0.855 & 0.775 & 0.717 & 0.75 & 0.365 & 0.217 & 0.162 & 0.27 \\
-D$'$$+$2 & \quad + two verify-and-repair rounds & \textbf{0.865} & \textbf{0.791} & 0.763 & \textbf{0.78} & --- & --- & --- & --- \\
-\bottomrule
-\end{tabular}
-\caption{The information-versus-architecture grid on the development subset
-(200 instances, both forms, 400 records; cohort $=$ 258 cohort-tier records)
-under the frozen configuration. ``$+$2'' rows add two bounded repair rounds
-(for A/B with plan-free checks only; for D/D$'$/C with the plan's checks).
-D$'$ is D with the plan resolved by the harness for S2. B$+$2 is kept here as
-the control for the repair rounds; it is not a system in the main table.}
-\label{tab:grid}
-\end{table*}
-
-\paragraph{Planning without the mapping.} Table~\ref{tab:toolbox} compares the
-two S1 frames. With the catalogue, a 32B model scores 0.998: given the mapping,
-planning is lookup. With the mapping withheld the same model composes the plan
-at 0.950 zero-shot and 0.955 with one repair round; the 7B model falls to
-0.595, almost entirely whole-shape misreads, while the fields that do land are
-right.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lrrrr}
-\toprule
- & \multicolumn{2}{c}{\textbf{32B-Inst.}} & \multicolumn{2}{c}{7B-Inst.} \\
-S1 condition (S2, S3 at gold) & all & cohort & all & cohort \\
-\midrule
-Catalogue (answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
-\textbf{Toolbox, zero-shot} & 0.950 & 0.922 & 0.595 & 0.558 \\
-\quad + one verify-and-repair round & \textbf{0.955} & \textbf{0.930} & 0.657 & 0.655 \\
-\bottomrule
-\end{tabular}
-\caption{Planning with the claim-type mapping given (catalogue) and withheld
-(toolbox); development subset; report tier 1.000 at 32B.}
-\label{tab:toolbox}
-\end{table}
-
-\paragraph{Retrieval: attribution.} Every prediction records the report
-identifiers it placed in each arm, so every wrongly included or dropped report
-can be checked against the claim's rule in the database and named
-(Table~\ref{tab:attribution}). The largest single cause in the end-to-end rows
-had been invisible to every aggregate metric: the query defines the eligible
-set as the supporting set, so $n = k$ and the claim is supported for free (87
-of 258 records for B). Repair rounds remove failed statements and most $n = k$
-queries; what remains for the end-to-end model is semantic --- co-existing
-reports in order denominators, ties, presence splits narrowed to co-occurrence
---- and what remains for the contract pipeline is mostly its planner's errors.
-
-\begin{table*}[t]
-\centering
-\footnotesize
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrrrrrr}
-\toprule
- & \multicolumn{3}{c}{S1 at gold} & \multicolumn{3}{c}{end-to-end} & \multicolumn{2}{c}{ours (D$'$)} \\
-S2 failure cause (258 cohort records) & Coder-7B & Coder-32B & \quad+2 & A & B & B+2 & no verifier & +2 \\
-\midrule
-no plan from S1 (S2 not run) & 0 & 0 & 0 & 0 & 0 & 0 & 8 & 6 \\
-SQL failed to execute & 150 & 50 & 38 & 72 & 25 & 4 & 50 & 35 \\
-denominator $=$ numerator ($n=k$) & 4 & 8 & 4 & 11 & 87 & 25 & 12 & 9 \\
-event absent from report & 2 & 26 & 24 & 57 & 45 & 47 & 19 & 16 \\
-\emph{co-exist} leak into an order denominator & 0 & 4 & 2 & 40 & 23 & 33 & 4 & 2 \\
-non-consecutive pair in an \emph{immediate} denominator & 0 & 0 & 0 & 10 & 13 & 13 & 0 & 10 \\
-tie leak into a first/last denominator & 0 & 0 & 0 & 1 & 7 & 7 & 0 & 0 \\
-presence split narrowed to co-occurrence & 0 & 0 & 0 & 18 & 2 & 2 & 0 & 0 \\
-wrong cohort / other & 72 & 6 & 10 & 14 & 10 & 26 & 10 & 14 \\
-\midrule
-wrong or missing denominators & 228 & 94 & 78 & 223 & 212 & 157 & 103 & 92 \\
-\quad of which verdict still right & 16 & 40 & 36 & 89 & 96 & 80 & 32 & 37 \\
-\textbf{faithfulness} & 0.29 & 0.73 & 0.79 & 0.21 & 0.28 & 0.53 & 0.75 & 0.78 \\
-\bottomrule
-\end{tabular}
-\caption{Attribution of denominator failures to the rule violated, and the
-faithfulness score, on the development subset. A record takes its dominant
-cause; ``SQL failed'' counts records whose statement did not execute.}
-\label{tab:attribution}
-\end{table*}
-
-\paragraph{Conventions as information, one change at a time.} Three
-prompt-level decisions were each made as a single controlled change on the
-development subset, with everything else fixed. \emph{One missing
-stipulation:} under an earlier conventions text the 32B planner composed every
-association claim (C-V2) as one-arm co-occurrence --- 0 of 18 records ---
-although the ``compare the rate with and without $A$'' situation was stated;
-the three association wordings were never bridged to it, while ``occur
-together'' matched the co-occurrence stipulation. Adding that bridge moved the
-planner from 0.897 to 0.950, with 23 of 26 groups unchanged record for record
-(C-V2 0.00 $\rightarrow$ 0.67; a co-occurrence bar group 0.00 $\rightarrow$
-1.00). A model is not wrong about a situation it was never told exists.
-\emph{Schema presentation:} showing the SQL model the \texttt{CREATE VIEW}
-bodies of the helper views led it to copy the views' internal aliases into its
-own queries (117 rejected statements of 466 in cell A); listing the views as
-columns with their semantics in comments removed that error but left an
-ambiguous unqualified identifier in self-joins (157 rejected); one sentence in
-the row contract removed that too (34 rejected). Cell A went 0.297
-$\rightarrow$ 0.378 $\rightarrow$ 0.502 and the SQL stage with the gold plan
-0.810 $\rightarrow$ 0.830 $\rightarrow$ 0.900. None of these changed the data,
-the models or the method; they are the cost of a prompt artefact that would
-otherwise have read as a finding about the new claim families.
 
 \subsection{Cost and latency}
 \label{sec:cost}
@@ -992,7 +831,23 @@ system & model & s / record & tokens / record & USD / record \\
 D$'$ & Opus 5.5 & 6.0 & 8{,}900 & 0.014 \\
 D$'$ & GPT-5.6 & 5.1 & 5{,}500 & 0.011 \\
 D$'$ & Qwen2.5-32B pair & 12.3 & 5{,}000 & 0 \\
-D$'$ & qwen3.8-27B & 10.1 & 5{,}100 & 0 \\
+D$'$ & qwen3.8-27B & 10.1\subsection{Development-set analyses}
+\label{sec:devpointer}
+
+Every prompt decision was made on the 200-instance development set, one
+change at a time, and the analyses that justify the frozen configuration are
+reported there (Appendix~\ref{app:dev}): the information-versus-architecture
+grid that separates what the prompt tells the 2024 pair from what the
+decomposition adds (handing the composed plan to retrieval as prose scores
+below the end-to-end control; resolving it into its rule gives $+0.28$ with
+nothing else changed); planning with the claim-type mapping given versus
+withheld; the attribution of every denominator failure to the rule it
+violated; the effect of one missing stipulation in the conventions and of the
+schema presentation; and a paraphrase case study over three registers, in
+which the cost of paraphrase is paid at planning and passes through the
+contract unchanged.
+
+ & 5{,}100 & 0 \\
 D$'$ & gemma4-31B & 14.1 & 5{,}300 & 0 \\
 B & Opus 5.5 & 4.6 & 4{,}600 & 0.011 \\
 B & GPT-5.6 & 5.5 & 3{,}000 & 0.009 \\
