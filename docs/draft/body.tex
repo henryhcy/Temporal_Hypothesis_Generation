@@ -567,7 +567,7 @@ across columns. Intervals are $\pm 0.02$ (0.6--0.9) and $\pm 0.01$ (above
 (its paper used only GPT-4 and GPT-3.5; the open model is our adaptation).
 $^\dagger$VERITAS, at nine minutes per claim through three agent phases, is
 run on a stratified 204-claim subsample of the test set (12 per group,
-verdict-balanced; 95\% interval 0.33--0.47); every other row is on all
+verdict-balanced; 95\% interval 0.333--0.471); every other row is on all
 1{,}500. Appendix~\ref{app:subsample} scores the other systems on the
 identical 204 claims. With gemma4 inside EHRAgent the agent's twelve-round
 repair loop takes five minutes per claim and the run could not be completed;
@@ -586,8 +586,8 @@ metric & system & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5
 \midrule
 denominator F1 & B & 0.643 & 0.751 & 0.836 & 1.000 & 1.000 \\
  & D$'$ + verifier & 0.789 & 0.914 & 0.975 & 0.998 & 0.993 \\
-faithfulness & B & 0.40 & 0.69 & 0.86 & 1.00 & 1.00 \\
- & D$'$ + verifier & 0.86 & 0.97 & 0.94 & 1.00 & 1.00 \\
+faithfulness & B & 0.405 & 0.693 & 0.859 & 1.000 & 1.000 \\
+ & D$'$ + verifier & 0.859 & 0.972 & 0.945 & 0.998 & 0.999 \\
 false-decisiveness & B & 0.234 & 0.141 & 0.036 & 0.000 & 0.000 \\
  & D$'$ + verifier & 0.033 & 0.047 & 0.010 & 0.004 & 0.020 \\
 over-abstention & B & 0.388 & 0.224 & 0.182 & 0.000 & 0.001 \\
@@ -671,12 +671,12 @@ for every other system that does not change the ranking.
 \toprule
 family (D$'$ + verifier / B) & $n$ & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
-precedes (P-V1--P-V4, P-M2) & 455 & 0.80 / 0.57 & 0.81 / 0.74 & 1.00 / 0.93 & 1.00 / 1.00 & 0.99 / 1.00 \\
-co-occurs (C-V1--C-V3) & 270 & 0.97 / 0.57 & 0.96 / 0.88 & 1.00 / 0.93 & 1.00 / 1.00 & 1.00 / 0.91 \\
-first/last (F-V1--F-V3) & 262 & 0.44 / 0.33 & 0.80 / 0.58 & 0.95 / 0.56 & 1.00 / 1.00 & 0.97 / 1.00 \\
-proximity (Y-V1--Y-V3) & 271 & 0.99 / 0.75 & 1.00 / 0.80 & 0.97 / 0.96 & 1.00 / 1.00 & 1.00 / 1.00 \\
-threshold (H-V1, H-V5) & 152 & 0.76 / 0.61 & 0.90 / 0.74 & 0.96 / 0.75 & 0.94 / 1.00 & 0.91 / 1.00 \\
-position (T-V1) & 90 & 1.00 / 0.72 & 0.69 / 0.72 & 1.00 / 1.00 & 1.00 / 1.00 & 1.00 / 1.00 \\
+precedes (P-V1--P-V4, P-M2) & 455 & 0.802 / 0.571 & 0.811 / 0.741 & 0.998 / 0.932 & 0.996 / 1.000 & 0.989 / 1.000 \\
+co-occurs (C-V1--C-V3) & 270 & 0.974 / 0.570 & 0.963 / 0.878 & 1.000 / 0.930 & 1.000 / 1.000 & 1.000 / 0.915 \\
+first/last (F-V1--F-V3) & 262 & 0.435 / 0.332 & 0.798 / 0.584 & 0.950 / 0.565 & 1.000 / 1.000 & 0.973 / 0.996 \\
+proximity (Y-V1--Y-V3) & 271 & 0.985 / 0.753 & 1.000 / 0.801 & 0.970 / 0.963 & 1.000 / 1.000 & 0.996 / 1.000 \\
+threshold (H-V1, H-V5) & 152 & 0.763 / 0.605 & 0.901 / 0.743 & 0.961 / 0.750 & 0.941 / 1.000 & 0.914 / 1.000 \\
+position (T-V1) & 90 & 1.000 / 0.722 & 0.689 / 0.722 & 1.000 / 1.000 & 1.000 / 1.000 & 1.000 / 1.000 \\
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy by claim family on the test set, our pipeline with
@@ -715,9 +715,9 @@ denominator and the contract then faithfully retrieves the wrong set.
 stages filled by the model (the others at gold) & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
 S1: plan & 0.953 & 0.917 & 0.995 & 0.993 & 0.993 \\
-S2: retrieval, 2 rounds & 0.836 & 0.944 & 0.989 & $\geq$0.999 & $\geq$0.999 \\
+S2: retrieval, with the verifier (2 repair rounds) & 0.836 & 0.944 & 0.989 & $\geq$0.999 & $\geq$0.999 \\
 LLM verdict from the gold counts (S1, S2 at gold; replaces S3) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
-S1 + S2 + LLM verdict from the model's own counts, 2 rounds & \pend{queued} & \pend{queued} & \pend{queued} & --- & --- \\
+S1 + S2 with the verifier + LLM verdict from the model's own counts & \pend{queued} & \pend{queued} & \pend{queued} & --- & --- \\
 \midrule
 S1 + S2 + S3 (ours, no verifier) & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 \textbf{S1 + S2 + S3 + verifier (ours)} & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & 0.993 & 0.983 \\
@@ -788,10 +788,10 @@ model; a model that does not need the verifier is not helped by it.
 \toprule
 rounds & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \midrule
-0 & 0.761 / 0.73 & 0.735 / 0.80 & 0.844 / 0.89 & 0.999 / 1.00 & 0.999 / 1.00 \\
-1 & 0.775 / 0.77 & 0.869 / 0.91 & 0.971 / 0.95 & 0.993 / 1.00 & 0.991 / 1.00 \\
-2 & 0.810 / 0.79 & 0.872 / 0.91 & 0.981 / 0.97 & 0.993 / 1.00 & 0.983 / 0.99 \\
-3 & 0.814 / 0.79 & 0.875 / 0.92 & 0.985 / 0.98 & 0.992 / 1.00 & 0.983 / 1.00 \\
+0 & 0.761 / 0.726 & 0.735 / 0.797 & 0.844 / 0.894 & 0.999 / 1.000 & 0.999 / 1.000 \\
+1 & 0.775 / 0.775 & 0.869 / 0.911 & 0.971 / 0.955 & 0.993 / 0.998 & 0.991 / 0.997 \\
+2 & 0.810 / 0.789 & 0.872 / 0.914 & 0.981 / 0.975 & 0.993 / 0.998 & 0.983 / 0.993 \\
+3 & 0.814 / 0.795 & 0.875 / 0.918 & 0.985 / 0.976 & 0.992 / 0.998 & 0.983 / 0.995 \\
 \bottomrule
 \end{tabular}
 \caption{Our pipeline with 0--3 verify-and-repair rounds on the test set:
