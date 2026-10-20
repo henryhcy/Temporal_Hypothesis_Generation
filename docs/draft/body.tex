@@ -677,7 +677,19 @@ cores each in the corpus) and appears in the report-tier case study only.}
 \label{tab:families}
 \end{table*}
 
-The families do not fail together (Table~\ref{tab:families}). For the 2024
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/families.pdf}
+\caption{Table~\ref{tab:families} as a heatmap: each cell is the contract's
+gain over the end-to-end control (ours minus B) on the test set, with the two
+accuracies beneath. The contract lifts the 2024 pair most on the families whose
+rule it states (co-occurs, precedes, position); the first/last family is where
+the 2024 Coder cannot be helped and where gemma4 gains most; at the frontier
+the two systems coincide except on threshold claims, a planning loss.}
+\label{fig:families}
+\end{figure}
+
+The families do not fail together (Table~\ref{tab:families}, Figure~\ref{fig:families}). For the 2024
 pair the contract lifts \emph{precedes} and \emph{co-occurs} by 0.23 and 0.40,
 because the rule those families need --- exclude the same-stage reports, count
 the ordered ones --- is exactly what the resolved contract states; it lifts
@@ -728,7 +740,19 @@ below.}
 \label{tab:modular}
 \end{table*}
 
-Table~\ref{tab:modular} fills one stage at a time with the model and leaves
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/modular.pdf}
+\caption{Table~\ref{tab:modular} as stage ceilings. For each model: every
+stage at gold (1.000), the model filling only the plan (S1) or only the
+retrieval (S2), the full pipeline with the exact test (S1 + S2 + S3), and the
+same with the verifier. For the 2024 pair the drop is at retrieval; for the
+2026 open models retrieval is nearly solved and the remaining distance to the
+ceiling is the plan; the frontier models sit at the ceiling at every stage.}
+\label{fig:modular}
+\end{figure*}
+
+Table~\ref{tab:modular} and Figure~\ref{fig:modular} fill one stage at a time with the model and leave
 the others at gold, so each row is the loss attributable to that stage
 alone; the lower rows then compose the stages as the pipeline does, and every
 row that has a verifier uses the pipeline's budget, two repair rounds at each
@@ -759,7 +783,7 @@ model. The decomposition pays only when the plan is a contract.
 \subsection{Case studies}
 \label{sec:cases}
 
-\paragraph{How many repair rounds?} Table~\ref{tab:rounds} runs our pipeline
+\paragraph{How many repair rounds?} Table~\ref{tab:rounds} and Figure~\ref{fig:rounds} run our pipeline
 with zero to three verify-and-repair rounds on the test set. For the open
 models the first round does almost all of the work: $+0.13$ for qwen3.8 and
 gemma4, with denominator F1 rising by 0.06--0.11, and the second and third
@@ -791,6 +815,17 @@ rounds & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 verdict accuracy / denominator F1.}
 \label{tab:rounds}
 \end{table}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/rounds.pdf}
+\caption{Table~\ref{tab:rounds} as curves: verdict accuracy (left) and
+denominator F1 (right) of our pipeline with zero to three verify-and-repair
+rounds on the test set. For the open models the first round does almost all
+of the work; the frontier lines are flat or fall slightly, as correct
+statements get flagged into abstention.}
+\label{fig:rounds}
+\end{figure*}
 
 \paragraph{Single reports.} The report tier asks whether a system can locate
 one report by its pseudonymous identifier and read an ordering from its
