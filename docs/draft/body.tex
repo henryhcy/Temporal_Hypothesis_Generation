@@ -807,6 +807,22 @@ at 0.96.}
 \end{table}
 
 
+\subsection{Development-set analyses}
+\label{sec:devpointer}
+
+Every prompt decision was made on the 200-instance development set, one
+change at a time, and the analyses that justify the frozen configuration are
+reported there (Appendix~\ref{app:dev}): the information-versus-architecture
+grid that separates what the prompt tells the 2024 pair from what the
+decomposition adds (handing the composed plan to retrieval as prose scores
+below the end-to-end control; resolving it into its rule gives $+0.28$ with
+nothing else changed); planning with the claim-type mapping given versus
+withheld; the attribution of every denominator failure to the rule it
+violated; the effect of one missing stipulation in the conventions and of the
+schema presentation; and a paraphrase case study over three registers, in
+which the cost of paraphrase is paid at planning and passes through the
+contract unchanged.
+
 \subsection{Cost and latency}
 \label{sec:cost}
 
@@ -831,23 +847,7 @@ system & model & s / record & tokens / record & USD / record \\
 D$'$ & Opus 5.5 & 6.0 & 8{,}900 & 0.014 \\
 D$'$ & GPT-5.6 & 5.1 & 5{,}500 & 0.011 \\
 D$'$ & Qwen2.5-32B pair & 12.3 & 5{,}000 & 0 \\
-D$'$ & qwen3.8-27B & 10.1\subsection{Development-set analyses}
-\label{sec:devpointer}
-
-Every prompt decision was made on the 200-instance development set, one
-change at a time, and the analyses that justify the frozen configuration are
-reported there (Appendix~\ref{app:dev}): the information-versus-architecture
-grid that separates what the prompt tells the 2024 pair from what the
-decomposition adds (handing the composed plan to retrieval as prose scores
-below the end-to-end control; resolving it into its rule gives $+0.28$ with
-nothing else changed); planning with the claim-type mapping given versus
-withheld; the attribution of every denominator failure to the rule it
-violated; the effect of one missing stipulation in the conventions and of the
-schema presentation; and a paraphrase case study over three registers, in
-which the cost of paraphrase is paid at planning and passes through the
-contract unchanged.
-
- & 5{,}100 & 0 \\
+D$'$ & qwen3.8-27B & 10.1 & 5{,}100 & 0 \\
 D$'$ & gemma4-31B & 14.1 & 5{,}300 & 0 \\
 B & Opus 5.5 & 4.6 & 4{,}600 & 0.011 \\
 B & GPT-5.6 & 5.5 & 3{,}000 & 0.009 \\
