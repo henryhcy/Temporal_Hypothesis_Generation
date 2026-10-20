@@ -291,3 +291,39 @@ B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 (claim form).}
 \label{tab:registers}
 \end{table}
+
+
+\section{The agentic subsample: every system on the identical 204 claims}
+\label{app:subsample}
+
+VERITAS was run on 204 claims of the test set (12 per cohort group, four per
+verdict, the same stratification as the test set; selected before any run and
+disjoint from the development set) because its three agent phases take nine
+minutes per claim. Table~\ref{tab:subsample} scores the other systems on the
+identical 204 claims next to their full-set numbers, with 95\% bootstrap
+intervals over claims (2{,}000 resamples). Every full-set number lies inside
+its own subsample interval, so the subsample estimates the same population
+with less precision, and the comparison with VERITAS is paired on the same
+claims.
+
+\begin{table}[h]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{lrr}
+\toprule
+system & full test set (1{,}500) & same 204 claims \\
+\midrule
+VERITAS + conventions, our tests (Coder-32B) & --- & 0.402 [0.33, 0.47] \\
+EHRAgent, own test (Coder-32B) & 0.605 [0.58, 0.63] & 0.559 [0.49, 0.62] \\
+B: end-to-end + conventions (Coder-32B) & 0.575 [0.55, 0.60] & 0.593 [0.53, 0.66] \\
+D$'$ + verifier (Qwen2.5-32B pair) & 0.810 [0.79, 0.83] & 0.804 [0.75, 0.86] \\
+D$'$ + verifier (qwen3.8-27B) & 0.872 [0.86, 0.89] & 0.887 [0.84, 0.93] \\
+D$'$ + verifier (gemma4-31B) & 0.981 [0.97, 0.99] & 0.980 [0.96, 1.00] \\
+D$'$ (Opus 5.5) & 0.999 [1.00, 1.00] & 1.000 [1.00, 1.00] \\
+\bottomrule
+\end{tabular}
+\caption{Verdict accuracy on the 204-claim agentic subsample against the full
+test set, same systems, same claims.}
+\label{tab:subsample}
+\end{table}

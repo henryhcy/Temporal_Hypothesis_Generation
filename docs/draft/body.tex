@@ -553,8 +553,8 @@ system (test set, 1{,}500 cohort claims) & Qwen2.5-32B pair & qwen3.8-27B & gemm
 counts-given judgment (gold $n,k$; S3 alone) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
 A: sentence $\rightarrow$ SQL, schema only & 0.529 & \pend{running} & \pend{running} & 0.878 & 0.876 \\
 B: \quad + conventions stated & 0.575 & 0.748 & 0.859 & 1.000 & 0.984 \\
-EHRAgent, runs its own test & 0.605 & \pend{running} & \pend{running} & --- & --- \\
-VERITAS + conventions, our tests (204-claim subsample) & 0.402 & \pend{queued} & \pend{queued} & --- & --- \\
+EHRAgent, runs its own test & 0.605 & \pend{running} & --- & --- & --- \\
+VERITAS + conventions, our tests$^\dagger$ & 0.402 & --- & --- & --- & --- \\
 \midrule
 D$'$: plan as contract, no verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 \textbf{D$'$ + verifier} (2 rounds) & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & \textbf{0.993} & \textbf{0.983} \\
@@ -563,13 +563,16 @@ D$'$: plan as contract, no verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 \caption{Verdict accuracy on the test set. Every row uses the same prompts,
 conventions, schema presentation and exact-test stage; only the model changes
 across columns. Intervals are $\pm 0.02$ (0.6--0.9) and $\pm 0.01$ (above
-0.98). EHRAgent returns a verdict from its own code and is run as published with
-each open model (thinking off); VERITAS, at about four minutes per claim
-through three agent phases, is run on a 204-claim subsample (12 per group);
-with Coder-32B, 95 of its 204 runs completed every phase within a 10-minute
-cap per phase, the rest are scored as misses, and it answers
-\emph{insufficient} on 166 of the 204. The agentic baselines are local-only
-by their design and are not run with the API models.}
+0.98). EHRAgent returns a verdict from its own code and is run as published
+(its paper used only GPT-4 and GPT-3.5; the open model is our adaptation).
+$^\dagger$VERITAS, at nine minutes per claim through three agent phases, is
+run on a stratified 204-claim subsample of the test set (12 per group,
+verdict-balanced; 95\% interval 0.33--0.47); every other row is on all
+1{,}500. Appendix~\ref{app:subsample} scores the other systems on the
+identical 204 claims. With gemma4 inside EHRAgent the agent's twelve-round
+repair loop takes five minutes per claim and the run could not be completed;
+the agentic baselines are local-only by design and are not run with the API
+models.}
 \label{tab:main}
 \end{table*}
 
@@ -642,6 +645,20 @@ counts-given row shows the same thing from the other side: handed the exact
 counts, the open models still pick the wrong test or read it wrong on a
 quarter to a third of claims (0.611--0.777), so a correct verdict from them is
 not evidence of a correct computation.
+
+\paragraph{On the VERITAS subsample.} VERITAS is the one system that could
+not be run on the full test set: its three agent phases take nine minutes per
+claim under a ten-minute cap per phase, so the 1{,}500 claims would need
+eight GPU-days. It was run instead on 204 claims drawn from the test set with
+the same stratification as the test set itself (12 per cohort group, four
+per verdict), and the number is reported with its interval. To check that
+the subsample estimates what the full set estimates, Appendix~\ref{app:subsample}
+scores every other system on the identical 204 claims: each lands inside
+its own 204-claim interval and within 0.05 of its full-set number (our
+pipeline 0.804 against 0.810, the end-to-end control 0.593 against 0.575,
+EHRAgent 0.559 against 0.605). The subsample comparison is therefore paired
+and unbiased; what it lacks is precision, and at 0.40 against 0.57 or more
+for every other system that does not change the ranking.
 
 \subsection{Results by temporal family}
 \label{sec:families}
