@@ -743,12 +743,14 @@ below.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/modular.pdf}
-\caption{Table~\ref{tab:modular} as stage ceilings. For each model: every
-stage at gold (1.000), the model filling only the plan (S1) or only the
-retrieval (S2), the full pipeline with the exact test (S1 + S2 + S3), and the
-same with the verifier. For the 2024 pair the drop is at retrieval; for the
-2026 open models retrieval is nearly solved and the remaining distance to the
-ceiling is the plan; the frontier models sit at the ceiling at every stage.}
+\caption{Table~\ref{tab:modular} as gains against the stage ceilings. For
+each model, the end-to-end control (B), our pipeline without the verifier and
+with it, against the two ceilings as dashed lines: the model's plan with gold
+retrieval (S1) and the model's retrieval with the gold plan (S2); every stage
+at gold is 1.000. The contract and the verifier carry the 2024 pair from 0.575
+to within 0.03 of its retrieval ceiling, and gemma4 from 0.859 to within 0.01
+of both ceilings; the frontier models are at the ceilings with or without the
+contract.}
 \label{fig:modular}
 \end{figure*}
 

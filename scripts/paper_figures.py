@@ -45,8 +45,9 @@ MODELS = [("q25pair", "Qwen2.5-32B pair", DRIFT),
 plt.rcParams.update({
     "font.family": "sans-serif",
     "font.sans-serif": ["Liberation Sans", "DejaVu Sans"],
-    "font.size": 8.5, "axes.titlesize": 9, "axes.labelsize": 8.5,
-    "xtick.labelsize": 8, "ytick.labelsize": 8, "legend.fontsize": 7.5,
+    "font.size": 9, "axes.titlesize": 10, "axes.titleweight": "bold",
+    "axes.labelsize": 10, "axes.labelweight": "bold",
+    "xtick.labelsize": 9, "ytick.labelsize": 9, "legend.fontsize": 8,
     "axes.edgecolor": CHARCOAL, "axes.linewidth": 0.6,
     "axes.spines.top": False, "axes.spines.right": False,
     "xtick.color": CHARCOAL, "ytick.color": CHARCOAL, "text.color": CHARCOAL, "axes.labelcolor": CHARCOAL,
@@ -74,6 +75,12 @@ def den_f1(run: str):
     return metric(run, "retrieval", "denominator", "f1")
 
 
+def boldify(ax, size=9):
+    """Bold, larger tick labels on both axes."""
+    for lab in ax.get_xticklabels() + ax.get_yticklabels():
+        lab.set_fontweight("bold"); lab.set_fontsize(size)
+
+
 def save(fig, name):
     fig.savefig(OUT / f"{name}.pdf", bbox_inches="tight")
     fig.savefig(OUT / f"{name}.png", bbox_inches="tight", dpi=200)
@@ -86,21 +93,26 @@ def fig_rounds():
     fig, axes = plt.subplots(1, 2, figsize=(7.0, 2.5), sharex=True)
     rounds = [0, 1, 2, 3]
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
+    style = {"q25pair": ("o", "-"), "qwen38_27b": ("s", "-"), "gemma4_31b": ("^", "-"),
+             "opus": ("D", "-"), "gpt": ("v", (0, (3, 2)))}
     for key, label, col in MODELS:
         a = [acc(f"test_{key}_{suffix[r]}") for r in rounds]
         f = [den_f1(f"test_{key}_{suffix[r]}") for r in rounds]
+        mk, ls = style[key]
         for ax, y in ((axes[0], a), (axes[1], f)):
             xs = [r for r, v in zip(rounds, y) if v is not None]
             ys = [v for v in y if v is not None]
-            ax.plot(xs, ys, marker="o", ms=4, lw=1.6, color=col, label=label, solid_capstyle="round")
+            ax.plot(xs, ys, marker=mk, ms=4.5, lw=1.0, ls=ls, color=col, label=label,
+                    markeredgecolor="white", markeredgewidth=0.5, alpha=0.95)
     axes[0].set_title("verdict accuracy", loc="left")
     axes[1].set_title("denominator F1", loc="left")
     for ax in axes:
         ax.set_xticks(rounds)
         ax.set_xlabel("verify-and-repair rounds")
         ax.set_ylim(0.70, 1.005)
+        boldify(ax)
     handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, labels, frameon=False, loc="lower center", ncol=5, handlelength=1.6,
+    fig.legend(handles, labels, frameon=False, loc="lower center", ncol=5, handlelength=2.2,
                bbox_to_anchor=(0.5, -0.04), columnspacing=1.6)
     fig.tight_layout(w_pad=2.0, rect=(0, 0.06, 1, 1))
     save(fig, "rounds")
@@ -136,6 +148,7 @@ def fig_families():
     ax.set_xticklabels([short[m[0]] for m in MODELS], rotation=0)
     ax.set_yticks(range(len(fams)))
     ax.set_yticklabels([f[1] for f in fams])
+    boldify(ax, size=9)
     for sp in ax.spines.values():
         sp.set_visible(False)
     ax.tick_params(length=0)
@@ -157,43 +170,49 @@ def fig_families():
     save(fig, "families")
 
 
-# ---- 3. modular stage ceilings -------------------------------------------------
+# ---- 3. modular analysis: what the contract and the verifier add, against the stage ceilings -----
 def fig_modular():
-    steps = [("all stages at gold", lambda k: 1.0),
-             ("S1 alone", lambda k: acc(f"test_{k}_planner_verify2") or acc(f"test_{k}_planner_verify1")),
-             ("S2 alone", lambda k: acc(f"test_{k}_sqlalone_verify2")),
-             ("S1 + S2 + S3, no verifier", lambda k: acc(f"test_{k}_dprime")),
-             ("+ verifier (ours)", lambda k: acc(f"test_{k}_dprime_verify2"))]
-    colors = [MIST, SEA, SLATE, DUNE, CHARCOAL]
-    fig, axes = plt.subplots(1, len(MODELS), figsize=(7.0, 2.6), sharey=True)
+    """Per model: the end-to-end control (B), the contract pipeline without and with the verifier,
+    as ascending bars with the value inside; the S1 ceiling (model plan, gold retrieval) and the S2
+    ceiling (gold plan, model retrieval) as dashed reference lines, their values under the panel title."""
+    fig, axes = plt.subplots(1, len(MODELS), figsize=(7.2, 2.9), sharey=True)
+    bars_spec = [("B", lambda k: acc(f"test_{k}_cellB"), SAND),
+                 ("ours", lambda k: acc(f"test_{k}_dprime"), SEA),
+                 ("ours\n+ver", lambda k: acc(f"test_{k}_dprime_verify2"), SLATE)]
     for ax, (key, label, _) in zip(axes, MODELS):
-        vals = []
-        for name, fn in steps:
-            v = fn(key)
-            if v is None and name == "S2 alone" and key in ("opus", "gpt"):
-                v = 0.999  # bounded below by the D' denominator F1 of 1.000 (see the table caption)
-            vals.append(v)
-        xs = np.arange(len(steps))
-        bars = ax.bar(xs, [v if v is not None else 0 for v in vals], color=colors, width=0.72,
-                      edgecolor="white", linewidth=0.5)
-        for x, v, name in zip(xs, vals, [s[0] for s in steps]):
-            if v is None:
-                continue
-            txt = f"{v:.3f}" if not (name == "S2 alone" and key in ("opus", "gpt")) else "$\\geq$.999"
-            ax.text(x, v + 0.012, txt, ha="center", va="bottom", fontsize=6.2, color=CHARCOAL, rotation=90)
-        ax.set_title(label, loc="left", fontsize=8.5)
+        vals = [fn(key) for _, fn, _ in bars_spec]
+        xs = np.arange(len(bars_spec))
+        ax.bar(xs, vals, color=[c for _, _, c in bars_spec], width=0.66, edgecolor="white", linewidth=0.5, zorder=2)
+        for x, v, (_, _, c) in zip(xs, vals, bars_spec):
+            if v < 0.64:  # too short for a label inside: put it above the bar
+                ax.text(x, v + 0.008, f"{v:.3f}", ha="center", va="bottom", fontsize=7.2, fontweight="bold",
+                        color=CHARCOAL, zorder=3)
+            else:
+                ax.text(x, v - 0.012, f"{v:.3f}", ha="center", va="top", fontsize=7.2, fontweight="bold",
+                        color=CHARCOAL if c == SAND else "white", rotation=90, zorder=3)
+        s1 = acc(f"test_{key}_planner_verify2") or acc(f"test_{key}_planner_verify1")
+        s2 = acc(f"test_{key}_sqlalone_verify2")
+        s2_lab = f"{s2:.3f}" if s2 is not None else "$\\geq$.999"
+        if s2 is None and key in ("opus", "gpt"):
+            s2 = 0.999
+        ax.axhline(s1, color=CHARCOAL, lw=0.9, ls=(0, (4, 2)), zorder=1, label="S1 ceiling: model plan, gold retrieval")
+        ax.axhline(s2, color=DRIFT, lw=0.9, ls=(0, (4, 2)), zorder=1, label="S2 ceiling: gold plan, model retrieval")
+        ax.set_title(f"{label}\n", loc="left")
+        ax.text(0.0, 1.02, f"ceilings  S1 {s1:.3f}   S2 {s2_lab}", transform=ax.transAxes, fontsize=6.6,
+                color="#6B6F73", ha="left", va="bottom")
         ax.set_xticks(xs)
-        ax.set_xticklabels(["gold", "S1", "S2", "full", "+ver"], fontsize=7)
-        ax.set_ylim(0.5, 1.12)
+        ax.set_xticklabels([n for n, _, _ in bars_spec])
+        ax.set_ylim(0.5, 1.03)
         ax.set_yticks([0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        boldify(ax, size=8.5)
         ax.spines["left"].set_visible(ax is axes[0])
         if ax is not axes[0]:
             ax.tick_params(axis="y", length=0)
     axes[0].set_ylabel("verdict accuracy")
-    fig.text(0.0, 0.0, "gold: every stage at gold.  S1 / S2: the model fills that stage only.  "
-             "full: model plan, model retrieval, exact test (ours).  +ver: with the verifier.",
-             fontsize=6.6, color="#6B6F73", ha="left", va="bottom")
-    fig.tight_layout(w_pad=0.6, rect=(0, 0.05, 1, 1))
+    handles, labels = axes[0].get_legend_handles_labels()
+    fig.legend(handles, labels, frameon=False, loc="lower center", ncol=2, bbox_to_anchor=(0.5, -0.03),
+               fontsize=7.5, handlelength=2.4)
+    fig.tight_layout(w_pad=0.5, rect=(0, 0.06, 1, 1))
     save(fig, "modular")
 
 
@@ -213,6 +232,7 @@ def fig_registers():
             ax.text(xi, v + 0.008, f"{v:.3f}", ha="center", va="bottom", fontsize=5.6, color=CHARCOAL, rotation=90)
     ax.set_xticks(x)
     ax.set_xticklabels(regs)
+    boldify(ax)
     ax.set_ylim(0.4, 1.08)
     ax.set_ylabel("verdict accuracy")
     ax.set_title("paraphrase registers, development set, Qwen2.5-32B pair", loc="left", fontsize=8.5)
