@@ -296,15 +296,11 @@ B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \section{The agentic subsample: every system on the identical 204 claims}
 \label{app:subsample}
 
-VERITAS was run on 204 claims of the test set (12 per cohort group, four per
-verdict, the same stratification as the test set; selected before any run and
-disjoint from the development set) because its three agent phases take nine
-minutes per claim. Table~\ref{tab:subsample} scores the other systems on the
-identical 204 claims next to their full-set numbers, with 95\% bootstrap
-intervals over claims (2{,}000 resamples). Every full-set number lies inside
-its own subsample interval, so the subsample estimates the same population
-with less precision, and the comparison with VERITAS is paired on the same
-claims.
+VERITAS's three agent phases take nine minutes per claim, so it was run on
+204 claims of the test set (12 per cohort group, four per verdict, the test
+set's own stratification; selected before any run). Table~\ref{tab:subsample}
+scores the other systems on the same 204 claims next to their full-set
+numbers, with 95\% bootstrap intervals over claims (2{,}000 resamples).
 
 \begin{table}[h]
 \centering

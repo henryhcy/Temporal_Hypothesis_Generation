@@ -533,11 +533,14 @@ in every model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
 Qwen2.5-Coder-32B (SQL); the 2026 open models qwen3.8-27B and gemma4-31B, one
 model for both stages, thinking off; and the frontier models Claude Opus~5.5
 and GPT-5.6. Open models run fully resident on one RTX A5000 with an 8k
-context; frontier models over their APIs with prompt caching. The agentic
-baselines run with Coder-32B as published. Verdict accuracies carry 95\%
-bootstrap intervals over instances (1{,}000 resamples), about $\pm 0.02$ on
-the test set and $\pm 0.01$ above 0.98; differences under 0.03 between test
-rows are not resolved.
+context; frontier models over their APIs with prompt caching. Rows A and B
+follow the single-query text-to-SQL protocol of EHRSQL \cite{lee2022ehrsql}:
+the model receives the schema and the claim and writes the retrieval in one
+shot, with the corpus conventions added to the prompt in B. EHRAgent runs its
+own code and returns its own verdict; VERITAS is run with its three agent
+phases, our exact tests pre-bound. Verdict accuracies carry 95\% bootstrap
+intervals over instances (1{,}000 resamples), about $\pm 0.02$ on the test set
+and $\pm 0.01$ above 0.98.
 
 \subsection{Main results}
 \label{sec:main}
@@ -562,16 +565,12 @@ D$'$: plan as contract, no verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 \caption{Verdict accuracy on the test set. Every row uses the same prompts,
 conventions, schema presentation and exact-test stage; only the model changes
 across columns. Intervals are $\pm 0.02$ (0.6--0.9) and $\pm 0.01$ (above
-0.98). EHRAgent returns a verdict from its own code and is run as published
-(its paper used only GPT-4 and GPT-3.5; the open model is our adaptation).
-$^\dagger$VERITAS, at nine minutes per claim through three agent phases, is
-run on a stratified 204-claim subsample of the test set (12 per group,
-verdict-balanced; 95\% interval 0.333--0.471); every other row is on all
-1{,}500. Appendix~\ref{app:subsample} scores the other systems on the
-identical 204 claims. With gemma4 inside EHRAgent the agent's twelve-round
-repair loop takes five minutes per claim and the run could not be completed;
-the agentic baselines are local-only by design and are not run with the API
-models.}
+0.98). EHRAgent returns a verdict from its own code; its paper used GPT-4 and
+GPT-3.5, and the open-model columns are ours. $^\dagger$VERITAS, at nine
+minutes per claim through three agent phases, is run on a stratified
+204-claim subsample of the test set (12 per group, verdict-balanced; 95\%
+interval 0.333--0.471); Appendix~\ref{app:subsample} scores the other systems
+on the same 204 claims.}
 \label{tab:main}
 \end{table*}
 
@@ -645,19 +644,12 @@ side: handed the exact counts and asked only for the verdict, the open models
 still pick the wrong test or read it wrong on a quarter to a third of claims,
 so a correct verdict from them is not evidence of a correct computation.
 
-\paragraph{On the VERITAS subsample.} VERITAS is the one system that could
-not be run on the full test set: its three agent phases take nine minutes per
-claim under a ten-minute cap per phase, so the 1{,}500 claims would need
-eight GPU-days. It was run instead on 204 claims drawn from the test set with
-the same stratification as the test set itself (12 per cohort group, four
-per verdict), and the number is reported with its interval. To check that
-the subsample estimates what the full set estimates, Appendix~\ref{app:subsample}
-scores every other system on the identical 204 claims: each lands inside
-its own 204-claim interval and within 0.05 of its full-set number (our
-pipeline 0.804 against 0.810, the end-to-end control 0.593 against 0.575,
-EHRAgent 0.559 against 0.605). The subsample comparison is therefore paired
-and unbiased; what it lacks is precision, and at 0.40 against 0.57 or more
-for every other system that does not change the ranking.
+\paragraph{The VERITAS subsample.} VERITAS's three agent phases take nine
+minutes per claim, so it is run on 204 claims of the test set with the test
+set's own stratification (12 per cohort group, four per verdict). On the same
+204 claims our pipeline scores 0.804 (0.810 on all 1{,}500), the end-to-end
+control 0.593 (0.575) and EHRAgent 0.559 (0.605), each inside its own
+subsample interval (Appendix~\ref{app:subsample}).
 
 \subsection{Results by temporal family}
 \label{sec:families}
@@ -862,41 +854,36 @@ systems' best gains came from fixing execution failures, not conditioning. The
 stage-level gold is what makes this visible, and it is the dataset's main
 contribution.
 
-\paragraph{What is and is not architecture.} The reference pipeline is a
-simple decomposition; its value is that each stage is checkable. Handing the
-plan to the next stage as prose discarded that value. We therefore claim
-``stated conventions, a plan that is a contract, and bounded verification''
---- not decomposition as such. The claim is also bounded by model class: a
-frontier model that holds the conventions needs no contract to verify the
-claims (0.999 either way) and is slightly hurt by the verifier; the contract
+\paragraph{What the contract is for.} The reference pipeline is a simple
+decomposition; its value is that each stage is checkable, and handing the plan
+to the next stage as prose discards that value. What the results support is
+stated conventions, a plan that is a contract, and bounded verification. A
+frontier model that holds the conventions verifies the claims without the
+contract (0.999 either way) and the verifier costs it a little; the contract
 is what lets an open model, run locally on clinical data, reach the same
 accuracy with an auditable denominator.
 
-\paragraph{Conventions are dataset-specific by design.} Porting the framework
-to another corpus means writing its conventions and primitive definitions, not
-retraining anything; whether that is cheap in general is untested here, and the
-one external hypothesis set with reference $p$-values (P-Bench) tests the
-statistics stage, not the conditioning, so we do not claim transfer.
+\paragraph{Conventions are dataset-specific.} Porting the framework to
+another corpus means writing its conventions and primitive definitions, not
+retraining anything. We have done this for one corpus; the cost of doing it
+for another is not measured here.
 
-\paragraph{Scale of the comparison.} Every system except VERITAS is run on
-the full 1{,}500-claim test set. VERITAS takes about five minutes per claim
-through its three phases and is compared on a 204-claim subsample (12 per
-group, verdict-balanced), stated as such. Development-set numbers transfer to
-the test set within 0.03 for every row we checked, so the prompt decisions
-did not overfit the 200 instances they were made on.
+\paragraph{Development and test.} Every prompt decision was made on the
+200-instance development set, and the development numbers transfer to the
+test set within 0.03 for every row we compared.
 
 \paragraph{Floors and ceilings.} Decisive labels carry $\alpha$-rate false
 positives by construction; exact tests are conservative, so the realised rate
 is below nominal but not zero. The release is bounded by enumeration breadth
 (the most frequent cohort terms), not by statistical power: three designed
 groups (two three-event sequence groups and one co-occurrence threshold) have
-only four to twelve cores in the corpus and are left out of the roster
-rather than reported on a handful of instances. The 7B tier is a capability
-floor: nothing in the framework helps a model that cannot compose a plan.
+only four to twelve cores in the corpus and are not in the roster. The 7B
+tier is a capability floor: nothing in the framework helps a model that
+cannot compose a plan.
 
 \paragraph{No lexical variation.} Slot fillers are raw MedDRA terms and the
-registers are templated; the paraphrase result is a bounded, not a general,
-robustness claim.
+registers are templated; the paraphrase case study covers those four
+registers.
 
 \section{Conclusion}
 \label{sec:conclusion}
