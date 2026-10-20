@@ -680,16 +680,18 @@ cores each in the corpus) and appears in the report-tier case study only.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{Figures/families.pdf}
-\caption{Table~\ref{tab:families} as a heatmap: each cell is the contract's
-gain over the end-to-end control (ours minus B) on the test set, green for a
-gain and brown for a loss, with the two accuracies beneath. The contract lifts the 2024 pair most on the families whose
-rule it states (co-occurs, precedes, position); the first/last family is where
-the 2024 Coder cannot be helped and where gemma4 gains most; at the frontier
-the two systems coincide except on threshold claims, a planning loss.}
+\caption{Faithfulness by claim family on the test set: among the claims a
+system gets right, the share whose denominator is exactly the gold set, for
+our pipeline (left) and the end-to-end control (right), with the number of
+right verdicts in each cell. Table~\ref{tab:families} gives the verdict
+accuracies; this is what those verdicts stand on. The end-to-end control's
+right answers on position claims rest on the right evidence one time in five
+for the two Qwen models, and its first/last verdicts almost never do; under
+the contract the exception is gemma4's proximity claims.}
 \label{fig:families}
 \end{figure}
 
-The families do not fail together (Table~\ref{tab:families}, Figure~\ref{fig:families}). For the 2024
+The families do not fail together (Table~\ref{tab:families}; Figure~\ref{fig:families} gives the faithfulness behind these verdicts). For the 2024
 pair the contract lifts \emph{precedes} and \emph{co-occurs} by 0.23 and 0.40,
 because the rule those families need --- exclude the same-stage reports, count
 the ordered ones --- is exactly what the resolved contract states; it lifts
@@ -743,13 +745,12 @@ below.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/modular.pdf}
-\caption{Table~\ref{tab:modular} as a dot plot. Each row is a model on the
-verdict-accuracy axis: the end-to-end control (B), our pipeline without the
-verifier and with it, joined by the span they cover, and the two stage
-ceilings as ticks, the model's plan with gold retrieval (S1) and the model's
-retrieval with the gold plan (S2); every stage at gold is the line at 1.000.
-The contract and the verifier carry the 2024 pair from 0.575 to within 0.03
-of its retrieval ceiling and gemma4 from 0.859 to within 0.01 of both
+\caption{Table~\ref{tab:modular} as bars: for each model the end-to-end
+control, our pipeline without and with the verifier, and the two stage
+ceilings as outlined bars, the model's retrieval with the gold plan (S2) and
+the model's plan with gold retrieval (S1); every stage at gold is the line at
+1.000. The contract and the verifier carry the 2024 pair from 0.575 to within
+0.03 of its retrieval ceiling and gemma4 from 0.859 to within 0.01 of both
 ceilings; the frontier models are at the ceilings with or without the
 contract.}
 \label{fig:modular}
@@ -822,12 +823,11 @@ verdict accuracy / denominator F1.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/rounds.pdf}
-\caption{Table~\ref{tab:rounds} as gains per round: for each model the
-bar starts at the value after zero rounds (marked) and adds the gain of
-rounds one, two and three as segments, verdict accuracy (left) and
-denominator F1 (right), test set. For the open models the first round is
-almost the whole gain; the frontier models lose a little per round, in
-brown, as correct statements get flagged into abstention.}
+\caption{Table~\ref{tab:rounds} as bars: our pipeline after zero, one, two
+and three verify-and-repair rounds, verdict accuracy (left) and denominator F1
+(right), test set. For the open models the first round is almost the whole
+gain; the frontier models lose a little per round as correct statements get
+flagged into abstention.}
 \label{fig:rounds}
 \end{figure*}
 
