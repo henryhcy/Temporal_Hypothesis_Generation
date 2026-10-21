@@ -1,0 +1,554 @@
+{
+ "title": "STRATA generation and the ART framework",
+ "canvas": {
+  "width": 1200,
+  "height": 560
+ },
+ "style": {
+  "font_family": "Helvetica, Arial, sans-serif",
+  "font_size": 13,
+  "bg_color": "#FFFFFF",
+  "palette": [
+   "#4A5568",
+   "#D9792F",
+   "#C9A227",
+   "#9A9A9A"
+  ]
+ },
+ "nodes": [
+  {
+   "id": "claim",
+   "label": "Claim",
+   "x": 325,
+   "y": 84,
+   "width": 120,
+   "height": 40,
+   "shape": "rounded",
+   "fill": "#F1F3F6",
+   "stroke": "#8A94A6",
+   "text_color": "#1F2933"
+  },
+  {
+   "id": "db",
+   "label": "Timeline DB",
+   "x": 325,
+   "y": 136,
+   "width": 120,
+   "height": 40,
+   "shape": "rounded",
+   "fill": "#F1F3F6",
+   "stroke": "#8A94A6",
+   "text_color": "#1F2933"
+  },
+  {
+   "id": "s1",
+   "label": "S1 Articulate",
+   "x": 520,
+   "y": 110,
+   "width": 160,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#DCE9F7",
+   "stroke": "#5B8DB8",
+   "text_color": "#1F2933",
+   "sublabel": "LLM → plan"
+  },
+  {
+   "id": "s2",
+   "label": "S2 Retrieve",
+   "x": 870,
+   "y": 110,
+   "width": 170,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#DCE9F7",
+   "stroke": "#5B8DB8",
+   "text_color": "#1F2933",
+   "sublabel": "LLM → SQL"
+  },
+  {
+   "id": "out",
+   "label": "Verdict",
+   "x": 1085,
+   "y": 110,
+   "width": 130,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#DDF0E4",
+   "stroke": "#5E9E6E",
+   "text_color": "#1F2933",
+   "sublabel": "+ evidence sets, p"
+  },
+  {
+   "id": "codebook",
+   "label": "Codebook",
+   "x": 325,
+   "y": 270,
+   "width": 120,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#ECE6F6",
+   "stroke": "#8E7CC3",
+   "text_color": "#1F2933",
+   "sublabel": "stipulations"
+  },
+  {
+   "id": "v1",
+   "label": "Verify",
+   "x": 460,
+   "y": 270,
+   "width": 90,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#F7F8FA",
+   "stroke": "#9AA3B2",
+   "text_color": "#1F2933",
+   "sublabel": "1 round",
+   "font_size": 12
+  },
+  {
+   "id": "contract",
+   "label": "Contract",
+   "x": 670,
+   "y": 270,
+   "width": 140,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#FBE2C9",
+   "stroke": "#D9792F",
+   "text_color": "#1F2933",
+   "sublabel": "plan → exact rule"
+  },
+  {
+   "id": "v2",
+   "label": "Verify",
+   "x": 800,
+   "y": 270,
+   "width": 90,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#F7F8FA",
+   "stroke": "#9AA3B2",
+   "text_color": "#1F2933",
+   "sublabel": "≤ 2 rounds",
+   "font_size": 12
+  },
+  {
+   "id": "sandbox",
+   "label": "Sandbox",
+   "x": 910,
+   "y": 270,
+   "width": 100,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#EDF0F3",
+   "stroke": "#8A94A6",
+   "text_color": "#1F2933",
+   "sublabel": "→ n, k, ids",
+   "font_size": 12
+  },
+  {
+   "id": "s3",
+   "label": "S3 Test",
+   "x": 1085,
+   "y": 270,
+   "width": 130,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#EDF0F3",
+   "stroke": "#8A94A6",
+   "text_color": "#1F2933",
+   "sublabel": "exact, deterministic"
+  },
+  {
+   "id": "goldnote",
+   "label": "Stage gold",
+   "x": 325,
+   "y": 430,
+   "width": 120,
+   "height": 70,
+   "shape": "rounded",
+   "fill": "#FFF3D0",
+   "stroke": "#C9A227",
+   "text_color": "#1F2933",
+   "sublabel": "any stage can be gold",
+   "font_size": 12
+  },
+  {
+   "id": "gplan",
+   "label": "Gold plan",
+   "x": 520,
+   "y": 430,
+   "width": 160,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#FFF3D0",
+   "stroke": "#C9A227",
+   "text_color": "#1F2933",
+   "sublabel": "plan EM"
+  },
+  {
+   "id": "gev",
+   "label": "Gold evidence",
+   "x": 885,
+   "y": 430,
+   "width": 160,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#FFF3D0",
+   "stroke": "#C9A227",
+   "text_color": "#1F2933",
+   "sublabel": "evidence F1, faithfulness"
+  },
+  {
+   "id": "gver",
+   "label": "Gold verdict",
+   "x": 1085,
+   "y": 430,
+   "width": 130,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#FFF3D0",
+   "stroke": "#C9A227",
+   "text_color": "#1F2933",
+   "sublabel": "accuracy, over/underclaim",
+   "font_size": 12
+  },
+  {
+   "id": "corpus",
+   "label": "Corpus",
+   "x": 120,
+   "y": 60,
+   "width": 150,
+   "height": 58,
+   "shape": "rounded",
+   "fill": "#F1F3F6",
+   "stroke": "#8A94A6",
+   "text_color": "#1F2933",
+   "sublabel": "annotated timelines",
+   "font_size": 12
+  },
+  {
+   "id": "templates",
+   "label": "Templates",
+   "x": 120,
+   "y": 140,
+   "width": 150,
+   "height": 58,
+   "shape": "rounded",
+   "fill": "#EAF0F7",
+   "stroke": "#7A8FB0",
+   "text_color": "#1F2933",
+   "sublabel": "26 groups, 7 families",
+   "font_size": 12
+  },
+  {
+   "id": "cores",
+   "label": "Cores",
+   "x": 120,
+   "y": 220,
+   "width": 150,
+   "height": 58,
+   "shape": "rounded",
+   "fill": "#EAF0F7",
+   "stroke": "#7A8FB0",
+   "text_color": "#1F2933",
+   "sublabel": "mirror pairs, not-locatable",
+   "font_size": 12
+  },
+  {
+   "id": "sgold",
+   "label": "Stage gold",
+   "x": 120,
+   "y": 300,
+   "width": 150,
+   "height": 58,
+   "shape": "rounded",
+   "fill": "#FFF3D0",
+   "stroke": "#C9A227",
+   "text_color": "#1F2933",
+   "sublabel": "plan, evidence, p, verdict",
+   "font_size": 12
+  },
+  {
+   "id": "screens",
+   "label": "Screens",
+   "x": 120,
+   "y": 380,
+   "width": 150,
+   "height": 58,
+   "shape": "rounded",
+   "fill": "#EDF0F3",
+   "stroke": "#8A94A6",
+   "text_color": "#1F2933",
+   "sublabel": "permutation nulls, oracle",
+   "font_size": 12
+  },
+  {
+   "id": "release",
+   "label": "Release",
+   "x": 120,
+   "y": 460,
+   "width": 150,
+   "height": 58,
+   "shape": "rounded",
+   "fill": "#EAF0F7",
+   "stroke": "#7A8FB0",
+   "text_color": "#1F2933",
+   "sublabel": "claims, codebook, gold",
+   "font_size": 12
+  }
+ ],
+ "edges": [
+  {
+   "from": "claim",
+   "to": "s1",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "db",
+   "to": "s1",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "codebook",
+   "to": "s1",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "s1",
+   "to": "v1",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": true
+  },
+  {
+   "from": "v1",
+   "to": "s1",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": true
+  },
+  {
+   "from": "s1",
+   "to": "contract",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": true,
+   "label": "plan"
+  },
+  {
+   "from": "contract",
+   "to": "s2",
+   "style": "solid",
+   "color": "#D9792F",
+   "thickness": 3,
+   "curve": true,
+   "label": "contract"
+  },
+  {
+   "from": "s2",
+   "to": "v2",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": true
+  },
+  {
+   "from": "v2",
+   "to": "s2",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": true
+  },
+  {
+   "from": "s2",
+   "to": "sandbox",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false,
+   "label": "SQL"
+  },
+  {
+   "from": "sandbox",
+   "to": "v2",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "sandbox",
+   "to": "s3",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false,
+   "label": "n, k"
+  },
+  {
+   "from": "s3",
+   "to": "out",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false,
+   "label": "verdict"
+  },
+  {
+   "from": "s1",
+   "to": "gplan",
+   "style": "dotted",
+   "color": "#C9A227",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "sandbox",
+   "to": "gev",
+   "style": "dotted",
+   "color": "#C9A227",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "s3",
+   "to": "gver",
+   "style": "dotted",
+   "color": "#C9A227",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "corpus",
+   "to": "templates",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "templates",
+   "to": "cores",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "cores",
+   "to": "sgold",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "sgold",
+   "to": "screens",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "screens",
+   "to": "release",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false
+  },
+  {
+   "from": "release",
+   "to": "goldnote",
+   "style": "dotted",
+   "color": "#C9A227",
+   "thickness": 2,
+   "curve": false,
+   "label": "stage gold"
+  },
+  {
+   "from": "release",
+   "to": "codebook",
+   "style": "solid",
+   "color": "#9A9A9A",
+   "thickness": 2,
+   "curve": true,
+   "label": "claims, codebook"
+  }
+ ],
+ "groups": [
+  {
+   "id": "g_gen",
+   "label": "STRATA generation",
+   "node_ids": [
+    "corpus",
+    "templates",
+    "cores",
+    "sgold",
+    "screens",
+    "release"
+   ],
+   "fill": "#F2F5F9",
+   "stroke": "#C9D3E0",
+   "padding": 30
+  },
+  {
+   "id": "g_model",
+   "label": "model (LLM)",
+   "node_ids": [
+    "claim",
+    "db",
+    "s1",
+    "s2",
+    "out"
+   ],
+   "fill": "#F3F7FB",
+   "stroke": "#C9D8E8",
+   "padding": 30
+  },
+  {
+   "id": "g_harness",
+   "label": "harness (deterministic)",
+   "node_ids": [
+    "codebook",
+    "v1",
+    "contract",
+    "v2",
+    "sandbox",
+    "s3"
+   ],
+   "fill": "#F6F7F8",
+   "stroke": "#D3D8DF",
+   "padding": 30
+  },
+  {
+   "id": "g_gold",
+   "label": "gold (released with the benchmark)",
+   "node_ids": [
+    "goldnote",
+    "gplan",
+    "gev",
+    "gver"
+   ],
+   "fill": "#FDFAEF",
+   "stroke": "#E7DDB5",
+   "padding": 30
+  }
+ ]
+}

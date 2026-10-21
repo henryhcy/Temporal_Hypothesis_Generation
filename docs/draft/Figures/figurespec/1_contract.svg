@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 340" width="760" height="340" font-family="Helvetica, Arial, sans-serif">
+  <rect width="760" height="340" fill="#FFFFFF"/>
+  <defs>
+    <marker id="arrow-default" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#555555"/>
+    </marker>
+    <marker id="arrow-c0" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#4A5568"/>
+    </marker>
+    <marker id="arrow-c1" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#D9792F"/>
+    </marker>
+    <marker id="arrow-c2" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#C9A227"/>
+    </marker>
+    <marker id="arrow-c3" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto" markerUnits="strokeWidth">
+      <polygon points="0 0, 8 4, 0 8" fill="#9A9A9A"/>
+    </marker>
+  </defs>
+  <path d="M 175.0,118.6 L 275.0,116.8" stroke="#4A5568" stroke-width="2" fill="none" marker-end="url(#arrow-c0)"/>
+  <rect x="176.0" y="99.7" width="98.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="225.0" y="111.7" font-size="10" fill="#777777" text-anchor="middle">named primitive</text>
+  <path d="M 485.0,127.9 L 585.0,140.2" stroke="#D9792F" stroke-width="3" fill="none" marker-end="url(#arrow-c1)"/>
+  <rect x="501.0" y="116.0" width="68.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="535.0" y="128.0" font-size="10" fill="#777777" text-anchor="middle">exact rule</text>
+  <path d="M 175.0,270.4 L 585.0,169.6" stroke="#9A9A9A" stroke-width="2" fill="none" marker-end="url(#arrow-c3)" stroke-dasharray="8,4"/>
+  <rect x="298.0" y="202.0" width="164.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="380.0" y="214.0" font-size="10" fill="#777777" text-anchor="middle">plan JSON + whole codebook</text>
+  <path d="M 485.0,179.5 L 616.1,260.0" stroke="#C9A227" stroke-width="2" fill="none" marker-end="url(#arrow-c2)" stroke-dasharray="3,3"/>
+  <rect x="519.6" y="201.7" width="62.0" height="16" fill="#FFFFFF" rx="3" opacity="0.85"/>
+  <text x="550.6" y="213.7" font-size="10" fill="#777777" text-anchor="middle">same rule</text>
+  <rect x="15.0" y="55.0" width="160.0" height="130.0" fill="#DCE9F7" stroke="#5B8DB8" stroke-width="2" rx="8"/>
+  <text x="95.0" y="97.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">Plan (output of S1)</text>
+  <text x="95.0" y="110.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">events: Headache, Fatigue</text>
+  <text x="95.0" y="123.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">denominator: ordered_pair</text>
+  <text x="95.0" y="136.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">null: symmetric 0.5</text>
+  <text x="95.0" y="149.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">test: binomial</text>
+  <rect x="275.0" y="35.0" width="210.0" height="160.0" fill="#FBE2C9" stroke="#D9792F" stroke-width="2" rx="8"/>
+  <text x="380.0" y="79.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">Harness lookup</text>
+  <text x="380.0" y="92.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">ordered_pair → both present</text>
+  <text x="380.0" y="105.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">at distinct stages; same</text>
+  <text x="380.0" y="118.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">stage excluded; numerator:</text>
+  <text x="380.0" y="131.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">A earlier</text>
+  <text x="380.0" y="144.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">both_present → …</text>
+  <text x="380.0" y="157.8" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">all_present_unique_first → …</text>
+  <rect x="585.0" y="85.0" width="160.0" height="130.0" fill="#DCE9F7" stroke="#5B8DB8" stroke-width="2" rx="8"/>
+  <text x="665.0" y="134.3" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">Prompt to S2</text>
+  <text x="665.0" y="147.3" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">schema (column listing)</text>
+  <text x="665.0" y="160.3" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">contract: count a report</text>
+  <text x="665.0" y="173.3" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">iff …; one row per report</text>
+  <rect x="585.0" y="260.0" width="160.0" height="60.0" fill="#F7F8FA" stroke="#9AA3B2" stroke-width="2" rx="8"/>
+  <text x="665.0" y="280.9" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">Verifier (S2)</text>
+  <text x="665.0" y="293.9" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">checks the rows against</text>
+  <text x="665.0" y="306.9" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">the same rule</text>
+  <rect x="15.0" y="260.0" width="160.0" height="60.0" fill="#F5F5F5" stroke="#B0B0B0" stroke-width="2" rx="8"/>
+  <text x="95.0" y="280.9" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">Ablation: plan as prose</text>
+  <text x="95.0" y="293.9" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">plan JSON + whole codebook;</text>
+  <text x="95.0" y="306.9" font-size="11" fill="#1F2933" text-anchor="middle" font-weight="bold">S2 must find the rule itself</text>
+</svg>

@@ -1,0 +1,124 @@
+{
+ "title": "The contract",
+ "canvas": {
+  "width": 760,
+  "height": 340
+ },
+ "style": {
+  "font_family": "Helvetica, Arial, sans-serif",
+  "font_size": 13,
+  "bg_color": "#FFFFFF",
+  "palette": [
+   "#4A5568",
+   "#D9792F",
+   "#C9A227",
+   "#9A9A9A"
+  ]
+ },
+ "nodes": [
+  {
+   "id": "plan",
+   "label": "Plan (output of S1)\nevents: Headache, Fatigue\ndenominator: ordered_pair\nnull: symmetric 0.5\ntest: binomial",
+   "x": 95,
+   "y": 120,
+   "width": 160,
+   "height": 130,
+   "shape": "rounded",
+   "fill": "#DCE9F7",
+   "stroke": "#5B8DB8",
+   "text_color": "#1F2933",
+   "font_size": 11
+  },
+  {
+   "id": "lookup",
+   "label": "Harness lookup\nordered_pair → both present\nat distinct stages; same\nstage excluded; numerator:\nA earlier\nboth_present → …\nall_present_unique_first → …",
+   "x": 380,
+   "y": 115,
+   "width": 210,
+   "height": 160,
+   "shape": "rounded",
+   "fill": "#FBE2C9",
+   "stroke": "#D9792F",
+   "text_color": "#1F2933",
+   "font_size": 11
+  },
+  {
+   "id": "prompt",
+   "label": "Prompt to S2\nschema (column listing)\ncontract: count a report\niff …; one row per report",
+   "x": 665,
+   "y": 150,
+   "width": 160,
+   "height": 130,
+   "shape": "rounded",
+   "fill": "#DCE9F7",
+   "stroke": "#5B8DB8",
+   "text_color": "#1F2933",
+   "font_size": 11
+  },
+  {
+   "id": "verifier",
+   "label": "Verifier (S2)\nchecks the rows against\nthe same rule",
+   "x": 665,
+   "y": 290,
+   "width": 160,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#F7F8FA",
+   "stroke": "#9AA3B2",
+   "text_color": "#1F2933",
+   "font_size": 11
+  },
+  {
+   "id": "prose",
+   "label": "Ablation: plan as prose\nplan JSON + whole codebook;\nS2 must find the rule itself",
+   "x": 95,
+   "y": 290,
+   "width": 160,
+   "height": 60,
+   "shape": "rounded",
+   "fill": "#F5F5F5",
+   "stroke": "#B0B0B0",
+   "text_color": "#1F2933",
+   "font_size": 11
+  }
+ ],
+ "edges": [
+  {
+   "from": "plan",
+   "to": "lookup",
+   "style": "solid",
+   "color": "#4A5568",
+   "thickness": 2,
+   "curve": false,
+   "label": "named primitive"
+  },
+  {
+   "from": "lookup",
+   "to": "prompt",
+   "style": "solid",
+   "color": "#D9792F",
+   "thickness": 3,
+   "curve": false,
+   "label": "exact rule"
+  },
+  {
+   "from": "prose",
+   "to": "prompt",
+   "style": "dashed",
+   "color": "#9A9A9A",
+   "thickness": 2,
+   "curve": false,
+   "label": "plan JSON + whole codebook"
+  },
+  {
+   "from": "lookup",
+   "to": "verifier",
+   "style": "dotted",
+   "color": "#C9A227",
+   "thickness": 2,
+   "curve": false,
+   "label": "same rule"
+  }
+ ],
+ "groups": []
+}
