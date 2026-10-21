@@ -5,6 +5,8 @@ Four figures, each placed next to the table it visualises (the tables stay):
   families.pdf   heatmap: the contract's gain over the end-to-end control by claim family and model
   modular.pdf    stage ceilings per model: all gold -> S1 alone -> S2 alone -> full pipeline -> + verifier
   registers.pdf  paraphrase case study (development set, 32B pair): accuracy by register
+  family_radar.pdf  verdict accuracy by claim family, ours with the verifier only, one polygon per model
+  groups.pdf     per-group heatmap of the same (not in the draft)
 
 Numbers come from results/<run>/metrics.json (test set) and the registers runs (dev), so the
 figures match the tables. Palette: a muted coastal set (charcoal, slate, sea blue, sand).
@@ -277,6 +279,36 @@ def fig_registers():
 
 
 # ---- 5. per-group verdict accuracy of our pipeline (ours only; user 2026-10-20) ------------------
+def fig_family_radar():
+    """Verdict accuracy by claim family on the test set, our pipeline with the verifier only, one polygon
+    per model (user 2026-10-20: radar, no end-to-end comparison, earth-and-sky palette)."""
+    import families_candidates as FC  # noqa: E402
+    O, _, n = FC.load()
+    cols = FC.PALETTES_STRONG["earthsky"]
+    K = len(FC.FAMS)
+    ang = np.linspace(0, 2 * np.pi, K, endpoint=False)
+    ang_c = np.concatenate([ang, ang[:1]])
+    fig, ax = plt.subplots(figsize=(4.6, 4.6), subplot_kw={"projection": "polar"})
+    lws = [2.0, 2.0, 2.0, 1.4, 1.4]
+    for j, (key, label, _) in enumerate(MODELS):
+        v = np.concatenate([O[:, j], O[:1, j]])
+        ax.plot(ang_c, v, color=cols[j], lw=lws[j], marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6,
+                label=label, zorder=5 - j)
+        ax.fill(ang_c, v, color=cols[j], alpha=0.10, zorder=1)
+    ax.set_theta_offset(np.pi / 2); ax.set_theta_direction(-1)
+    ax.set_xticks(ang)
+    ax.set_xticklabels([f"{f[1]}\n(n={n[f[0]]})" for f in FC.FAMS], fontsize=8.5, fontweight="bold")
+    ax.set_ylim(0.3, 1.0); ax.set_yticks([0.4, 0.6, 0.8, 1.0])
+    ax.set_yticklabels(["0.4", "0.6", "0.8", "1.0"], fontsize=6.5, color="#6B6F73")
+    ax.set_rlabel_position(90)
+    ax.grid(color="#E4E1D8", lw=0.8); ax.spines["polar"].set_color("#E4E1D8")
+    ax.tick_params(axis="x", pad=10)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=3, fontsize=7.5,
+              handlelength=1.6, columnspacing=1.2)
+    fig.tight_layout()
+    save(fig, "family_radar")
+
+
 def fig_groups():
     import sys
     sys.path.insert(0, str(REPO / "scripts"))
@@ -331,3 +363,4 @@ if __name__ == "__main__":
     fig_modular()
     fig_registers()
     fig_groups()
+    fig_family_radar()

@@ -743,14 +743,14 @@ cores each in the corpus) and appears in the report-tier case study only.}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=\columnwidth]{Figures/groups.pdf}
-\caption{Verdict accuracy of our pipeline with the verifier on the test set
-by hypothesis group, with the group's family and size. The three first/last
-groups, P-V2 and H-V5 are what hold the 2024 pair at 0.810; the 2026 open
-models clear all but one or two of them; H-V5, a threshold claim with a
-text-stated bar, is the one group where every model including the frontier
-drops.}
-\label{fig:groups}
+\includegraphics[width=0.92\columnwidth]{Figures/family_radar.pdf}
+\caption{Verdict accuracy by claim family on the test set, our pipeline with
+the verifier, one polygon per model (family sizes in parentheses). The 2024
+pair's dents are at first/last (0.435) and threshold (0.763); qwen3.8's is at
+position (0.689); gemma4 and the two frontier models are within 0.06 of the
+rim on every family, threshold being the one family where the frontier
+models themselves fall short of 1.0.}
+\label{fig:families-radar}
 \end{figure}
 
 \begin{figure*}[t]
@@ -769,19 +769,18 @@ gemma4's faithfulness on proximity.}
 \label{fig:families}
 \end{figure*}
 
-The families do not fail together, and the group level shows where the
-losses are (Figure~\ref{fig:groups}). For the 2024 pair they are concentrated
-in the three first/last groups (0.43--0.44), P-V2 (0.42) and H-V5 (0.41):
-the first/last groups need an argmax over three candidates with ties dropped
-from the denominator, P-V2 is the precedes variant whose null is a
-data-derived rate, and H-V5 a threshold claim with a text-stated bar; every
-other group is at 0.85 or above and most at 1.00. The 2026 open models clear
-the first/last groups (0.86--0.96) and differ in which single group they
-miss: qwen3.8 on P-V2 (0.21) and T-V1 (0.69), gemma4 only on H-V5 (0.90) and
-the proximity groups (0.93--0.98). H-V5 is the one group where the frontier
-models also drop (0.82--0.85); its planner-alone row is at the same level,
-so the loss is in composing the bar into the plan. Which families the
-contract helps relative to the end-to-end control, and on which evidence
+The families do not fail together (Figure~\ref{fig:families-radar}). The
+2024 pair is at 0.97 or above on co-occurs, proximity and position, and its
+losses sit in two families: first/last (0.435), whose three groups need an
+argmax over three candidates with ties dropped from the denominator, and
+threshold (0.763), where H-V5 states its bar in the text. The 2026 open models
+clear first/last (0.798 and 0.950) and each misses a different family:
+qwen3.8 on position (0.689, the T-V1 group) and on the precedes variant whose
+null is a data-derived rate, gemma4 only on proximity (0.970) and threshold
+(0.961). Threshold is the one family where the frontier models also drop
+(0.941 and 0.914, all of it in H-V5); their planner-alone rows are at the
+same level, so the loss is in composing the bar into the plan. Which families
+the contract helps relative to the end-to-end control, and on which evidence
 measure, is in Figure~\ref{fig:families}.
 
 \subsection{Modular analysis against gold}
