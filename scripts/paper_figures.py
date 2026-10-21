@@ -1,7 +1,7 @@
 """The paper's result figures, drawn from the finished runs (2026-10-20).
 
 Four figures, each placed next to the table it visualises (the tables stay):
-  rounds.pdf     repair-round curves: verdict accuracy and denominator F1 vs rounds 0-3, per model
+  rounds.pdf     repair rounds: change in verdict accuracy per round, per model (rounds_f1.pdf: evidence F1, appendix)
   families.pdf   heatmap: the contract's gain over the end-to-end control by claim family and model
   modular.pdf    stage ceilings per model: all gold -> S1 alone -> S2 alone -> full pipeline -> + verifier
   registers.pdf  paraphrase case study (development set, 32B pair): accuracy by register
@@ -94,12 +94,13 @@ def save(fig, name):
 
 # ---- 1. repair rounds: the gain of each round over the previous one (design 4, user 2026-10-20) ----
 def fig_rounds():
-    """Two panels stacked, sized for one column of the two-column layout (user 2026-10-21)."""
+    """One panel per file, sized for one column: rounds.pdf (verdict accuracy, main text) and
+    rounds_f1.pdf (evidence F1, appendix) (user 2026-10-21)."""
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
     cols = [SLATE, SEA, MIST]
-    fig, axes = plt.subplots(2, 1, figsize=(3.4, 3.9), sharex=True)
-    for ax, getter, title in ((axes[0], acc, "verdict accuracy"), (axes[1], den_f1, "evidence F1")):
+    for name, getter, title in (("rounds", acc, "verdict accuracy"), ("rounds_f1", den_f1, "evidence F1")):
+        fig, ax = plt.subplots(figsize=(3.4, 2.1))
         x = np.arange(len(MODELS)); w = 0.26
         for r in (1, 2, 3):
             d = []
@@ -121,11 +122,10 @@ def fig_rounds():
         ax.set_yticks([0.0, 0.05, 0.10, 0.15])
         boldify(ax, size=7.5)
         ax.tick_params(axis="x", length=0)
-    axes[0].set_ylabel("change from\nthe previous round", fontsize=8)
-    axes[1].set_ylabel("change from\nthe previous round", fontsize=8)
-    axes[0].legend(frameon=False, loc="upper right", fontsize=7, handlelength=1.2, labelspacing=0.3)
-    fig.tight_layout(h_pad=0.8)
-    save(fig, "rounds")
+        ax.set_ylabel("change from\nthe previous round", fontsize=8)
+        ax.legend(frameon=False, loc="upper right", fontsize=7, handlelength=1.2, labelspacing=0.3)
+        fig.tight_layout()
+        save(fig, name)
 
 
 # ---- 2. heatmaps: the four evidence metrics by claim family, as the contract's change over B ----
