@@ -241,3 +241,17 @@ if __name__ == "__main__" and "--radar" in sys.argv:
     O, C, n = load()
     for name, cols in PALETTES.items():
         c4(O, n, name, cols)
+
+
+# 4b. the same radar, natural palettes with stronger contrast between the five models ------------
+PALETTES_STRONG = {
+    "canyon":   ["#9B2226", "#EE9B00", "#94D2BD", "#0A9396", "#005F73"],  # brick, amber, mint, teal, deep teal
+    "tide":     ["#C44536", "#F4A259", "#8CB369", "#2A9D8F", "#264653"],  # brick, orange, leaf, sea, slate
+    "meadow":   ["#B5462F", "#E6B422", "#6A994E", "#386641", "#2A3D66"],  # poppy, goldenrod, grass, pine, dusk blue
+    "earthsky": ["#7B2D26", "#D4A017", "#5B8C5A", "#3B6EA5", "#1F2F4A"],  # clay, ochre, moss, sky, night
+}
+
+if __name__ == "__main__" and "--radar2" in sys.argv:
+    O, C, n = load()
+    for name, cols in PALETTES_STRONG.items():
+        c4(O, n, name, cols)
