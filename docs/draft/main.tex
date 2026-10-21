@@ -15,6 +15,15 @@
 \let\Bbbk\relax
 \usepackage{amssymb}
 \usepackage{pifont}
+\usepackage{colortbl}
+\definecolor{cellyes}{HTML}{DDE5C4}
+\definecolor{cellpart}{HTML}{F1EBC9}
+\definecolor{cellno}{HTML}{EADCCB}
+\definecolor{cellna}{HTML}{E9E7E2}
+\newcommand{\cyes}[1]{\cellcolor{cellyes}#1}
+\newcommand{\cpart}[1]{\cellcolor{cellpart}#1}
+\newcommand{\cno}[1]{\cellcolor{cellno}#1}
+\newcommand{\cna}[1]{\cellcolor{cellna}#1}
 \newcommand{\cmark}{\textcolor{black!75}{\ding{51}}}
 \newcommand{\xmark}{\textcolor{black!40}{\ding{55}}}
 \newcommand{\pmark}{\textcolor{black!60}{$\circ$}}  % partial

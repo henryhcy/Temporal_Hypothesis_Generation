@@ -151,42 +151,63 @@ co-existence, ties) those claims carry.
 
 \begin{table*}[t]
 \centering
-\small
-\setlength{\tabcolsep}{5pt}
-\renewcommand{\arraystretch}{1.12}
-\begin{tabular}{@{}lccccccccc@{}}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\textwidth}{@{}p{2.55cm} Y Y Y Y Y Y@{}}
 \toprule
- & \multicolumn{2}{c}{\textbf{claims}} & \multicolumn{2}{c}{\textbf{statistics}} & \multicolumn{3}{c}{\textbf{gold at each stage}} & & \\
-\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-8}
-Benchmark / system & temporal & null composed & exact tests & by harness & plan & evidence set & $p$-value & clinical & conventions \\
+Work & Formulates the null? & Statistic computed by & Event-order claims & Clinical & Gold at intermediate stages & Dataset-in interface \\
 \midrule
-StatQA \cite{zhu2024statqa} & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
-StatFormBench \cite{wang2026statformbench} & \xmark & \pmark & \xmark & \xmark & \pmark & \xmark & \xmark & \xmark & \xmark \\
-StatABench \cite{zhu2026statabench} & \xmark & \xmark & \cmark & \cmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
-P-Bench / Fisher-R1 \cite{miao2026fisher} & \xmark & \xmark & \pmark & \xmark & \xmark & \xmark & \cmark & \pmark & \xmark \\
-DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
-EHRSQL / EHRAgent \cite{lee2022ehrsql,shi2024ehragent} & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark & \xmark \\
-LATCH \cite{gim2026latch} & \xmark & \xmark & \cmark & \cmark & \xmark & \pmark & \pmark & \cmark & \xmark \\
-VERITAS \cite{veritas2026} & \xmark & \pmark & \pmark & \pmark & \xmark & \xmark & \xmark & \cmark & \xmark \\
-CRAFT / TIMER \cite{craft2026,timer2025} & \pmark & --- & --- & --- & --- & --- & --- & \cmark & \xmark \\
+P-Bench / Fisher-R1 \cite{miao2026fisher} & no; $H_0$ given, test chosen but unscored & model-written R in a sandbox & no (survival only) & partly & no; final $p$ and decision & no; 425 fixed tasks \\
+LATCH \cite{gim2026latch} & no; hypothesis and method both given & deterministic R pipelines & no (cross-sectional) & yes (NHANES) & partial; cohort $n$, CI vs.\ the paper & yes; schema summary \\
+StatFormBench \cite{wang2026statformbench} & family label only & nothing computed & no & textbook & formulation only & no \\
+StatABench \cite{zhu2026statabench} & test selection, no null & fixed tool functions & no & no & final answer & no \\
+StatQA \cite{zhu2024statqa} & applicability only & nothing computed & no & no & final answer & no \\
+DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & open-ended hypothesis & agent code & no & no & rubric / expert & no \\
+EHRAgent / EHRSQL \cite{shi2024ehragent,lee2022ehrsql} & no (QA / SQL) & agent code / SQL & no & yes (EHR) & answer / execution & schema \\
+VERITAS \cite{veritas2026} & plans the analysis & own code + deterministic classifier & no & yes (imaging) & verdict vs.\ reference & data + description \\
+CRAFT / TIMER \cite{craft2026,timer2025} & n/a (extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
 \midrule
-\textbf{\sys{} (this work)} & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
+\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last, position, proximity, threshold & \textbf{yes}: annotated VAERS timelines & \textbf{every stage}: plan, evidence set, counts, $p$, verdict & stated conventions + dataset card \\
 \bottomrule
-\end{tabular}
-\caption{Positioning. \emph{Temporal}: claims about the order or timing of
-events within a record. \emph{Null composed}: the system must state the null
-and the population it is tested over, rather than receive them. \emph{Exact
-tests}: labels rest on exact tests; \emph{by harness}: the statistic is
-computed deterministically from the system's evidence, not by model-written
-code. \emph{Gold at each stage}: the plan, the evidence set and the $p$-value
-are released, so each stage can be scored. \emph{Clinical}: clinical records.
-\emph{Conventions}: the corpus stipulations are shipped as part of the task.
-\cmark{} yes, \xmark{} no, \pmark{} partial (StatFormBench scores a
-formulation but not a null; P-Bench's tests are model-written R against a
-reference $p$ on partly medical data; LATCH releases cohort sizes and
-intervals; VERITAS plans the analysis and classifies with a deterministic
-rule; CRAFT and TIMER extract timelines and pose no claims).}
+\end{tabularx}
+\caption{Positioning against the closest benchmarks and systems. ``Gold at
+intermediate stages'' is what makes per-stage attribution possible;
+``event-order claims'' means hypotheses about the order or timing of events
+within a record.}
 \label{tab:related}
+\end{table*}
+
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}p{2.5cm} Y Y Y Y Y Y@{}}
+\toprule
+Work & Null & Statistic computed by & Event-order claims & Clinical data & Gold released & Conventions \\
+\midrule
+StatQA \cite{zhu2024statqa} & \cpart{applicability only} & \cno{none} & \cno{no} & \cno{no} & \cno{final answer} & \cno{none} \\
+StatFormBench \cite{wang2026statformbench} & \cpart{test family} & \cno{none} & \cno{no} & \cno{textbook} & \cpart{formulation} & \cno{none} \\
+StatABench \cite{zhu2026statabench} & \cpart{test choice} & \cyes{fixed tools} & \cno{no} & \cno{no} & \cno{final answer} & \cno{none} \\
+P-Bench / Fisher-R1 \cite{miao2026fisher} & \cno{given} & \cno{model-written R} & \cpart{survival only} & \cpart{partly} & \cpart{reference $p$} & \cno{none} \\
+DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & \cpart{open-ended} & \cno{agent code} & \cno{no} & \cno{no} & \cpart{rubric} & \cno{none} \\
+EHRSQL / EHRAgent \cite{lee2022ehrsql,shi2024ehragent} & \cno{none (QA)} & \cno{agent code, SQL} & \cno{no} & \cyes{EHR} & \cpart{answer, execution} & \cpart{schema} \\
+LATCH \cite{gim2026latch} & \cno{given} & \cyes{R pipelines} & \cno{no} & \cyes{NHANES} & \cpart{cohort $n$, CI} & \cpart{schema summary} \\
+VERITAS \cite{veritas2026} & \cpart{planned by agent} & \cpart{own code + rule} & \cno{no} & \cyes{imaging} & \cpart{verdict only} & \cpart{data description} \\
+CRAFT / TIMER \cite{craft2026,timer2025} & \cna{n/a} & \cna{n/a} & \cpart{timelines, no claims} & \cyes{yes} & \cpart{reference timeline} & \cna{n/a} \\
+\midrule
+\textbf{\sys{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{harness}, exact tests} & \cyes{\textbf{7 families}} & \cyes{\textbf{annotated VAERS}} & \cyes{\textbf{plan, evidence, $p$, verdict}} & \cyes{\textbf{stated} + dataset card} \\
+\bottomrule
+\end{tabularx}
+\caption{Positioning, concise form. \emph{Null}: who states the null and the
+population it is tested over. \emph{Statistic computed by}: what produces the
+number the verdict rests on. \emph{Event-order claims}: hypotheses about the
+order or timing of events within a record. \emph{Gold released}: what is
+scored besides the final answer. \emph{Conventions}: whether the corpus
+stipulations are part of the task. Shading: \cyes{has it}, \cpart{partly},
+\cno{lacks it}, \cna{not applicable}.}
+\label{tab:related-concise}
 \end{table*}
 
 \section{Task}
