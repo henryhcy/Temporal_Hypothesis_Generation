@@ -790,9 +790,11 @@ cores each in the corpus) and appears in the report-tier case study only.}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.92\columnwidth]{Figures/family_radar.pdf}
+\includegraphics[width=0.72\columnwidth]{Figures/family_radar.pdf}
 \caption{Verdict accuracy by claim family on the test set, our pipeline with
-the verifier, one polygon per model (family sizes in parentheses). The 2024
+the verifier, one polygon per model; rings at 0.4, 0.6, 0.8 and 1.0 (family
+sizes: precedes 455, co-occurs 270, first/last 262, proximity 271, threshold
+152, position 90). The 2024
 pair's dents are at first/last (0.435) and threshold (0.763); qwen3.8's is at
 position (0.689); gemma4 and the two frontier models are within 0.06 of the
 rim on every family, threshold being the one family where the frontier
@@ -979,17 +981,17 @@ verdict accuracy / evidence F1.}
 \end{table}
 \fi
 
-\begin{figure*}[t]
+\begin{figure}[t]
 \centering
-\includegraphics[width=\textwidth]{Figures/rounds.pdf}
+\includegraphics[width=\columnwidth]{Figures/rounds.pdf}
 \caption{What each verify-and-repair round adds: the change in verdict
-accuracy (left) and evidence F1 (right) from the previous round, for rounds
+accuracy (top) and evidence F1 (bottom) from the previous round, for rounds
 one to three, on the test set. For the open models the first round is almost
 the whole gain and the next two add a few thousandths; the frontier models
 lose a little in every round, as correct statements get flagged into
 abstention.}
 \label{fig:rounds}
-\end{figure*}
+\end{figure}
 
 \subsection{Case studies}
 \label{sec:cases}

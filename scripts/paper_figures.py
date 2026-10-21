@@ -94,10 +94,11 @@ def save(fig, name):
 
 # ---- 1. repair rounds: the gain of each round over the previous one (design 4, user 2026-10-20) ----
 def fig_rounds():
+    """Two panels stacked, sized for one column of the two-column layout (user 2026-10-21)."""
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
     cols = [SLATE, SEA, MIST]
-    fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.8))
+    fig, axes = plt.subplots(2, 1, figsize=(3.4, 3.9), sharex=True)
     for ax, getter, title in ((axes[0], acc, "verdict accuracy"), (axes[1], den_f1, "evidence F1")):
         x = np.arange(len(MODELS)); w = 0.26
         for r in (1, 2, 3):
@@ -112,15 +113,18 @@ def fig_rounds():
                 if v is None:
                     continue
                 ax.text(xi, v + (0.003 if v >= 0 else -0.003), f"{v:+.3f}", ha="center",
-                        va="bottom" if v >= 0 else "top", fontsize=5.6, rotation=90, color=CHARCOAL, fontweight="bold")
+                        va="bottom" if v >= 0 else "top", fontsize=5.0, rotation=90, color=CHARCOAL, fontweight="bold")
         ax.axhline(0, color=CHARCOAL, lw=0.8)
         ax.set_xticks(x); ax.set_xticklabels([short[m[0]] for m in MODELS])
-        ax.set_title(f"{title}: change per repair round", loc="left")
+        ax.set_title(f"{title}: change per repair round", loc="left", fontsize=8.5)
         ax.set_ylim(-0.03, 0.16)
-        boldify(ax, size=8.5)
-    axes[0].set_ylabel("change from the previous round")
-    axes[0].legend(frameon=False, loc="upper right", fontsize=7.5, handlelength=1.3)
-    fig.tight_layout(w_pad=1.5)
+        ax.set_yticks([0.0, 0.05, 0.10, 0.15])
+        boldify(ax, size=7.5)
+        ax.tick_params(axis="x", length=0)
+    axes[0].set_ylabel("change from\nthe previous round", fontsize=8)
+    axes[1].set_ylabel("change from\nthe previous round", fontsize=8)
+    axes[0].legend(frameon=False, loc="upper right", fontsize=7, handlelength=1.2, labelspacing=0.3)
+    fig.tight_layout(h_pad=0.8)
     save(fig, "rounds")
 
 
@@ -288,24 +292,26 @@ def fig_family_radar(palette: str = "meadow", suffix: str = ""):
     K = len(FC.FAMS)
     ang = np.linspace(0, 2 * np.pi, K, endpoint=False)
     ang_c = np.concatenate([ang, ang[:1]])
-    fig, ax = plt.subplots(figsize=(4.6, 4.6), subplot_kw={"projection": "polar"})
-    lws = [2.0, 2.0, 2.0, 1.4, 1.4]
+    # compact rendering (user 2026-10-21: about a third of the earlier area): family names only
+    # (sizes go to the caption), legend beside the chart, placed at 0.7\columnwidth
+    fig, ax = plt.subplots(figsize=(3.0, 1.95), subplot_kw={"projection": "polar"})
+    fig.subplots_adjust(left=0.16, right=0.62, top=0.88, bottom=0.12)
+    lws = [1.5, 1.5, 1.5, 1.1, 1.1]
     for j, (key, label, _) in enumerate(MODELS):
         v = np.concatenate([O[:, j], O[:1, j]])
-        ax.plot(ang_c, v, color=cols[j], lw=lws[j], marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6,
+        ax.plot(ang_c, v, color=cols[j], lw=lws[j], marker="o", ms=2.6, markeredgecolor="white", markeredgewidth=0.4,
                 label=label, zorder=5 - j)
         ax.fill(ang_c, v, color=cols[j], alpha=0.10, zorder=1)
     ax.set_theta_offset(np.pi / 2); ax.set_theta_direction(-1)
     ax.set_xticks(ang)
-    ax.set_xticklabels([f"{f[1]}\n(n={n[f[0]]})" for f in FC.FAMS], fontsize=8.5, fontweight="bold")
+    ax.set_xticklabels([f[1] for f in FC.FAMS], fontsize=8.5, fontweight="bold")
     ax.set_ylim(0.3, 1.0); ax.set_yticks([0.4, 0.6, 0.8, 1.0])
-    ax.set_yticklabels(["0.4", "0.6", "0.8", "1.0"], fontsize=6.5, color="#6B6F73")
-    ax.set_rlabel_position(90)
-    ax.grid(color="#E4E1D8", lw=0.8); ax.spines["polar"].set_color("#E4E1D8")
-    ax.tick_params(axis="x", pad=10)
-    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=3, fontsize=7.5,
-              handlelength=1.6, columnspacing=1.2)
-    fig.tight_layout()
+    ax.set_yticklabels(["0.4", "0.6", "0.8", "1.0"], fontsize=5.5, color="#6B6F73")
+    ax.set_rlabel_position(0)
+    ax.grid(color="#E4E1D8", lw=0.6); ax.spines["polar"].set_color("#E4E1D8")
+    ax.tick_params(axis="x", pad=2)
+    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.28, 0.5), ncol=1, fontsize=7.5,
+              handlelength=1.4, labelspacing=0.35)
     save(fig, "family_radar" + suffix)
 
 
