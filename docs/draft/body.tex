@@ -160,10 +160,11 @@ VERITAS) on our data as end-to-end baselines.
 scores one query per question with an abstention option; EHRAgent
 \cite{shi2024ehragent} solves EHR questions with a code-writing agent and
 error-driven retries. The Straight-to-SQL baselines in \S\ref{sec:baselines}
-follow that protocol over our schema. MedTempo and the CRAFT/TIMER line
-\cite{craft2026,timer2025} extract clinical timelines from narratives; we start
-where extraction ends, taking the expert-annotated timelines as given and
-asking what can be claimed about them.
+follow that protocol over our schema. The CRAFT/TIMER line \cite{craft2026,timer2025} extracts clinical timelines
+from narratives, and MedTempo \cite{medtempo2026} is the expert-annotated
+corpus of such timelines that we build on; it is our data source, not a
+competitor: we start where extraction ends, take the timelines as given and
+ask what can be claimed about them.
 
 \paragraph{Positioning.} Table~\ref{tab:related} compares the closest work on
 the dimensions that decide what can be claimed. Two things are not new: a
@@ -191,7 +192,6 @@ StatQA \cite{zhu2024statqa} & applicability only & nothing computed & no & no & 
 DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & open-ended hypothesis & agent code & no & no & rubric / expert & no \\
 EHRAgent / EHRSQL \cite{shi2024ehragent,lee2022ehrsql} & no (QA / SQL) & agent code / SQL & no & yes (EHR) & answer / execution & schema \\
 VERITAS \cite{veritas2026} & plans the analysis & own code + deterministic classifier & no & yes (imaging) & verdict vs.\ reference & data + description \\
-CRAFT / TIMER \cite{craft2026,timer2025} & n/a (extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
 \midrule
 \textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last, position, proximity, threshold & \textbf{yes}: annotated VAERS timelines & \textbf{every stage}: plan, evidence set, counts, $p$, verdict & stated codebook + dataset card \\
 \bottomrule
@@ -210,27 +210,26 @@ within a record.}
 \renewcommand{\arraystretch}{1.25}
 \begin{tabularx}{\textwidth}{@{}p{2.5cm} Y Y Y Y Y Y@{}}
 \toprule
-Work & Null & Statistic computed by & Event-order claims & Clinical data & Gold released & Codebook \\
+Work & Null & Test selection & Test execution & Event-order claims & Clinical data & Gold released \\
 \midrule
-StatQA \cite{zhu2024statqa} & \cpart{applicability only} & \cno{none} & \cno{no} & \cno{no} & \cno{final answer} & \cno{none} \\
-StatFormBench \cite{wang2026statformbench} & \cpart{test family} & \cno{none} & \cno{no} & \cno{textbook} & \cpart{formulation} & \cno{none} \\
-StatABench \cite{zhu2026statabench} & \cpart{test choice} & \cyes{fixed tools} & \cno{no} & \cno{no} & \cno{final answer} & \cno{none} \\
-P-Bench / Fisher-R1 \cite{miao2026fisher} & \cno{given} & \cno{model-written R} & \cpart{survival only} & \cpart{partly} & \cpart{reference $p$} & \cno{none} \\
-DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & \cpart{open-ended} & \cno{agent code} & \cno{no} & \cno{no} & \cpart{rubric} & \cno{none} \\
-EHRSQL / EHRAgent \cite{lee2022ehrsql,shi2024ehragent} & \cno{none (QA)} & \cno{agent code, SQL} & \cno{no} & \cyes{EHR} & \cpart{answer, execution} & \cpart{schema} \\
-LATCH \cite{gim2026latch} & \cno{given} & \cyes{R pipelines} & \cno{no} & \cyes{NHANES} & \cpart{cohort $n$, CI} & \cpart{schema summary} \\
-VERITAS \cite{veritas2026} & \cpart{planned by agent} & \cpart{own code + rule} & \cno{no} & \cyes{imaging} & \cpart{verdict only} & \cpart{data description} \\
-CRAFT / TIMER \cite{craft2026,timer2025} & \cna{n/a} & \cna{n/a} & \cpart{timelines, no claims} & \cyes{yes} & \cpart{reference timeline} & \cna{n/a} \\
+StatQA \cite{zhu2024statqa} & \cpart{applicability only} & \cyes{model picks from a catalogue, scored} & \cno{none run} & \cno{no} & \cno{no} & \cno{final answer} \\
+StatFormBench \cite{wang2026statformbench} & \cpart{test family} & \cpart{model names the family} & \cno{none run} & \cno{no} & \cno{textbook} & \cpart{formulation} \\
+StatABench \cite{zhu2026statabench} & \cpart{test choice} & \cyes{model picks, scored} & \cpart{fixed tool functions} & \cno{no} & \cno{no} & \cno{final answer} \\
+P-Bench / Fisher-R1 \cite{miao2026fisher} & \cno{given} & \cpart{model picks, unscored} & \cpart{model-written R} & \cpart{survival only} & \cpart{partly} & \cpart{reference $p$} \\
+DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & \cpart{open-ended} & \cpart{agent, rubric-scored} & \cpart{agent code} & \cno{no} & \cno{no} & \cpart{rubric} \\
+EHRSQL / EHRAgent \cite{lee2022ehrsql,shi2024ehragent} & \cno{none (QA)} & \cno{none} & \cno{SQL, agent code; no test} & \cno{no} & \cyes{EHR} & \cpart{answer, execution} \\
+LATCH \cite{gim2026latch} & \cno{given} & \cno{given by the source study} & \cyes{deterministic R pipelines} & \cno{no} & \cyes{NHANES} & \cpart{cohort $n$, CI} \\
+VERITAS \cite{veritas2026} & \cpart{planned by agent} & \cpart{agent plans} & \cpart{own code + rule} & \cno{no} & \cyes{imaging} & \cpart{verdict only} \\
 \midrule
-\textbf{\sys{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{harness}, exact tests} & \cyes{\textbf{7 families}} & \cyes{\textbf{annotated VAERS}} & \cyes{\textbf{plan, evidence, $p$, verdict}} & \cyes{\textbf{stated} + dataset card} \\
+\textbf{\sys{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{derived from the plan} (null, arms); scored by plan EM} & \cyes{\textbf{harness}: three exact tests, floor} & \cyes{\textbf{7 families}} & \cyes{\textbf{annotated VAERS}} & \cyes{\textbf{plan, evidence, $p$, verdict}} \\
 \bottomrule
 \end{tabularx}
 \caption{Positioning, concise form. \emph{Null}: who states the null and the
-population it is tested over. \emph{Statistic computed by}: what produces the
-number the verdict rests on. \emph{Event-order claims}: hypotheses about the
-order or timing of events within a record. \emph{Gold released}: what is
-scored besides the final answer. \emph{Codebook}: whether the corpus
-stipulations are part of the task. Marks: \cmark{} has it, \pmark{} partly,
+population it is tested over. \emph{Test selection}: who chooses the test
+and whether that choice is scored. \emph{Test execution}: what computes the
+statistic the verdict rests on, and with which tests. \emph{Event-order
+claims}: hypotheses about the order or timing of events within a record.
+\emph{Gold released}: what is scored besides the final answer. Marks: \cmark{} has it, \pmark{} partly,
 \xmark{} lacks it, \nmark{} not applicable.}
 \label{tab:related-concise}
 \end{table*}
