@@ -279,10 +279,9 @@ def fig_registers():
 
 
 # ---- 5. per-group verdict accuracy of our pipeline (ours only; user 2026-10-20) ------------------
-def fig_family_radar(palette: str = "earthsky", suffix: str = ""):
+def fig_family_radar(palette: str = "meadow", suffix: str = ""):
     """Verdict accuracy by claim family on the test set, our pipeline with the verifier only, one polygon
-    per model (user 2026-10-20: radar, no end-to-end comparison; earth-and-sky and meadow palettes
-    both in the draft for comparison)."""
+    per model (user 2026-10-20: radar, no end-to-end comparison, meadow palette)."""
     import families_candidates as FC  # noqa: E402
     O, _, n = FC.load()
     cols = FC.PALETTES_STRONG[palette]
@@ -365,4 +364,3 @@ if __name__ == "__main__":
     fig_registers()
     fig_groups()
     fig_family_radar()
-    fig_family_radar("meadow", "_meadow")
