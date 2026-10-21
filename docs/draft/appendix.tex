@@ -140,12 +140,12 @@ adds, is released with the code.
 The test set fixes the prompt; the development set is where the prompt was
 varied one decision at a time. Table~\ref{tab:grid} separates what the prompt
 tells the 2024 pair from what the decomposition adds. Stating the conventions
-to the end-to-end model is worth $+0.09$ (A$\rightarrow$B); two plan-free
+to the Straight-to-SQL model is worth $+0.09$ (A$\rightarrow$B); two plan-free
 repair rounds another $+0.07$; handing the composed plan to S2 as prose is
-\emph{below} the end-to-end control (0.573) and level with it after repair
+\emph{below} the Straight-to-SQL control (0.573) and level with it after repair
 (0.645); resolving the plan into its rule gives 0.855 with nothing else
 changed. At 7B nothing moves the cohort tiers above 0.45, and the conventions
-cost the end-to-end 7B model accuracy (B $<$ A): a model that cannot compose
+cost the Straight-to-SQL 7B model accuracy (B $<$ A): a model that cannot compose
 the plan cannot use the stipulations either.
 
 \begin{table*}[t]
@@ -213,10 +213,10 @@ Catalogue (answer-injected upper bound) & 1.000 & 1.000 & --- & --- \\
 \paragraph{Retrieval: attribution.} Every prediction records the report
 identifiers it placed in each arm, so every wrongly included or dropped report
 can be checked against the claim's rule in the database and named
-(Table~\ref{tab:attribution}). The largest single cause in the end-to-end rows
+(Table~\ref{tab:attribution}). The largest single cause in the Straight-to-SQL rows
 had been invisible to every aggregate metric: the query defines the eligible
 set as the supporting set, so $n = k$ and the claim is supported for free (47 of 129 records for B). Repair rounds remove failed statements and most $n = k$
-queries; what remains for the end-to-end model is semantic --- co-existing
+queries; what remains for the Straight-to-SQL model is semantic --- co-existing
 reports in order denominators, ties, presence splits narrowed to co-occurrence
 --- and what remains for the contract pipeline is mostly its planner's errors.
 
@@ -226,7 +226,7 @@ reports in order denominators, ties, presence splits narrowed to co-occurrence
 \setlength{\tabcolsep}{4pt}
 \begin{tabular}{lrrrrrrrr}
 \toprule
- & \multicolumn{3}{c}{S1 at gold} & \multicolumn{3}{c}{end-to-end} & \multicolumn{2}{c}{ours (D$'$)} \\
+ & \multicolumn{3}{c}{S1 at gold} & \multicolumn{3}{c}{Straight-to-SQL} & \multicolumn{2}{c}{ours (D$'$)} \\
 S2 failure cause (129 cohort records) & Coder-7B & Coder-32B & \quad+2 & A & B & B+2 & no verifier & +2 \\
 \midrule
 no plan from S1 (S2 not run) & 0 & 0 & 0 & 0 & 0 & 0 & 3 & 2 \\
@@ -294,7 +294,7 @@ system & full test set (1{,}500) & same 204 claims \\
 \midrule
 VERITAS + codebook, our tests (Coder-32B) & --- & 0.402 [0.333, 0.471] \\
 EHRAgent, own test (Coder-32B) & 0.605 [0.579, 0.629] & 0.559 [0.490, 0.623] \\
-B: end-to-end + codebook (Coder-32B) & 0.575 [0.549, 0.599] & 0.593 [0.525, 0.662] \\
+B: Straight-to-SQL + codebook (Coder-32B) & 0.575 [0.549, 0.599] & 0.593 [0.525, 0.662] \\
 D$'$ + verifier (Qwen2.5-32B pair) & 0.810 [0.791, 0.830] & 0.804 [0.750, 0.858] \\
 D$'$ + verifier (qwen3.8-27B) & 0.872 [0.855, 0.889] & 0.887 [0.843, 0.931] \\
 D$'$ + verifier (gemma4-31B) & 0.981 [0.974, 0.988] & 0.980 [0.961, 0.995] \\
@@ -312,7 +312,7 @@ test set, same systems, same claims.}
 Table~\ref{tab:cost} gives, per test record, the wall time of the sequential
 harness, the tokens exchanged and the dollar cost from the providers' own
 usage counts at list price with prompt caching; local rows cost GPU time only.
-The contract pipeline makes two calls per record where the end-to-end
+The contract pipeline makes two calls per record where the Straight-to-SQL
 baseline makes one, so it exchanges about twice the tokens, and the verifier
 adds 10--20\% on top. A full ten-row frontier column on the test set cost
 \$80 (Opus) and \$89 (GPT-5.6, which spends hidden reasoning tokens on the

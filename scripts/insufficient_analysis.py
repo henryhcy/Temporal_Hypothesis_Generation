@@ -21,7 +21,7 @@ R = Path(__file__).resolve().parents[1] / "results"
 E = Path.home() / "ehragent_baseline"
 MODELS = [("q25pair", "Qwen2.5-32B pair"), ("qwen38_27b", "qwen3.8-27B"), ("gemma4_31b", "gemma4-31B"),
           ("opus", "Opus 5.5"), ("gpt", "GPT-5.6")]
-SYSTEMS = [("cellB", "B: end-to-end + conventions"), ("dprime_verify2", "ours: contract + verifier")]
+SYSTEMS = [("cellB", "B: Straight-to-SQL + codebook"), ("dprime_verify2", "ours: ART with the verifier")]
 # the frontier rows of the main table are D' without the verifier at 0.999; the verifier rows are what
 # the paper reports for every model, so the same suffix is used throughout
 EHRAGENT = [("Qwen2.5-32B pair", E / "logs_testcohort_e2e_32b_min/predictions.jsonl"),

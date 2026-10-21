@@ -41,7 +41,7 @@ box(0.8, 26.0, 17.6, 13.0, C_TASK, "Output: verdict",
 
 # ---- top band: the three stages -------------------------------------------
 XS = [(21.0, 25.0), (48.5, 25.0), (76.0, 23.2)]; YA, HA = 40.5, 20.5
-box(XS[0][0], YA, XS[0][1], HA, C_STAGE, "S1  Plan  (LLM, toolbox frame)",
+box(XS[0][0], YA, XS[0][1], HA, C_STAGE, "S1  Articulate  (LLM, toolbox frame)",
     "told: codebook by situation,\nnull sources, test definitions,\ndataset card -- the claim-type\nmapping is WITHHELD; zero-shot.\n"
     "composes:", bsize=5.1)
 ax.text(XS[0][0] + 1.2, YA + 7.6, "events      [Headache, Fatigue]\nquantity    order_of_pair\ndenominator ordered_pair\narms 1  null symmetric p0=.5\ntail greater  test binomial",
@@ -69,7 +69,7 @@ for (x, w), lab in zip(XS, ["verify & repair, 1 round:\nquantity vs denominator;
                             "rule validity:\nfamily x rule, p0 in (0,1)"]):
     arrow(x + w * 0.75, YA + HA + 3.0, x + w * 0.25, YA + HA + 3.0, conn="arc3,rad=0.5", lw=0.8, color=BROWN)
     ax.text(x + w / 2, YA + HA + 5.7, lab, fontsize=4.5, ha="center", va="bottom", color=BROWN, linespacing=1.15)
-ax.text(21.0, 72.6, "Reference pipeline: each stage has a contract, a verifier (contract, codebook and data only) and a gold answer",
+ax.text(21.0, 72.6, "ART reference pipeline (articulate, retrieve, test): each stage has a contract, a verifier (contract, codebook and data only) and a gold answer",
         fontsize=5.9, fontweight="bold", va="top", ha="left")
 
 # ---- gold and metrics band -------------------------------------------------
@@ -87,7 +87,7 @@ s1, s2, s3 = XS[0][0], XS[1][0], XS[2][0]; e1, e2, e3 = s1 + XS[0][1], s2 + XS[1
 rows = [
     (C_OURS, [(s1, e3)], "D'  ours: plan -> resolved rule -> SQL -> exact test; +2 repair rounds with the plan's checks"),
     (C_BASE, [(s1, e3)], "D   ablation: the plan handed to S2 as prose + the whole codebook"),
-    (C_BASE, [(s1, e2)], "A / B  end-to-end sentence -> SQL (schema only / + codebook); +2 plan-free repair rounds; S3 by the harness"),
+    (C_BASE, [(s1, e2)], "A / B  Straight-to-SQL, one prompt from claim to query (schema only / + codebook); +2 plan-free repair rounds; S3 by the harness"),
     (C_EXT,  [(s1, e3)], "agentic: EHRAgent (code agent, own retries), VERITAS (plan / statistics / interpretation agents); our test functions available"),
     (C_BASE, [("gold", s1, e2), (s3, e3)], "model as statistician: S1 and S2 at gold, n and k handed over; the model names the test and makes the judgment call"),
     (C_HARN, [(s1, e1), (s2, e2)], "ceilings: planner alone (gold S2/S3)                       SQL stage alone (gold plan)"),
@@ -101,7 +101,7 @@ for fc, spans, lab in rows:
             xa, xb = span; box(xa, y - rh, xb - xa, rh - 0.5, fc, round_=False, lw=0.6)
     ax.text(s1 + 0.7, y - rh / 2 - 0.25, lab, fontsize=5.0, va="center", ha="left")
     y -= rh
-for x, w, lab in [(s1, XS[0][1], "S1 plan"), (s2, XS[1][1], "S2 retrieve"), (s3, XS[2][1], "S3 test")]:
+for x, w, lab in [(s1, XS[0][1], "S1 articulate"), (s2, XS[1][1], "S2 retrieve"), (s3, XS[2][1], "S3 test")]:
     ax.text(x + w / 2, 0.8, lab, fontsize=5.6, ha="center", va="bottom", color="#555555", fontweight="bold")
 
 out = sys.argv[1] if len(sys.argv) > 1 else "."

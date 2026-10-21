@@ -14,6 +14,7 @@
 % ---------------------------------------------------------------------------
 \newcommand{\pend}[1]{\textit{#1}}
 \newcommand{\sys}{\textsc{Strata}}
+\newcommand{\art}{\textsc{Art}}
 
 \begin{figure*}[t]
 \centering
@@ -26,8 +27,8 @@ S2 writes the retrieval query under that contract; S3 runs the exact test.
 Each stage has a bounded verify-and-repair loop and a gold answer, so the stage
 metrics beneath (plan EM; evidence F1, co-exist leak; $p$-agreement,
 faithfulness, overclaim and underclaim) are measured in addition to the verdict. Baseline
-families (bottom) are placed on the stages they replace: end-to-end
-sentence-to-SQL with and without the codebook and with plan-free repair,
+families (bottom) are placed on the stages they replace: Straight-to-SQL
+with and without the codebook and with plan-free repair,
 agentic systems, and the model as statistician on the gold counts.}
 \label{fig:overview}
 \end{figure*}
@@ -63,8 +64,9 @@ computed mechanically from the annotations, validated by six families of
 invariants, and reproduced to 1.000 by a deterministic oracle, so a system's
 intermediate outputs can be scored, not only its answer.
 
-We pair the benchmark with an \emph{instrumented reference pipeline}: a plan
-stage, a retrieval stage and a deterministic test stage, each with an explicit
+We pair the benchmark with an \emph{instrumented reference pipeline},
+\art{} (articulate, retrieve, test): a stage that articulates the claim as a
+plan, a retrieval stage and a deterministic test stage, each with an explicit
 output contract and a bounded verify-and-repair loop. The pipeline is a
 measuring instrument as much as a method: its stages can be filled with gold,
 its prompts can state or withhold the corpus \emph{codebook} (the
@@ -90,7 +92,8 @@ stand on the right evidence}: a 2024 32B pair goes from 0.575 end to end to
 right verdicts that rest on the exact denominator rises from 40--86\% to
 86--97\%. Third, \emph{the denominator is where systems fail, and verdict
 accuracy hides it}: a published agentic baseline reaches 0.605, within 0.03 of
-the end-to-end control, while deciding 58\% of the claims the data cannot
+the Straight-to-SQL control (one prompt from the claim to its query), while
+deciding 58\% of the claims the data cannot
 decide; handed the exact counts, the open models still return the wrong
 verdict on a quarter to a third of claims.
 
@@ -110,8 +113,8 @@ validated by six families of invariants and reproduced by a deterministic
 oracle; and the corpus stipulations the labels depend on are shipped as text
 that any system can be given, so ``codebook given'' is a controlled
 condition rather than a hidden assumption (\S\ref{sec:dataset}).
-\item \textbf{A staged verification method.} A plan, retrieve, test
-pipeline whose plan is handed to retrieval as a contract resolved by the
+\item \textbf{A staged verification method.} \art{}, an articulate,
+retrieve, test pipeline whose plan is handed to retrieval as a contract resolved by the
 harness, with a bounded verify-and-repair loop at each stage and a
 deterministic exact test; any stage can be filled with gold, so the loss of
 each stage is measurable and information and architecture are separately
@@ -156,7 +159,7 @@ VERITAS) on our data as end-to-end baselines.
 \paragraph{Clinical text-to-SQL and timelines.} EHRSQL \cite{lee2022ehrsql}
 scores one query per question with an abstention option; EHRAgent
 \cite{shi2024ehragent} solves EHR questions with a code-writing agent and
-error-driven retries. The sentence-to-SQL baselines in \S\ref{sec:baselines}
+error-driven retries. The Straight-to-SQL baselines in \S\ref{sec:baselines}
 follow that protocol over our schema. MedTempo and the CRAFT/TIMER line
 \cite{craft2026,timer2025} extract clinical timelines from narratives; we start
 where extraction ends, taking the expert-annotated timelines as given and
@@ -468,8 +471,8 @@ $p$ on supported claims, median & 0.008 \\
 \label{sec:framework}
 \label{sec:method}
 
-Our reference pipeline verifies a claim in three stages, plan, retrieve and
-test, and is built so that each stage can be scored against its gold, filled
+Our reference pipeline, \art{}, verifies a claim in three stages, articulate,
+retrieve and test, and is built so that each stage can be scored against its gold, filled
 with gold, or told more or less about the corpus. This section gives the
 stage contracts, the two prompt frames that control what the model is told,
 and the verification loop; the systems it is compared against are in
@@ -481,7 +484,7 @@ and the verification loop; the systems it is compared against are in
 The reference pipeline decomposes verification into three stages with explicit
 output contracts (Figure~\ref{fig:overview}).
 
-\textbf{S1 --- plan.} From the record (text, level, cohort) the model composes
+\textbf{S1 --- articulate.} From the record (text, level, cohort) the model composes
 a plan: \texttt{events}, \texttt{quantity}, \texttt{denominator} (a named
 primitive: \emph{ordered\_pair}, \emph{both\_present},
 \emph{all\_present\_unique\_first}, \emph{consecutive\_pair},
@@ -543,7 +546,7 @@ S2 a statement that the database rejects, an arm whose denominator equals its
 numerator, an empty arm beside a full one, and --- when a plan exists --- rows
 that violate the plan's primitive (co-existing reports in an order
 denominator, ties in a first/last denominator, non-consecutive pairs in an
-immediate denominator) trigger a re-ask, up to two rounds. The end-to-end
+immediate denominator) trigger a re-ask, up to two rounds. The Straight-to-SQL
 baselines receive the same loop with the checks that need no plan, which is
 the control for what verification is worth without a contract. The planner
 alone settles after one round; the SQL stage after two.
@@ -562,7 +565,7 @@ the same five models in every model slot.
 end to end, and how much does giving them the corpus codebook change the
 result?
 \item \textbf{RQ2.} Does our staged pipeline improve open models over
-end-to-end verification, and which stage and which claim families account
+Straight-to-SQL verification, and which stage and which claim families account
 for the errors that remain?
 \item \textbf{RQ3.} Do correct verdicts rest on correct evidence, and how
 often do systems decide claims the data cannot decide, or abstain on claims
@@ -577,9 +580,10 @@ studies (\S\ref{sec:cases}) cover single reports and paraphrase, and
 \subsection{Baselines}
 \label{sec:baselines}
 
-\emph{End-to-end sentence-to-SQL} (rows A and B) follows the single-query
-text-to-SQL protocol of EHRSQL \cite{lee2022ehrsql}: the same SQL model
-receives the schema and the claim and writes the per-report rows in one shot,
+\emph{Straight-to-SQL} (rows A and B): one prompt takes the claim straight to
+its retrieval query, following the single-query text-to-SQL protocol of
+EHRSQL \cite{lee2022ehrsql}; the same SQL model receives the schema and the
+claim and writes the per-report rows in one pass,
 given the schema only (A) or the schema and the codebook (B); S3 is the
 harness's, so these rows differ from our pipeline only in having no plan and
 no contract. \emph{Agentic}: EHRAgent \cite{shi2024ehragent}, a code-writing
@@ -670,21 +674,21 @@ with the code.
 test set, 1{,}500 cohort claims & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
  & \multicolumn{5}{c}{\textit{verdict accuracy \,(macro precision / recall / F1)}} \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{end-to-end (EHRSQL protocol) and agentic baselines}} \\
-A: sentence $\rightarrow$ SQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
+\multicolumn{6}{@{}l}{\textit{Straight-to-SQL (EHRSQL protocol) and agentic baselines}} \\
+A: Straight-to-SQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
 B: \quad + codebook & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
 EHRAgent, runs its own test & 0.605\,{\scriptsize(0.694/0.606/0.600)} & \pend{running} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
 VERITAS + codebook, our tests$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{stage ceilings (one stage by the model, the others at gold) and ablations}} \\
-S1: plan, with the verifier (2 rounds) & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
-S2: retrieval, with the verifier (2 rounds) & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
+S1 articulate, with the verifier (2 rounds) & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
+S2 retrieve, with the verifier (2 rounds) & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
 model as statistician: verdict from the gold counts (replaces S3) & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
 S1 + S2 with the verifier + model as statistician on its own counts & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{ours: plan as contract, exact test}} \\
-S1 + S2 + S3, no verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
-\textbf{S1 + S2 + S3 + verifier} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
+\multicolumn{6}{@{}l}{\textit{ours: \art{}, plan as contract, exact test}} \\
+\art{} (S1 + S2 + S3), no verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
+\textbf{\art{} + verifier} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
 \bottomrule
 \end{tabular}
 \caption{Main results on the test set. Each cell is verdict accuracy, then in
@@ -722,7 +726,7 @@ underclaim & B & 0.388 & 0.224 & 0.182 & 0.000 & 0.001 \\
  & D$'$ + verifier & 0.223 & 0.068 & 0.023 & 0.009 & 0.011 \\
 \bottomrule
 \end{tabular}
-\caption{Evidence and abstention on the test set for the end-to-end control
+\caption{Evidence and abstention on the test set for the Straight-to-SQL control
 (B) and our pipeline. Denominator F1 is over the report sets each arm
 retrieved; faithfulness is $P(\text{denominator exact} \mid \text{verdict
 right})$; overclaim is the share of gold-\emph{insufficient} claims
@@ -736,7 +740,7 @@ Table~\ref{tab:main} reports every system on the same 1{,}500 claims and
 Figure~\ref{fig:families} what their verdicts stand on. The three research
 questions are answered in turn.
 
-\subsection{RQ1: end-to-end verification and the codebook}
+\subsection{RQ1: Straight-to-SQL verification and the codebook}
 \label{sec:main}
 
 \paragraph{With the codebook, frontier models solve the task; without it
@@ -786,7 +790,7 @@ position (T-V1) & 90 & 1.000 / 0.722 & 0.689 / 0.722 & 1.000 / 1.000 & 1.000 / 1
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy by claim family on the test set, our pipeline with
-the verifier against the end-to-end control, same model. The sequence family
+the verifier against the Straight-to-SQL control, same model. The sequence family
 has no cohort-tier group in the test set (its two cohort groups have four
 cores each in the corpus) and appears in the report-tier case study only.}
 \label{tab:families}
@@ -816,7 +820,7 @@ null is a data-derived rate, gemma4 only on proximity (0.970) and threshold
 (0.941 and 0.914, all of it in H-V5); their planner-alone rows are at the
 same level, so the loss is in composing the bar into the plan.
 Figure~\ref{fig:families} shows which families the contract helps relative
-to the end-to-end control, on each evidence measure: its largest gains are in
+to the Straight-to-SQL control, on each evidence measure: its largest gains are in
 faithfulness and overclaim on the families whose rule it states (position,
 threshold, first/last, co-occurs); the cells where it loses are the 2024
 pair's underclaim on first/last, where it abstains rather than decide, and
@@ -827,14 +831,14 @@ gemma4's faithfulness on proximity.
 
 \paragraph{The denominator is where systems fail, and the verdict hides it.}
 The published agentic baseline reaches 0.605 with the 2024 Coder, within
-0.03 of the end-to-end control, and 0.792 with GPT-5.6 against 0.984 for the
+0.03 of the Straight-to-SQL control, and 0.792 with GPT-5.6 against 0.984 for the
 same model under the EHRSQL protocol with the codebook; its evidence
 cannot be audited (it returns a verdict from its own code), and it decides
 58\% and 15\% of the claims the data cannot decide
 (\S\ref{sec:insufficient}); the multi-agent VERITAS, given the same codebook and our exact
 tests, completes fewer than half its runs within a 10-minute cap per phase
 and scores 0.402, abstaining on most decisive claims --- the opposite
-failure. The end-to-end control with the 2024 Coder is right on 57\% of claims
+failure. The Straight-to-SQL control with the 2024 Coder is right on 57\% of claims
 and right for the right reason on 40\% of those: it admits same-stage reports
 into order denominators, defines the eligible set as the supporting set, and
 narrows presence splits to co-occurrence (Table~\ref{tab:attribution}). The
@@ -855,7 +859,7 @@ subsample interval (Appendix~\ref{app:subsample}).
 \includegraphics[width=\textwidth]{Figures/families.pdf}
 \caption{The four evidence measures (\S\ref{sec:framework}: evidence F1,
 faithfulness, overclaim, underclaim) by claim family and model, as the
-contract's improvement over the end-to-end control on one scale: ours minus
+contract's improvement over the Straight-to-SQL control on one scale: ours minus
 B, with the sign flipped for the two lower-is-better measures (marked
 $\downarrow$) so that green is better in every panel; the two underlying
 values are printed beneath each cell.}
@@ -943,7 +947,7 @@ already resolved. On the development set (the full
 information-versus-architecture grid is released with the code) the same
 composed plan handed to S2 as prose with the codebook gives 0.570 for the
 2024 pair, and 0.655 with two verify-and-repair rounds, below the verified
-end-to-end model (0.715), while resolving the plan's named primitive into
+Straight-to-SQL model (0.715), while resolving the plan's named primitive into
 its rule gives 0.865 and 0.870 with the same plan and the same
 model. The decomposition pays only when the plan is a contract.
 
@@ -1032,7 +1036,7 @@ registers of every instance (research, media, clinical), and the case study
 uses the weakest of our models, the 2024 Qwen2.5 pair, so that any
 sensitivity would show. The planner alone loses 0.03--0.12 across registers
 and the full pipeline 0.03--0.10 (Figure~\ref{fig:registers}): the cost of paraphrase is paid at planning and
-passes through the contract unchanged, and the end-to-end control loses
+passes through the contract unchanged, and the Straight-to-SQL control loses
 0.04--0.08 from a lower base. Paraphrase does not change the ranking of
 systems or the size of the contract's margin. The registers are templated;
 free paraphrase, and the stronger models, are left to future work.
@@ -1048,7 +1052,7 @@ development set, 32B pair & Original & Research & Media & Clinical \\
 planner alone (S2, S3 at gold), 1 round & 0.965 & 0.850 & 0.860 & 0.935 \\
 D$'$ & 0.865 & 0.790 & 0.755 & 0.825 \\
 D$'$ + verifier & 0.870 & 0.815 & 0.770 & 0.840 \\
-B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
+B (Straight-to-SQL control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy by register on the 200 development instances
@@ -1062,7 +1066,7 @@ B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \includegraphics[width=\columnwidth]{Figures/registers.pdf}
 \caption{Verdict accuracy by paraphrase register on the 200 development
 instances (claim form), Qwen2.5-32B pair: the planner alone (S2, S3 at gold),
-the pipeline without and with the verifier, and the end-to-end control.}
+the pipeline without and with the verifier, and the Straight-to-SQL control.}
 \label{fig:registers}
 \end{figure}
 
@@ -1080,14 +1084,14 @@ the pipeline without and with the verifier, and the end-to-end control.}
 \cmidrule(lr){2-5}\cmidrule(lr){7-12}
 test set & all & not-loc. & sparse & underp. & sub-type right & all & query failed & none found & too few & wrong set & gold set & no answer \\
 \midrule
-\multicolumn{13}{@{}l}{\textit{B: end-to-end, codebook given}} \\
+\multicolumn{13}{@{}l}{\textit{B: Straight-to-SQL, codebook given}} \\
 \quad Qwen2.5-32B pair & 0.234 & 0.131 & 0.134 & 0.430 & 0.791 & 0.388 & 0.017 & 0.026 & 0.108 & 0.204 & 0.033 & 0.000 \\
 \quad qwen3.8-27B & 0.141 & 0.080 & 0.083 & 0.256 & 0.855 & 0.224 & 0.050 & 0.016 & 0.085 & 0.066 & 0.006 & 0.000 \\
 \quad gemma4-31B & 0.036 & 0.040 & 0.013 & 0.052 & 0.893 & 0.182 & 0.098 & 0.001 & 0.043 & 0.039 & 0.000 & 0.000 \\
 \quad Opus 5.5 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
 \quad GPT-5.6 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.001 & 0.000 & 0.000 & 0.001 & 0.000 & 0.000 & 0.000 \\
 \midrule
-\multicolumn{13}{@{}l}{\textit{ours: plan as contract, exact test, verifier}} \\
+\multicolumn{13}{@{}l}{\textit{ours: \art{} with the verifier}} \\
 \quad Qwen2.5-32B pair & 0.032 & 0.011 & 0.051 & 0.035 & 0.871 & 0.216 & 0.134 & 0.021 & 0.009 & 0.047 & 0.005 & 0.031 \\
 \quad qwen3.8-27B & 0.046 & 0.062 & 0.025 & 0.047 & 0.966 & 0.066 & 0.013 & 0.006 & 0.014 & 0.029 & 0.004 & 0.025 \\
 \quad gemma4-31B & 0.010 & 0.000 & 0.019 & 0.012 & 0.970 & 0.023 & 0.012 & 0.001 & 0.002 & 0.005 & 0.003 & 0.000 \\
@@ -1117,25 +1121,25 @@ test family. ``No answer'' is a record for which no plan could be derived.}
 The three-decision verdict fails in two directions, deciding what the data
 cannot decide and abstaining on what it can, and Table~\ref{tab:insufficient}
 separates them with the cause of each. \emph{Overclaim is the agents' and the
-end-to-end models' failure.} EHRAgent with the 2024 Coder decides 0.578 of the
+Straight-to-SQL models' failure.} EHRAgent with the 2024 Coder decides 0.578 of the
 claims the data cannot decide and 0.965 of the \emph{underpowered} ones: it
 runs its own test and finds significance where the exact test finds none,
-and with GPT-5.6 it still decides 0.145. The end-to-end control with the
+and with GPT-5.6 it still decides 0.145. The Straight-to-SQL control with the
 2024 pair decides 0.234, again mostly on \emph{underpowered} claims (0.430),
 where a denominator that admits the wrong reports moves the tail. Our
 pipeline decides 0.010--0.046 of them with the open models and 0.004--0.020
 at the frontier, because the exact test, not the model, does the abstaining.
 On the 176 \emph{not-locatable} claims, where no report has the combination
-and the right answer is an empty denominator, the end-to-end pair returns a
+and the right answer is an empty denominator, the Straight-to-SQL pair returns a
 decisive verdict on 0.131 and EHRAgent on 0.364: the denominator was filled
 with reports that do not qualify. Under the contract this falls to 0.011
 for the pair and 0.000 for gemma4 and the frontier models; qwen3.8's 0.062
 is its one weakness here. When our pipeline does abstain it names the right
 sub-type on 0.871--0.970 of its abstentions with the open models and 0.996
-or more at the frontier, against 0.791--0.893 for the end-to-end control.
+or more at the frontier, against 0.791--0.893 for the Straight-to-SQL control.
 
 \emph{Underclaim is the open models' larger loss, and its cause differs by
-system.} The end-to-end pair abstains on 0.388 of the decisive claims, and
+system.} The Straight-to-SQL pair abstains on 0.388 of the decisive claims, and
 the prediction shows why: on 0.204 the denominator was testable but not the
 gold set, on 0.108 it was below the floor; gemma4 end to end abstains on
 0.182, half of it (0.098) queries the database rejected. Under the contract
@@ -1155,8 +1159,8 @@ threshold family (\S\ref{sec:families}).
 
 \paragraph{What the instrument shows.} The verdict is a poor proxy for the
 reasoning it is supposed to certify: systems a few points apart on accuracy are
-a factor of two apart on whether their evidence is right, and the end-to-end
-systems' best gains came from fixing execution failures, not conditioning. The
+a factor of two apart on whether their evidence is right, and the
+Straight-to-SQL systems' best gains came from fixing execution failures, not conditioning. The
 stage-level gold is what makes this visible, and it is the dataset's main
 contribution.
 
