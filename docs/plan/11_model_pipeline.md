@@ -2094,3 +2094,12 @@ disk-cache hits from D'+2; zero API cost): pair 0.953, qwen3.8 0.917, gemma4 0.9
 (0.995 at 1 round), Opus 0.993, GPT 0.993. The modular table now states the budget on
 every verified row. The model-judged verdict from counts is named as an ablation that
 REPLACES S3 (user): S3 is the pipeline's exact-test stage.
+
+**Update 2026-10-20 21:20.** Cell A (schema only, no conventions) on the test set:
+gemma4 **0.635** (B with conventions 0.859), qwen3.8 **0.587** (B 0.748); report
+tier A: gemma4 0.744, qwen3.8 0.989; report-tier planner alone 1.000 for both.
+S1+S2+LLM-verdict (the exact test replaced by the model judging from its own
+counts, 2 rounds): gemma4 **0.770** vs 0.981 with the exact test; qwen3.8 and the
+pair running. VERITAS with the open models cancelled (user). EHRAgent interim:
+qwen3.8 0.848 vs ours 0.867 on the same 698 claims; GPT-5.6 0.794 vs ours 0.999 on
+933 ($35.41 so far).
