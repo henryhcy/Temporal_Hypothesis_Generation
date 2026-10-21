@@ -209,6 +209,7 @@ def fig_families():
                         color="white" if dark else "#6B6F73")
         ax.set_title(title, loc="left", fontsize=9)
     cb = fig.colorbar(im, ax=axes, fraction=0.012, pad=0.012)
+    cb.set_ticks([-0.2, -0.1, 0.0, 0.2, 0.4, 0.6, 0.8])
     cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=7)
     cb.set_label("improvement of the contract over the end-to-end control\n(ours $-$ B; sign flipped for the two lower-is-better metrics)", fontsize=7)
     fig.savefig(OUT / "families.pdf", bbox_inches="tight"); fig.savefig(OUT / "families.png", bbox_inches="tight", dpi=200)
