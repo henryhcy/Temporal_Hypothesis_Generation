@@ -7,11 +7,12 @@
 \section{Corpus, roster and per-group statistics}
 \label{app:stats}
 
-Table~\ref{tab:corpus} describes the MedTempo source corpus, Table~\ref{tab:roster}
-the 26-group roster with each group's template, null and conditioning rule,
+Table~\ref{tab:roster} gives the 26-group roster with each group's template,
+null and conditioning rule,
 Table~\ref{tab:screens} the permutation screens every group cleared before it
 entered the roster, and Table~\ref{tab:pergroup} the released pool by group.
 
+\iffalse  % corpus table kept in source only (user 2026-10-21); its numbers are inline in \S\ref{sec:corpus}
 \begin{table}[htbp]
 \centering
 \small
@@ -27,6 +28,7 @@ Stages per report (mean / median / max) & 3.4 / 3 / 14 \\
 \caption{Source corpus. Stages are the levels of the annotated leveled order.}
 \label{tab:corpus}
 \end{table}
+\fi
 
 \begin{table}[htbp]
 \centering
@@ -125,6 +127,13 @@ distinct \texttt{fact\_id}; median $n$ is the conditioned denominator.}
 \section{Development-set analyses}
 \label{app:dev}
 
+The test set fixes the prompt; the development set (200 instances, claim
+form, four registers) is where the prompt was varied one decision at a time.
+The information-versus-architecture grid over the development set, which
+separates what the prompt tells the 2024 pair from what the decomposition
+adds, is released with the code.
+
+\iffalse  % grid subsection kept in source only (user 2026-10-21): its records include the question form, which the paper no longer studies
 \subsection{Information versus architecture}
 \label{sec:grid}
 
@@ -174,6 +183,7 @@ D$'$ is D with the plan resolved by the harness for S2. B$+$2 is kept here as
 the control for the repair rounds; it is not a system in the main table.}
 \label{tab:grid}
 \end{table*}
+\fi
 
 \paragraph{Planning without the mapping.} Table~\ref{tab:toolbox} compares the
 two S1 frames. With the catalogue, a 32B model scores 0.998: given the mapping,
@@ -241,10 +251,10 @@ cause; ``SQL failed'' counts records whose statement did not execute.}
 \label{tab:attribution}
 \end{table*}
 
-\paragraph{Conventions as information, one change at a time.} Three
+\paragraph{The codebook as information, one change at a time.} Three
 prompt-level decisions were each made as a single controlled change on the
 development subset, with everything else fixed. \emph{One missing
-stipulation:} under an earlier conventions text the 32B planner composed every
+stipulation:} under an earlier codebook the 32B planner composed every
 association claim (C-V2) as one-arm co-occurrence --- 0 of 18 records ---
 although the ``compare the rate with and without $A$'' situation was stated;
 the three association wordings were never bridged to it, while ``occur
@@ -283,9 +293,9 @@ numbers, with 95\% bootstrap intervals over claims (2{,}000 resamples).
 \toprule
 system & full test set (1{,}500) & same 204 claims \\
 \midrule
-VERITAS + conventions, our tests (Coder-32B) & --- & 0.402 [0.333, 0.471] \\
+VERITAS + codebook, our tests (Coder-32B) & --- & 0.402 [0.333, 0.471] \\
 EHRAgent, own test (Coder-32B) & 0.605 [0.579, 0.629] & 0.559 [0.490, 0.623] \\
-B: end-to-end + conventions (Coder-32B) & 0.575 [0.549, 0.599] & 0.593 [0.525, 0.662] \\
+B: end-to-end + codebook (Coder-32B) & 0.575 [0.549, 0.599] & 0.593 [0.525, 0.662] \\
 D$'$ + verifier (Qwen2.5-32B pair) & 0.810 [0.791, 0.830] & 0.804 [0.750, 0.858] \\
 D$'$ + verifier (qwen3.8-27B) & 0.872 [0.855, 0.889] & 0.887 [0.843, 0.931] \\
 D$'$ + verifier (gemma4-31B) & 0.981 [0.974, 0.988] & 0.980 [0.961, 0.995] \\
