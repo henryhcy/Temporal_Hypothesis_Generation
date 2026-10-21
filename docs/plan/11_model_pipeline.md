@@ -2103,3 +2103,5 @@ counts, 2 rounds): gemma4 **0.770** vs 0.981 with the exact test; qwen3.8 and th
 pair running. VERITAS with the open models cancelled (user). EHRAgent interim:
 qwen3.8 0.848 vs ours 0.867 on the same 698 claims; GPT-5.6 0.794 vs ours 0.999 on
 933 ($35.41 so far).
+**21:35.** S1+S2+LLM-verdict for qwen3.8: **0.568** (0.872 with the exact test).
+EHRAgent GPT-5.6 at 989/1,500, qwen3.8 at 735/1,500.
