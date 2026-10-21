@@ -808,6 +808,7 @@ gold-plan row from below.}
 \end{table*}
 \fi
 
+\iffalse  % stage-ceilings figure dropped (user 2026-10-20): it repeats rows of Table~\ref{tab:main}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/modular.pdf}
@@ -821,8 +822,9 @@ ceilings; the frontier models are at the ceilings with or without the
 contract.}
 \label{fig:modular}
 \end{figure*}
+\fi
 
-The middle block of Table~\ref{tab:main} and Figure~\ref{fig:modular} fill one stage at a time with the model and leave
+The middle block of Table~\ref{tab:main} fills one stage at a time with the model and leaves
 the others at gold, so each row is the loss attributable to that stage
 alone; the lower rows then compose the stages as the pipeline does, and every
 row that has a verifier uses the pipeline's budget, two repair rounds at each
