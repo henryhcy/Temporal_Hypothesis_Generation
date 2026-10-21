@@ -276,8 +276,58 @@ def fig_registers():
     save(fig, "registers")
 
 
+# ---- 5. per-group verdict accuracy of our pipeline (ours only; user 2026-10-20) ------------------
+def fig_groups():
+    import sys
+    sys.path.insert(0, str(REPO / "scripts"))
+    from group_table import per_key, family_of  # noqa: E402
+    from temporal_hypo.framework.io import load_release  # noqa: E402
+    rel = load_release(REPO / "data" / "release" / "v1.2", verify_sha=False)
+    order = ["P-V1", "P-V2", "P-V3", "P-V4", "P-M2", "C-V1", "C-V2", "C-V3", "F-V1", "F-V2", "F-V3",
+             "Y-V1", "Y-V2", "Y-V3", "H-V1", "H-V5", "T-V1"]
+    M = np.full((len(order), len(MODELS)), np.nan); N = np.zeros(len(order))
+    for j, (key, _, _) in enumerate(MODELS):
+        d = per_key(R / f"test_{key}_dprime_verify2", rel, lambda g: g)
+        for i, g in enumerate(order):
+            if g in d:
+                M[i, j] = d[g][0] / d[g][1]; N[i] = d[g][1]
+    cmap = LinearSegmentedColormap.from_list("avocado_seq", [A_BROWN, A_TAN, A_CREAM, A_LIME, A_AVO, A_OLIVE])
+    fig, ax = plt.subplots(figsize=(4.4, 5.2))
+    ax.grid(False)
+    im = ax.imshow(M, cmap=cmap, vmin=0.4, vmax=1.0, aspect="auto")
+    short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
+    ax.set_xticks(range(len(MODELS))); ax.set_xticklabels([short[m[0]] for m in MODELS])
+    ax.set_yticks(range(len(order)))
+    ax.set_yticklabels([f"{g}  ({family_of(g)}, n={int(N[i])})" for i, g in enumerate(order)])
+    boldify(ax, size=7.5)
+    for lab in ax.get_xticklabels():
+        lab.set_fontsize(6.8)
+    for sp in ax.spines.values():
+        sp.set_visible(False)
+    ax.tick_params(length=0)
+    for i in range(len(order)):
+        for j in range(len(MODELS)):
+            v = M[i, j]
+            if np.isnan(v):
+                continue
+            ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=7, fontweight="bold",
+                    color="white" if (v > 0.88 or v < 0.5) else CHARCOAL)
+    # family separators
+    fams = [family_of(g) for g in order]
+    for i in range(1, len(order)):
+        if fams[i] != fams[i - 1]:
+            ax.axhline(i - 0.5, color="white", lw=2.0)
+    cb = fig.colorbar(im, ax=ax, fraction=0.045, pad=0.03)
+    cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=7)
+    cb.set_label("verdict accuracy, ours (D$'$ + verifier)", fontsize=7)
+    ax.set_title("verdict accuracy by hypothesis group, test set", loc="left", fontsize=8.5)
+    fig.tight_layout()
+    save(fig, "groups")
+
+
 if __name__ == "__main__":
     fig_rounds()
     fig_families()
     fig_modular()
     fig_registers()
+    fig_groups()

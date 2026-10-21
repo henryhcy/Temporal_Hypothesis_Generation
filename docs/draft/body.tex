@@ -716,6 +716,7 @@ subsample interval (Appendix~\ref{app:subsample}).
 \subsection{Results by temporal family}
 \label{sec:families}
 
+\iffalse  % family table kept in source; Figure~\ref{fig:groups} (ours by group) and Figure~\ref{fig:families} (evidence vs B) carry it (user 2026-10-20)
 \begin{table*}[t]
 \centering
 \small
@@ -738,6 +739,19 @@ has no cohort-tier group in the test set (its two cohort groups have four
 cores each in the corpus) and appears in the report-tier case study only.}
 \label{tab:families}
 \end{table*}
+\fi
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/groups.pdf}
+\caption{Verdict accuracy of our pipeline with the verifier on the test set
+by hypothesis group, with the group's family and size. The three first/last
+groups, P-V2 and H-V5 are what hold the 2024 pair at 0.810; the 2026 open
+models clear all but one or two of them; H-V5, a threshold claim with a
+text-stated bar, is the one group where every model including the frontier
+drops.}
+\label{fig:groups}
+\end{figure}
 
 \begin{figure*}[t]
 \centering
@@ -755,22 +769,20 @@ gemma4's faithfulness on proximity.}
 \label{fig:families}
 \end{figure*}
 
-The families do not fail together (Table~\ref{tab:families}; Figure~\ref{fig:families} gives the evidence behind these verdicts). For the 2024
-pair the contract lifts \emph{precedes} and \emph{co-occurs} by 0.23 and 0.40,
-because the rule those families need --- exclude the same-stage reports, count
-the ordered ones --- is exactly what the resolved contract states; it lifts
-\emph{first/last} by only 0.11, to 0.44, because the argmax over three
-candidates with ties dropped from the denominator is a rule the 2024 Coder
-cannot write even when it is handed to it (the gold-plan row scores the same
-groups at 0.44). The 2026 models write that rule: gemma4 reaches 0.95 on
-first/last with the contract and 0.56 without it, the largest single gain in
-the table. \emph{Threshold} is the family where the contract helps least at the
-frontier (0.91--0.94 against 1.00 end to end): the text-stated bar
-(``at least two thirds'') is composed into the plan as a null, and a few plans
-place it on the wrong side; the end-to-end model never has to represent it.
-\emph{Position} is the one family where qwen3.8 does worse with the contract
-than without (0.69 against 0.72): its planner mis-composes the early-half
-denominator and the contract then faithfully retrieves the wrong set.
+The families do not fail together, and the group level shows where the
+losses are (Figure~\ref{fig:groups}). For the 2024 pair they are concentrated
+in the three first/last groups (0.43--0.44), P-V2 (0.42) and H-V5 (0.41):
+the first/last groups need an argmax over three candidates with ties dropped
+from the denominator, P-V2 is the precedes variant whose null is a
+data-derived rate, and H-V5 a threshold claim with a text-stated bar; every
+other group is at 0.85 or above and most at 1.00. The 2026 open models clear
+the first/last groups (0.86--0.96) and differ in which single group they
+miss: qwen3.8 on P-V2 (0.21) and T-V1 (0.69), gemma4 only on H-V5 (0.90) and
+the proximity groups (0.93--0.98). H-V5 is the one group where the frontier
+models also drop (0.82--0.85); its planner-alone row is at the same level,
+so the loss is in composing the bar into the plan. Which families the
+contract helps relative to the end-to-end control, and on which evidence
+measure, is in Figure~\ref{fig:families}.
 
 \subsection{Modular analysis against gold}
 \label{sec:modular}
