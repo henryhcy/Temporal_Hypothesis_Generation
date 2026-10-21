@@ -374,7 +374,8 @@ def fig_tiers():
         for j, (key, label) in enumerate(TC.MODELS):
             y = TC.tier_acc(key, suf)
             ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label, zorder=5 - j)
-            ax.text(x[-1] + 0.07, y[-1], f"{y[-1]:.3f}", fontsize=5.6, color=cols[j], va="center", ha="left")
+            if key in ("q25pair", "qwen38_27b", "gemma4_31b"):  # the frontier ends coincide near 1.0
+                ax.text(x[-1] + 0.07, y[-1], f"{y[-1]:.3f}", fontsize=5.6, color=cols[j], va="center", ha="left")
         ax.set_xticks(x); ax.set_xticklabels(levels)
         ax.set_xlim(-0.25, 2.6); ax.set_ylim(0.25, 1.06)
         ax.set_title(title, loc="left", fontsize=8.5)
