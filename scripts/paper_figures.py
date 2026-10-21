@@ -174,8 +174,10 @@ def fig_families():
     cmap = LinearSegmentedColormap.from_list("avocado", [A_BROWN, A_TAN, A_CREAM, A_LIME, A_AVO, A_OLIVE])
     norm = TwoSlopeNorm(vmin=-0.25, vcenter=0.0, vmax=0.8)
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
-    fig, axes = plt.subplots(2, 2, figsize=(7.4, 5.8))
-    fig.subplots_adjust(hspace=0.32, wspace=0.28)
+    # four panels in one row at the 2x2 version's per-panel size and fonts; LaTeX scales the whole
+    # row to the text width (user 2026-10-20: keep the rendering, shrink in LaTeX, one row)
+    fig, axes = plt.subplots(1, 4, figsize=(14.6, 3.1))
+    fig.subplots_adjust(wspace=0.22)
     for ax, (title, idx, sign) in zip(axes.flat, metrics):
         D = np.full((len(fams), len(MODELS)), np.nan); O = D.copy(); C = D.copy()
         for j, (k, _, _) in enumerate(MODELS):
@@ -186,8 +188,8 @@ def fig_families():
         ax.grid(False)
         im = ax.imshow(D, cmap=cmap, norm=norm, aspect="auto")
         ax.set_xticks(range(len(MODELS)))
-        ax.set_xticklabels([short[m[0]] for m in MODELS] if ax in axes[1] else [""] * len(MODELS))
-        ax.set_yticks(range(len(fams))); ax.set_yticklabels([f[1] for f in fams] if ax in axes[:, 0] else [""] * len(fams))
+        ax.set_xticklabels([short[m[0]] for m in MODELS])
+        ax.set_yticks(range(len(fams))); ax.set_yticklabels([f[1] for f in fams] if ax is axes[0] else [""] * len(fams))
         boldify(ax, size=8)
         for lab in ax.get_xticklabels():
             lab.set_fontsize(7)
@@ -206,7 +208,7 @@ def fig_families():
                 ax.text(j, i + 0.22, f"{O[i, j]:.2f} vs {C[i, j]:.2f}", ha="center", va="center", fontsize=5.6,
                         color="white" if dark else "#6B6F73")
         ax.set_title(title, loc="left", fontsize=9)
-    cb = fig.colorbar(im, ax=axes, fraction=0.025, pad=0.02)
+    cb = fig.colorbar(im, ax=axes, fraction=0.012, pad=0.012)
     cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=7)
     cb.set_label("improvement of the contract over the end-to-end control\n(ours $-$ B; sign flipped for the two lower-is-better metrics)", fontsize=7)
     fig.savefig(OUT / "families.pdf", bbox_inches="tight"); fig.savefig(OUT / "families.png", bbox_inches="tight", dpi=200)
