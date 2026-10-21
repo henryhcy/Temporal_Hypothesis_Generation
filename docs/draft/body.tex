@@ -246,10 +246,15 @@ the experiments treat ``conventions stated'' as a controlled condition. The
 claim-type \emph{mapping} --- which rule and which test go with which wording
 --- is what we withhold: a system is scored on composing it.
 
-\paragraph{Metrics.} Verdict accuracy and class-macro F1 are reported on the
-cohort tiers (the statistical headline) and on the report tier (a reading
-task) separately. Because every stage has gold, four evidence measures are
-reported with the verdict. \emph{Plan EM} is exact match on the plan's
+\paragraph{Metrics.} The verdict is scored as a three-class prediction:
+accuracy, and precision, recall and F1 macro-averaged over \emph{supported},
+\emph{refuted} and \emph{insufficient}, on the cohort tiers (the statistical
+headline) and on the report tier (a reading task) separately. These four
+numbers say how often and how evenly a system reaches the right label; they
+cannot say whether it reached it for the right reason, because a verdict can
+be right on the wrong evidence and wrong on the right evidence. Because every
+stage has gold, four evidence measures are therefore reported with the
+verdict, and they are what the heatmaps show. \emph{Plan EM} is exact match on the plan's
 fields. \emph{Evidence F1} is the F1 between the set of reports a system
 placed in an arm's denominator and the gold set, averaged over arms: it
 measures whether the system counted the right reports, whatever it concluded
@@ -592,6 +597,7 @@ and $\pm 0.01$ above 0.98.
 \begin{tabular}{@{}lrrrrr@{}}
 \toprule
 test set, 1{,}500 cohort claims & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
+ & \multicolumn{5}{c}{\textit{verdict accuracy \,(macro precision / recall / F1)}} \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{end-to-end (EHRSQL protocol) and agentic baselines}} \\
 A: sentence $\rightarrow$ SQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
