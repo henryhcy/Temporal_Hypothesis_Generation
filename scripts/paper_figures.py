@@ -174,8 +174,8 @@ def fig_families():
     cmap = LinearSegmentedColormap.from_list("avocado", [A_BROWN, A_TAN, A_CREAM, A_LIME, A_AVO, A_OLIVE])
     norm = TwoSlopeNorm(vmin=-0.25, vcenter=0.0, vmax=0.8)
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
-    fig, axes = plt.subplots(1, 4, figsize=(7.4, 2.55))
-    fig.subplots_adjust(wspace=0.08)
+    fig, axes = plt.subplots(2, 2, figsize=(7.4, 5.8))
+    fig.subplots_adjust(hspace=0.32, wspace=0.28)
     for ax, (title, idx, sign) in zip(axes.flat, metrics):
         D = np.full((len(fams), len(MODELS)), np.nan); O = D.copy(); C = D.copy()
         for j, (k, _, _) in enumerate(MODELS):
@@ -186,12 +186,11 @@ def fig_families():
         ax.grid(False)
         im = ax.imshow(D, cmap=cmap, norm=norm, aspect="auto")
         ax.set_xticks(range(len(MODELS)))
-        ax.set_xticklabels([m.replace("Qwen2.5\n32B pair", "Q2.5\npair").replace("qwen3.8\n27B", "q3.8").replace("gemma4\n31B", "gem4")
-                            .replace("Opus\n5.5", "Opus").replace("GPT\n5.6", "GPT") for m in [short[m[0]] for m in MODELS]])
-        ax.set_yticks(range(len(fams))); ax.set_yticklabels([f[1] for f in fams] if ax is axes[0] else [""] * len(fams))
-        boldify(ax, size=7.5)
+        ax.set_xticklabels([short[m[0]] for m in MODELS] if ax in axes[1] else [""] * len(MODELS))
+        ax.set_yticks(range(len(fams))); ax.set_yticklabels([f[1] for f in fams] if ax in axes[:, 0] else [""] * len(fams))
+        boldify(ax, size=8)
         for lab in ax.get_xticklabels():
-            lab.set_fontsize(6.4)
+            lab.set_fontsize(7)
         for sp in ax.spines.values():
             sp.set_visible(False)
         ax.tick_params(length=0)
@@ -202,12 +201,14 @@ def fig_families():
                     continue
                 dark = d > 0.45 or d < -0.15
                 dtxt = f"{d:+.3f}" if abs(d) >= 0.0005 else "0.000"
-                ax.text(j, i, dtxt, ha="center", va="center", fontsize=5.7, fontweight="bold",
+                ax.text(j, i - 0.14, dtxt, ha="center", va="center", fontsize=7.2, fontweight="bold",
                         color="white" if dark else CHARCOAL)
-        ax.set_title(title.replace(" (lower is better)", "$^{\\downarrow}$"), loc="left", fontsize=7.6)
-    cb = fig.colorbar(im, ax=axes, fraction=0.018, pad=0.015)
-    cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=6.5)
-    cb.set_label("ours $-$ B (sign flipped for $\\downarrow$ metrics)", fontsize=6.5)
+                ax.text(j, i + 0.22, f"{O[i, j]:.2f} vs {C[i, j]:.2f}", ha="center", va="center", fontsize=5.6,
+                        color="white" if dark else "#6B6F73")
+        ax.set_title(title, loc="left", fontsize=9)
+    cb = fig.colorbar(im, ax=axes, fraction=0.025, pad=0.02)
+    cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=7)
+    cb.set_label("improvement of the contract over the end-to-end control\n(ours $-$ B; sign flipped for the two lower-is-better metrics)", fontsize=7)
     fig.savefig(OUT / "families.pdf", bbox_inches="tight"); fig.savefig(OUT / "families.png", bbox_inches="tight", dpi=200)
     plt.close(fig); print("wrote", OUT / "families.pdf")
 
