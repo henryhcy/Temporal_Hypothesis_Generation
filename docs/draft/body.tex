@@ -589,7 +589,7 @@ harness's, so these rows differ from our pipeline only in having no plan and
 no contract. \emph{Agentic}: EHRAgent \cite{shi2024ehragent}, a code-writing
 agent with error-driven retries over the same database, which runs its own
 test and returns its own verdict (its paper used GPT-4 and GPT-3.5; we run it
-with the open models and with GPT-5.6); VERITAS \cite{veritas2026}, run
+with the 2024 Coder, qwen3.8 and GPT-5.6); VERITAS \cite{veritas2026}, run
 through its hypothesis, statistics and interpretation agents with imaging
 bypassed, given our exact-test functions and the codebook.
 \emph{Model as statistician}: the model receives the gold counts and must
@@ -677,7 +677,7 @@ test set, 1{,}500 cohort claims & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & 
 \multicolumn{6}{@{}l}{\textit{Straight-to-SQL (EHRSQL protocol) and agentic baselines}} \\
 A: Straight-to-SQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
 B: \quad + codebook & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
-EHRAgent, runs its own test & 0.605\,{\scriptsize(0.694/0.606/0.600)} & \pend{running} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
+EHRAgent, runs its own test & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
 VERITAS + codebook, our tests$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{stage ceilings (one stage by the model, the others at gold) and ablations}} \\
@@ -831,11 +831,12 @@ gemma4's faithfulness on proximity.
 
 \paragraph{The denominator is where systems fail, and the verdict hides it.}
 The published agentic baseline reaches 0.605 with the 2024 Coder, within
-0.03 of the Straight-to-SQL control, and 0.792 with GPT-5.6 against 0.984 for the
-same model under the EHRSQL protocol with the codebook; its evidence
-cannot be audited (it returns a verdict from its own code), and it decides
-58\% and 15\% of the claims the data cannot decide
-(\S\ref{sec:insufficient}); the multi-agent VERITAS, given the same codebook and our exact
+0.03 of the Straight-to-SQL control; with qwen3.8 it reaches 0.839 against
+0.748 Straight-to-SQL and 0.872 under \art{} for the same model, and with
+GPT-5.6 0.792 against 0.984 for the same model under the EHRSQL protocol
+with the codebook; its evidence cannot be audited (it returns a verdict
+from its own code), and it decides 58\%, 8\% and 15\% of the claims the
+data cannot decide (\S\ref{sec:insufficient}); the multi-agent VERITAS, given the same codebook and our exact
 tests, completes fewer than half its runs within a 10-minute cap per phase
 and scores 0.402, abstaining on most decisive claims --- the opposite
 failure. The Straight-to-SQL control with the 2024 Coder is right on 57\% of claims
@@ -1100,7 +1101,7 @@ test set & all & not-loc. & sparse & underp. & sub-type right & all & query fail
 \midrule
 \multicolumn{13}{@{}l}{\textit{EHRAgent, runs its own test (returns a bare verdict)}} \\
 \quad Qwen2.5-Coder-32B & 0.578 & 0.364 & 0.395 & 0.965 & --- & 0.033 & --- & --- & --- & --- & --- & 0.001 \\
-\quad qwen3.8-27B & \pend{running} & & & & --- & & --- & --- & --- & --- & --- & \\
+\quad qwen3.8-27B & 0.079 & 0.011 & 0.038 & 0.186 & --- & 0.191 & --- & --- & --- & --- & --- & 0.000 \\
 \quad GPT-5.6 & 0.145 & 0.057 & 0.210 & 0.174 & --- & 0.197 & --- & --- & --- & --- & --- & 0.000 \\
 \bottomrule
 \end{tabular}
@@ -1123,8 +1124,8 @@ cannot decide and abstaining on what it can, and Table~\ref{tab:insufficient}
 separates them with the cause of each. \emph{Overclaim is the agents' and the
 Straight-to-SQL models' failure.} EHRAgent with the 2024 Coder decides 0.578 of the
 claims the data cannot decide and 0.965 of the \emph{underpowered} ones: it
-runs its own test and finds significance where the exact test finds none,
-and with GPT-5.6 it still decides 0.145. The Straight-to-SQL control with the
+runs its own test and finds significance where the exact test finds none;
+with qwen3.8 it decides 0.079 and with GPT-5.6 0.145. The Straight-to-SQL control with the
 2024 pair decides 0.234, again mostly on \emph{underpowered} claims (0.430),
 where a denominator that admits the wrong reports moves the tail. Our
 pipeline decides 0.010--0.046 of them with the open models and 0.004--0.020
@@ -1142,7 +1143,10 @@ or more at the frontier, against 0.791--0.893 for the Straight-to-SQL control.
 system.} The Straight-to-SQL pair abstains on 0.388 of the decisive claims, and
 the prediction shows why: on 0.204 the denominator was testable but not the
 gold set, on 0.108 it was below the floor; gemma4 end to end abstains on
-0.182, half of it (0.098) queries the database rejected. Under the contract
+0.182, half of it (0.098) queries the database rejected. EHRAgent moves the
+other way as its model improves: the Coder abstained on 0.033 of the decisive
+claims, qwen3.8 and GPT-5.6 on 0.191 and 0.197, so the stronger agents trade
+overclaim for underclaim rather than for correct verdicts. Under the contract
 the pair's 0.216 is mostly queries that still fail after two repairs (0.134,
 the Coder resubmitting the same statement) and a wrong set on 0.047; qwen3.8
 abstains on 0.066 and gemma4 on 0.023. The frontier models abstain on

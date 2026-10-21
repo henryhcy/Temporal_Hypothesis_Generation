@@ -2105,3 +2105,10 @@ qwen3.8 0.848 vs ours 0.867 on the same 698 claims; GPT-5.6 0.794 vs ours 0.999 
 933 ($35.41 so far).
 **21:35.** S1+S2+LLM-verdict for qwen3.8: **0.568** (0.872 with the exact test).
 EHRAgent GPT-5.6 at 989/1,500, qwen3.8 at 735/1,500.
+**2026-10-21 02:36.** All remaining runs done. EHRAgent GPT-5.6 on the full test
+set **0.792** (macro P/R/F1 0.808/0.792/0.794; $56.30, 4,501 calls); EHRAgent
+qwen3.8 **0.839** (0.863/0.839/0.843); on the 204-claim subsample 0.784 and
+0.868. Abstention (insufficient_analysis.py): EHRAgent overclaim 0.578 (Coder) /
+0.079 (qwen3.8) / 0.145 (GPT-5.6), underclaim 0.033 / 0.191 / 0.197. S3-LLM
+ablation: pair 0.512, qwen3.8 0.568, gemma4 0.770. Draft cells filled (main
+table, abstention table, subsample table, RQ3 and error-analysis prose).
