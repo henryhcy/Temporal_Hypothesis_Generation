@@ -178,9 +178,9 @@ the control for the repair rounds; it is not a system in the main table.}
 \paragraph{Planning without the mapping.} Table~\ref{tab:toolbox} compares the
 two S1 frames. With the catalogue, a 32B model scores 0.998: given the mapping,
 planning is lookup. With the mapping withheld the same model composes the plan
-at 0.950 zero-shot and 0.955 with one repair round; the 7B model falls to
-0.595, almost entirely whole-shape misreads, while the fields that do land are
-right.
+at 0.950 zero-shot and 0.955 with one repair round (the report tier is 1.000
+at 32B); the 7B model falls to 0.595, almost entirely whole-shape misreads,
+while the fields that do land are right.
 
 \begin{table}[t]
 \centering
@@ -196,7 +196,7 @@ Catalogue (answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
 \bottomrule
 \end{tabular}
 \caption{Planning with the claim-type mapping given (catalogue) and withheld
-(toolbox); development subset; report tier 1.000 at 32B.}
+(toolbox); development subset.}
 \label{tab:toolbox}
 \end{table}
 

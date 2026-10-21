@@ -693,8 +693,8 @@ their evidence F1 of 1.000 with their own plans. EHRAgent returns a verdict
 from its own code; its paper used GPT-4 and GPT-3.5, and the open-model
 columns are ours. $^\dagger$VERITAS, at nine minutes per claim through three
 agent phases, is run on a stratified 204-claim subsample (12 per group,
-verdict-balanced; interval 0.333--0.471); Appendix~\ref{app:subsample} scores
-the other systems on the same claims.}
+verdict-balanced); Appendix~\ref{app:subsample} scores the other systems on
+the same claims.}
 \label{tab:main}
 \end{table*}
 
@@ -790,15 +790,10 @@ cores each in the corpus) and appears in the report-tier case study only.}
 
 \begin{figure}[t]
 \centering
-\includegraphics[width=0.72\columnwidth]{Figures/family_radar.pdf}
+\includegraphics[width=\columnwidth]{Figures/family_radar.pdf}
 \caption{Verdict accuracy by claim family on the test set, our pipeline with
-the verifier, one polygon per model; rings at 0.4, 0.6, 0.8 and 1.0 (family
-sizes: precedes 455, co-occurs 270, first/last 262, proximity 271, threshold
-152, position 90). The 2024
-pair's dents are at first/last (0.435) and threshold (0.763); qwen3.8's is at
-position (0.689); gemma4 and the two frontier models are within 0.06 of the
-rim on every family, threshold being the one family where the frontier
-models themselves fall short of 1.0.}
+the verifier, one polygon per model; rings at 0.4, 0.6, 0.8 and 1.0, family
+sizes in parentheses.}
 \label{fig:families-radar}
 \end{figure}
 
@@ -814,9 +809,13 @@ qwen3.8 on position (0.689, the T-V1 group) and on the precedes variant whose
 null is a data-derived rate, gemma4 only on proximity (0.970) and threshold
 (0.961). Threshold is the one family where the frontier models also drop
 (0.941 and 0.914, all of it in H-V5); their planner-alone rows are at the
-same level, so the loss is in composing the bar into the plan. Which families
-the contract helps relative to the end-to-end control, and on which evidence
-measure, is in Figure~\ref{fig:families}.
+same level, so the loss is in composing the bar into the plan.
+Figure~\ref{fig:families} shows which families the contract helps relative
+to the end-to-end control, on each evidence measure: its largest gains are in
+faithfulness and overclaim on the families whose rule it states (position,
+threshold, first/last, co-occurs); the cells where it loses are the 2024
+pair's underclaim on first/last, where it abstains rather than decide, and
+gemma4's faithfulness on proximity.
 
 \subsection{RQ3: right verdicts on the right evidence}
 \label{sec:evidence}
@@ -854,11 +853,7 @@ faithfulness, overclaim, underclaim) by claim family and model, as the
 contract's improvement over the end-to-end control on one scale: ours minus
 B, with the sign flipped for the two lower-is-better measures (marked
 $\downarrow$) so that green is better in every panel; the two underlying
-values are printed beneath each cell. The contract's largest gains are in
-faithfulness and overclaim on the families whose rule it states (position,
-threshold, first/last, co-occurs); the cells where it loses are the 2024
-pair's underclaim on first/last, where it abstains rather than decide, and
-gemma4's faithfulness on proximity.}
+values are printed beneath each cell.}
 \label{fig:families}
 \end{figure*}
 
@@ -987,10 +982,7 @@ verdict accuracy / evidence F1.}
 \includegraphics[width=\columnwidth]{Figures/rounds.pdf}
 \caption{What each verify-and-repair round adds: the change in verdict
 accuracy from the previous round, for rounds one to three, on the test set
-(the same plot for evidence F1 is in Appendix~\ref{app:rounds}). For the
-open models the first round is almost the whole gain and the next two add a
-few thousandths; the frontier models lose a little in every round, as correct
-statements get flagged into abstention.}
+(the same plot for evidence F1 is in Appendix~\ref{app:rounds}).}
 \label{fig:rounds}
 \end{figure}
 
@@ -1003,8 +995,11 @@ annotated timeline; the plan has one arm and the test stage is a
 deterministic rule. Every system with a 2026 model does this at 0.98--1.00
 with or without the contract (Table~\ref{tab:report}). The 2024 Coder end to
 end does not: 0.433 without the conventions and 0.750 with them, against
-1.000 for the same Coder under the contract and 1.000 for its planner. The tier is trivial as statistics and still separates systems that
-read what the contract asks them to read from systems that do not.
+1.000 for the same Coder under the contract and 1.000 for its planner. Opus
+abstains on three of the 180 (an event it judged absent); EHRAgent read this
+tier at 0.96 on the development set. The tier is trivial as statistics and
+still separates systems that read what the contract asks them to read from
+systems that do not.
 
 \begin{table}[t]
 \centering
@@ -1020,9 +1015,8 @@ planner alone & 1.000 & 1.000 & 1.000 & --- & --- \\
 D$'$ + verifier & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
 \bottomrule
 \end{tabular}
-\caption{The report-tier case study. Opus abstains on three of the 180
-(an event it judged absent); EHRAgent on the development set read this tier
-at 0.96.}
+\caption{The report-tier case study: verdict accuracy on the 180
+single-report claims.}
 \label{tab:report}
 \end{table}
 
@@ -1060,9 +1054,9 @@ B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{Figures/registers.pdf}
-\caption{Paraphrase registers: the paraphrase cost is paid at
-planning and passes through the contract unchanged, and the end-to-end
-control loses the same amount from a lower base.}
+\caption{Verdict accuracy by paraphrase register on the 200 development
+instances (claim form), Qwen2.5-32B pair: the planner alone (S2, S3 at gold),
+the pipeline without and with the verifier, and the end-to-end control.}
 \label{fig:registers}
 \end{figure}
 

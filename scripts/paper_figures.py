@@ -292,26 +292,25 @@ def fig_family_radar(palette: str = "meadow", suffix: str = ""):
     K = len(FC.FAMS)
     ang = np.linspace(0, 2 * np.pi, K, endpoint=False)
     ang_c = np.concatenate([ang, ang[:1]])
-    # compact rendering (user 2026-10-21: about a third of the earlier area): family names only
-    # (sizes go to the caption), legend beside the chart, placed at 0.7\columnwidth
-    fig, ax = plt.subplots(figsize=(3.0, 1.95), subplot_kw={"projection": "polar"})
-    fig.subplots_adjust(left=0.16, right=0.62, top=0.88, bottom=0.12)
-    lws = [1.5, 1.5, 1.5, 1.1, 1.1]
+    # column-width rendering with the legend on one line below (user 2026-10-21)
+    fig, ax = plt.subplots(figsize=(3.4, 3.5), subplot_kw={"projection": "polar"})
+    fig.subplots_adjust(left=0.13, right=0.87, top=0.90, bottom=0.17)
+    lws = [1.8, 1.8, 1.8, 1.3, 1.3]
     for j, (key, label, _) in enumerate(MODELS):
         v = np.concatenate([O[:, j], O[:1, j]])
-        ax.plot(ang_c, v, color=cols[j], lw=lws[j], marker="o", ms=2.6, markeredgecolor="white", markeredgewidth=0.4,
+        ax.plot(ang_c, v, color=cols[j], lw=lws[j], marker="o", ms=3.4, markeredgecolor="white", markeredgewidth=0.5,
                 label=label, zorder=5 - j)
         ax.fill(ang_c, v, color=cols[j], alpha=0.10, zorder=1)
     ax.set_theta_offset(np.pi / 2); ax.set_theta_direction(-1)
     ax.set_xticks(ang)
-    ax.set_xticklabels([f[1] for f in FC.FAMS], fontsize=8.5, fontweight="bold")
+    ax.set_xticklabels([f"{f[1]}\n(n={n[f[0]]})" for f in FC.FAMS], fontsize=8, fontweight="bold")
     ax.set_ylim(0.3, 1.0); ax.set_yticks([0.4, 0.6, 0.8, 1.0])
-    ax.set_yticklabels(["0.4", "0.6", "0.8", "1.0"], fontsize=5.5, color="#6B6F73")
+    ax.set_yticklabels(["0.4", "0.6", "0.8", "1.0"], fontsize=6, color="#6B6F73")
     ax.set_rlabel_position(0)
-    ax.grid(color="#E4E1D8", lw=0.6); ax.spines["polar"].set_color("#E4E1D8")
-    ax.tick_params(axis="x", pad=2)
-    ax.legend(frameon=False, loc="center left", bbox_to_anchor=(1.28, 0.5), ncol=1, fontsize=7.5,
-              handlelength=1.4, labelspacing=0.35)
+    ax.grid(color="#E4E1D8", lw=0.7); ax.spines["polar"].set_color("#E4E1D8")
+    ax.tick_params(axis="x", pad=5)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=5, fontsize=6.6,
+              handlelength=1.1, handletextpad=0.4, columnspacing=0.9)
     save(fig, "family_radar" + suffix)
 
 
