@@ -910,6 +910,44 @@ at 0.96.}
 \end{table}
 
 
+\paragraph{Paraphrase.} The development set carries three paraphrase
+registers of every instance (research, media, clinical), and the case study
+uses the weakest of our models, the 2024 Qwen2.5 pair, so that any
+sensitivity would show. The planner alone loses 0.02--0.12 across registers
+and the full pipeline the same (Table~\ref{tab:registers},
+Figure~\ref{fig:registers}): the cost of paraphrase is paid at planning and
+passes through the contract unchanged, and the end-to-end control loses the
+same 0.04--0.12 from a lower base. Paraphrase does not change the ranking of
+systems or the size of the contract's margin. The registers are templated;
+free paraphrase, and the stronger models, are left to future work.
+
+\begin{table}[t]
+\centering
+\small
+\begin{tabular}{lrrrr}
+\toprule
+development set, 32B pair & Original & Research & Media & Clinical \\
+\midrule
+planner alone (S2, S3 at gold), 1 round & 0.955 & 0.838 & 0.877 & 0.935 \\
+D$'$ & 0.865 & 0.790 & 0.755 & 0.825 \\
+D$'$ + verifier & 0.870 & 0.815 & 0.770 & 0.840 \\
+B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
+\bottomrule
+\end{tabular}
+\caption{Verdict accuracy by register on the 200 development instances
+(claim form).}
+\label{tab:registers}
+\end{table}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/registers.pdf}
+\caption{Table~\ref{tab:registers} as bars: the paraphrase cost is paid at
+planning and passes through the contract unchanged, and the end-to-end
+control loses the same amount from a lower base.}
+\label{fig:registers}
+\end{figure}
+
 \subsection{Development-set analyses}
 \label{sec:devpointer}
 
@@ -922,9 +960,7 @@ below the end-to-end control; resolving it into its rule gives $+0.28$ with
 nothing else changed); planning with the claim-type mapping given versus
 withheld; the attribution of every denominator failure to the rule it
 violated; the effect of one missing stipulation in the conventions and of the
-schema presentation; and a paraphrase case study over three registers, in
-which the cost of paraphrase is paid at planning and passes through the
-contract unchanged.
+schema presentation.
 
 \paragraph{Cost and latency.} Per-record wall time, tokens and dollar
 cost for every system and model are in Appendix~\ref{app:cost}: a full
