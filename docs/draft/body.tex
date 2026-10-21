@@ -941,10 +941,10 @@ unchanged.
 decision the modular rows cannot see, because S2 alone is given the gold plan
 already resolved. On the development set (the full
 information-versus-architecture grid is released with the code) the same
-composed plan handed to S2 as prose with the codebook gives 0.573 for the
-2024 pair, and 0.645 with two verify-and-repair rounds --- level with the
-verified end-to-end model (0.660) --- while resolving the plan's named
-primitive into its rule gives 0.855 and 0.865 with the same plan and the same
+composed plan handed to S2 as prose with the codebook gives 0.570 for the
+2024 pair, and 0.655 with two verify-and-repair rounds, below the verified
+end-to-end model (0.715), while resolving the plan's named primitive into
+its rule gives 0.865 and 0.870 with the same plan and the same
 model. The decomposition pays only when the plan is a contract.
 
 \paragraph{Repair rounds.} Figure~\ref{fig:rounds} runs our pipeline
@@ -1030,10 +1030,10 @@ single-report claims.}
 \paragraph{Paraphrase.} The development set carries three paraphrase
 registers of every instance (research, media, clinical), and the case study
 uses the weakest of our models, the 2024 Qwen2.5 pair, so that any
-sensitivity would show. The planner alone loses 0.02--0.12 across registers
-and the full pipeline the same (Figure~\ref{fig:registers}): the cost of paraphrase is paid at planning and
-passes through the contract unchanged, and the end-to-end control loses the
-same 0.04--0.12 from a lower base. Paraphrase does not change the ranking of
+sensitivity would show. The planner alone loses 0.03--0.12 across registers
+and the full pipeline 0.03--0.10 (Figure~\ref{fig:registers}): the cost of paraphrase is paid at planning and
+passes through the contract unchanged, and the end-to-end control loses
+0.04--0.08 from a lower base. Paraphrase does not change the ranking of
 systems or the size of the contract's margin. The registers are templated;
 free paraphrase, and the stronger models, are left to future work.
 
@@ -1045,7 +1045,7 @@ free paraphrase, and the stronger models, are left to future work.
 \toprule
 development set, 32B pair & Original & Research & Media & Clinical \\
 \midrule
-planner alone (S2, S3 at gold), 1 round & 0.955 & 0.838 & 0.877 & 0.935 \\
+planner alone (S2, S3 at gold), 1 round & 0.965 & 0.850 & 0.860 & 0.935 \\
 D$'$ & 0.865 & 0.790 & 0.755 & 0.825 \\
 D$'$ + verifier & 0.870 & 0.815 & 0.770 & 0.840 \\
 B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\

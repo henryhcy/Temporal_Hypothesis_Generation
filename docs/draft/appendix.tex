@@ -186,10 +186,10 @@ the control for the repair rounds; it is not a system in the main table.}
 \fi
 
 \paragraph{Planning without the mapping.} Table~\ref{tab:toolbox} compares the
-two S1 frames. With the catalogue, a 32B model scores 0.998: given the mapping,
+two S1 frames. With the catalogue, a 32B model scores 1.000: given the mapping,
 planning is lookup. With the mapping withheld the same model composes the plan
-at 0.950 zero-shot and 0.955 with one repair round (the report tier is 1.000
-at 32B); the 7B model falls to 0.595, almost entirely whole-shape misreads,
+at 0.960 zero-shot and 0.965 with one repair round (the report tier is 1.000
+at 32B); the 7B model falls to 0.560, almost entirely whole-shape misreads,
 while the fields that do land are right.
 
 \begin{table}[t]
@@ -200,9 +200,9 @@ while the fields that do land are right.
  & \multicolumn{2}{c}{\textbf{32B-Inst.}} & \multicolumn{2}{c}{7B-Inst.} \\
 S1 condition (S2, S3 at gold) & all & cohort & all & cohort \\
 \midrule
-Catalogue (answer-injected upper bound) & 0.998 & 0.996 & --- & --- \\
-\textbf{Toolbox, zero-shot} & 0.950 & 0.922 & 0.595 & 0.558 \\
-\quad + one verify-and-repair round & \textbf{0.955} & \textbf{0.930} & 0.657 & 0.655 \\
+Catalogue (answer-injected upper bound) & 1.000 & 1.000 & --- & --- \\
+\textbf{Toolbox, zero-shot} & 0.960 & 0.938 & 0.560 & 0.535 \\
+\quad + one verify-and-repair round & \textbf{0.965} & \textbf{0.946} & 0.610 & 0.612 \\
 \bottomrule
 \end{tabular}
 \caption{Planning with the claim-type mapping given (catalogue) and withheld
@@ -215,8 +215,7 @@ identifiers it placed in each arm, so every wrongly included or dropped report
 can be checked against the claim's rule in the database and named
 (Table~\ref{tab:attribution}). The largest single cause in the end-to-end rows
 had been invisible to every aggregate metric: the query defines the eligible
-set as the supporting set, so $n = k$ and the claim is supported for free (87
-of 258 records for B). Repair rounds remove failed statements and most $n = k$
+set as the supporting set, so $n = k$ and the claim is supported for free (47 of 129 records for B). Repair rounds remove failed statements and most $n = k$
 queries; what remains for the end-to-end model is semantic --- co-existing
 reports in order denominators, ties, presence splits narrowed to co-occurrence
 --- and what remains for the contract pipeline is mostly its planner's errors.
@@ -228,21 +227,21 @@ reports in order denominators, ties, presence splits narrowed to co-occurrence
 \begin{tabular}{lrrrrrrrr}
 \toprule
  & \multicolumn{3}{c}{S1 at gold} & \multicolumn{3}{c}{end-to-end} & \multicolumn{2}{c}{ours (D$'$)} \\
-S2 failure cause (258 cohort records) & Coder-7B & Coder-32B & \quad+2 & A & B & B+2 & no verifier & +2 \\
+S2 failure cause (129 cohort records) & Coder-7B & Coder-32B & \quad+2 & A & B & B+2 & no verifier & +2 \\
 \midrule
-no plan from S1 (S2 not run) & 0 & 0 & 0 & 0 & 0 & 0 & 8 & 6 \\
-SQL failed to execute & 150 & 50 & 38 & 72 & 25 & 4 & 50 & 35 \\
-denominator $=$ numerator ($n=k$) & 4 & 8 & 4 & 11 & 87 & 25 & 12 & 9 \\
-event absent from report & 2 & 26 & 24 & 57 & 45 & 47 & 19 & 16 \\
-\emph{co-exist} leak into an order denominator & 0 & 4 & 2 & 40 & 23 & 33 & 4 & 2 \\
-non-consecutive pair in an \emph{immediate} denominator & 0 & 0 & 0 & 10 & 13 & 13 & 0 & 10 \\
-tie leak into a first/last denominator & 0 & 0 & 0 & 1 & 7 & 7 & 0 & 0 \\
-presence split narrowed to co-occurrence & 0 & 0 & 0 & 18 & 2 & 2 & 0 & 0 \\
-wrong cohort / other & 72 & 6 & 10 & 14 & 10 & 26 & 10 & 14 \\
+no plan from S1 (S2 not run) & 0 & 0 & 0 & 0 & 0 & 0 & 3 & 2 \\
+SQL failed to execute & 75 & 25 & 19 & 35 & 11 & 1 & 25 & 17 \\
+denominator $=$ numerator ($n=k$) & 2 & 4 & 2 & 4 & 47 & 13 & 7 & 5 \\
+event absent from report & 1 & 13 & 12 & 26 & 26 & 21 & 10 & 9 \\
+\emph{co-exist} leak into an order denominator & 0 & 2 & 1 & 25 & 11 & 16 & 2 & 1 \\
+non-consecutive pair in an \emph{immediate} denominator & 0 & 0 & 0 & 6 & 4 & 4 & 0 & 2 \\
+tie leak into a first/last denominator & 0 & 0 & 0 & 0 & 4 & 4 & 0 & 0 \\
+presence split narrowed to co-occurrence & 0 & 0 & 0 & 9 & 1 & 1 & 0 & 0 \\
+wrong cohort / other & 36 & 3 & 5 & 8 & 3 & 14 & 4 & 6 \\
 \midrule
-wrong or missing denominators & 228 & 94 & 78 & 223 & 212 & 157 & 103 & 92 \\
-\quad of which verdict still right & 16 & 40 & 36 & 89 & 96 & 80 & 32 & 37 \\
-\textbf{faithfulness} & 0.29 & 0.73 & 0.79 & 0.21 & 0.28 & 0.53 & 0.75 & 0.78 \\
+wrong or missing denominators & 114 & 47 & 39 & 113 & 107 & 74 & 51 & 42 \\
+\quad of which verdict still right & 8 & 20 & 18 & 44 & 49 & 38 & 17 & 16 \\
+\textbf{faithfulness} & 0.29 & 0.73 & 0.79 & 0.20 & 0.28 & 0.56 & 0.75 & 0.81 \\
 \bottomrule
 \end{tabular}
 \caption{Attribution of denominator failures to the rule violated, and the
@@ -255,20 +254,20 @@ cause; ``SQL failed'' counts records whose statement did not execute.}
 prompt-level decisions were each made as a single controlled change on the
 development subset, with everything else fixed. \emph{One missing
 stipulation:} under an earlier codebook the 32B planner composed every
-association claim (C-V2) as one-arm co-occurrence --- 0 of 18 records ---
+association claim (C-V2) as one-arm co-occurrence --- 0 of 9 records ---
 although the ``compare the rate with and without $A$'' situation was stated;
 the three association wordings were never bridged to it, while ``occur
 together'' matched the co-occurrence stipulation. Adding that bridge moved the
-planner from 0.897 to 0.950, with 23 of 26 groups unchanged record for record
-(C-V2 0.00 $\rightarrow$ 0.67; a co-occurrence bar group 0.00 $\rightarrow$
-1.00). A model is not wrong about a situation it was never told exists.
+planner from 0.900 to 0.960, with 23 of 26 groups unchanged record for record
+(C-V2 0.00 $\rightarrow$ 0.67; P-V2 0.33 $\rightarrow$ 0.50; F-R3 0.90
+$\rightarrow$ 1.00). A model is not wrong about a situation it was never told exists.
 \emph{Schema presentation:} showing the SQL model the \texttt{CREATE VIEW}
 bodies of the helper views led it to copy the views' internal aliases into its
-own queries (117 rejected statements of 466 in cell A); listing the views as
+own queries (97 rejected statements of 227 in cell A); listing the views as
 columns with their semantics in comments removed that error but left an
-ambiguous unqualified identifier in self-joins (157 rejected); one sentence in
-the row contract removed that too (34 rejected). Cell A went 0.297
-$\rightarrow$ 0.378 $\rightarrow$ 0.502 and the SQL stage with the gold plan
+ambiguous unqualified identifier in self-joins (107 rejected); one sentence in
+the row contract removed that too (35 rejected). Cell A went 0.330
+$\rightarrow$ 0.415 $\rightarrow$ 0.505 and the SQL stage with the gold plan
 0.810 $\rightarrow$ 0.830 $\rightarrow$ 0.900. None of these changed the data,
 the models or the method; they are the cost of a prompt artefact that would
 otherwise have read as a finding about the new claim families.

@@ -259,8 +259,8 @@ def fig_modular():
 # ---- 4. paraphrase registers (dev, 32B pair) -------------------------------------
 def fig_registers():
     regs = ["Original", "Research", "Media", "Clinical"]
-    # from Table tab:registers (development set, claim form; planner row at one round)
-    rows = [("planner alone (S2, S3 at gold)", [0.955, 0.838, 0.877, 0.935], MIST),
+    # development set, claim form (scripts/dev_claim_rescore.py, 2026-10-21); planner row at one round
+    rows = [("planner alone (S2, S3 at gold)", [0.965, 0.850, 0.860, 0.935], MIST),
             ("D$'$", [0.865, 0.790, 0.755, 0.825], SEA),
             ("D$'$ + verifier", [0.870, 0.815, 0.770, 0.840], SLATE),
             ("B (end-to-end control)", [0.640, 0.587, 0.600, 0.557], DUNE)]
