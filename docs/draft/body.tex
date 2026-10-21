@@ -301,17 +301,18 @@ Twenty-six template groups span seven claim families at three scopes
 \emph{first/last} among candidates --- and three, added to diversify the null,
 concern \emph{position} (an event in the earlier half of a timeline),
 \emph{proximity} (two events at consecutive stages) and \emph{threshold} (a
-rate at least a stated bar). Claims come in three \emph{tiers} of
-increasing complexity. The \emph{report} tier asks about one named report:
-the verdict is a deterministic reading of its timeline (did $A$ precede $B$
-in this report), there is no null and no test, and \emph{insufficient} does
-not arise (9 groups). The \emph{cohort} tier asks about the reports of one
-vaccine: a denominator has to be assembled under the family's rule, a null
-stated, and an exact test run with a floor on the count, so all three
-verdicts are possible (16 groups). The \emph{multi-cohort} tier contrasts
-two vaccines' cohorts: two denominators, two rates, and a two-sample exact
-test (1 group). Within the cohort tier, three groups are themselves two-arm
-contrasts: whether $B$ follows $A$ more often than it follows $C$; whether $A$
+rate at least a stated bar). Claims come at three \emph{levels of
+difficulty}, ordered by what a claim asks of a reader, not by how systems
+score on it. \emph{Easy} (the report tier) asks about one named report: the
+verdict is a deterministic reading of its timeline (did $A$ precede $B$ in
+this report), there is no null and no test, and \emph{insufficient} does not
+arise (9 groups). \emph{Medium} (the cohort tier) asks about the reports of
+one vaccine: a denominator has to be assembled under the family's rule, a
+null stated, and an exact test run with a floor on the count, so all three
+verdicts are possible (16 groups). \emph{Hard} (the two-cohort tier)
+contrasts two vaccines' cohorts: two denominators, two rates, and a
+two-sample exact test (1 group). Within the cohort tier, three groups are
+themselves two-arm contrasts: whether $B$ follows $A$ more often than it follows $C$; whether $A$
 precedes $B$ more often than $C$ precedes $D$; and whether $A$ and $B$ occur
 together more often than their separate rates predict (association). Each
 group is realised as a declarative claim in four registers (a canonical
@@ -862,6 +863,28 @@ faithfulness and overclaim on the families whose rule it states (position,
 threshold, first/last, co-occurs); the cells where it loses are the 2024
 pair's underclaim on first/last, where it abstains rather than decide, and
 gemma4's faithfulness on proximity.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/tiers.pdf}
+\caption{Verdict accuracy by difficulty level, one line per model: the
+one-prompt baseline with the codebook (top) and \art{} with the verifier
+(bottom). Easy is the 180-claim report case study; Medium and Hard are the
+1{,}418 cohort and 82 two-cohort claims of the test set.}
+\label{fig:tiers}
+\end{figure}
+
+\paragraph{By difficulty level.} The levels are a ladder for the one-prompt
+baseline and not for the pipeline (Figure~\ref{fig:tiers}). With the
+codebook but no contract, the 2024 pair falls from 0.750 on Easy to 0.590 on
+Medium and 0.317 on Hard, qwen3.8 from 1.000 to 0.761 to 0.524 and gemma4
+from 1.000 to 0.860 to 0.829, while the frontier models stay at 1.000. Under
+\art{} every model is level from Medium to Hard (the pair 0.807 and 0.854,
+qwen3.8 0.870 and 0.902, gemma4 0.981 and 0.988), and the open models gain
+most on the level they lost most on. The step the one-prompt systems cannot
+take is the one Hard adds: composing a second denominator and a two-sample
+test, which the contract states and the harness runs. The Hard level has 82
+test claims (one group), so its intervals are about $\pm 0.08$.
 
 \subsection{RQ3: the evidence behind the verdicts}
 \label{sec:evidence}
