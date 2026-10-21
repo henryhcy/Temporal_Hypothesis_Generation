@@ -36,144 +36,112 @@ agentic systems, and the model as statistician on the gold counts.}
 \section{Introduction}
 \label{sec:intro}
 
-A growing class of language-model systems promises to test scientific
-hypotheses against data: given a claim and a dataset, they choose a statistical
-method, run it and report a conclusion. Benchmarks for this ability
-\cite{miao2026fisher,zhu2024statqa,zhu2026statabench} score the final answer ---
-a $p$-value, a reject/fail-to-reject decision --- and hand the system the
-relevant data already assembled. In most real settings that is the easy half.
-Consider the claim \emph{``after the Pfizer vaccine, headache tends to precede
-fatigue''} against a corpus of annotated adverse-event reports. Before any test
-can run, a system has to decide \emph{which reports count}: those in which both
-events occur at different stages (a report where they co-occur witnesses
-neither order), \emph{what ``no effect'' means} (a 50/50 split of the ordered
-reports), and \emph{which test applies} (a one-sided exact binomial with a
-minimum-count floor). Each of those decisions is a stipulation about what the
-sentence means for this corpus, each can be wrong independently of the others,
-and a verdict can be right while all of them are wrong.
+A growing class of language-model systems promises to test hypotheses
+against data: given a claim and a dataset, they choose a statistical method,
+run it and report a conclusion. Benchmarks for this ability
+\cite{miao2026fisher,zhu2024statqa,zhu2026statabench} score the final answer
+and hand the system the relevant data already assembled. In most real
+settings that is the easy half. For the claim \emph{``after the Pfizer
+vaccine, headache tends to precede fatigue''} over a corpus of annotated
+adverse-event reports, a system must first decide \emph{which reports count}
+(a report where the two events co-occur witnesses neither order), \emph{what
+``no effect'' means} (a 50/50 split of the ordered reports) and \emph{which
+test applies} (a one-sided exact binomial with a minimum-count floor). Each
+decision is a stipulation about what the sentence means for this corpus,
+each can be wrong independently, and a verdict can be right while all of
+them are wrong.
 
-This paper makes that chain of decisions the object of evaluation. We release
-\sys{} (Staged Temporal-statistical Reasoning Assessment), a benchmark and evaluation framework for temporal--statistical claims over MedTempo, a corpus of
-3{,}166 vaccine adverse-event reports whose clinical course is annotated as a
-\emph{leveled order} of events. Every instance carries not only its gold
-verdict --- \emph{supported}, \emph{refuted} or \emph{insufficient}, the last
-sub-typed --- but the gold of every stage that produced it: the structured plan
-(events, quantity, denominator rule, null, test), the exact set of report
-identifiers in the denominator and numerator, and the exact $p$-values. Gold is
-computed mechanically from the annotations, validated by six families of
-invariants, and reproduced to 1.000 by a deterministic oracle, so a system's
-intermediate outputs can be scored, not only its answer.
-
-We pair the benchmark with an \emph{instrumented reference pipeline},
+This paper makes that chain of decisions the object of evaluation. \sys{}
+(Staged Temporal-statistical Reasoning Assessment) is a benchmark and
+evaluation framework for temporal--statistical claims over MedTempo, a corpus
+of 3{,}166 vaccine adverse-event reports whose clinical course is annotated
+as a \emph{leveled order} of events. Every instance carries its gold verdict
+(\emph{supported}, \emph{refuted} or a sub-typed \emph{insufficient}) and the
+gold of every stage that produced it: the structured plan, the exact report
+sets in the denominator and numerator, and the exact $p$-values, all
+computed mechanically from the annotations and reproduced by a deterministic
+oracle. We pair the benchmark with an instrumented reference pipeline,
 \art{} (articulate, retrieve, test): a stage that articulates the claim as a
-plan, a retrieval stage and a deterministic test stage, each with an explicit
-output contract and a bounded verify-and-repair loop. The pipeline is a
-measuring instrument as much as a method: its stages can be filled with gold,
-its prompts can state or withhold the corpus \emph{codebook} (the
+plan, a retrieval stage and a deterministic test stage, each with an output
+contract and a bounded verify-and-repair loop. Its stages can be filled with
+gold, its prompts can state or withhold the corpus \emph{codebook} (the
 stipulations about how the annotations are to be read, written as text), and
-its plan can be handed to the next stage either as prose or as a
-\emph{contract}, in which the harness expands each primitive the plan names
-into that primitive's exact rule, so that the retrieval stage implements a
-definition rather than interpreting advice. That lets us separate two things that end-to-end evaluation
-conflates --- the \emph{information} a system is told and the
-\emph{architecture} it is given --- and ask what each is worth.
+its plan can be handed on either as prose or as a \emph{contract}, in which
+the harness expands each primitive the plan names into that primitive's
+exact rule. That separates what end-to-end evaluation conflates, the
+\emph{information} a system is told and the \emph{architecture} it is given.
 
-Three questions organise the experiments and three findings answer them, all
-on a 1{,}500-claim test set that no prompt decision was made on, with five
-models from the 2024 open generation to the 2026 frontier in every model
-slot. First, \emph{the codebook is the information the task measures}: with it
-in the prompt, Claude Opus~5.5 and GPT-5.6 verify 1.000
-and 0.984 of the claims end to end with every denominator exact; without them
-the same models fall to 0.88 and get a fifth of their denominators wrong.
-Second, \emph{for open models the plan contract is what makes the verdict
-stand on the right evidence}: a 2024 32B pair goes from 0.575 end to end to
-0.810 with the contract and the verifier, the 2026 gemma4-31B from 0.859 to
-0.981 --- within 0.02 of the frontier at zero API cost --- and the share of
-right verdicts that rest on the exact denominator rises from 40--86\% to
-86--97\%. Third, \emph{the denominator is where systems fail, and verdict
-accuracy hides it}: a published agentic baseline reaches 0.605, within 0.03 of
-the Straight-to-SQL control (one prompt from the claim to its query), while
-deciding 58\% of the claims the data cannot
-decide; handed the exact counts, the open models still return the wrong
-verdict on a quarter to a third of claims.
-
-Our contributions are:
+On a 1{,}500-claim test set that no prompt decision was made on, with five
+models from the 2024 open generation to the 2026 frontier, three findings
+answer three questions: the codebook is the information the task measures,
+and frontier models solve the task once they have it; for open models the
+contract is what makes the verdict stand on the right evidence, carrying a
+31B model to within 0.02 of the frontier at zero API cost; and the
+denominator is where systems fail, which verdict accuracy hides. Our
+contributions are:
 \begin{itemize}
-\item \textbf{A benchmark with gold at every stage.} \sys{} poses
-temporal--statistical claims in 26 groups and seven claim families over three
-cohort tiers, released as a 200-instance development set and a 1{,}500-claim
-fact-disjoint test set (plus a 180-claim single-report case study), each
-instance with its structured plan, its exact evidence sets, its exact
-$p$-values and a three-decision verdict with sub-typed abstention, over
-pseudonymised identifiers (\S\ref{sec:dataset}).
+\item \textbf{A benchmark with gold at every stage}: temporal--statistical
+claims in 26 groups and seven families over three difficulty levels, released
+as a development set, a fact-disjoint test set and a single-report case
+study, with structured plans, exact evidence sets, exact $p$-values and a
+three-decision verdict with sub-typed abstention (\S\ref{sec:dataset}).
 \item \textbf{A generation process that makes the codebook part of the
-task.} Claims are enumerated from the annotated timelines by templates; every
-gold stage is computed mechanically, screened against permutation nulls,
-validated by six families of invariants and reproduced by a deterministic
-oracle; and the corpus stipulations the labels depend on are shipped as text
-that any system can be given, so ``codebook given'' is a controlled
-condition rather than a hidden assumption (\S\ref{sec:dataset}).
-\item \textbf{A staged verification method.} \art{}, an articulate,
-retrieve, test pipeline whose plan is handed to retrieval as a contract resolved by the
-harness, with a bounded verify-and-repair loop at each stage and a
-deterministic exact test; any stage can be filled with gold, so the loss of
-each stage is measurable and information and architecture are separately
-controllable (\S\ref{sec:method}).
+task}: claims enumerated from the annotated timelines by templates, gold
+computed mechanically, screened against permutation nulls and validated by
+invariants and an oracle, and the stipulations the labels depend on shipped
+as text any system can be given (\S\ref{sec:dataset}).
+\item \textbf{A staged verification method}, \art{}, whose plan is handed to
+retrieval as a contract resolved by the harness, with bounded repair at each
+stage and a deterministic exact test, so that any stage can be set to gold
+and information and architecture are separately controllable
+(\S\ref{sec:method}).
 \item \textbf{A study of five models and two agentic systems} under three
-research questions: what the codebook is worth, what the contract
-adds and where the loss remains, and whether right verdicts rest on the right
-evidence; with ablations of each stage and of the repair budget, case studies
-of single reports and paraphrase, and an error analysis of the
-\emph{insufficient} class (\S\ref{sec:experiments},
-\S\ref{sec:results}).
+research questions, with stage and repair-budget ablations, case studies and
+an error analysis of the \emph{insufficient} class
+(\S\ref{sec:experiments}, \S\ref{sec:results}).
 \end{itemize}
 
 \section{Related Work}
 \label{sec:related}
 
 \paragraph{Statistical reasoning benchmarks.} StatQA \cite{zhu2024statqa}
-scores whether a model knows which test applies; StatFormBench
-\cite{wang2026statformbench} scores the formulation of a test family from a
-description; StatABench \cite{zhu2026statabench} adds fixed tool functions and
-scores the final answer. P-Bench and Fisher-R1 \cite{miao2026fisher} come
-closest to our setting: 425 tasks in which an agent receives a hypothesis with
-its null stated, a CSV of the relevant data and a glossary, writes R to compute
-a $p$-value, and is scored on the decision and on the $p$-value's distance to
-a reference. In all of these the data are already the relevant subset and the
-null is given or trivial. The step we score first --- deciding which records a
-statistic is computed over --- has no counterpart, and no intermediate stage
+scores whether a model knows which test applies, StatFormBench
+\cite{wang2026statformbench} the formulation of a test family, and StatABench
+\cite{zhu2026statabench} the final answer with fixed tool functions. P-Bench
+and Fisher-R1 \cite{miao2026fisher} come closest to our setting: an agent
+receives a hypothesis with its null stated, a CSV of the relevant data and a
+glossary, writes R to compute a $p$-value, and is scored on the decision and
+the $p$-value. In all of these the data are already the relevant subset and
+the null is given or trivial; the step we score first, deciding which records
+a statistic is computed over, has no counterpart, and no intermediate stage
 has gold.
 
 \paragraph{Hypothesis-testing agents.} VERITAS \cite{veritas2026} is a
-multi-agent co-scientist that formulates, analyses and interprets a hypothesis
-with a deterministic evidence classifier, built for image-derived cohorts; LATCH
-\cite{gim2026latch} runs LLM-chosen analyses through deterministic R pipelines
-on EHR data with the method given; DiscoveryBench and BLADE
-\cite{majumder2025discoverybench,gu2024blade} evaluate open-ended data-driven
-discovery agents against rubrics. These systems share our plan-then-execute
-shape and our insistence on auditable computation; none of them scores the
-conditioning of the evidence, and none has hypotheses about the order of
-events within a record. We run two of them (EHRAgent \cite{shi2024ehragent},
-VERITAS) on our data as end-to-end baselines.
+multi-agent co-scientist with a deterministic evidence classifier, built for
+image-derived cohorts; LATCH \cite{gim2026latch} runs LLM-chosen analyses
+through deterministic R pipelines on EHR data with the method given;
+DiscoveryBench and BLADE \cite{majumder2025discoverybench,gu2024blade}
+evaluate open-ended discovery agents against rubrics. They share our
+plan-then-execute shape and our insistence on auditable computation, but
+none scores the conditioning of the evidence and none has hypotheses about
+the order of events within a record. We run two of them, EHRAgent
+\cite{shi2024ehragent} and VERITAS, as baselines.
 
 \paragraph{Clinical text-to-SQL and timelines.} EHRSQL \cite{lee2022ehrsql}
-scores one query per question with an abstention option; EHRAgent
+scores one query per question with an abstention option, and EHRAgent
 \cite{shi2024ehragent} solves EHR questions with a code-writing agent and
-error-driven retries. The Straight-to-SQL baselines in \S\ref{sec:baselines}
-follow that protocol over our schema. The CRAFT/TIMER line \cite{craft2026,timer2025} extracts clinical timelines
-from narratives, and MedTempo \cite{medtempo2026} is the expert-annotated
-corpus of such timelines that we build on; it is our data source, not a
-competitor: we start where extraction ends, take the timelines as given and
-ask what can be claimed about them.
+error-driven retries; our Straight-to-SQL baselines (\S\ref{sec:baselines})
+follow the EHRSQL protocol over our schema. The CRAFT/TIMER line
+\cite{craft2026,timer2025} extracts clinical timelines from narratives, and
+MedTempo \cite{medtempo2026} is the expert-annotated corpus of such timelines
+we build on: a data source, not a competitor. We start where extraction ends.
 
-\paragraph{Positioning.} Table~\ref{tab:related-concise} compares the closest work on
-the dimensions that decide what can be claimed. Two things are not new: a
-plan-then-execute loop with a deterministic statistics layer is the LATCH
-architecture, and ``hypothesis and data in, method and $p$ out'' is P-Bench.
-What is new is the combination of a model-formulated null executed
-deterministically with gold at every stage, a scored eligibility rule, and
-claims about event order with the conditioning semantics (first mention,
-co-existence, ties) those claims carry.
+\paragraph{Positioning.} Table~\ref{tab:related-concise} compares the closest
+work. A plan-then-execute loop with a deterministic statistics layer (LATCH)
+and ``hypothesis and data in, $p$ out'' (P-Bench) are not new; what is new
+is a model-formulated null executed deterministically with gold at every
+stage, a scored eligibility rule, and claims about event order with the
+conditioning semantics those claims carry.
 
 \iffalse  % prose positioning table kept in source only (user 2026-10-21); Table~\ref{tab:related-concise} is the live one
 \begin{table*}[t]
@@ -664,40 +632,24 @@ denominator) and $p$-agreement with the exact computation.
 \subsection{Experimental settings}
 \label{sec:setup}
 
-\paragraph{Splits.} The \emph{development set} is the 200-instance slice on
-which every prompt decision was made (all three tiers, four registers); it is a tuning set and no number from it enters the main table.
-The \emph{test set} is 1{,}500 cohort- and multi-tier instances over the 17
-cohort groups, 90 per group where the corpus allows it and every eligible
-instance where it does not (four groups contribute 61--86), balanced over the
-three verdicts (498 / 497 / 505) and fact-disjoint from the development set:
-no instance in the test set shares a core with one that was tuned on. The
-report tier is evaluated separately as a case study on 180 single-report
-instances (20 per report group), because every capable system reads a single
-report at 0.98--1.00 and the tier would only flatter weak rows. All test rows
-use the \textsc{Original} register in claim form; prompts were frozen before
-the first test record was run.
-
-\paragraph{Models and compute.} Every system is run with each of five models
-in every model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
+The splits are those of \S\ref{sec:release}: the 200-instance development
+set, on which every prompt decision was made and from which no number enters
+the main table; the 1{,}500-claim test set, run once after the prompts were
+frozen, in the \textsc{Original} register and claim form; and the 180-claim
+report case study, kept apart because every capable system reads a single
+report at 0.98--1.00. Every system is run with each of five models in every
+model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
 Qwen2.5-Coder-32B (SQL); the 2026 open models qwen3.8-27B and gemma4-31B, one
 model for both stages, thinking off; and the frontier models Claude Opus~5.5
 and GPT-5.6. Open models run fully resident on one RTX A5000 with an 8k
-context; frontier models over their APIs with prompt caching. Verdict accuracies carry 95\% bootstrap
-intervals over instances (1{,}000 resamples), about $\pm 0.02$ on the test set
-and $\pm 0.01$ above 0.98.
-Per-record cost and latency are in Appendix~\ref{app:cost}: a full frontier
-column on the test set cost \$80--89 at list price with prompt caching,
-EHRAgent with GPT-5.6 \$56, and the open models answer a test claim in
-10--14 seconds on one workstation GPU.
-
-\paragraph{Development set.} Every prompt decision was made on the
-200-instance development set, one change at a time, and the analyses behind
-the frozen configuration are reported there (Appendix~\ref{app:dev}):
-planning with the claim-type mapping given versus withheld, the attribution
-of every denominator failure to the rule it violated, and the effect of one
-missing stipulation in the codebook and of the schema presentation; the full
-information-versus-architecture grid over the development set is released
-with the code.
+context, frontier models over their APIs with prompt caching. Verdict
+accuracies carry 95\% bootstrap intervals over instances (1{,}000 resamples),
+about $\pm 0.02$ on the test set and $\pm 0.01$ above 0.98. Per-record cost
+and latency are in Appendix~\ref{app:cost}; a frontier column on the test set
+cost \$80--89 at list price, and the open models answer a claim in 10--14
+seconds on one workstation GPU. The development-set analyses behind the
+frozen configuration are in Appendix~\ref{app:dev}, and the full
+information-versus-architecture grid is released with the code.
 
 \section{Results}
 \label{sec:results}
@@ -729,19 +681,15 @@ S1 + S2 with the verifier + model as statistician on its own counts & 0.512\,{\s
 \textbf{\art{} + verifier} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
 \bottomrule
 \end{tabular}
-\caption{Main results on the test set. Each cell is verdict accuracy, then in
-parentheses macro precision / recall / F1 over the three verdict classes.
-Every row uses the same prompts, codebook, schema presentation and exact
-test; only the model changes across columns. Intervals on accuracy are
-$\pm 0.02$ (0.6--0.9) and $\pm 0.01$ (above 0.98). The middle block fills one
-stage with the model and leaves the others at gold (every stage at gold
-reproduces the labels, 1.000); the frontier S2 cells are bounded below by
-their evidence F1 of 1.000 with their own plans. EHRAgent returns a verdict
-from its own code; its paper used GPT-4 and GPT-3.5, and the open-model
-columns are ours. $^\dagger$VERITAS, at nine minutes per claim through three
-agent phases, is run on a stratified 204-claim subsample (12 per group,
-verdict-balanced); Appendix~\ref{app:subsample} scores the other systems on
-the same claims.}
+\caption{Main results on the test set: verdict accuracy, then macro
+precision / recall / F1 over the three verdict classes. Every row uses the
+same prompts, codebook, schema presentation and exact test; only the model
+changes across columns. Intervals on accuracy are $\pm 0.02$ (0.6--0.9) and
+$\pm 0.01$ (above 0.98). The middle block fills one stage with the model and
+the others with gold (all gold reproduces the labels, 1.000); the frontier
+S2 cells are bounded below by their evidence F1 of 1.000 with their own
+plans. EHRAgent returns a verdict from its own code. $^\dagger$VERITAS is
+run on a stratified 204-claim subsample (Appendix~\ref{app:subsample}).}
 \label{tab:main}
 \end{table*}
 
@@ -782,33 +730,28 @@ questions are answered in turn.
 \label{sec:main}
 
 \paragraph{With the codebook, frontier models solve the task; without it
-they do not.} Opus~5.5 and GPT-5.6 verify 1.000 and 0.984 of the
-claims end to end once the corpus stipulations are in the prompt, with every
-denominator exact. Remove the stipulations (row A) and the same models fall to
-0.878 and 0.876 and get a fifth of their denominators wrong: they infer most
-of the codebook from the schema and the wording and miss the rest. The
-open models lose far more without them, 0.748 $\rightarrow$ 0.587 for
-qwen3.8 and 0.859 $\rightarrow$ 0.635 for gemma4. The
-benchmark is therefore not hard for a frontier model with the information; it
-measures whether the information is used. Our pipeline adds nothing to such a
-model (0.999), and its verifier costs it a little (0.993, 0.983): the plan
-checks flag a few correct $n = k$ statements and the pipeline abstains rather
-than guess.
+they do not.} Given the codebook, Opus~5.5 and GPT-5.6 verify essentially
+every claim end to end with every denominator exact. Without it the same
+models lose a tenth of their verdicts and a fifth of their denominators: they
+infer most of the stipulations from the schema and the wording and miss the
+rest. The open models lose far more without it. The benchmark is therefore
+not hard for a frontier model that has the information; it measures whether
+the information is used. \art{} adds nothing to such a model, and its
+verifier costs it a little, because the plan checks flag a few correct
+$n = k$ statements and the pipeline abstains rather than guess.
 
 \subsection{RQ2: the staged pipeline and where errors remain}
 \label{sec:families}
 
 \paragraph{For open models the contract is what makes the verdict stand on the
-right evidence.} The 2024 pair verifies 0.575 of claims end to end with the
-codebook and 0.810 with the contract and the verifier; the 2026 models
-0.748 $\rightarrow$ 0.872 (qwen3.8) and 0.859 $\rightarrow$ 0.981 (gemma4).
-The verdict margin is $+0.12$ to $+0.24$. The evidence margin is larger and
-does not shrink with model quality: with the contract 86--97\% of right
-verdicts rest on the exact denominator against 40--86\% end to end, and
-overclaim falls from 0.04--0.23 to 0.01--0.05. gemma4-31B with the
-contract is within 0.02 of the frontier models at zero API cost, 14~seconds
-per claim on one workstation GPU.
-
+right evidence.} With the contract and the verifier, every open model gains
+between 0.12 and 0.24 in verdict accuracy over the Straight-to-SQL control,
+and gemma4-31B lands within 0.02 of the frontier at zero API cost. The
+evidence margin is larger and does not shrink with model quality: under the
+contract 86--97\% of right verdicts rest on the exact denominator, against
+40--86\% end to end, and overclaim falls by a factor of four or more. The
+contract does not make the models better at SQL; it removes the
+interpretation step on which they were failing.
 
 \iffalse  % family table kept in source; Figure~\ref{fig:groups} (ours by group) and Figure~\ref{fig:families} (evidence vs B) carry it (user 2026-10-20)
 \begin{table*}[t]
@@ -844,25 +787,21 @@ sizes in parentheses.}
 \label{fig:families-radar}
 \end{figure}
 
-
 \paragraph{By claim family.} The families do not fail together
-(Figure~\ref{fig:families-radar}). The
-2024 pair is at 0.97 or above on co-occurs, proximity and position, and its
-losses sit in two families: first/last (0.435), whose three groups need an
-argmax over three candidates with ties dropped from the denominator, and
-threshold (0.763), where H-V5 states its bar in the text. The 2026 open models
-clear first/last (0.798 and 0.950) and each misses a different family:
-qwen3.8 on position (0.689, the T-V1 group) and on the precedes variant whose
-null is a data-derived rate, gemma4 only on proximity (0.970) and threshold
-(0.961). Threshold is the one family where the frontier models also drop
-(0.941 and 0.914, all of it in H-V5); their planner-alone rows are at the
-same level, so the loss is in composing the bar into the plan.
-Figure~\ref{fig:families} shows which families the contract helps relative
-to the Straight-to-SQL control, on each evidence measure: its largest gains are in
-faithfulness and overclaim on the families whose rule it states (position,
-threshold, first/last, co-occurs); the cells where it loses are the 2024
-pair's underclaim on first/last, where it abstains rather than decide, and
-gemma4's faithfulness on proximity.
+(Figure~\ref{fig:families-radar}). The 2024 pair's losses sit in two
+families whose rule it cannot carry out: first/last, an argmax over three
+candidates with ties dropped from the denominator, and threshold, where one
+group states its bar in the text. The 2026 open models clear first/last and
+each misses a different family, qwen3.8 on position and on the precedes
+variant whose null is a data-derived rate, gemma4 only on proximity and
+threshold. Threshold is the one family where the frontier models also drop,
+and their planner-alone rows drop by the same amount, so the loss is in
+composing the bar into the plan, not in retrieval. Figure~\ref{fig:families}
+shows where the contract helps relative to the control on each evidence
+measure: its largest gains are in faithfulness and overclaim on the families
+whose rule it states, and the few cells where it loses are the 2024 pair's
+underclaim on first/last, where it abstains rather than decide, and gemma4's
+faithfulness on proximity.
 
 \begin{figure}[t]
 \centering
@@ -876,54 +815,45 @@ one-prompt baseline with the codebook (top) and \art{} with the verifier
 
 \paragraph{By difficulty level.} The levels are a ladder for the one-prompt
 baseline and not for the pipeline (Figure~\ref{fig:tiers}). With the
-codebook but no contract, the 2024 pair falls from 0.750 on Easy to 0.590 on
-Medium and 0.317 on Hard, qwen3.8 from 1.000 to 0.761 to 0.524 and gemma4
-from 1.000 to 0.860 to 0.829, while the frontier models stay at 1.000. Under
-\art{} every model is level from Medium to Hard (the pair 0.807 and 0.854,
-qwen3.8 0.870 and 0.902, gemma4 0.981 and 0.988), and the open models gain
-most on the level they lost most on. The step the one-prompt systems cannot
-take is the one Hard adds: composing a second denominator and a two-sample
-test, which the contract states and the harness runs. The Hard level has 82
-test claims (one group), so its intervals are about $\pm 0.08$.
+codebook but no contract, the open models lose a third to a half of their
+accuracy from Easy to Hard, the 2024 pair ending below chance on the
+two-cohort level, while the frontier models stay at 1.0. Under \art{} every
+model is level from Medium to Hard, and the open models gain most on the
+level they lost most on. The step the one-prompt systems cannot take is the
+one Hard adds, composing a second denominator and a two-sample test, which
+the contract states and the harness runs. The Hard level has 82 test claims
+(one group), so its intervals are about $\pm 0.08$.
 
 \subsection{RQ3: the evidence behind the verdicts}
 \label{sec:evidence}
 
 \paragraph{The denominator is where systems fail, and the verdict hides it.}
-The published agentic baseline reaches 0.605 with the 2024 Coder, within
-0.03 of the Straight-to-SQL control; with qwen3.8 it reaches 0.839 against
-0.748 Straight-to-SQL and 0.872 under \art{} for the same model, and with
-GPT-5.6 0.792 against 0.984 for the same model under the EHRSQL protocol
-with the codebook; its evidence cannot be audited (it returns a verdict
-from its own code), and it decides 58\%, 8\% and 15\% of the claims the
-data cannot decide (\S\ref{sec:insufficient}); the multi-agent VERITAS, given the same codebook and our exact
-tests, completes fewer than half its runs within a 10-minute cap per phase
-and scores 0.402, abstaining on most decisive claims --- the opposite
-failure. The Straight-to-SQL control with the 2024 Coder is right on 57\% of claims
-and right for the right reason on 40\% of those: it admits same-stage reports
-into order denominators, defines the eligible set as the supporting set, and
-narrows presence splits to co-occurrence (Table~\ref{tab:attribution}). The
-modular analysis (\S\ref{sec:modular}) shows the same thing from the other
-side: handed the exact counts and asked only for the verdict, the open models
-still pick the wrong test or read it wrong on a quarter to a third of claims,
-so a correct verdict from them is not evidence of a correct computation.
-
-\paragraph{The VERITAS subsample.} VERITAS's three agent phases take nine
-minutes per claim, so it is run on 204 claims of the test set with the test
-set's own stratification (12 per cohort group, four per verdict). On the same
-204 claims our pipeline scores 0.804 (0.810 on all 1{,}500), the
-Straight-to-SQL control 0.593 (0.575) and EHRAgent 0.559 (0.605), each inside its own
-subsample interval (Appendix~\ref{app:subsample}).
+The published agentic baseline is within 0.03 of the Straight-to-SQL control
+with the 2024 Coder and below \art{} with every newer model, and its evidence
+cannot be audited: it returns a verdict from its own code, and with the
+Coder it decides more than half of the claims the data cannot decide
+(\S\ref{sec:insufficient}). VERITAS, given the same codebook and our exact
+tests, shows the opposite failure, completing fewer than half its runs
+within a ten-minute cap per phase and abstaining on most decisive claims. The
+Straight-to-SQL control with the 2024 Coder is right on 57\% of claims and
+right for the right reason on only 40\% of those: it admits same-stage
+reports into order denominators, defines the eligible set as the supporting
+set, and narrows presence splits to co-occurrence
+(Table~\ref{tab:attribution}). The model-as-statistician rows show the same
+thing from the other side: handed the exact counts, the open models still
+return the wrong verdict on a quarter to a third of claims, so a correct
+verdict from them is not evidence of a correct computation. VERITAS's nine
+minutes per claim confine it to a 204-claim stratified subsample of the test
+set; every other system scores within its own interval on those claims
+(Appendix~\ref{app:subsample}).
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/families.pdf}
-\caption{The four evidence measures (\S\ref{sec:framework}: evidence F1,
-faithfulness, overclaim, underclaim) by claim family and model, as the
-contract's improvement over the Straight-to-SQL control on one scale: ours minus
-B, with the sign flipped for the two lower-is-better measures (marked
-$\downarrow$) so that green is better in every panel; the two underlying
-values are printed beneath each cell.}
+\caption{The four evidence measures by claim family and model, as the
+contract's change over the Straight-to-SQL control (ours minus B, sign
+flipped for the two lower-is-better measures so that green is better in
+every panel); the two underlying values are printed beneath each cell.}
 \label{fig:families}
 \end{figure*}
 
@@ -981,51 +911,38 @@ contract.}
 \fi
 
 \paragraph{Stage ceilings and the test stage.} The middle block of
-Table~\ref{tab:main} fills one stage at a time with the model and leaves
-the others at gold, so each row is the loss attributable to that stage
-alone; the lower rows then compose the stages as the pipeline does, and every
-row that has a verifier uses the pipeline's budget, two repair rounds at each
-stage it fills. Planning is nearly solved by every model (0.917--0.993): with
-the mapping withheld and the codebook given, the plan is composed right on
-at least nine claims in ten, and the gemma4 planner matches the frontier.
-Retrieval is the 2024 pair's loss: its Coder with the gold plan scores
-0.836, so the full pipeline's 0.761 is the planner's errors compounded on a
-retrieval stage that was already losing a sixth of the claims. The 2026
-models retrieve well with the gold plan (0.944 and 0.989), so for them the
-remaining loss is the plan: gemma4 with the verifier (0.981) is within 0.01 of
-both its ceilings, and qwen3.8 (0.872) sits 0.07 below its retrieval
-ceiling and 0.05 below its planner ceiling. The test stage is a function and
-the open models cannot compute it (0.61--0.78 as the statistician, judging
-from the exact counts); the pipeline does not ask them to, and the row that
-makes the model the statistician on its own counts shows what the same
-pipeline loses when it does: gemma4 falls from 0.981 to 0.770, qwen3.8 from 0.872 to
-0.568 and the 2024 pair from 0.810 to 0.512, with their own plans and retrieval
-unchanged.
+Table~\ref{tab:main} fills one stage at a time with the model and leaves the
+others at gold, so each row is the loss attributable to that stage alone.
+Planning is nearly solved by every model: with the mapping withheld and the
+codebook given, the plan is composed right on at least nine claims in ten,
+and the gemma4 planner matches the frontier. Retrieval is where the 2024
+pair loses, its Coder dropping a sixth of the claims even with the gold
+plan, so the full pipeline compounds planner errors on a stage that was
+already failing. The 2026 models retrieve well with the gold plan, so their
+remaining loss is the plan, and gemma4 with the verifier sits within 0.01 of
+both its ceilings. The test stage is a function the open models cannot
+compute: as the statistician on the exact counts they are wrong on a quarter
+to a third of claims, and the row that makes the model the statistician on
+its own counts shows the same pipeline losing 0.2 to 0.3 when it is asked to.
 
-\paragraph{Prose versus contract.} The hand-off between S1 and S2 is the
-decision the modular rows cannot see, because S2 alone is given the gold plan
-already resolved. On the development set (the full
-information-versus-architecture grid is released with the code) the same
-composed plan handed to S2 as prose with the codebook gives 0.570 for the
-2024 pair, and 0.655 with two verify-and-repair rounds, below the verified
-Straight-to-SQL model (0.715), while resolving the plan's named primitive into
-its rule gives 0.865 and 0.870 with the same plan and the same
-model. The decomposition pays only when the plan is a contract.
+\paragraph{Prose versus contract.} The hand-off between S1 and S2 is what the
+ceiling rows cannot see, because S2 alone receives the gold plan already
+resolved. On the development set the same composed plan handed to S2 as
+prose with the codebook scores below the verified Straight-to-SQL model even
+after two repair rounds, while resolving the plan's named primitive into its
+rule adds about 0.3 with the same plan and the same model. The decomposition
+pays only when the plan is a contract.
 
-\paragraph{Repair rounds.} Figure~\ref{fig:rounds} runs our pipeline
-with zero to three verify-and-repair rounds on the test set. For the open
-models the first round does almost all of the work: $+0.13$ for qwen3.8 and
-gemma4, with evidence F1 rising by 0.06--0.11 (Appendix~\ref{app:rounds}),
-and the second and third
-rounds add about 0.01 each. The 2024 pair gains little per round (0.761
-$\rightarrow$ 0.814) because its Coder resubmits the same mistake when told
-what was wrong. At the frontier every round costs 0.005--0.015: the checks
-fire on statements that are already correct (a genuine $n = k$, an absent
-event) and the pipeline turns a right verdict into an abstention. Records
-that flip from right to wrong under repair flip almost entirely into
-\emph{insufficient}; records that cannot be repaired (a quarter of those
-flagged) are not executed. Two rounds is the operating point for every open
-model; a model that does not need the verifier is not helped by it.
+\paragraph{Repair rounds.} Figure~\ref{fig:rounds} runs the pipeline with
+zero to three verify-and-repair rounds. For the 2026 open models the first
+round does almost all of the work, about $+0.13$ in accuracy with evidence
+F1 rising with it (Appendix~\ref{app:rounds}), and the next two rounds add a
+few thousandths; the 2024 pair gains little per round because its Coder
+resubmits the same mistake when told what was wrong. At the frontier every
+round costs a little, since the checks fire on statements that are already
+correct and the pipeline turns a right verdict into an abstention. Two rounds
+is the operating point for every open model; a model that does not need the
+verifier is not helped by it.
 
 \iffalse  % repair-rounds table kept in source; Figure~\ref{fig:rounds} carries it (user 2026-10-20)
 \begin{table}[t]
@@ -1060,17 +977,14 @@ accuracy from the previous round, for rounds one to three, on the test set
 \subsection{Case studies}
 \label{sec:cases}
 
-\paragraph{Single reports.} The report tier asks whether a system can locate
-one report by its pseudonymous identifier and read an ordering from its
-annotated timeline; the plan has one arm and the test stage is a
-deterministic rule. Every system with a 2026 model does this at 0.98--1.00
-with or without the contract (Table~\ref{tab:report}). The 2024 Coder end to
-end does not: 0.433 without the codebook and 0.750 with it, against
-1.000 for the same Coder under the contract and 1.000 for its planner. Opus
-abstains on three of the 180 (an event it judged absent); EHRAgent read this
-tier at 0.96 on the development set. The tier is trivial as statistics and
-still separates systems that read what the contract asks them to read from
-systems that do not.
+\paragraph{Single reports.} The report tier asks a system to locate one
+report by its pseudonymous identifier and read an ordering from its timeline;
+the plan has one arm and the test stage is a deterministic rule. Every system
+with a 2026 model does this at 0.98--1.00 with or without the contract
+(Table~\ref{tab:report}); the 2024 Coder end to end does not, and reaches
+1.000 only under the contract. The level is trivial as statistics and still
+separates systems that read what the contract asks them to read from systems
+that do not.
 
 \begin{table}[t]
 \centering
@@ -1093,14 +1007,14 @@ single-report claims.}
 
 
 \paragraph{Paraphrase.} The development set carries three paraphrase
-registers of every instance (research, media, clinical), and the case study
-uses the weakest of our models, the 2024 Qwen2.5 pair, so that any
-sensitivity would show. The planner alone loses 0.03--0.12 across registers
-and the full pipeline 0.03--0.10 (Figure~\ref{fig:registers}): the cost of paraphrase is paid at planning and
-passes through the contract unchanged, and the Straight-to-SQL control loses
-0.04--0.08 from a lower base. Paraphrase does not change the ranking of
-systems or the size of the contract's margin. The registers are templated;
-free paraphrase, and the stronger models, are left to future work.
+registers of every instance, and the case study uses the weakest model, the
+2024 pair, so that any sensitivity would show. The planner alone and the full
+pipeline lose the same amount across registers (Figure~\ref{fig:registers}):
+the cost of paraphrase is paid at planning and passes through the contract
+unchanged, while the Straight-to-SQL control loses a similar amount from a
+lower base. Paraphrase changes neither the ranking of systems nor the size of
+the contract's margin. The registers are templated; free paraphrase and the
+stronger models are left to future work.
 
 \iffalse  % registers table kept in source; Figure~\ref{fig:registers} carries it (user 2026-10-20)
 \begin{table}[t]
@@ -1165,110 +1079,78 @@ test set & all & not-loc. & sparse & underp. & sub-type right & all & query fail
 \quad GPT-5.6 & 0.145 & 0.057 & 0.210 & 0.174 & --- & 0.197 & --- & --- & --- & --- & --- & 0.000 \\
 \bottomrule
 \end{tabular}
-\caption{The \emph{insufficient} class on the test set. Left: the share of
-gold-\emph{insufficient} claims given a decisive verdict (overclaim), overall
-and by the gold sub-type (\emph{not-locatable}: no report has the
-combination, 176 claims; \emph{sparse}: fewer than the floor, 157;
-\emph{underpowered}: enough reports, neither tail significant, 172), and the
-share of the system's own abstentions that name the right sub-type. Right:
-the share of decisive claims answered \emph{insufficient} (underclaim), by
-what the prediction shows: the query failed after repair; the retrieved
-denominator was empty or below the floor; it was testable but not the gold
-set; it was the gold set, so the loss is in the numerator, the null or the
-test family. ``No answer'' is a record for which no plan could be derived.}
+\caption{The \emph{insufficient} class on the test set. Left: overclaim,
+the share of gold-\emph{insufficient} claims given a decisive verdict,
+overall and by gold sub-type (\emph{not-locatable} 176 claims,
+\emph{sparse} 157, \emph{underpowered} 172), and the share of a system's
+abstentions with the right sub-type. Right: underclaim, the share of decisive
+claims answered \emph{insufficient}, by what the prediction shows (query
+failed; denominator empty; below the floor; testable but not the gold set;
+the gold set, so the loss is in the numerator, null or test). ``No answer'':
+no plan could be derived.}
 \label{tab:insufficient}
 \end{table*}
 
 The three-decision verdict fails in two directions, deciding what the data
 cannot decide and abstaining on what it can, and Table~\ref{tab:insufficient}
 separates them with the cause of each. \emph{Overclaim is the agents' and the
-Straight-to-SQL models' failure.} EHRAgent with the 2024 Coder decides 0.578 of the
-claims the data cannot decide and 0.965 of the \emph{underpowered} ones: it
-runs its own test and finds significance where the exact test finds none;
-with qwen3.8 it decides 0.079 and with GPT-5.6 0.145. The Straight-to-SQL control with the
-2024 pair decides 0.234, again mostly on \emph{underpowered} claims (0.430),
-where a denominator that admits the wrong reports moves the tail. Our
-pipeline decides 0.010--0.046 of them with the open models and 0.004--0.020
-at the frontier, because the exact test, not the model, does the abstaining.
-On the 176 \emph{not-locatable} claims, where no report has the combination
-and the right answer is an empty denominator, the Straight-to-SQL pair returns a
-decisive verdict on 0.131 and EHRAgent on 0.364: the denominator was filled
-with reports that do not qualify. Under the contract this falls to 0.011
-for the pair and 0.000 for gemma4 and the frontier models; qwen3.8's 0.062
-is its one weakness here. When our pipeline does abstain it names the right
-sub-type on 0.871--0.970 of its abstentions with the open models and 0.996
-or more at the frontier, against 0.791--0.893 for the Straight-to-SQL control.
+one-prompt models' failure.} EHRAgent with the 2024 Coder decides more than
+half of the claims the data cannot decide and nearly all of the
+\emph{underpowered} ones, because it runs its own test and finds
+significance where the exact test finds none; its newer models decide far
+fewer. The Straight-to-SQL control overclaims mostly on \emph{underpowered}
+claims, where a denominator that admits the wrong reports moves the tail.
+Our pipeline overclaims on a few percent at most, because the exact test,
+not the model, does the abstaining. On the \emph{not-locatable} claims,
+where no report has the combination and the right answer is an empty
+denominator, the one-prompt pair and EHRAgent return decisive verdicts on a
+tenth to a third of claims by filling the denominator with reports that do
+not qualify; under the contract this all but disappears, qwen3.8 being the
+one open model that still does it occasionally. When our pipeline abstains
+it names the right sub-type far more often than the control does.
 
 \emph{Underclaim is the open models' larger loss, and its cause differs by
-system.} The Straight-to-SQL pair abstains on 0.388 of the decisive claims, and
-the prediction shows why: on 0.204 the denominator was testable but not the
-gold set, on 0.108 it was below the floor; gemma4 end to end abstains on
-0.182, half of it (0.098) queries the database rejected. EHRAgent moves the
-other way as its model improves: the Coder abstained on 0.033 of the decisive
-claims, qwen3.8 and GPT-5.6 on 0.191 and 0.197, so the stronger agents trade
-overclaim for underclaim rather than for correct verdicts. Under the contract
-the pair's 0.216 is mostly queries that still fail after two repairs (0.134,
-the Coder resubmitting the same statement) and a wrong set on 0.047; qwen3.8
-abstains on 0.066 and gemma4 on 0.023. The frontier models abstain on
-0.009 and 0.011, almost all of it with the gold denominator (0.008, 0.010),
-and every one of those is in H-V5: the plan reads ``most often first, in at
-least half of the reports'' as an argmax claim and runs modal-versus-runner-up
-on the right counts instead of the exact binomial against the stated bar.
-The counts are exact and the test family is not, which is the one
-composition the frontier planners miss and the whole of their loss on the
-threshold family (\S\ref{sec:families}).
+system.} The one-prompt pair abstains on nearly four decisive claims in ten,
+mostly because its denominator was testable but not the gold set or fell
+below the floor; gemma4 end to end abstains mainly on queries the database
+rejected. EHRAgent moves the other way as its model improves, from almost
+never abstaining with the Coder to abstaining on a fifth of the decisive
+claims with qwen3.8 and GPT-5.6: the stronger agents trade overclaim for
+underclaim rather than for correct verdicts. Under the contract the pair's
+remaining abstentions are mostly queries that still fail after two repairs,
+the Coder resubmitting the same statement, and the 2026 models abstain on a
+few percent. The frontier models' few abstentions all come with the gold
+denominator and all fall in one group, H-V5: the plan reads ``most often
+first, in at least half of the reports'' as an argmax claim and runs
+modal-versus-runner-up on the right counts instead of the exact binomial
+against the stated bar. The counts are exact and the test family is not,
+which is the one composition the frontier planners miss and the whole of
+their loss on the threshold family (\S\ref{sec:families}).
 
-\section{Discussion and Limitations}
+\section{Conclusion and Limitations}
 \label{sec:limitations}
-
-\paragraph{What the instrument shows.} The verdict is a poor proxy for the
-reasoning it is supposed to certify: systems a few points apart on accuracy are
-a factor of two apart on whether their evidence is right, and the
-Straight-to-SQL systems' best gains came from fixing execution failures, not conditioning. The
-stage-level gold is what makes this visible, and it is the dataset's main
-contribution.
-
-\paragraph{What the contract is for.} The reference pipeline is a simple
-decomposition; its value is that each stage is checkable, and handing the plan
-to the next stage as prose discards that value. What the results support is
-a stated codebook, a plan that is a contract, and bounded verification. A
-frontier model that holds the codebook verifies the claims without the
-contract (0.999 either way) and the verifier costs it a little; the contract
-is what lets an open model, run locally on clinical data, reach the same
-accuracy with an auditable denominator.
-
-\paragraph{The codebook is dataset-specific.} Porting the framework to
-another corpus means writing its codebook and primitive definitions, not
-retraining anything. We have done this for one corpus; the cost of doing it
-for another is not measured here.
-
-\paragraph{Development and test.} Every prompt decision was made on the
-200-instance development set, and the development numbers transfer to the
-test set within 0.03 for every row we compared.
-
-\paragraph{Floors and ceilings.} Decisive labels carry $\alpha$-rate false
-positives by construction; exact tests are conservative, so the realised rate
-is below nominal but not zero. The release is bounded by enumeration breadth
-(the most frequent cohort terms), not by statistical power: three designed
-groups (two three-event sequence groups and one co-occurrence threshold) have
-only four to twelve cores in the corpus and are not in the roster. The 7B
-tier is a capability floor: nothing in the framework helps a model that
-cannot compose a plan.
-
-\paragraph{No lexical variation.} Slot fillers are raw MedDRA terms and the
-registers are templated; the paraphrase case study covers those four
-registers.
-
-\section{Conclusion}
 \label{sec:conclusion}
 
-\sys{} turns a temporal--statistical claim into a chain of scored decisions ---
-which reports count, what the null is, which test applies, what the evidence
-was --- and shows that the first of those is where systems fail and the last is
-what the verdict cannot see. On a 1{,}500-claim test set no prompt decision
-was made on, frontier models verify the claims once the corpus codebook is
-stated and not before; open models need the plan to be a contract between the
-stages, and with it a 31B model run on one workstation GPU reaches 0.981 with
-its evidence right 94\% of the time, against 0.859 and 86\% end to end.
-Benchmarks of this kind should publish their codebook with their data, and
-score the evidence with the answer.
+\sys{} turns a temporal--statistical claim into a chain of scored decisions,
+which reports count, what the null is, which test applies and what the
+evidence was, and shows that the first of those is where systems fail and
+the last is what the verdict cannot see: systems a few points apart on
+accuracy are a factor of two apart on whether their evidence is right. On a
+1{,}500-claim test set no prompt decision was made on, frontier models verify
+the claims once the corpus codebook is stated and not before; open models
+need the plan to be a contract between the stages, and with it a 31B model
+run on one workstation GPU reaches the frontier's accuracy with an auditable
+denominator. The reference pipeline is a simple decomposition whose value is
+that each stage is checkable; handing the plan on as prose discards that
+value, and a model that does not need the verifier is not helped by it.
+
+Three limits bound the claims. The codebook is corpus-specific: porting the
+framework means writing another corpus's codebook and primitive definitions,
+a cost we have paid for one corpus and not measured for another. Decisive
+labels carry $\alpha$-rate false positives by construction, and the release
+is bounded by enumeration breadth rather than statistical power, three
+designed groups having too few cores to ship. Slot fillers are raw MedDRA
+terms and the registers are templated, so lexical variation is limited to
+the paraphrase case study, and a 7B model that cannot compose a plan is not
+helped by anything in the framework. Benchmarks of this kind should publish
+their codebook with their data, and score the evidence with the answer.
