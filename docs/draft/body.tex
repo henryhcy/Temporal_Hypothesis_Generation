@@ -166,7 +166,7 @@ corpus of such timelines that we build on; it is our data source, not a
 competitor: we start where extraction ends, take the timelines as given and
 ask what can be claimed about them.
 
-\paragraph{Positioning.} Table~\ref{tab:related} compares the closest work on
+\paragraph{Positioning.} Table~\ref{tab:related-concise} compares the closest work on
 the dimensions that decide what can be claimed. Two things are not new: a
 plan-then-execute loop with a deterministic statistics layer is the LATCH
 architecture, and ``hypothesis and data in, method and $p$ out'' is P-Bench.
@@ -175,6 +175,7 @@ deterministically with gold at every stage, a scored eligibility rule, and
 claims about event order with the conditioning semantics (first mention,
 co-existence, ties) those claims carry.
 
+\iffalse  % prose positioning table kept in source only (user 2026-10-21); Table~\ref{tab:related-concise} is the live one
 \begin{table*}[t]
 \centering
 \scriptsize
@@ -202,6 +203,7 @@ intermediate stages'' is what makes per-stage attribution possible;
 within a record.}
 \label{tab:related}
 \end{table*}
+\fi
 
 \begin{table*}[t]
 \centering
@@ -299,8 +301,16 @@ Twenty-six template groups span seven claim families at three scopes
 \emph{first/last} among candidates --- and three, added to diversify the null,
 concern \emph{position} (an event in the earlier half of a timeline),
 \emph{proximity} (two events at consecutive stages) and \emph{threshold} (a
-rate at least a stated bar). Scopes are a single report, one vaccine cohort,
-and a contrast of two cohorts. Within a cohort, three groups are two-arm
+rate at least a stated bar). Claims come in three \emph{tiers} of
+increasing complexity. The \emph{report} tier asks about one named report:
+the verdict is a deterministic reading of its timeline (did $A$ precede $B$
+in this report), there is no null and no test, and \emph{insufficient} does
+not arise (9 groups). The \emph{cohort} tier asks about the reports of one
+vaccine: a denominator has to be assembled under the family's rule, a null
+stated, and an exact test run with a floor on the count, so all three
+verdicts are possible (16 groups). The \emph{multi-cohort} tier contrasts
+two vaccines' cohorts: two denominators, two rates, and a two-sample exact
+test (1 group). Within the cohort tier, three groups are themselves two-arm
 contrasts: whether $B$ follows $A$ more often than it follows $C$; whether $A$
 precedes $B$ more often than $C$ precedes $D$; and whether $A$ and $B$ occur
 together more often than their separate rates predict (association). Each
@@ -334,12 +344,39 @@ A)$ over the whole cohort. \emph{Immediate} order counts reports where the two
 events are at consecutive occupied stages; \emph{position} drops single-stage
 reports and events on the exact middle stage.
 
-\paragraph{Tests.} All tests are exact. Majority and bar claims use a one-sided
-exact binomial against $p_0$; argmax claims use modal-versus-runner-up, an exact
-binomial on the named cell against its strongest competitor; two-arm and
-two-cohort contrasts use Fisher's exact test. No $\chi^2$ approximation
-appears; the sole gate is a per-family minimum denominator ($n \geq 10$;
-sequence $n \geq 5$), applied to both arms where two exist.
+\paragraph{Tests.} All tests are exact, and Table~\ref{tab:tests} lists
+them by claim shape: a one-sided exact binomial against $p_0$ for majority,
+bar and data-derived nulls; modal-versus-runner-up, an exact binomial of the
+named cell against its strongest competitor, for argmax claims; Fisher's
+exact test for two-arm and two-cohort contrasts. No $\chi^2$ approximation
+appears; the sole gate is a minimum denominator of 10, applied to both arms
+where two exist. Each instance releases both one-sided $p$-values, the
+Wilson interval and Cohen's $h$ against the null actually used.
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\columnwidth}{@{}p{2.25cm} Y Y p{1.05cm}@{}}
+\toprule
+claim shape (groups) & null & exact test & floor \\
+\midrule
+order majority: precedes, co-occurs, immediate order (P-V1, P-V3, C-V1, Y-V1, Y-V2) & symmetric, $p_0 = 0.5$ & one-sided binomial on the conditioned proportion & $n \geq 10$ \\
+argmax: first, last, most common co-occurrence (F-V1--F-V3, C-V3) & named cell vs.\ its strongest competitor & modal-versus-runner-up: binomial on the two cells & $n \geq 10$ \\
+two-arm contrast within a cohort: antecedent, pair-vs-pair, association (P-V2, P-V4, C-V2) & equality of two rates & Fisher's exact test & $n \geq 10$ per arm \\
+two-cohort contrast (P-M2) & equality of two cohorts' rates & Fisher's exact test & $n \geq 10$ per cohort \\
+threshold: bar stated in the text (H-V1, H-V5) & $p_0$ read from the wording ($2/3$, $1/2$) & one-sided binomial, tested per orientation & $n \geq 10$ \\
+data-derived: position, proximity rate (T-V1, Y-V3) & $p_0$ computed from the denominator reports (structural early rate; $2/L$ adjacency chance) & one-sided binomial against the summed chance & $n \geq 10$ \\
+report tier (9 groups) & none & none: a deterministic reading of one timeline & --- \\
+\bottomrule
+\end{tabularx}
+\caption{The tests, by claim shape. Every test is exact and one-sided in the
+claim's direction; the floor is the minimum conditioned denominator below
+which the verdict is \emph{sparse} ($0 < n <$ floor) or \emph{not-locatable}
+($n = 0$).}
+\label{tab:tests}
+\end{table}
 
 \paragraph{The three-decision rule and oriented statistics.} A claim is
 \emph{supported} only when its own one-sided tail is significant at
@@ -505,10 +542,11 @@ sandbox and aggregates the rows into $(n, k)$ per arm together with the
 identifier sets, so the evidence is auditable against the gold sets.
 
 \textbf{S3 --- test.} A deterministic function runs the plan's test on the
-counts: the exact binomial against the plan's $p_0$ (for a data-derived null,
-against the chance sum over the retrieved denominator), Fisher's test for two
-arms, modal-versus-runner-up for argmax; applies the floor; and returns the
-verdict with both tails. Nothing is inferred at S3.
+counts (Table~\ref{tab:tests}): the exact binomial against the plan's $p_0$
+(for a data-derived null, against the chance sum over the retrieved
+denominator), Fisher's test for two arms, modal-versus-runner-up for argmax;
+applies the floor; and returns the verdict with both tails. Nothing is
+inferred at S3.
 
 \subsection{Information: what the model is told}
 \label{sec:frames}
