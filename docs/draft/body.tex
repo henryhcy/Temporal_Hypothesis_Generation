@@ -151,30 +151,41 @@ co-existence, ties) those claims carry.
 
 \begin{table*}[t]
 \centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\textwidth}{@{}p{2.55cm} Y Y Y Y Y Y@{}}
+\small
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{@{}lccccccccc@{}}
 \toprule
-Work & Formulates the null? & Statistic computed by & Event-order claims & Clinical & Gold at intermediate stages & Dataset-in interface \\
+ & \multicolumn{2}{c}{\textbf{claims}} & \multicolumn{2}{c}{\textbf{statistics}} & \multicolumn{3}{c}{\textbf{gold at each stage}} & & \\
+\cmidrule(lr){2-3} \cmidrule(lr){4-5} \cmidrule(lr){6-8}
+Benchmark / system & temporal & null composed & exact tests & by harness & plan & evidence set & $p$-value & clinical & conventions \\
 \midrule
-P-Bench / Fisher-R1 \cite{miao2026fisher} & no; $H_0$ given, test chosen but unscored & model-written R in a sandbox & no (survival only) & partly & no; final $p$ and decision & no; 425 fixed tasks \\
-LATCH \cite{gim2026latch} & no; hypothesis and method both given & deterministic R pipelines & no (cross-sectional) & yes (NHANES) & partial; cohort $n$, CI vs.\ the paper & yes; schema summary \\
-StatFormBench \cite{wang2026statformbench} & family label only & nothing computed & no & textbook & formulation only & no \\
-StatABench \cite{zhu2026statabench} & test selection, no null & fixed tool functions & no & no & final answer & no \\
-StatQA \cite{zhu2024statqa} & applicability only & nothing computed & no & no & final answer & no \\
-DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & open-ended hypothesis & agent code & no & no & rubric / expert & no \\
-EHRAgent / EHRSQL \cite{shi2024ehragent,lee2022ehrsql} & no (QA / SQL) & agent code / SQL & no & yes (EHR) & answer / execution & schema \\
-VERITAS \cite{veritas2026} & plans the analysis & own code + deterministic classifier & no & yes (imaging) & verdict vs.\ reference & data + description \\
-CRAFT / TIMER \cite{craft2026,timer2025} & n/a (extraction) & n/a & timelines, no claims & yes & reference timeline & n/a \\
+StatQA \cite{zhu2024statqa} & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+StatFormBench \cite{wang2026statformbench} & \xmark & \pmark & \xmark & \xmark & \pmark & \xmark & \xmark & \xmark & \xmark \\
+StatABench \cite{zhu2026statabench} & \xmark & \xmark & \cmark & \cmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+P-Bench / Fisher-R1 \cite{miao2026fisher} & \xmark & \xmark & \pmark & \xmark & \xmark & \xmark & \cmark & \pmark & \xmark \\
+DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark \\
+EHRSQL / EHRAgent \cite{lee2022ehrsql,shi2024ehragent} & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \xmark & \cmark & \xmark \\
+LATCH \cite{gim2026latch} & \xmark & \xmark & \cmark & \cmark & \xmark & \pmark & \pmark & \cmark & \xmark \\
+VERITAS \cite{veritas2026} & \xmark & \pmark & \pmark & \pmark & \xmark & \xmark & \xmark & \cmark & \xmark \\
+CRAFT / TIMER \cite{craft2026,timer2025} & \pmark & --- & --- & --- & --- & --- & --- & \cmark & \xmark \\
 \midrule
-\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last, position, proximity, threshold & \textbf{yes}: annotated VAERS timelines & \textbf{every stage}: plan, evidence set, counts, $p$, verdict & stated conventions + dataset card \\
+\textbf{\sys{} (this work)} & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark & \cmark \\
 \bottomrule
-\end{tabularx}
-\caption{Positioning against the closest benchmarks and systems. ``Gold at
-intermediate stages'' is what makes per-stage attribution possible;
-``event-order claims'' means hypotheses about the order or timing of events
-within a record.}
+\end{tabular}
+\caption{Positioning. \emph{Temporal}: claims about the order or timing of
+events within a record. \emph{Null composed}: the system must state the null
+and the population it is tested over, rather than receive them. \emph{Exact
+tests}: labels rest on exact tests; \emph{by harness}: the statistic is
+computed deterministically from the system's evidence, not by model-written
+code. \emph{Gold at each stage}: the plan, the evidence set and the $p$-value
+are released, so each stage can be scored. \emph{Clinical}: clinical records.
+\emph{Conventions}: the corpus stipulations are shipped as part of the task.
+\cmark{} yes, \xmark{} no, \pmark{} partial (StatFormBench scores a
+formulation but not a null; P-Bench's tests are model-written R against a
+reference $p$ on partly medical data; LATCH releases cohort sizes and
+intervals; VERITAS plans the analysis and classifies with a deterministic
+rule; CRAFT and TIMER extract timelines and pose no claims).}
 \label{tab:related}
 \end{table*}
 
@@ -798,7 +809,7 @@ model. The decomposition pays only when the plan is a contract.
 \subsection{Case studies}
 \label{sec:cases}
 
-\paragraph{How many repair rounds?} Table~\ref{tab:rounds} and Figure~\ref{fig:rounds} run our pipeline
+\paragraph{How many repair rounds?} Figure~\ref{fig:rounds} runs our pipeline
 with zero to three verify-and-repair rounds on the test set. For the open
 models the first round does almost all of the work: $+0.13$ for qwen3.8 and
 gemma4, with evidence F1 rising by 0.06--0.11, and the second and third
@@ -812,6 +823,7 @@ that flip from right to wrong under repair flip almost entirely into
 flagged) are not executed. Two rounds is the operating point for every open
 model; a model that does not need the verifier is not helped by it.
 
+\iffalse  % repair-rounds table kept in source; Figure~\ref{fig:rounds} carries it (user 2026-10-20)
 \begin{table}[t]
 \centering
 \small
@@ -830,11 +842,12 @@ rounds & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 verdict accuracy / evidence F1.}
 \label{tab:rounds}
 \end{table}
+\fi
 
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/rounds.pdf}
-\caption{Table~\ref{tab:rounds} as bars: our pipeline after zero, one, two
+\caption{Our pipeline after zero, one, two
 and three verify-and-repair rounds, verdict accuracy (left) and evidence F1
 (right), test set. For the open models the first round is almost the whole
 gain; the frontier models lose a little per round as correct statements get
