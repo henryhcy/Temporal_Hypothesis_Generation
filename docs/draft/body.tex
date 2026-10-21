@@ -938,13 +938,13 @@ at 0.96.}
 registers of every instance (research, media, clinical), and the case study
 uses the weakest of our models, the 2024 Qwen2.5 pair, so that any
 sensitivity would show. The planner alone loses 0.02--0.12 across registers
-and the full pipeline the same (Table~\ref{tab:registers},
-Figure~\ref{fig:registers}): the cost of paraphrase is paid at planning and
+and the full pipeline the same (Figure~\ref{fig:registers}): the cost of paraphrase is paid at planning and
 passes through the contract unchanged, and the end-to-end control loses the
 same 0.04--0.12 from a lower base. Paraphrase does not change the ranking of
 systems or the size of the contract's margin. The registers are templated;
 free paraphrase, and the stronger models, are left to future work.
 
+\iffalse  % registers table kept in source; Figure~\ref{fig:registers} carries it (user 2026-10-20)
 \begin{table}[t]
 \centering
 \small
@@ -962,11 +962,12 @@ B (end-to-end control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 (claim form).}
 \label{tab:registers}
 \end{table}
+\fi
 
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{Figures/registers.pdf}
-\caption{Table~\ref{tab:registers} as bars: the paraphrase cost is paid at
+\caption{Paraphrase registers: the paraphrase cost is paid at
 planning and passes through the contract unchanged, and the end-to-end
 control loses the same amount from a lower base.}
 \label{fig:registers}
