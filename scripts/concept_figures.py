@@ -296,7 +296,59 @@ def draw_whole(c: Canvas):
     c.ax.text(100.4, 30, "stage gold → every gold box", rotation=90, ha="center", va="center", fontsize=c.bfs - 0.6, color=gcol)
 
 
+# ====================================================================== level 2, abstract (user 2026-10-21)
+def draw_framework_abstract(c: Canvas):
+    """The ART framework with titles and one short sub-label per box: the contract dips through the harness
+    between S1 and S2, the two repair loops, the sandbox, S3 as a function, and the gold row with metric names."""
+    st = c.st
+    if st.lanes:
+        c.lane(0.5, 10.5, "gold", "gold")
+        c.lane(11, 22.5, "harness", "harness")
+        c.lane(23, 35.5, "model", "model")
+        for xc, lab, col in ((25.5, "S1  Articulate", "#6A994E"), (62, "S2  Retrieve", "#6A994E"), (87, "S3  Test", "#B8921C")):
+            c.header(xc, 35.9, lab, col)
+    if st.numbered:
+        c.note(1, 36.6, "ART: \u2460 articulate  \u2461 contract  \u2462 retrieve  \u2463 sandbox  \u2464 test;  dotted: compared with the released gold", fs=c.bfs, color=st.text, weight="bold")
+    # model row
+    c.box(1, 29.5, 13, 4.5, "input", "Claim")
+    c.box(1, 24, 13, 4.5, "input", "Timeline DB")
+    c.box(17, 24, 17, 10, "model", "S1 Articulate", "LLM \u2192 plan", number=1)
+    c.box(52, 24, 20, 10, "model", "S2 Retrieve", "LLM \u2192 SQL", number=3)
+    c.box(75, 24, 24, 10, "output", "Verdict", "+ evidence sets, p")
+    # harness row
+    c.box(1, 12, 13, 9, "codebook", "Codebook", "stipulations")
+    c.box(17, 12, 11, 9, "verify", "Verify", "\u27f3 1: plan vs\ncodebook")
+    c.box(37, 12, 12, 9, "contract", "Contract", "plan \u2192 exact rule", number=2, emph=True)
+    c.box(52, 12, 9.5, 9, "verify", "Verify", "\u27f3 \u2264 2: rows\nvs rule")
+    c.box(62.5, 12, 9.5, 9, "harness", "Sandbox", "\u2192 n, k, ids", number=4)
+    c.box(75, 12, 24, 9, "harness", "S3 Test", "exact test, deterministic", number=5)
+    # gold row
+    c.box(1, 2, 13, 7.5, "gold", "Stage gold", "any stage can be\nset to gold")
+    c.box(17, 2, 17, 7.5, "gold", "Gold plan", "plan EM")
+    c.box(52, 2, 20, 7.5, "gold", "Gold evidence", "evidence F1, faithfulness")
+    c.box(75, 2, 24, 7.5, "gold", "Gold verdict", "accuracy, overclaim, underclaim")
+    # flows
+    c.arrow((14, 31.75), (17, 31.75)); c.arrow((14, 26.25), (17, 26.25))
+    c.arrow((14, 18), (18.5, 24), rad=-0.3)
+    c.arrow((20.5, 24), (20.5, 21)); c.arrow((24.5, 21), (24.5, 24))
+    c.arrow((34, 29), (37, 19), "plan", rad=0.35, loff=(0.8, 2.0))
+    c.arrow((49, 19), (52, 29), "contract", accent=True, rad=0.35, loff=(0.0, 2.0))
+    c.arrow((54.5, 24), (54.5, 21)); c.arrow((58.5, 21), (58.5, 24))
+    c.arrow((67, 24), (67, 21), "SQL", loff=(2.6, 0))
+    c.arrow((62.5, 15), (61.5, 15))
+    c.arrow((72, 17), (75, 17))
+    c.arrow((87, 21), (87, 24), "verdict", loff=(5.2, 0))
+    c.dotted((31, 24), (31, 9.5)); c.dotted((67, 12), (67, 9.5)); c.dotted((87, 12), (87, 9.5))
+
+
 def main() -> None:
+    import sys
+    if "--abstract" in sys.argv:
+        for st in STYLES:
+            xmin = -3.2 if st.lanes else -1.0
+            c = Canvas(st, 100, 38, 7.2, title_fs=8.5, body_fs=6.8, xmin=xmin)
+            draw_framework_abstract(c); c.save(f"{st.key}_2_framework_abstract")
+        return
     for st in STYLES:
         xmin = -3.2 if st.lanes else -1.0
         c = Canvas(st, 100, 57, 3.5, title_fs=6.2, body_fs=5.0, xmin=-1.0)
