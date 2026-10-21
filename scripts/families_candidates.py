@@ -200,3 +200,44 @@ if __name__ == "__main__":
     for i, (code, name) in enumerate(FAMS):
         print(f"{name:11s}", " ".join(f"{O[i, j]:.3f}/{C[i, j]:.3f}" for j in range(len(PF.MODELS))))
     c1(O, C, n); c1b(O, C, n); c2(O, C, n); c2b(O, C, n); c3(O, C, n); c3b(O, C, n)
+
+
+# 4. ours-only radar (no end-to-end comparison), one polygon per model, in alternative palettes --
+PALETTES = {
+    # name: five model colours, dark/warm for the 2024 pair through to the frontier
+    "desert":  ["#B5553A", "#D9935B", "#C9BD7A", "#8FA07A", "#4F6B5E"],   # rust, clay, dune, sage, juniper
+    "forest":  ["#7A5C3E", "#C4A77D", "#A3B86C", "#5F8A4E", "#2F5D3A"],   # bark, mushroom, fern, moss, pine
+    "dusk":    ["#E07A5F", "#F2B880", "#B5657F", "#6D4A7E", "#2F3A5C"],   # coral, peach, mauve, plum, midnight
+    "lake":    ["#B98A5E", "#C9AE7E", "#8FBFB0", "#3F7D8A", "#2B4F60"],   # driftwood, shore, shallows, lake, deep
+}
+
+
+def c4(O, n, name, cols):
+    K = len(FAMS)
+    ang = np.linspace(0, 2 * np.pi, K, endpoint=False)
+    ang_c = np.concatenate([ang, ang[:1]])
+    fig, ax = plt.subplots(figsize=(4.6, 4.6), subplot_kw={"projection": "polar"})
+    lws = [2.0, 2.0, 2.0, 1.4, 1.4]
+    for j, (key, label, _) in enumerate(PF.MODELS):
+        v = np.concatenate([O[:, j], O[:1, j]])
+        ax.plot(ang_c, v, color=cols[j], lw=lws[j], marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6,
+                label=label, zorder=5 - j)
+        ax.fill(ang_c, v, color=cols[j], alpha=0.10, zorder=1)
+    ax.set_theta_offset(np.pi / 2); ax.set_theta_direction(-1)
+    ax.set_xticks(ang)
+    ax.set_xticklabels([f"{f[1]}\n(n={n[f[0]]})" for f in FAMS], fontsize=8.5, fontweight="bold")
+    ax.set_ylim(0.3, 1.0); ax.set_yticks([0.4, 0.6, 0.8, 1.0])
+    ax.set_yticklabels(["0.4", "0.6", "0.8", "1.0"], fontsize=6.5, color="#6B6F73")
+    ax.set_rlabel_position(90)
+    ax.grid(color="#E4E1D8", lw=0.8); ax.spines["polar"].set_color("#E4E1D8")
+    ax.tick_params(axis="x", pad=10)
+    ax.legend(frameon=False, loc="upper center", bbox_to_anchor=(0.5, -0.17), ncol=3, fontsize=7.5,
+              handlelength=1.6, columnspacing=1.2)
+    fig.tight_layout()
+    save(fig, f"4_{name}")
+
+
+if __name__ == "__main__" and "--radar" in sys.argv:
+    O, C, n = load()
+    for name, cols in PALETTES.items():
+        c4(O, n, name, cols)
