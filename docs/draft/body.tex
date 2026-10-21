@@ -552,15 +552,15 @@ The experiments answer three questions, each on the test set and each with
 the same five models in every model slot.
 
 \begin{itemize}
-\item \textbf{RQ1 (information).} Can current language models verify
-temporal--statistical claims end to end, and how much of what they achieve
-depends on being told the corpus conventions?
-\item \textbf{RQ2 (architecture).} Does handing the plan to retrieval as a
-contract, with bounded verification, improve the verdicts of open models, and
-where in the pipeline and in the claim space does the loss remain?
-\item \textbf{RQ3 (evidence).} When a verdict is right, is it right for the
-right reason, and which systems decide what the data cannot decide or abstain
-on what they can?
+\item \textbf{RQ1.} How well do current language models verify these claims
+end to end, and how much does telling them the corpus conventions change the
+result?
+\item \textbf{RQ2.} Does our staged pipeline improve open models over
+end-to-end verification, and which stage and which claim families account
+for the errors that remain?
+\item \textbf{RQ3.} Do correct verdicts rest on correct evidence, and how
+often do systems decide claims the data cannot decide, or abstain on claims
+it can?
 \end{itemize}
 
 \S\ref{sec:main}--\S\ref{sec:evidence} answer each in turn; the ablations
@@ -731,7 +731,7 @@ Table~\ref{tab:main} reports every system on the same 1{,}500 claims and
 Figure~\ref{fig:families} what their verdicts stand on. The three research
 questions are answered in turn.
 
-\subsection{RQ1: what the stated conventions are worth}
+\subsection{RQ1: end-to-end verification and the conventions}
 \label{sec:main}
 
 \paragraph{With the conventions stated, frontier models solve the task;
@@ -748,7 +748,7 @@ model (0.999), and its verifier costs it a little (0.993, 0.983): the plan
 checks flag a few correct $n = k$ statements and the pipeline abstains rather
 than guess.
 
-\subsection{RQ2: what the contract adds, and where the loss remains}
+\subsection{RQ2: the staged pipeline and where errors remain}
 \label{sec:families}
 
 \paragraph{For open models the contract is what makes the verdict stand on the
@@ -817,7 +817,7 @@ threshold, first/last, co-occurs); the cells where it loses are the 2024
 pair's underclaim on first/last, where it abstains rather than decide, and
 gemma4's faithfulness on proximity.
 
-\subsection{RQ3: right verdicts on the right evidence}
+\subsection{RQ3: the evidence behind the verdicts}
 \label{sec:evidence}
 
 \paragraph{The denominator is where systems fail, and the verdict hides it.}
