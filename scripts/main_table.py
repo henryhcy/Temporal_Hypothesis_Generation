@@ -41,8 +41,10 @@ rows.append("\\multicolumn{6}{@{}l}{\\textit{end-to-end (EHRSQL protocol) and ag
 row("A: sentence $\\rightarrow$ SQL, schema only", [cell_metrics(f"test_{k}_cellA") for k, _ in MODELS])
 row("B: \\quad + conventions stated", [cell_metrics(f"test_{k}_cellB") for k, _ in MODELS])
 ehr_cells = [ehr(E / "logs_testcohort_e2e_32b_min/predictions.jsonl"), None, None, None, None]
-for i, (k, f) in enumerate([(1, "logs_testcohort_e2e_qwen38"), (4, "logs_testcohort_e2e_gpt56")]):
-    pass
+for i, f in ((1, "logs_testcohort_e2e_qwen38"), (4, "logs_testcohort_e2e_gpt56")):
+    p = E / f / "predictions.jsonl"  # filled once the run has all 1,500 claims (GPT-5.6 done 2026-10-20)
+    if p.exists() and sum(1 for _ in open(p)) == 1500:
+        ehr_cells[i] = ehr(p)
 row("EHRAgent, runs its own test", ehr_cells)
 row("VERITAS + conventions, our tests$^\\dagger$", [veritas(), None, None, None, None])
 rows.append("\\midrule\n\\multicolumn{6}{@{}l}{\\textit{stage ceilings (one stage by the model, the others at gold) and ablations}} \\\\")

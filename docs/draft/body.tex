@@ -4,8 +4,10 @@
 % preamble, title, abstract and bibliography. Keep it format-neutral: no
 % \usepackage, no \bibliography.
 %
-% 2026-10-13: restructured as a full paper (intro / related / task / dataset /
-% framework / experiments / discussion). Every number is measured: the slice
+% 2026-10-20: restructured (user): intro with a contribution list / related /
+% benchmark (task + data) / method / experiments (RQs, baselines, metrics,
+% settings) / results (RQ1-3, ablations, case studies, insufficient-class
+% error analysis) / discussion. Every number is measured: the slice
 % rows under the final prompt configuration (11 §10.3h/j), the core set (10.3i).
 % Numbers marked \pend{...} are runs in flight (held-out set, test slice, VERITAS,
 % frontier) and are to be filled in before submission.
@@ -71,37 +73,54 @@ resolves. That lets us separate two things that end-to-end evaluation
 conflates --- the \emph{information} a system is told and the
 \emph{architecture} it is given --- and ask what each is worth.
 
-Three findings organise the results, all on a 1{,}500-claim test set that no
-prompt decision was made on, with five models from the 2024 open generation
-to the 2026 frontier in every model slot. First, \emph{the stated conventions
-are the information the task measures}: with them in the prompt, Claude
-Opus~5.5 and GPT-5.6 verify 1.000 and 0.984 of the claims end to end with
-every denominator exact; without them the same models fall to 0.88 and get a
-fifth of their denominators wrong. Second, \emph{for open models the plan
-contract is what makes the verdict stand on the right evidence}: a 2024
-32B pair goes from 0.575 end to end to 0.810 with the contract and the
-verifier, the 2026 gemma4-31B from 0.859 to 0.981 --- within 0.02 of the
-frontier at zero API cost --- and the share of right verdicts that rest on the
-exact denominator rises from 40--86\% to 86--97\%. Third, \emph{the denominator
-is where systems fail, and verdict accuracy hides it}: a published agentic
-baseline reaches 0.605, within 0.03 of the end-to-end control, while deciding
-64\% of the claims the data cannot decide on the development set; handed the
-exact counts, the open models still return the wrong verdict on a quarter to a
-third of claims.
+Three questions organise the experiments and three findings answer them, all
+on a 1{,}500-claim test set that no prompt decision was made on, with five
+models from the 2024 open generation to the 2026 frontier in every model
+slot. First, \emph{the stated conventions are the information the task
+measures}: with them in the prompt, Claude Opus~5.5 and GPT-5.6 verify 1.000
+and 0.984 of the claims end to end with every denominator exact; without them
+the same models fall to 0.88 and get a fifth of their denominators wrong.
+Second, \emph{for open models the plan contract is what makes the verdict
+stand on the right evidence}: a 2024 32B pair goes from 0.575 end to end to
+0.810 with the contract and the verifier, the 2026 gemma4-31B from 0.859 to
+0.981 --- within 0.02 of the frontier at zero API cost --- and the share of
+right verdicts that rest on the exact denominator rises from 40--86\% to
+86--97\%. Third, \emph{the denominator is where systems fail, and verdict
+accuracy hides it}: a published agentic baseline reaches 0.605, within 0.03 of
+the end-to-end control, while deciding 58\% of the claims the data cannot
+decide; handed the exact counts, the open models still return the wrong
+verdict on a quarter to a third of claims.
 
-Our contributions are: (i) a benchmark of temporal--statistical claims in 26
-groups and seven claim families over three cohort tiers, released as a
-200-instance development set and a 1{,}500-claim fact-disjoint test set (plus
-a 180-claim single-report case study), with stage-level gold, exact-test
-labels, a three-decision verdict with sub-typed abstention and pseudonymised
-identifiers (\S\ref{sec:dataset}); (ii) an evaluation framework whose stage
-contracts turn the verdict into auditable quantities --- plan agreement,
-evidence-set agreement, faithfulness, abstention --- and whose prompt frames
-make information and architecture separately controllable
-(\S\ref{sec:framework}); (iii) a study of five models, two agentic systems and
-the modular ceilings of each stage under that framework, with results by
-temporal family and case studies of repair, single reports and paraphrase
-(\S\ref{sec:experiments}).
+Our contributions are:
+\begin{itemize}
+\item \textbf{A benchmark with gold at every stage.} \sys{} poses
+temporal--statistical claims in 26 groups and seven claim families over three
+cohort tiers, released as a 200-instance development set and a 1{,}500-claim
+fact-disjoint test set (plus a 180-claim single-report case study), each
+instance with its structured plan, its exact evidence sets, its exact
+$p$-values and a three-decision verdict with sub-typed abstention, over
+pseudonymised identifiers (\S\ref{sec:dataset}).
+\item \textbf{A generation process that makes the conventions part of the
+task.} Claims are enumerated from the annotated timelines by templates; every
+gold stage is computed mechanically, screened against permutation nulls,
+validated by six families of invariants and reproduced by a deterministic
+oracle; and the corpus stipulations the labels depend on are shipped as text
+that any system can be given, so ``conventions stated'' is a controlled
+condition rather than a hidden assumption (\S\ref{sec:dataset}).
+\item \textbf{A staged verification method.} A plan, retrieve, test
+pipeline whose plan is handed to retrieval as a contract resolved by the
+harness, with a bounded verify-and-repair loop at each stage and a
+deterministic exact test; any stage can be filled with gold, so the loss of
+each stage is measurable and information and architecture are separately
+controllable (\S\ref{sec:method}).
+\item \textbf{A study of five models and two agentic systems} under three
+research questions: what the stated conventions are worth, what the contract
+adds and where the loss remains, and whether right verdicts rest on the right
+evidence; with ablations of each stage and of the repair budget, case studies
+of single reports and paraphrase, and an error analysis of the
+\emph{insufficient} class (\S\ref{sec:experiments},
+\S\ref{sec:results}).
+\end{itemize}
 
 \section{Related Work}
 \label{sec:related}
@@ -210,8 +229,12 @@ sand lacks it, grey not applicable.}
 \label{tab:related-concise}
 \end{table*}
 
-\section{Task}
+\section{The \sys{} Benchmark}
+\label{sec:dataset}
+
+\subsection{Task}
 \label{sec:task}
+
 
 \paragraph{Input and output.} A \emph{record} is a claim in natural language
 --- a question or a declarative sentence, in one of four registers --- about a
@@ -246,30 +269,6 @@ the experiments treat ``conventions stated'' as a controlled condition. The
 claim-type \emph{mapping} --- which rule and which test go with which wording
 --- is what we withhold: a system is scored on composing it.
 
-\paragraph{Metrics.} The verdict is scored as a three-class prediction:
-accuracy, and precision, recall and F1 macro-averaged over \emph{supported},
-\emph{refuted} and \emph{insufficient}, on the cohort tiers (the statistical
-headline) and on the report tier (a reading task) separately. These four
-numbers say how often and how evenly a system reaches the right label; they
-cannot say whether it reached it for the right reason, because a verdict can
-be right on the wrong evidence and wrong on the right evidence. Because every
-stage has gold, four evidence measures are therefore reported with the
-verdict, and they are what the heatmaps show. \emph{Plan EM} is exact match on the plan's
-fields. \emph{Evidence F1} is the F1 between the set of reports a system
-placed in an arm's denominator and the gold set, averaged over arms: it
-measures whether the system counted the right reports, whatever it concluded
-from them. \emph{Faithfulness} is the share of correct verdicts whose
-evidence set is exactly the gold set, that is, the probability that a right
-answer is right for the right reason. Two abstention measures complete the
-picture: \emph{overclaim}, the share of gold-\emph{insufficient} claims
-given a decisive verdict (deciding what the data cannot decide), and
-\emph{underclaim}, the share of decisive claims answered
-\emph{insufficient}. We also report the sub-type accuracy of abstentions, the
-\emph{co-exist leak} (same-stage reports wrongly admitted to an order
-denominator) and $p$-agreement with the exact computation.
-
-\section{The \sys{} Benchmark}
-\label{sec:dataset}
 
 \subsection{Source corpus}
 \label{sec:corpus}
@@ -459,8 +458,16 @@ $p$ on supported claims, median & 0.008 \\
 \label{tab:totals}
 \end{table}
 
-\section{Evaluation Framework}
+\section{Method}
 \label{sec:framework}
+\label{sec:method}
+
+Our reference pipeline verifies a claim in three stages, plan, retrieve and
+test, and is built so that each stage can be scored against its gold, filled
+with gold, or told more or less about the corpus. This section gives the
+stage contracts, the two prompt frames that control what the model is told,
+and the verification loop; the systems it is compared against are in
+\S\ref{sec:baselines}.
 
 \subsection{Stage contracts}
 \label{sec:contracts}
@@ -535,27 +542,78 @@ baselines receive the same loop with the checks that need no plan, which is
 the control for what verification is worth without a contract. The planner
 alone settles after one round; the SQL stage after two.
 
-\subsection{Baselines}
-\label{sec:baselines}
-
-\emph{Sentence-to-SQL} (cells A and B): the same SQL model writes the
-per-report rows directly from the sentence, given the schema only (A) or the
-schema and the conventions (B); S3 is the harness's. \emph{Agentic}: EHRAgent
-\cite{shi2024ehragent}, a code-writing agent with error-driven retries over the
-same database, in a variant that returns counts to our test and one that runs
-its own test; VERITAS \cite{veritas2026}, run through its hypothesis,
-statistics and interpretation agents with imaging bypassed, given our exact-test
-functions and, in one condition, the conventions. \emph{Counts-given judgment}:
-the model receives the gold counts and must name the test and the verdict ---
-not a competitor but the floor of ``the model does the statistics itself''.
-\emph{Ceilings}: the planner alone (gold S2/S3) and the SQL stage alone (gold
-plan). Chance on the three-class cohort tiers is $\approx 0.33$; a per-group
-majority guesser scores at most 0.37.
-
 \section{Experiments}
 \label{sec:experiments}
 
-\subsection{Setup}
+\subsection{Research questions}
+\label{sec:rqs}
+
+The experiments answer three questions, each on the test set and each with
+the same five models in every model slot.
+
+\begin{itemize}
+\item \textbf{RQ1 (information).} Can current language models verify
+temporal--statistical claims end to end, and how much of what they achieve
+depends on being told the corpus conventions?
+\item \textbf{RQ2 (architecture).} Does handing the plan to retrieval as a
+contract, with bounded verification, improve the verdicts of open models, and
+where in the pipeline and in the claim space does the loss remain?
+\item \textbf{RQ3 (evidence).} When a verdict is right, is it right for the
+right reason, and which systems decide what the data cannot decide or abstain
+on what they can?
+\end{itemize}
+
+\S\ref{sec:main}--\S\ref{sec:evidence} answer each in turn; the ablations
+(\S\ref{sec:modular}) separate the stages and the repair budget, the case
+studies (\S\ref{sec:cases}) cover single reports and paraphrase, and
+\S\ref{sec:insufficient} analyses the \emph{insufficient} class.
+
+\subsection{Baselines}
+\label{sec:baselines}
+
+\emph{End-to-end sentence-to-SQL} (rows A and B) follows the single-query
+text-to-SQL protocol of EHRSQL \cite{lee2022ehrsql}: the same SQL model
+receives the schema and the claim and writes the per-report rows in one shot,
+given the schema only (A) or the schema and the conventions (B); S3 is the
+harness's, so these rows differ from our pipeline only in having no plan and
+no contract. \emph{Agentic}: EHRAgent \cite{shi2024ehragent}, a code-writing
+agent with error-driven retries over the same database, which runs its own
+test and returns its own verdict (its paper used GPT-4 and GPT-3.5; we run it
+with the open models and with GPT-5.6); VERITAS \cite{veritas2026}, run
+through its hypothesis, statistics and interpretation agents with imaging
+bypassed, given our exact-test functions and the conventions.
+\emph{Counts-given judgment}: the model receives the gold counts and must
+name the test and the verdict --- not a competitor but the floor of ``the
+model does the statistics itself''. \emph{Ceilings}: the planner alone (gold
+S2/S3) and the SQL stage alone (gold plan). Chance on the three-class cohort
+tiers is $\approx 0.33$; a per-group majority guesser scores at most 0.37.
+
+\subsection{Evaluation metrics}
+\label{sec:metrics}
+
+The verdict is scored as a three-class prediction:
+accuracy, and precision, recall and F1 macro-averaged over \emph{supported},
+\emph{refuted} and \emph{insufficient}, on the cohort tiers (the statistical
+headline) and on the report tier (a reading task) separately. These four
+numbers say how often and how evenly a system reaches the right label; they
+cannot say whether it reached it for the right reason, because a verdict can
+be right on the wrong evidence and wrong on the right evidence. Because every
+stage has gold, four evidence measures are therefore reported with the
+verdict, and they are what Figure~\ref{fig:families} shows. \emph{Plan EM} is exact match on the plan's
+fields. \emph{Evidence F1} is the F1 between the set of reports a system
+placed in an arm's denominator and the gold set, averaged over arms: it
+measures whether the system counted the right reports, whatever it concluded
+from them. \emph{Faithfulness} is the share of correct verdicts whose
+evidence set is exactly the gold set, that is, the probability that a right
+answer is right for the right reason. Two abstention measures complete the
+picture: \emph{overclaim}, the share of gold-\emph{insufficient} claims
+given a decisive verdict (deciding what the data cannot decide), and
+\emph{underclaim}, the share of decisive claims answered
+\emph{insufficient}. We also report the sub-type accuracy of abstentions, the
+\emph{co-exist leak} (same-stage reports wrongly admitted to an order
+denominator) and $p$-agreement with the exact computation.
+
+\subsection{Experimental settings}
 \label{sec:setup}
 
 \paragraph{Splits.} The \emph{development set} is the 200-instance slice on
@@ -572,22 +630,30 @@ report at 0.98--1.00 and the tier would only flatter weak rows. All test rows
 use the \textsc{Original} register in claim form; prompts were frozen before
 the first test record was run.
 
-\paragraph{Systems and models.} Every system is run with each of five models
+\paragraph{Models and compute.} Every system is run with each of five models
 in every model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
 Qwen2.5-Coder-32B (SQL); the 2026 open models qwen3.8-27B and gemma4-31B, one
 model for both stages, thinking off; and the frontier models Claude Opus~5.5
 and GPT-5.6. Open models run fully resident on one RTX A5000 with an 8k
-context; frontier models over their APIs with prompt caching. Rows A and B
-follow the single-query text-to-SQL protocol of EHRSQL \cite{lee2022ehrsql}:
-the model receives the schema and the claim and writes the retrieval in one
-shot, with the corpus conventions added to the prompt in B. EHRAgent runs its
-own code and returns its own verdict; VERITAS is run with its three agent
-phases, our exact tests pre-bound. Verdict accuracies carry 95\% bootstrap
+context; frontier models over their APIs with prompt caching. Verdict accuracies carry 95\% bootstrap
 intervals over instances (1{,}000 resamples), about $\pm 0.02$ on the test set
 and $\pm 0.01$ above 0.98.
+Per-record cost and latency are in Appendix~\ref{app:cost}: a full frontier
+column on the test set cost \$80--89 at list price with prompt caching,
+EHRAgent with GPT-5.6 \$56, and the open models answer a test claim in
+10--14 seconds on one workstation GPU.
 
-\subsection{Main results}
-\label{sec:main}
+\paragraph{Development set.} Every prompt decision was made on the
+200-instance development set, one change at a time, and the analyses behind
+the frozen configuration are reported there (Appendix~\ref{app:dev}): the
+information-versus-architecture grid that separates what the prompt tells
+the 2024 pair from what the decomposition adds, planning with the claim-type
+mapping given versus withheld, the attribution of every denominator failure
+to the rule it violated, and the effect of one missing stipulation in the
+conventions and of the schema presentation.
+
+\section{Results}
+\label{sec:results}
 
 \begin{table*}[t]
 \centering
@@ -602,7 +668,7 @@ test set, 1{,}500 cohort claims & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & 
 \multicolumn{6}{@{}l}{\textit{end-to-end (EHRSQL protocol) and agentic baselines}} \\
 A: sentence $\rightarrow$ SQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
 B: \quad + conventions stated & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
-EHRAgent, runs its own test & 0.605\,{\scriptsize(0.694/0.606/0.600)} & \pend{running} & --- & --- & \pend{running} \\
+EHRAgent, runs its own test & 0.605\,{\scriptsize(0.694/0.606/0.600)} & \pend{running} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
 VERITAS + conventions, our tests$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{stage ceilings (one stage by the model, the others at gold) and ablations}} \\
@@ -662,8 +728,11 @@ answered \emph{insufficient}.}
 \fi
 
 Table~\ref{tab:main} reports every system on the same 1{,}500 claims and
-Figure~\ref{fig:families} what their verdicts stand on. Three observations
-carry the paper.
+Figure~\ref{fig:families} what their verdicts stand on. The three research
+questions are answered in turn.
+
+\subsection{RQ1: what the stated conventions are worth}
+\label{sec:main}
 
 \paragraph{With the conventions stated, frontier models solve the task;
 without them they do not.} Opus~5.5 and GPT-5.6 verify 1.000 and 0.984 of the
@@ -679,6 +748,9 @@ model (0.999), and its verifier costs it a little (0.993, 0.983): the plan
 checks flag a few correct $n = k$ statements and the pipeline abstains rather
 than guess.
 
+\subsection{RQ2: what the contract adds, and where the loss remains}
+\label{sec:families}
+
 \paragraph{For open models the contract is what makes the verdict stand on the
 right evidence.} The 2024 pair verifies 0.575 of claims end to end with the
 conventions and 0.810 with the contract and the verifier; the 2026 models
@@ -690,31 +762,6 @@ overclaim falls from 0.04--0.23 to 0.01--0.05. gemma4-31B with the
 contract is within 0.02 of the frontier models at zero API cost, 14~seconds
 per claim on one workstation GPU.
 
-\paragraph{The denominator is where systems fail, and the verdict hides it.}
-The published agentic baseline reaches 0.605, within 0.03 of the end-to-end
-control, but its evidence cannot be audited (it returns a verdict from its own
-code) and on the development set it decided 64\% of the claims the data cannot
-decide; the multi-agent VERITAS, given the same conventions and our exact
-tests, completes fewer than half its runs within a 10-minute cap per phase
-and scores 0.402, abstaining on most decisive claims --- the opposite
-failure. The end-to-end control with the 2024 Coder is right on 57\% of claims
-and right for the right reason on 40\% of those: it admits same-stage reports
-into order denominators, defines the eligible set as the supporting set, and
-narrows presence splits to co-occurrence (Table~\ref{tab:attribution}). The
-modular analysis (\S\ref{sec:modular}) shows the same thing from the other
-side: handed the exact counts and asked only for the verdict, the open models
-still pick the wrong test or read it wrong on a quarter to a third of claims,
-so a correct verdict from them is not evidence of a correct computation.
-
-\paragraph{The VERITAS subsample.} VERITAS's three agent phases take nine
-minutes per claim, so it is run on 204 claims of the test set with the test
-set's own stratification (12 per cohort group, four per verdict). On the same
-204 claims our pipeline scores 0.804 (0.810 on all 1{,}500), the end-to-end
-control 0.593 (0.575) and EHRAgent 0.559 (0.605), each inside its own
-subsample interval (Appendix~\ref{app:subsample}).
-
-\subsection{Results by temporal family}
-\label{sec:families}
 
 \iffalse  % family table kept in source; Figure~\ref{fig:groups} (ours by group) and Figure~\ref{fig:families} (evidence vs B) carry it (user 2026-10-20)
 \begin{table*}[t]
@@ -753,6 +800,50 @@ models themselves fall short of 1.0.}
 \label{fig:families-radar}
 \end{figure}
 
+
+\paragraph{By claim family.} The families do not fail together
+(Figure~\ref{fig:families-radar}). The
+2024 pair is at 0.97 or above on co-occurs, proximity and position, and its
+losses sit in two families: first/last (0.435), whose three groups need an
+argmax over three candidates with ties dropped from the denominator, and
+threshold (0.763), where H-V5 states its bar in the text. The 2026 open models
+clear first/last (0.798 and 0.950) and each misses a different family:
+qwen3.8 on position (0.689, the T-V1 group) and on the precedes variant whose
+null is a data-derived rate, gemma4 only on proximity (0.970) and threshold
+(0.961). Threshold is the one family where the frontier models also drop
+(0.941 and 0.914, all of it in H-V5); their planner-alone rows are at the
+same level, so the loss is in composing the bar into the plan. Which families
+the contract helps relative to the end-to-end control, and on which evidence
+measure, is in Figure~\ref{fig:families}.
+
+\subsection{RQ3: right verdicts on the right evidence}
+\label{sec:evidence}
+
+\paragraph{The denominator is where systems fail, and the verdict hides it.}
+The published agentic baseline reaches 0.605 with the 2024 Coder, within
+0.03 of the end-to-end control, and 0.792 with GPT-5.6 against 0.984 for the
+same model under the EHRSQL protocol with the conventions; its evidence
+cannot be audited (it returns a verdict from its own code), and it decides
+58\% and 15\% of the claims the data cannot decide
+(\S\ref{sec:insufficient}); the multi-agent VERITAS, given the same conventions and our exact
+tests, completes fewer than half its runs within a 10-minute cap per phase
+and scores 0.402, abstaining on most decisive claims --- the opposite
+failure. The end-to-end control with the 2024 Coder is right on 57\% of claims
+and right for the right reason on 40\% of those: it admits same-stage reports
+into order denominators, defines the eligible set as the supporting set, and
+narrows presence splits to co-occurrence (Table~\ref{tab:attribution}). The
+modular analysis (\S\ref{sec:modular}) shows the same thing from the other
+side: handed the exact counts and asked only for the verdict, the open models
+still pick the wrong test or read it wrong on a quarter to a third of claims,
+so a correct verdict from them is not evidence of a correct computation.
+
+\paragraph{The VERITAS subsample.} VERITAS's three agent phases take nine
+minutes per claim, so it is run on 204 claims of the test set with the test
+set's own stratification (12 per cohort group, four per verdict). On the same
+204 claims our pipeline scores 0.804 (0.810 on all 1{,}500), the end-to-end
+control 0.593 (0.575) and EHRAgent 0.559 (0.605), each inside its own
+subsample interval (Appendix~\ref{app:subsample}).
+
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/families.pdf}
@@ -769,22 +860,9 @@ gemma4's faithfulness on proximity.}
 \label{fig:families}
 \end{figure*}
 
-The families do not fail together (Figure~\ref{fig:families-radar}). The
-2024 pair is at 0.97 or above on co-occurs, proximity and position, and its
-losses sit in two families: first/last (0.435), whose three groups need an
-argmax over three candidates with ties dropped from the denominator, and
-threshold (0.763), where H-V5 states its bar in the text. The 2026 open models
-clear first/last (0.798 and 0.950) and each misses a different family:
-qwen3.8 on position (0.689, the T-V1 group) and on the precedes variant whose
-null is a data-derived rate, gemma4 only on proximity (0.970) and threshold
-(0.961). Threshold is the one family where the frontier models also drop
-(0.941 and 0.914, all of it in H-V5); their planner-alone rows are at the
-same level, so the loss is in composing the bar into the plan. Which families
-the contract helps relative to the end-to-end control, and on which evidence
-measure, is in Figure~\ref{fig:families}.
-
-\subsection{Modular analysis against gold}
+\subsection{Ablations}
 \label{sec:modular}
+
 
 \iffalse  % modular table merged into Table~\ref{tab:main} (user 2026-10-20); kept in source
 \begin{table*}[t]
@@ -835,7 +913,8 @@ contract.}
 \end{figure*}
 \fi
 
-The middle block of Table~\ref{tab:main} fills one stage at a time with the model and leaves
+\paragraph{Stage ceilings and the test stage.} The middle block of
+Table~\ref{tab:main} fills one stage at a time with the model and leaves
 the others at gold, so each row is the loss attributable to that stage
 alone; the lower rows then compose the stages as the pipeline does, and every
 row that has a verifier uses the pipeline's budget, two repair rounds at each
@@ -865,10 +944,7 @@ verified end-to-end model (0.660) --- while resolving the plan's named
 primitive into its rule gives 0.855 and 0.865 with the same plan and the same
 model. The decomposition pays only when the plan is a contract.
 
-\subsection{Case studies}
-\label{sec:cases}
-
-\paragraph{How many repair rounds?} Figure~\ref{fig:rounds} runs our pipeline
+\paragraph{Repair rounds.} Figure~\ref{fig:rounds} runs our pipeline
 with zero to three verify-and-repair rounds on the test set. For the open
 models the first round does almost all of the work: $+0.13$ for qwen3.8 and
 gemma4, with evidence F1 rising by 0.06--0.11, and the second and third
@@ -915,6 +991,9 @@ abstention.}
 \label{fig:rounds}
 \end{figure*}
 
+\subsection{Case studies}
+\label{sec:cases}
+
 \paragraph{Single reports.} The report tier asks whether a system can locate
 one report by its pseudonymous identifier and read an ordering from its
 annotated timeline; the plan has one arm and the test stage is a
@@ -926,11 +1005,11 @@ read what the contract asks them to read from systems that do not.
 
 \begin{table}[t]
 \centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrrrrr}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrr@{}}
 \toprule
-system (180 single-report claims) & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
+180 single-report claims & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \midrule
 A: schema only & 0.433 & 0.989 & 0.744 & --- & --- \\
 B: + conventions & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
@@ -984,25 +1063,89 @@ control loses the same amount from a lower base.}
 \label{fig:registers}
 \end{figure}
 
-\subsection{Development-set analyses}
-\label{sec:devpointer}
+\subsection{Error analysis: the \emph{insufficient} class}
+\label{sec:insufficient}
 
-Every prompt decision was made on the 200-instance development set, one
-change at a time, and the analyses that justify the frozen configuration are
-reported there (Appendix~\ref{app:dev}): the information-versus-architecture
-grid that separates what the prompt tells the 2024 pair from what the
-decomposition adds (handing the composed plan to retrieval as prose scores
-below the end-to-end control; resolving it into its rule gives $+0.28$ with
-nothing else changed); planning with the claim-type mapping given versus
-withheld; the attribution of every denominator failure to the rule it
-violated; the effect of one missing stipulation in the conventions and of the
-schema presentation.
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.2pt}
+\renewcommand{\arraystretch}{1.1}
+\begin{tabular}{@{}lrrrrrrrrrrrr@{}}
+\toprule
+ & \multicolumn{4}{c}{gold \emph{insufficient} (505): decided anyway} & & \multicolumn{6}{c}{gold decisive (995): abstained} & \\
+\cmidrule(lr){2-5}\cmidrule(lr){7-12}
+test set & all & not-loc. & sparse & underp. & sub-type right & all & query failed & none found & too few & wrong set & gold set & no answer \\
+\midrule
+\multicolumn{13}{@{}l}{\textit{B: end-to-end, conventions stated}} \\
+\quad Qwen2.5-32B pair & 0.234 & 0.131 & 0.134 & 0.430 & 0.791 & 0.388 & 0.017 & 0.026 & 0.108 & 0.204 & 0.033 & 0.000 \\
+\quad qwen3.8-27B & 0.141 & 0.080 & 0.083 & 0.256 & 0.855 & 0.224 & 0.050 & 0.016 & 0.085 & 0.066 & 0.006 & 0.000 \\
+\quad gemma4-31B & 0.036 & 0.040 & 0.013 & 0.052 & 0.893 & 0.182 & 0.098 & 0.001 & 0.043 & 0.039 & 0.000 & 0.000 \\
+\quad Opus 5.5 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
+\quad GPT-5.6 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.001 & 0.000 & 0.000 & 0.001 & 0.000 & 0.000 & 0.000 \\
+\midrule
+\multicolumn{13}{@{}l}{\textit{ours: plan as contract, exact test, verifier}} \\
+\quad Qwen2.5-32B pair & 0.032 & 0.011 & 0.051 & 0.035 & 0.871 & 0.216 & 0.134 & 0.021 & 0.009 & 0.047 & 0.005 & 0.031 \\
+\quad qwen3.8-27B & 0.046 & 0.062 & 0.025 & 0.047 & 0.966 & 0.066 & 0.013 & 0.006 & 0.014 & 0.029 & 0.004 & 0.025 \\
+\quad gemma4-31B & 0.010 & 0.000 & 0.019 & 0.012 & 0.970 & 0.023 & 0.012 & 0.001 & 0.002 & 0.005 & 0.003 & 0.000 \\
+\quad Opus 5.5 & 0.004 & 0.000 & 0.006 & 0.006 & 0.996 & 0.009 & 0.000 & 0.000 & 0.001 & 0.000 & 0.008 & 0.000 \\
+\quad GPT-5.6 & 0.020 & 0.000 & 0.057 & 0.006 & 0.998 & 0.011 & 0.000 & 0.000 & 0.000 & 0.001 & 0.010 & 0.000 \\
+\midrule
+\multicolumn{13}{@{}l}{\textit{EHRAgent, runs its own test (returns a bare verdict)}} \\
+\quad Qwen2.5-Coder-32B & 0.578 & 0.364 & 0.395 & 0.965 & --- & 0.033 & --- & --- & --- & --- & --- & 0.001 \\
+\quad qwen3.8-27B & \pend{running} & & & & --- & & --- & --- & --- & --- & --- & \\
+\quad GPT-5.6 & 0.145 & 0.057 & 0.210 & 0.174 & --- & 0.197 & --- & --- & --- & --- & --- & 0.000 \\
+\bottomrule
+\end{tabular}
+\caption{The \emph{insufficient} class on the test set. Left: the share of
+gold-\emph{insufficient} claims given a decisive verdict (overclaim), overall
+and by the gold sub-type (\emph{not-locatable}: no report has the
+combination, 176 claims; \emph{sparse}: fewer than the floor, 157;
+\emph{underpowered}: enough reports, neither tail significant, 172), and the
+share of the system's own abstentions that name the right sub-type. Right:
+the share of decisive claims answered \emph{insufficient} (underclaim), by
+what the prediction shows: the query failed after repair; the retrieved
+denominator was empty or below the floor; it was testable but not the gold
+set; it was the gold set, so the loss is in the numerator, the null or the
+test family. ``No answer'' is a record for which no plan could be derived.}
+\label{tab:insufficient}
+\end{table*}
 
-\paragraph{Cost and latency.} Per-record wall time, tokens and dollar
-cost for every system and model are in Appendix~\ref{app:cost}: a full
-frontier column on the test set cost \$80--89 at list price with prompt
-caching, and the open models answer a test claim in 10--14 seconds on one
-workstation GPU.
+The three-decision verdict fails in two directions, deciding what the data
+cannot decide and abstaining on what it can, and Table~\ref{tab:insufficient}
+separates them with the cause of each. \emph{Overclaim is the agents' and the
+end-to-end models' failure.} EHRAgent with the 2024 Coder decides 0.578 of the
+claims the data cannot decide and 0.965 of the \emph{underpowered} ones: it
+runs its own test and finds significance where the exact test finds none,
+and with GPT-5.6 it still decides 0.145. The end-to-end control with the
+2024 pair decides 0.234, again mostly on \emph{underpowered} claims (0.430),
+where a denominator that admits the wrong reports moves the tail. Our
+pipeline decides 0.010--0.046 of them with the open models and 0.004--0.020
+at the frontier, because the exact test, not the model, does the abstaining.
+On the 176 \emph{not-locatable} claims, where no report has the combination
+and the right answer is an empty denominator, the end-to-end pair returns a
+decisive verdict on 0.131 and EHRAgent on 0.364: the denominator was filled
+with reports that do not qualify. Under the contract this falls to 0.011
+for the pair and 0.000 for gemma4 and the frontier models; qwen3.8's 0.062
+is its one weakness here. When our pipeline does abstain it names the right
+sub-type on 0.871--0.970 of its abstentions with the open models and 0.996
+or more at the frontier, against 0.791--0.893 for the end-to-end control.
+
+\emph{Underclaim is the open models' larger loss, and its cause differs by
+system.} The end-to-end pair abstains on 0.388 of the decisive claims, and
+the prediction shows why: on 0.204 the denominator was testable but not the
+gold set, on 0.108 it was below the floor; gemma4 end to end abstains on
+0.182, half of it (0.098) queries the database rejected. Under the contract
+the pair's 0.216 is mostly queries that still fail after two repairs (0.134,
+the Coder resubmitting the same statement) and a wrong set on 0.047; qwen3.8
+abstains on 0.066 and gemma4 on 0.023. The frontier models abstain on
+0.009 and 0.011, almost all of it with the gold denominator (0.008, 0.010),
+and every one of those is in H-V5: the plan reads ``most often first, in at
+least half of the reports'' as an argmax claim and runs modal-versus-runner-up
+on the right counts instead of the exact binomial against the stated bar.
+The counts are exact and the test family is not, which is the one
+composition the frontier planners miss and the whole of their loss on the
+threshold family (\S\ref{sec:families}).
 
 \section{Discussion and Limitations}
 \label{sec:limitations}

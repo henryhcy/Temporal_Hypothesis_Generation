@@ -277,9 +277,9 @@ numbers, with 95\% bootstrap intervals over claims (2{,}000 resamples).
 
 \begin{table}[htbp]
 \centering
-\small
-\setlength{\tabcolsep}{4pt}
-\begin{tabular}{lrr}
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrr@{}}
 \toprule
 system & full test set (1{,}500) & same 204 claims \\
 \midrule
@@ -307,8 +307,10 @@ The contract pipeline makes two calls per record where the end-to-end
 baseline makes one, so it exchanges about twice the tokens, and the verifier
 adds 10--20\% on top. A full ten-row frontier column on the test set cost
 \$80 (Opus) and \$89 (GPT-5.6, which spends hidden reasoning tokens on the
-test-stage judgment); a 31B open model answers a test claim in 14~seconds on
-one workstation GPU and a 27B one in 10.
+test-stage judgment); EHRAgent with GPT-5.6 cost \$56 for its one row
+(4{,}501 calls, 11.3M prompt tokens of which 5.0M cached, 1.4M completion
+tokens, reasoning off); a 31B open model answers a test claim in 14~seconds
+on one workstation GPU and a 27B one in 10.
 
 \begin{table}[htbp]
 \centering
