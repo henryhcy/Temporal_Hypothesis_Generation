@@ -90,33 +90,35 @@ def save(fig, name):
     print("wrote", OUT / f"{name}.pdf")
 
 
-# ---- 1. repair rounds: grouped bars, one group per model, one bar per round ----------------------
+# ---- 1. repair rounds: the gain of each round over the previous one (design 4, user 2026-10-20) ----
 def fig_rounds():
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
-    cols = [SAND, MIST, SEA, SLATE]            # rounds 0..3, light to dark
+    short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
+    cols = [SLATE, SEA, MIST]
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.8))
     for ax, getter, title in ((axes[0], acc, "verdict accuracy"), (axes[1], den_f1, "evidence F1")):
-        x = np.arange(len(MODELS)); w = 0.2
-        for r in range(4):
-            vals = [getter(f"test_{k}_{suffix[r]}") for k, _, _ in MODELS]
-            xs = x + (r - 1.5) * w
-            ax.bar(xs, [v or 0 for v in vals], width=w, color=cols[r], edgecolor="white", linewidth=0.5,
-                   label=f"{r} round{'s' if r != 1 else ''}", zorder=2)
-            for xi, v in zip(xs, vals):
-                if v is not None:
-                    ax.text(xi, v + 0.004, f"{v:.3f}", ha="center", va="bottom", fontsize=5.6, rotation=90,
-                            color=CHARCOAL, fontweight="bold")
-        ax.set_xticks(x)
-        ax.set_xticklabels(["Qwen2.5\n32B pair", "qwen3.8\n27B", "gemma4\n31B", "Opus\n5.5", "GPT\n5.6"])
-        ax.set_ylim(0.70, 1.06)
-        ax.set_yticks([0.7, 0.8, 0.9, 1.0])
-        ax.set_title(title, loc="left")
+        x = np.arange(len(MODELS)); w = 0.26
+        for r in (1, 2, 3):
+            d = []
+            for k, _, _ in MODELS:
+                cur, prev = getter(f"test_{k}_{suffix[r]}"), getter(f"test_{k}_{suffix[r - 1]}")
+                d.append(None if cur is None or prev is None else cur - prev)
+            xs = x + (r - 2) * w
+            ax.bar(xs, [v or 0 for v in d], width=w, color=cols[r - 1], edgecolor="white", linewidth=0.5,
+                   label=f"round {r}", zorder=2)
+            for xi, v in zip(xs, d):
+                if v is None:
+                    continue
+                ax.text(xi, v + (0.003 if v >= 0 else -0.003), f"{v:+.3f}", ha="center",
+                        va="bottom" if v >= 0 else "top", fontsize=5.6, rotation=90, color=CHARCOAL, fontweight="bold")
+        ax.axhline(0, color=CHARCOAL, lw=0.8)
+        ax.set_xticks(x); ax.set_xticklabels([short[m[0]] for m in MODELS])
+        ax.set_title(f"{title}: change per repair round", loc="left")
+        ax.set_ylim(-0.03, 0.16)
         boldify(ax, size=8.5)
-    handles, labels = axes[0].get_legend_handles_labels()
-    fig.legend(handles, [l.replace("round", "verify-and-repair round", 1) if l.startswith("0") else l for l in labels],
-               frameon=False, loc="lower center", ncol=4, fontsize=7.5, handlelength=1.4, columnspacing=1.6,
-               bbox_to_anchor=(0.5, -0.03))
-    fig.tight_layout(w_pad=1.5, rect=(0, 0.06, 1, 1))
+    axes[0].set_ylabel("change from the previous round")
+    axes[0].legend(frameon=False, loc="upper right", fontsize=7.5, handlelength=1.3)
+    fig.tight_layout(w_pad=1.5)
     save(fig, "rounds")
 
 

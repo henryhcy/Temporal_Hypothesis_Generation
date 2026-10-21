@@ -871,11 +871,12 @@ verdict accuracy / evidence F1.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/rounds.pdf}
-\caption{Our pipeline after zero, one, two
-and three verify-and-repair rounds, verdict accuracy (left) and evidence F1
-(right), test set. For the open models the first round is almost the whole
-gain; the frontier models lose a little per round as correct statements get
-flagged into abstention.}
+\caption{What each verify-and-repair round adds: the change in verdict
+accuracy (left) and evidence F1 (right) from the previous round, for rounds
+one to three, on the test set. For the open models the first round is almost
+the whole gain and the next two add a few thousandths; the frontier models
+lose a little in every round, as correct statements get flagged into
+abstention.}
 \label{fig:rounds}
 \end{figure*}
 
