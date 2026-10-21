@@ -22,8 +22,8 @@ verified by a three-stage reference pipeline (centre): S1 composes a
 harness resolves the plan's named denominator primitive into its definition and
 S2 writes the retrieval query under that contract; S3 runs the exact test.
 Each stage has a bounded verify-and-repair loop and a gold answer, so the stage
-metrics beneath (plan EM; denominator F1, co-exist leak; $p$-agreement,
-faithfulness, abstention) are measured in addition to the verdict. Baseline
+metrics beneath (plan EM; evidence F1, co-exist leak; $p$-agreement,
+faithfulness, overclaim and underclaim) are measured in addition to the verdict. Baseline
 families (bottom) are placed on the stages they replace: end-to-end
 sentence-to-SQL with and without the conventions and with plan-free repair,
 agentic systems, and an LLM verdict from the gold counts.}
@@ -216,13 +216,20 @@ claim-type \emph{mapping} --- which rule and which test go with which wording
 
 \paragraph{Metrics.} Verdict accuracy and class-macro F1 are reported on the
 cohort tiers (the statistical headline) and on the report tier (a reading
-task) separately. Because every stage has gold, we also report plan agreement
-(exact match on the plan's fields), denominator-set F1 and the \emph{co-exist
-leak} (same-stage reports wrongly admitted to an order denominator),
-$p$-agreement with the exact computation, \emph{faithfulness} --- the share of
-correct verdicts whose denominator is exactly the gold set --- and three
-abstention measures: false-decisiveness (a decisive verdict on a gold
-\emph{insufficient} claim), over-abstention and sub-type accuracy.
+task) separately. Because every stage has gold, four evidence measures are
+reported with the verdict. \emph{Plan EM} is exact match on the plan's
+fields. \emph{Evidence F1} is the F1 between the set of reports a system
+placed in an arm's denominator and the gold set, averaged over arms: it
+measures whether the system counted the right reports, whatever it concluded
+from them. \emph{Faithfulness} is the share of correct verdicts whose
+evidence set is exactly the gold set, that is, the probability that a right
+answer is right for the right reason. Two abstention measures complete the
+picture: \emph{overclaim}, the share of gold-\emph{insufficient} claims
+given a decisive verdict (deciding what the data cannot decide), and
+\emph{underclaim}, the share of decisive claims answered
+\emph{insufficient}. We also report the sub-type accuracy of abstentions, the
+\emph{co-exist leak} (same-stage reports wrongly admitted to an order
+denominator) and $p$-agreement with the exact computation.
 
 \section{The \sys{} Benchmark}
 \label{sec:dataset}
@@ -574,6 +581,7 @@ on the same 204 claims.}
 \label{tab:main}
 \end{table*}
 
+\iffalse  % evidence table kept in source; Figure~\ref{fig:families} carries these metrics (user 2026-10-20)
 \begin{table*}[t]
 \centering
 \small
@@ -582,27 +590,28 @@ on the same 204 claims.}
 \toprule
 metric & system & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
 \midrule
-denominator F1 & B & 0.643 & 0.751 & 0.836 & 1.000 & 1.000 \\
+evidence F1 & B & 0.643 & 0.751 & 0.836 & 1.000 & 1.000 \\
  & D$'$ + verifier & 0.789 & 0.914 & 0.975 & 0.998 & 0.993 \\
 faithfulness & B & 0.405 & 0.693 & 0.859 & 1.000 & 1.000 \\
  & D$'$ + verifier & 0.859 & 0.972 & 0.945 & 0.998 & 0.999 \\
-false-decisiveness & B & 0.234 & 0.141 & 0.036 & 0.000 & 0.000 \\
+overclaim & B & 0.234 & 0.141 & 0.036 & 0.000 & 0.000 \\
  & D$'$ + verifier & 0.033 & 0.047 & 0.010 & 0.004 & 0.020 \\
-over-abstention & B & 0.388 & 0.224 & 0.182 & 0.000 & 0.001 \\
+underclaim & B & 0.388 & 0.224 & 0.182 & 0.000 & 0.001 \\
  & D$'$ + verifier & 0.223 & 0.068 & 0.023 & 0.009 & 0.011 \\
 \bottomrule
 \end{tabular}
 \caption{Evidence and abstention on the test set for the end-to-end control
 (B) and our pipeline. Denominator F1 is over the report sets each arm
 retrieved; faithfulness is $P(\text{denominator exact} \mid \text{verdict
-right})$; false-decisiveness is the share of gold-\emph{insufficient} claims
-given a decisive verdict; over-abstention the share of decisive claims
+right})$; overclaim is the share of gold-\emph{insufficient} claims
+given a decisive verdict; underclaim the share of decisive claims
 answered \emph{insufficient}.}
 \label{tab:evidence}
 \end{table*}
+\fi
 
 Table~\ref{tab:main} reports every system on the same 1{,}500 claims and
-Table~\ref{tab:evidence} what their verdicts stand on. Three observations
+Figure~\ref{fig:families} what their verdicts stand on. Three observations
 carry the paper.
 
 \paragraph{With the conventions stated, frontier models solve the task;
@@ -624,7 +633,7 @@ conventions and 0.810 with the contract and the verifier; the 2026 models
 The verdict margin is $+0.12$ to $+0.24$. The evidence margin is larger and
 does not shrink with model quality: with the contract 86--97\% of right
 verdicts rest on the exact denominator against 40--86\% end to end, and
-false-decisiveness falls from 0.04--0.23 to 0.01--0.05. gemma4-31B with the
+overclaim falls from 0.04--0.23 to 0.01--0.05. gemma4-31B with the
 contract is within 0.02 of the frontier models at zero API cost, 14~seconds
 per claim on one workstation GPU.
 
@@ -680,19 +689,20 @@ cores each in the corpus) and appears in the report-tier case study only.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/families.pdf}
-\caption{The evidence and abstention metrics of Table~\ref{tab:evidence} by
-claim family, as the contract's improvement over the end-to-end control on
-one scale (ours minus B; the sign is flipped for false-decisiveness and
-over-abstention so that green is better everywhere), with the two values
-beneath each cell. The contract's largest gains are in faithfulness and
-false-decisiveness on exactly the families whose rule it states (position,
-threshold, first/last, co-occurs); the cells where it loses are the 2024 pair's
-over-abstention on first/last, where it abstains rather than decide, and
+\caption{The four evidence measures (\S\ref{sec:framework}: evidence F1,
+faithfulness, overclaim, underclaim) by claim family and model, as the
+contract's improvement over the end-to-end control on one scale: ours minus
+B, with the sign flipped for the two lower-is-better measures (marked
+$\downarrow$) so that green is better in every panel; the two underlying
+values are printed beneath each cell. The contract's largest gains are in
+faithfulness and overclaim on the families whose rule it states (position,
+threshold, first/last, co-occurs); the cells where it loses are the 2024
+pair's underclaim on first/last, where it abstains rather than decide, and
 gemma4's faithfulness on proximity.}
 \label{fig:families}
 \end{figure*}
 
-The families do not fail together (Table~\ref{tab:families}; Figure~\ref{fig:families} gives the faithfulness behind these verdicts). For the 2024
+The families do not fail together (Table~\ref{tab:families}; Figure~\ref{fig:families} gives the evidence behind these verdicts). For the 2024
 pair the contract lifts \emph{precedes} and \emph{co-occurs} by 0.23 and 0.40,
 because the rule those families need --- exclude the same-stage reports, count
 the ordered ones --- is exactly what the resolved contract states; it lifts
@@ -738,8 +748,8 @@ labels exactly (1.000). S2 is run under the same resolved contract the full
 pipeline uses, so the difference between the S2 row and the S1$+$S2$+$S3 rows
 is the cost of the model's own plan. The frontier S2 cells are not run
 separately: with their own plans both models retrieved every denominator
-exactly (Table~\ref{tab:evidence}), which bounds the gold-plan row from
-below.}
+exactly (evidence F1 1.000 in Figure~\ref{fig:families}), which bounds the
+gold-plan row from below.}
 \label{tab:modular}
 \end{table*}
 
@@ -791,7 +801,7 @@ model. The decomposition pays only when the plan is a contract.
 \paragraph{How many repair rounds?} Table~\ref{tab:rounds} and Figure~\ref{fig:rounds} run our pipeline
 with zero to three verify-and-repair rounds on the test set. For the open
 models the first round does almost all of the work: $+0.13$ for qwen3.8 and
-gemma4, with denominator F1 rising by 0.06--0.11, and the second and third
+gemma4, with evidence F1 rising by 0.06--0.11, and the second and third
 rounds add about 0.01 each. The 2024 pair gains little per round (0.761
 $\rightarrow$ 0.814) because its Coder resubmits the same mistake when told
 what was wrong. At the frontier every round costs 0.005--0.015: the checks
@@ -817,7 +827,7 @@ rounds & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \bottomrule
 \end{tabular}
 \caption{Our pipeline with 0--3 verify-and-repair rounds on the test set:
-verdict accuracy / denominator F1.}
+verdict accuracy / evidence F1.}
 \label{tab:rounds}
 \end{table}
 
@@ -825,7 +835,7 @@ verdict accuracy / denominator F1.}
 \centering
 \includegraphics[width=\textwidth]{Figures/rounds.pdf}
 \caption{Table~\ref{tab:rounds} as bars: our pipeline after zero, one, two
-and three verify-and-repair rounds, verdict accuracy (left) and denominator F1
+and three verify-and-repair rounds, verdict accuracy (left) and evidence F1
 (right), test set. For the open models the first round is almost the whole
 gain; the frontier models lose a little per round as correct statements get
 flagged into abstention.}

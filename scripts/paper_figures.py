@@ -95,7 +95,7 @@ def fig_rounds():
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
     cols = [SAND, MIST, SEA, SLATE]            # rounds 0..3, light to dark
     fig, axes = plt.subplots(1, 2, figsize=(7.2, 2.8))
-    for ax, getter, title in ((axes[0], acc, "verdict accuracy"), (axes[1], den_f1, "denominator F1")):
+    for ax, getter, title in ((axes[0], acc, "verdict accuracy"), (axes[1], den_f1, "evidence F1")):
         x = np.arange(len(MODELS)); w = 0.2
         for r in range(4):
             vals = [getter(f"test_{k}_{suffix[r]}") for k, _, _ in MODELS]
@@ -167,8 +167,8 @@ def _family_metrics(recs):
 def fig_families():
     gold = {json.loads(l)["hypothesis_id"]: json.loads(l) for l in (R / "test_gold_sets" / "predictions.jsonl").open()}
     fams = [("P", "precedes"), ("C", "co-occurs"), ("F", "first/last"), ("Y", "proximity"), ("H", "threshold"), ("T", "position")]
-    metrics = [("denominator F1", 0, +1), ("faithfulness", 1, +1),
-               ("false-decisiveness (lower is better)", 2, -1), ("over-abstention (lower is better)", 3, -1)]
+    metrics = [("evidence F1", 0, +1), ("faithfulness", 1, +1),
+               ("overclaim (lower is better)", 2, -1), ("underclaim (lower is better)", 3, -1)]
     ours = {k: _family_metrics(_records(R / f"test_{k}_dprime_verify2", gold)) for k, _, _ in MODELS}
     ctrl = {k: _family_metrics(_records(R / f"test_{k}_cellB", gold)) for k, _, _ in MODELS}
     cmap = LinearSegmentedColormap.from_list("avocado", [A_BROWN, A_TAN, A_CREAM, A_LIME, A_AVO, A_OLIVE])
