@@ -612,11 +612,11 @@ with the model (one repair round) and retrieval and test with gold;
 contract (two repair rounds) and runs the exact test on its counts.
 \emph{Test alone} runs the exact test on the gold counts; the Test stage is
 a deterministic function the harness calls, not a tool the model chooses to
-call, so it reproduces every label. \emph{LLM as statistician} replaces it
-with the model: given the gold counts and the test definitions, the model
-chooses the test and returns the verdict, the floor of ``the model does the
-statistics''; on the pipeline's own counts the same replacement differs from
-\art{} only in the Test stage. \emph{\art{} $-$ verifier} removes the repair loops;
+call, so it reproduces every label. \emph{StatQA} \cite{zhu2024statqa}
+replaces it with its protocol, adapted to the Test stage only: given the
+counts, the claim and the test definitions, the model chooses the applicable
+test and returns the verdict. It is run on the gold counts, and on the
+pipeline's own counts, where it differs from \art{} only in the Test stage. \emph{\art{} $-$ verifier} removes the repair loops;
 everywhere else \art{} includes the verifier.
 Chance on the three-class cohort
 tiers is $\approx 0.33$; a per-group majority guesser scores at most 0.37.
@@ -715,12 +715,12 @@ verdict accuracy, test set & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.
 Articulate alone & 0.953 & 0.917 & 0.992 & 0.993 & 0.993 \\
 Retrieve alone & 0.836 & 0.944 & 0.989 & $\geq$0.999 & $\geq$0.999 \\
 Test alone (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-\quad Test by an LLM (LLM as statistician) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
+\quad StatQA (Test stage only) & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ablations of \art{}}} \\
 \art{} & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & 0.993 & 0.983 \\
 \quad $-$ verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
-\quad Test by an LLM (LLM as statistician) & 0.512 & 0.568 & 0.770 & --- & --- \\
+\quad Test by StatQA & 0.512 & 0.568 & 0.770 & --- & --- \\
 \quad $-$ contract (plan as prose) & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
 \quad $-$ plan and contract (EHRSQL + codebook) & 0.575 & 0.748 & 0.859 & 1.000 & 0.984 \\
 \bottomrule
@@ -728,7 +728,7 @@ Test alone (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 \caption{Stage ceilings and ablations on the test set. The ceilings fill one
 stage and set the others to gold; Test alone is the deterministic exact test
 on the gold counts, which reproduces every label, and the row beneath it
-hands the same gold counts to an LLM instead; the frontier Retrieve-alone cells are bounded below by their
+hands the same gold counts to the StatQA protocol instead; the frontier Retrieve-alone cells are bounded below by their
 evidence F1 of 1.000 with their own plans. Each ablation removes one part of
 \art{}; a dash marks a run not made.}
 \label{tab:ablation}
@@ -907,7 +907,7 @@ Straight-to-SQL control with the 2024 Coder is right on 57\% of claims and
 right for the right reason on only 40\% of those: it admits same-stage
 reports into order denominators, defines the eligible set as the supporting
 set, and narrows presence splits to co-occurrence
-(Table~\ref{tab:attribution}). The LLM-as-statistician rows show the same
+(Table~\ref{tab:attribution}). The StatQA rows show the same
 thing from the other side: handed the exact counts, the open models still
 return the wrong verdict on a quarter to a third of claims, so a correct
 verdict from them is not evidence of a correct computation. VERITAS's nine
@@ -980,9 +980,9 @@ plan, so the full pipeline compounds planner errors on a stage that was
 already failing. The 2026 models retrieve well with the gold plan, so their
 remaining loss is the plan, and gemma4 under \art{} sits within 0.01 of
 both its ceilings. The test stage is a function the open models cannot
-compute: as the statistician on the exact counts an LLM is wrong on a quarter
-to a third of claims, and the row that makes the LLM the statistician on
-its own counts shows the same pipeline losing 0.2 to 0.3 when it is asked to.
+compute: under the StatQA protocol on the exact counts the open models are
+wrong on a quarter to a third of claims, and the same protocol on the
+pipeline's own counts loses 0.2 to 0.3.
 
 \paragraph{Prose versus contract.} The hand-off between S1 and S2 is what the
 ceiling rows cannot see, because Retrieve alone receives the gold plan already
@@ -1208,6 +1208,10 @@ run on one workstation GPU reaches the frontier's accuracy with an auditable
 denominator. The reference pipeline is a simple decomposition whose value is
 that each stage is checkable; handing the plan on as prose discards that
 value, and a model that does not need the verifier is not helped by it.
+Asking the model to be the statistician, to make the judgment call on counts
+it was handed, is the step the open models fail most often even with exact
+counts; the benchmark's design, and \art{}'s, takes that call away from the
+model and gives it to an exact test.
 
 Three limits bound the claims. The codebook is corpus-specific: porting the
 framework means writing another corpus's codebook and primitive definitions,
