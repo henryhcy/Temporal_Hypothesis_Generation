@@ -107,6 +107,57 @@ def design3(D):
     save(fig, "tiers_design3")
 
 
+EHR = Path.home() / "ehragent_baseline"
+EHR_RUNS = {"q25pair": "logs_testcohort_e2e_32b_min", "qwen38_27b": "logs_testcohort_e2e_qwen38", "gpt": "logs_testcohort_e2e_gpt56"}
+
+
+def ehragent_ladder(key):
+    """EHRAgent on the matched shape: Medium (P-V1) and Hard (P-M2) only. Its single-report run used other
+    P-R1 claims (and the question form), so it has no comparable Easy point; gemma4 and Opus were not run."""
+    if key not in EHR_RUNS:
+        return None
+    import json
+    gold = json.load(open(EHR / "medtempo_data" / "gold_map_test_cohort_v1.2.json"))
+    rows = [json.loads(l) for l in open(EHR / EHR_RUNS[key] / "predictions.jsonl")]
+    out = [None]
+    for g in ("P-V1", "P-M2"):
+        sel = [r for r in rows if r["group_id"] == g]
+        out.append(sum(r.get("pred_raw") == gold[r["id"]]["gold_verdict"] for r in sel) / len(sel))
+    return out
+
+
+def design1b(D):
+    """Small multiples with EHRAgent added: ART (model colour), EHRSQL-C (grey dashed), EHRAgent (gold dotted)."""
+    fig, axes = plt.subplots(1, 5, figsize=(3.45, 1.8), sharey=True)
+    x = np.arange(3)
+    for ax, (k, _, c) in zip(axes, PF.MODELS):
+        b, a, e = D["cellB"][k], D["dprime_verify2"][k], ehragent_ladder(k)
+        ax.plot(x, b, color=GREY, lw=1.2, ls=(0, (2.5, 1.5)), marker="o", ms=2.6, markeredgecolor="white", markeredgewidth=0.4, zorder=2)
+        if e:
+            ax.plot(x[1:], e[1:], color=PF.GOLD, lw=1.2, ls=(0, (1, 1.2)), marker="s", ms=2.6, markeredgecolor="white", markeredgewidth=0.4, zorder=3)
+        ax.plot(x, a, color=c, lw=1.9, marker="o", ms=3.2, markeredgecolor="white", markeredgewidth=0.4, zorder=4)
+        ax.set_title(SHORT[k], fontsize=6.4, pad=3)
+        ax.set_xticks(x); ax.set_xticklabels(["E", "M", "H"], fontsize=6.2)
+        ax.set_ylim(0.25, 1.06); ax.set_xlim(-0.35, 2.35)
+        ax.tick_params(axis="y", labelsize=6, length=2); ax.tick_params(axis="x", length=0)
+        ax.grid(axis="y", lw=0.4)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    axes[0].set_ylabel("verdict accuracy", fontsize=6.8)
+    axes[0].set_yticks([0.4, 0.6, 0.8, 1.0])
+    h = [Line2D([], [], color=PF.SLATE_M, lw=1.9, marker="o", ms=3, label="ART (model colour)"),
+         Line2D([], [], color=GREY, lw=1.2, ls=(0, (2.5, 1.5)), marker="o", ms=3, label="EHRSQL-C"),
+         Line2D([], [], color=PF.GOLD, lw=1.2, ls=(0, (1, 1.2)), marker="s", ms=3, label="EHRAgent")]
+    fig.legend(handles=h, loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=3, frameon=False, fontsize=5.8,
+               handlelength=1.8, columnspacing=1.0)
+    fig.subplots_adjust(wspace=0.12, bottom=0.21, top=0.88, left=0.13, right=0.99)
+    save(fig, "tiers_design1b")
+    for k, _, _ in PF.MODELS:
+        e = ehragent_ladder(k)
+        print(k, "ART", [round(v, 3) for v in D["dprime_verify2"][k]], "EHRSQL-C", [round(v, 3) for v in D["cellB"][k]],
+              "EHRAgent", [None if v is None else round(v, 3) for v in e] if e else None)
+
+
 def sheet():
     import matplotlib.image as mpimg
     names = ["tiers", "tiers_design1", "tiers_design2", "tiers_design3"]
@@ -121,4 +172,4 @@ def sheet():
 
 if __name__ == "__main__":
     D = data()
-    design1(D); design2(D); design3(D); sheet()
+    design1(D); design1b(D); design2(D); design3(D); sheet()
