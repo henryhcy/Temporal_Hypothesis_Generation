@@ -590,8 +590,8 @@ the same 1{,}500 claims, database and codebook text. \emph{EHRSQL}
 \cite{lee2022ehrsql} is the single-query text-to-SQL protocol over our
 schema, which we call Straight-to-SQL in the text: one prompt per claim to
 the SQL model, carrying the schema as a column listing and the row contract
-(one row per report with denominator, numerator and excluded flags), with or
-without the codebook (\emph{EHRSQL + codebook}); the query runs in the
+(one row per report with denominator, numerator and excluded flags);
+\emph{EHRSQL$'$} adds the codebook to the same prompt. The query runs in the
 read-only sandbox and the harness runs the exact test, so these rows differ
 from our pipeline only in having no plan, no contract and no repair.
 \emph{EHRAgent} \cite{shi2024ehragent} runs the authors' code over the same
@@ -609,18 +609,26 @@ data description; each phase is capped at ten minutes, and at nine minutes
 per claim it is run with the Coder on a stratified 204-claim subsample
 (Appendix~\ref{app:subsample}).
 
-The ablations isolate parts of \art{}. \emph{Articulate alone} fills the plan
-with the model (one repair round) and retrieval and test with gold;
-\emph{Retrieve alone} hands the model the gold plan already resolved into its
-contract (two repair rounds) and runs the exact test on its counts.
-\emph{Test alone} runs the exact test on the gold counts; the Test stage is
-a deterministic function the harness calls, not a tool the model chooses to
-call, so it reproduces every label. \emph{StatQA} \cite{zhu2024statqa}
-replaces it with its protocol, adapted to the Test stage only: given the
-counts, the claim and the test definitions, the model chooses the applicable
-test and returns the verdict. It is run on the gold counts, and on the
-pipeline's own counts, where it differs from \art{} only in the Test stage. \emph{\art{} $-$ verifier} removes the repair loops;
-everywhere else \art{} includes the verifier.
+\emph{Stage baselines} compare each stage of \art{} with an established
+method for that step, the other stages set to gold. For Articulate, the
+same model plans with chain-of-thought prompting \cite{wei2022cot}: it
+writes its reasoning before the plan fields. For Retrieve, two open
+text-to-SQL models fine-tuned from the same Qwen2.5-Coder-32B base as our
+2024 SQL model, OmniSQL \cite{li2025omnisql} and XiYanSQL
+\cite{gao2025xiyansql}, write the SQL from the gold plan under the same
+contract. For Test, StatQA's protocol \cite{zhu2024statqa} hands the model
+the gold counts, the claim and the test definitions and asks it to choose
+the applicable test and return the verdict. The corresponding rows for
+\art{} fill the same stage with its own component: Articulate and Retrieve
+with the model under the contract (one and two repair rounds), Test with the
+exact test, a deterministic function the harness calls rather than a tool
+the model chooses to call, which therefore reproduces every label.
+
+The \emph{ablations} remove one part of \art{} at a time: the verifier's
+repair loops; the exact test, replaced by the model's own verdict from the
+pipeline's counts; and the contract, the plan handed to S2 as prose with the
+codebook. Removing both the plan and the contract leaves EHRSQL$'$; everywhere
+else \art{} includes the verifier.
 Chance on the three-class cohort
 tiers is $\approx 0.33$; a per-group majority guesser scores at most 0.37.
 
@@ -688,20 +696,23 @@ test set, 1{,}500 cohort claims & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & 
  & \multicolumn{5}{c}{\textit{verdict accuracy \,(macro precision / recall / F1)}} \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{baselines}} \\
-EHRSQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
-EHRSQL + codebook & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
+EHRSQL & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
+EHRSQL$'$ & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
 EHRAgent & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
 VERITAS$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{stage ceilings (other stages at gold)}} \\
-Articulate alone & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
-Retrieve alone & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
-Test alone (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-\quad StatQA (Test stage only) & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
+\multicolumn{6}{@{}l}{\textit{stage baselines (other stages at gold)}} \\
+Articulate: \art{} & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
+\quad chain-of-thought & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
+Retrieve: \art{} & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
+\quad OmniSQL-32B$^\ddagger$ & \pend{running} & --- & --- & --- & --- \\
+\quad XiYanSQL-32B$^\ddagger$ & \pend{running} & --- & --- & --- & --- \\
+Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+\quad StatQA & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ablations of \art{}}} \\
 \quad $-$ verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
-\quad Test by StatQA & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
+\quad $-$ exact test (model verdict) & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
 \quad $-$ contract (plan as prose) & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ours}} \\
@@ -711,11 +722,9 @@ Test alone (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 \caption{Main results on the test set: verdict accuracy, then macro
 precision / recall / F1 over the three verdict classes; only the model
 changes across columns. Intervals on accuracy are $\pm 0.02$ (0.6--0.9) and
-$\pm 0.01$ (above 0.98). Stage ceilings fill one stage and set the others
-to gold; Test alone is the exact test on the gold counts, which reproduces
-every label, and StatQA hands the same counts to the model. Each ablation
-removes one part of \art{}; removing both the plan and the contract gives
-EHRSQL + codebook. $^\dagger$VERITAS is run with the Coder on a stratified
+$\pm 0.01$ (above 0.98). Systems and settings are described in
+\S\ref{sec:baselines}. $^\ddagger$Fine-tuned from Qwen2.5-Coder-32B, so
+listed under the 2024 pair. $^\dagger$VERITAS is run with the Coder on a stratified
 204-claim subsample (Appendix~\ref{app:subsample}); a dash marks a run not
 made.}
 \label{tab:main}
@@ -895,7 +904,7 @@ Straight-to-SQL control with the 2024 Coder is right on 57\% of claims and
 right for the right reason on only 40\% of those: it admits same-stage
 reports into order denominators, defines the eligible set as the supporting
 set, and narrows presence splits to co-occurrence
-(Table~\ref{tab:attribution}). The StatQA rows show the same
+(Table~\ref{tab:attribution}). The StatQA row shows the same
 thing from the other side: handed the exact counts, the open models still
 return the wrong verdict on a quarter to a third of claims, so a correct
 verdict from them is not evidence of a correct computation. VERITAS's nine
@@ -957,7 +966,7 @@ contract.}
 \end{figure*}
 \fi
 
-\paragraph{Stage ceilings and the test stage.} The stage ceilings in
+\paragraph{Stage ceilings and the test stage.} The stage rows in
 Table~\ref{tab:main} fill one stage at a time with the model and leaves the
 others at gold, so each row is the loss attributable to that stage alone.
 Planning is nearly solved by every model: with the mapping withheld and the
@@ -969,11 +978,11 @@ already failing. The 2026 models retrieve well with the gold plan, so their
 remaining loss is the plan, and gemma4 under \art{} sits within 0.01 of
 both its ceilings. The test stage is a function the open models cannot
 compute: under the StatQA protocol on the exact counts the open models are
-wrong on a quarter to a third of claims, and the same protocol on the
-pipeline's own counts loses 0.2 to 0.3.
+wrong on a quarter to a third of claims, and replacing the exact test with
+the model's verdict on the pipeline's own counts loses 0.2 to 0.3.
 
 \paragraph{Prose versus contract.} The hand-off between S1 and S2 is what the
-ceiling rows cannot see, because Retrieve alone receives the gold plan already
+stage rows cannot see, because Retrieve receives the gold plan already
 resolved. On the development set the same composed plan handed to S2 as
 prose with the codebook scores below the verified Straight-to-SQL model even
 after two repair rounds, while resolving the plan's named primitive into its
@@ -1042,9 +1051,9 @@ that do not.
 \toprule
 180 single-report claims & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \midrule
-EHRSQL, schema only & 0.433 & 0.989 & 0.744 & --- & --- \\
-EHRSQL + codebook & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
-Articulate alone & 1.000 & 1.000 & 1.000 & --- & --- \\
+EHRSQL & 0.433 & 0.989 & 0.744 & --- & --- \\
+EHRSQL$'$ & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Articulate: \art{} (Retrieve, Test at gold) & 1.000 & 1.000 & 1.000 & --- & --- \\
 \art{} & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
 \bottomrule
 \end{tabular}
@@ -1112,7 +1121,7 @@ run; the other registers rerun the same 1{,}500 claims.}
 \cmidrule(lr){2-5}\cmidrule(lr){6-6}\cmidrule(lr){7-12}\cmidrule(lr){13-13}
 test set & all & \shortstack[c]{gold\\not-locatable} & \shortstack[c]{gold\\sparse} & \shortstack[c]{gold\\underpowered} & \shortstack[c]{with the right\\sub-type} & all & \shortstack[c]{query\\rejected} & \shortstack[c]{denominator\\empty} & \shortstack[c]{below\\the floor} & \shortstack[c]{wrong\\denominator} & \shortstack[c]{gold\\denominator} & \shortstack[c]{(no\\answer)} \\
 \midrule
-\multicolumn{13}{@{}l}{\textit{EHRSQL + codebook}} \\
+\multicolumn{13}{@{}l}{\textit{EHRSQL$'$}} \\
 \quad Qwen2.5-32B pair & 0.234 & 0.131 & 0.134 & 0.430 & 0.791 & 0.388 & 0.017 & 0.026 & 0.108 & 0.204 & 0.033 & 0.000 \\
 \quad qwen3.8-27B & 0.141 & 0.080 & 0.083 & 0.256 & 0.855 & 0.224 & 0.050 & 0.016 & 0.085 & 0.066 & 0.006 & 0.000 \\
 \quad gemma4-31B & 0.036 & 0.040 & 0.013 & 0.052 & 0.893 & 0.182 & 0.098 & 0.001 & 0.043 & 0.039 & 0.000 & 0.000 \\
