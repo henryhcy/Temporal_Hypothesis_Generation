@@ -18,18 +18,14 @@
 
 \begin{figure*}[t]
 \centering
-\includegraphics[width=\textwidth]{Figures/overview.pdf}
-\caption{Overview. A claim about annotated adverse-event timelines (left) is
-verified by a three-stage reference pipeline (centre): S1 composes a
-\emph{plan} from the stated codebook, with the claim-type mapping withheld; the
-harness resolves the plan's named denominator primitive into its definition and
-S2 writes the retrieval query under that contract; S3 runs the exact test.
-Each stage has a bounded verify-and-repair loop and a gold answer, so the stage
-metrics beneath (plan EM; evidence F1, co-exist leak; $p$-agreement,
-faithfulness, overclaim and underclaim) are measured in addition to the verdict. Baseline
-families (bottom) are placed on the stages they replace: Straight-to-SQL
-with and without the codebook and with plan-free repair,
-agentic systems, and the model as statistician on the gold counts.}
+\includegraphics[width=\textwidth]{Figures/overview_slide.pdf}
+\caption{Overview. Top: \sys{} benchmark construction, from the annotated
+timelines (1.1) through the hypothesis templates (1.2) and the groups,
+families and difficulty levels (1.3) to the gold computed at every stage
+(1.4). Middle: the \art{} verification pipeline, articulate (S1), retrieve
+(S2) and test (S3), with the contract between S1 and S2 and the
+verify-and-repair loops. Bottom: stage-level evaluation of the plan, the
+evidence sets and the verdict against their gold.}
 \label{fig:overview}
 \end{figure*}
 
