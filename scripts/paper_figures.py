@@ -383,7 +383,7 @@ def fig_tiers():
     cols = MODEL_COLORS
     levels = ["Easy\none report", "Medium\none cohort", "Hard\ntwo cohorts"]
     fig, axes = plt.subplots(2, 1, figsize=(3.4, 4.0), sharex=True)
-    for ax, suf, title in ((axes[0], "cellB", "EHRSQL′"), (axes[1], "dprime_verify2", "ART")):
+    for ax, suf, title in ((axes[0], "cellB", "EHRSQL-C"), (axes[1], "dprime_verify2", "ART")):
         x = np.arange(3)
         for j, (key, label) in enumerate(TC.MODELS):
             y = TC.tier_acc(key, suf)

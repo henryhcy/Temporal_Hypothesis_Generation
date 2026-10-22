@@ -591,7 +591,7 @@ the same 1{,}500 claims, database and codebook text. \emph{EHRSQL}
 schema, which we call Straight-to-SQL in the text: one prompt per claim to
 the SQL model, carrying the schema as a column listing and the row contract
 (one row per report with denominator, numerator and excluded flags);
-\emph{EHRSQL$'$} adds the codebook to the same prompt. The query runs in the
+\emph{EHRSQL-C} adds the codebook to the same prompt. The query runs in the
 read-only sandbox and the harness runs the exact test, so these rows differ
 from our pipeline only in having no plan, no contract and no repair.
 \emph{EHRAgent} \cite{shi2024ehragent} runs the authors' code over the same
@@ -624,11 +624,6 @@ with the model under the contract (one and two repair rounds), Test with the
 exact test, a deterministic function the harness calls rather than a tool
 the model chooses to call, which therefore reproduces every label.
 
-The \emph{ablations} remove one part of \art{} at a time: the verifier's
-repair loops; the exact test, replaced by the model's own verdict from the
-pipeline's counts; and the contract, the plan handed to S2 as prose with the
-codebook. Removing both the plan and the contract leaves EHRSQL$'$; everywhere
-else \art{} includes the verifier.
 Chance on the three-class cohort
 tiers is $\approx 0.33$; a per-group majority guesser scores at most 0.37.
 
@@ -697,7 +692,7 @@ test set, 1{,}500 cohort claims & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & 
 \midrule
 \multicolumn{6}{@{}l}{\textit{baselines}} \\
 EHRSQL & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
-EHRSQL$'$ & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
+EHRSQL-C & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
 EHRAgent & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
 VERITAS$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
@@ -916,6 +911,12 @@ set; every other system scores within its own interval on those claims
 \subsection{Ablations}
 \label{sec:modular}
 
+The ablations in Table~\ref{tab:main} remove one part of \art{} at a time: the verifier's
+repair loops; the exact test, replaced by the model's own verdict from the
+pipeline's counts; and the contract, the plan handed to S2 as prose with the
+codebook. Removing both the plan and the contract leaves EHRSQL-C; everywhere
+else \art{} includes the verifier.
+
 
 \iffalse  % modular table merged into Table~\ref{tab:main} (user 2026-10-20); kept in source
 \begin{table*}[t]
@@ -1052,7 +1053,7 @@ that do not.
 180 single-report claims & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \midrule
 EHRSQL & 0.433 & 0.989 & 0.744 & --- & --- \\
-EHRSQL$'$ & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
+EHRSQL-C & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
 Articulate: \art{} (Retrieve, Test at gold) & 1.000 & 1.000 & 1.000 & --- & --- \\
 \art{} & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
 \bottomrule
@@ -1121,7 +1122,7 @@ run; the other registers rerun the same 1{,}500 claims.}
 \cmidrule(lr){2-5}\cmidrule(lr){6-6}\cmidrule(lr){7-12}\cmidrule(lr){13-13}
 test set & all & \shortstack[c]{gold\\not-locatable} & \shortstack[c]{gold\\sparse} & \shortstack[c]{gold\\underpowered} & \shortstack[c]{with the right\\sub-type} & all & \shortstack[c]{query\\rejected} & \shortstack[c]{denominator\\empty} & \shortstack[c]{below\\the floor} & \shortstack[c]{wrong\\denominator} & \shortstack[c]{gold\\denominator} & \shortstack[c]{(no\\answer)} \\
 \midrule
-\multicolumn{13}{@{}l}{\textit{EHRSQL$'$}} \\
+\multicolumn{13}{@{}l}{\textit{EHRSQL-C}} \\
 \quad Qwen2.5-32B pair & 0.234 & 0.131 & 0.134 & 0.430 & 0.791 & 0.388 & 0.017 & 0.026 & 0.108 & 0.204 & 0.033 & 0.000 \\
 \quad qwen3.8-27B & 0.141 & 0.080 & 0.083 & 0.256 & 0.855 & 0.224 & 0.050 & 0.016 & 0.085 & 0.066 & 0.006 & 0.000 \\
 \quad gemma4-31B & 0.036 & 0.040 & 0.013 & 0.052 & 0.893 & 0.182 & 0.098 & 0.001 & 0.043 & 0.039 & 0.000 & 0.000 \\
