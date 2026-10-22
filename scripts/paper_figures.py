@@ -399,31 +399,42 @@ def ladder_acc(key: str, suf: str):
     return out
 
 
+def _wilson(p, n, z=1.96):
+    d = 1 + z * z / n; c = (p + z * z / (2 * n)) / d; h = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return c - h, c + h
+
+
 def fig_tiers():
-    """Difficulty analysis independent of the levels' family mix: ART on the precedes shape at the three
-    levels, one line per model (the EHRSQL-C drops over the same steps are given in the text)."""
-    cols = MODEL_COLORS
-    ns = [n for _, n in ladder_acc("gemma4_31b", "dprime_verify2")]
-    levels = [lab.replace(": ", "\n") + f"\n(n={n})" for (_, _, lab), n in zip(LADDER, ns)]
-    fig, ax = plt.subplots(figsize=(3.4, 2.5))
+    """Difficulty analysis on one claim shape (A precedes B) at Easy / Medium / Hard: small multiples, one
+    panel per model, ART (model colour) against EHRSQL-C (grey, dashed), with 95% Wilson intervals over claims
+    (design 9, chosen by the user 2026-10-22). EHRSQL-C is the controlled reference: same model, codebook,
+    database and exact test; it lacks only the plan, the contract and the repair."""
+    from matplotlib.lines import Line2D
+    from matplotlib.patches import Patch
+    grey = "#A9A39A"
+    short = {"q25pair": "Qwen2.5 pair", "qwen38_27b": "qwen3.8", "gemma4_31b": "gemma4", "opus": "Opus 5.5", "gpt": "GPT-5.6"}
+    fig, axes = plt.subplots(1, 5, figsize=(3.45, 1.85), sharey=True)
     x = np.arange(3)
-    for j, (key, label, _) in enumerate(MODELS):
-        y = [a for a, _ in ladder_acc(key, "dprime_verify2")]
-        ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label,
-                zorder=5 - j, ls=(0, (3, 1.5)) if key == "gpt" else "-")
-        if key in ("q25pair", "qwen38_27b"):
-            ax.text(x[-1] + 0.07, y[-1], f"{y[-1]:.3f}", fontsize=5.8, color=cols[j], va="center", ha="left")
-    ax.set_xticks(x); ax.set_xticklabels(levels)
-    ax.set_xlim(-0.25, 2.6); ax.set_ylim(0.8, 1.02)
-    ax.set_ylabel("verdict accuracy", fontsize=8)
-    boldify(ax, size=7.5)
-    ax.grid(axis="y")
-    ax.legend(frameon=False, fontsize=6.0, loc="upper center", bbox_to_anchor=(0.5, -0.40), ncol=3, handlelength=1.3,
-              columnspacing=0.9, labelspacing=0.3)
-    fig.tight_layout()
+    for ax, (k, _, c) in zip(axes, MODELS):
+        for suf, col, lw, ls in (("cellB", grey, 1.2, (0, (2.5, 1.5))), ("dprime_verify2", c, 1.8, "-")):
+            pts = ladder_acc(k, suf)
+            v = np.array([a for a, _ in pts]); lo, hi = zip(*[_wilson(a, n) for a, n in pts])
+            ax.fill_between(x, lo, hi, color=col, alpha=0.16, lw=0)
+            ax.plot(x, v, color=col, lw=lw, ls=ls, marker="o", ms=2.8, markeredgecolor="white", markeredgewidth=0.4)
+        ax.set_title(short[k], fontsize=6.4, pad=3)
+        ax.set_xticks(x); ax.set_xticklabels(["E", "M", "H"], fontsize=6.2)
+        ax.set_ylim(0.15, 1.04); ax.set_xlim(-0.3, 2.3)
+        ax.tick_params(axis="y", labelsize=6, length=2); ax.tick_params(axis="x", length=0)
+        ax.grid(axis="y", lw=0.4)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    axes[0].set_ylabel("verdict accuracy", fontsize=6.8); axes[0].set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+    h = [Line2D([], [], color=SLATE_M, lw=1.8, marker="o", ms=3, label="ART (model colour)"),
+         Line2D([], [], color=grey, lw=1.2, ls=(0, (2.5, 1.5)), marker="o", ms=3, label="EHRSQL-C"),
+         Patch(color=grey, alpha=0.3, label="95% interval")]
+    fig.legend(handles=h, loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=3, frameon=False, fontsize=5.8, handlelength=1.6)
+    fig.subplots_adjust(wspace=0.12, bottom=0.22, top=0.88, left=0.13, right=0.99)
     save(fig, "tiers")
-    for suf in ("cellB", "dprime_verify2"):
-        print(suf, {k: [round(a, 3) for a, _ in ladder_acc(k, suf)] for k, _, _ in MODELS})
 
 
 # ---- 7. repair rounds, vertical variant for comparison (user 2026-10-21; appendix) ----------------

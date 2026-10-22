@@ -971,24 +971,29 @@ model.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{Figures/tiers.pdf}
-\caption{Verdict accuracy of \art{} on one claim shape, \emph{A precedes B},
-at the three difficulty levels: read off one report (P-R1), tested in one
-cohort (P-V1) and compared across two cohorts (P-M2). One line per model;
-lines at 1.0 coincide.}
+\caption{Verdict accuracy on one claim shape, \emph{A precedes B}, at the
+three difficulty levels: E, read off one report (P-R1, 20 claims); M, tested
+in one cohort (P-V1, 95); H, compared across two cohorts (P-M2, 82). One
+panel per model: \art{} against EHRSQL-C, which shares its model, codebook,
+database and exact test but has no plan, contract or repair. Bands are 95\%
+Wilson intervals over claims.}
 \label{fig:tiers}
 \end{figure}
 
 \paragraph{By difficulty level.} The three levels contain different
-families, so their pooled accuracies mix difficulty with family; Figure~\ref{fig:tiers}
-holds the claim shape fixed instead. Difficulty is real: under \art{} every
-model verifies the single-report and one-cohort claims, and the open models
-lose 0.15 (pair), 0.10 (qwen3.8) and 0.01 (gemma4) when a second cohort adds
-a second denominator and a two-sample test. The one-prompt baseline with the
-codebook loses far more over the same steps, 0.68, 0.48 and 0.17, the pair
-already 0.38 at the one-cohort step, while the frontier models stay at or
-near 1.0 in both systems. The contract does not remove the cost of the harder
-level; it cuts it by a factor of five or more for the open models. The
-two-cohort level has 82 claims, so its intervals are about $\pm 0.08$.
+families, so their pooled accuracies mix difficulty with family;
+Figure~\ref{fig:tiers} holds the claim shape fixed instead and compares
+\art{} with EHRSQL-C, the controlled reference. Difficulty is real: under
+\art{} every model verifies the single-report and one-cohort claims, and the
+open models lose 0.15 (pair), 0.10 (qwen3.8) and 0.01 (gemma4) when a second
+cohort adds a second denominator and a two-sample test. EHRSQL-C loses far
+more over the same steps, 0.68, 0.48 and 0.17, the pair already 0.38 at the
+one-cohort step, while the frontier models stay at or near 1.0 in both. The
+contract does not remove the cost of the harder level; it cuts it by a
+factor of five or more for the open models. EHRAgent, the strongest published
+baseline, also drops from Medium to Hard, by 0.19 with qwen3.8 and 0.21 with
+GPT-5.6. The Hard level has 82 claims, so its intervals are about
+$\pm 0.08$.
 
 \subsection{RQ3: evidence and abstention}
 \label{sec:evidence}
