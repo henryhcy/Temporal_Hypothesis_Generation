@@ -46,6 +46,77 @@ systems release no gold of their own. Marks: \cmark{} has it, \pmark{} partly,
 \label{tab:related-concise}
 \end{table*}
 
+\section{Claim catalogue}
+\label{app:stats}
+\label{app:catalogue}
+
+Table~\ref{tab:catalogue} lists all 26 template groups: the claim as it is
+worded in the original register, which reports count toward its
+denominator, the null, the exact test and the size of the released pool.
+Every population test is one-sided in the claim's direction at
+$\alpha = 0.05$, with a floor of $n \geq 10$ per arm below which the verdict
+is \emph{sparse} ($0 < n < 10$) or \emph{not-locatable} ($n = 0$). Each
+template also exists in three paraphrase registers.
+
+\begin{table*}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3.5pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabularx}{\textwidth}{@{}l X p{3.1cm} p{1.6cm} p{2.25cm} rr@{}}
+\toprule
+group & claim template (original register) & reports counted & null & exact test & inst. & med.\ $n$ \\
+\midrule
+\multicolumn{7}{@{}l}{\textit{read off one report (Easy)}} \\
+P-R1 & In report $r$, $A$ occurred before $B$. & the named report & --- & none & 400 & --- \\
+P-R2 & In report $r$, $A$ came first, before $B$. & the named report & --- & none & 400 & --- \\
+C-R1 & In report $r$, $A$ and $B$ co-occur. & the named report & --- & none & 400 & --- \\
+S-R1 & In report $r$, $A$, $B$, $C$ occur in the order $A$ $\rightarrow$ $B$ $\rightarrow$ $C$. & the named report & --- & none & 400 & --- \\
+F-R1 & In report $r$, $A$ occurs first among $A$, $B$, $C$. & the named report & --- & none & 400 & --- \\
+F-R2 & In report $r$, $A$ occurs last among $A$, $B$, $C$. & the named report & --- & none & 400 & --- \\
+F-R3 & In report $r$, $A$ is the first of $A$, $B$, $C$ to occur. & the named report & --- & none & 400 & --- \\
+T-R1 & In report $r$, $A$ occurred in the first half of the timeline. & the named report & --- & none & 400 & --- \\
+Y-R1 & In report $r$, $A$ occurred in the stage immediately before $B$. & the named report & --- & none & 400 & --- \\
+\midrule
+\multicolumn{7}{@{}l}{\textit{tested in one cohort (Medium)}} \\
+P-V1 & After $v$, $A$ typically occurs before $B$. & both events, at distinct stages & $0.5$ & binomial & 501 & 17 \\
+P-V3 & After $v$, $A$ usually comes before $B$. & both events, at distinct stages & $0.5$ & binomial & 501 & 17 \\
+P-V2 & After $v$, $B$ follows $A$ more often than it follows $C$. & both events, at distinct stages & two rates equal & Fisher & 600 & 22 \\
+P-V4 & After $v$, $A$ precedes $B$ more often than $C$ precedes $D$. & both events, at distinct stages & two rates equal & Fisher & 600 & 24 \\
+C-V1 & After $v$, $A$ and $B$ typically co-occur. & both events present & $0.5$ & binomial & 600 & 19 \\
+C-V2 & After $v$, $A$ and $B$ occur together more often than their separate rates would predict. & whole cohort, split on presence of $A$ & two rates equal & Fisher & 600 & 229 \\
+C-V3 & After $v$, co-occurrence is the dominant relation for $A$ and $B$. & both events present & runner-up & modal vs.\ runner-up & 522 & 23 \\
+F-V1 & After $v$, $A$ is most commonly the first event among $A$, $B$, $C$. & all candidates present, a unique first & runner-up & modal vs.\ runner-up & 102 & 14 \\
+F-V2 & After $v$, $A$ is most commonly the last event among $A$, $B$, $C$. & all candidates present, a unique last & runner-up & modal vs.\ runner-up & 138 & 14 \\
+F-V3 & After $v$, $A$ is the most common first event among $A$, $B$, $C$. & all candidates present, a unique first & runner-up & modal vs.\ runner-up & 102 & 14 \\
+T-V1 & After $v$, $A$ appears in the earlier half of the timeline more often than chance would place it there. & $A$ present, off the middle stage & data-derived & binomial & 102 & 145 \\
+Y-V1 & After $v$, when $A$ and $B$ fall in consecutive stages, $A$ usually comes first. & both events, at consecutive stages & $0.5$ & binomial & 204 & 17 \\
+Y-V2 & After $v$, in reports where $A$ and $B$ are in consecutive stages, $A$ comes first more often. & both events, at consecutive stages & $0.5$ & binomial & 204 & 17 \\
+Y-V3 & After $v$, $A$ and $B$ fall in consecutive stages more often than chance would give. & both events, at distinct stages & data-derived & binomial & 105 & 26 \\
+H-V1 & After $v$, $A$ tends to precede $B$ in at least two out of three cases where their order is recorded. & both events, at distinct stages & bar in text, $2/3$ & binomial & 105 & 16 \\
+H-V5 & After $v$, $A$ tends to be the first of $A$, $B$ and $C$ in at least half of cases. & all candidates present, a unique first & bar in text, $0.5$ & binomial & 66 & 13.5 \\
+\midrule
+\multicolumn{7}{@{}l}{\textit{compared across two cohorts (Hard)}} \\
+P-M2 & $A$ precedes $B$ more often after $v_1$ than after $v_2$. & both events, at distinct stages & two rates equal & Fisher & 87 & 21.5 \\
+\bottomrule
+\end{tabularx}
+\caption{Claim catalogue: the 26 template groups by difficulty level.
+$A$--$D$ are event terms, $v$ a vaccine cohort and $r$ a report; for example,
+P-V1 is realised as ``After Pfizer, Headache typically occurs before
+Fatigue''. \emph{Reports counted}: the denominator rule. \emph{Null}:
+$0.5$ is the symmetric null; \emph{runner-up} tests the named candidate
+against its strongest competitor; \emph{two rates equal} compares
+two arms; \emph{data-derived} computes chance from the denominator reports
+(the structural early rate, or $2/L$ for adjacency); a \emph{bar in text} is
+read from the wording. \emph{inst.}: released instances; \emph{med.\ $n$}:
+median test denominator. Report-tier claims are read off one timeline with no
+test.}
+\label{tab:catalogue}
+\end{table*}
+
+% Former roster, permutation-screen and per-group tables, removed from the paper 2026-10-22 (user);
+% their content is merged into the catalogue above or kept here for the repo.
+\iffalse
 \section{Corpus, roster and per-group statistics}
 \label{app:stats}
 
@@ -165,6 +236,9 @@ insufficient sub-types (underpowered / sparse / not-locatable); Facts counts
 distinct \texttt{fact\_id}; median $n$ is the conditioned denominator.}
 \label{tab:pergroup}
 \end{table*}
+
+
+\fi
 
 \iffalse  % DEVELOPMENT-SET ANALYSES: removed from the paper (user 2026-10-22: no dev results shown); kept in source only.
 \section{Development-set analyses}
@@ -319,6 +393,7 @@ otherwise have read as a finding about the new claim families.
 
 \fi  % end of development-set analyses (app:dev)
 
+\iffalse  % tests-by-shape table merged into the claim catalogue (2026-10-22)
 \section{Tests by claim shape}
 \label{app:tests}
 
@@ -346,6 +421,7 @@ which the verdict is \emph{sparse} ($0 < n <$ floor) or \emph{not-locatable}
 ($n = 0$).}
 \label{tab:tests}
 \end{table}
+\fi
 
 \section{Evidence by claim family}
 \label{app:families}

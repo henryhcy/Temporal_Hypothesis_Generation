@@ -274,8 +274,10 @@ benchmark's ground truth and the systems' input.
 \subsection{Hypothesis space}
 \label{sec:space}
 
-Twenty-six template groups span seven claim families at three scopes
-(Table~\ref{tab:roster}). Four families concern order and co-occurrence ---
+Twenty-six template groups span seven claim families at three scopes;
+Figure~\ref{fig:overview} shows one template per family, and the claim
+catalogue (Table~\ref{tab:catalogue}, Appendix~\ref{app:catalogue}) lists
+every group with its wording, denominator rule, null and test. Four families concern order and co-occurrence ---
 \emph{precedes}, \emph{co-occurs}, strict \emph{sequence} of three events,
 \emph{first/last} among candidates --- and three, added to diversify the null,
 concern \emph{position} (an event in the earlier half of a timeline),
@@ -324,8 +326,8 @@ A)$ over the whole cohort. \emph{Immediate} order counts reports where the two
 events are at consecutive occupied stages; \emph{position} drops single-stage
 reports and events on the exact middle stage.
 
-\paragraph{Tests.} All tests are exact, and Table~\ref{tab:tests}
-(Appendix~\ref{app:tests}) lists them by claim shape: a one-sided exact binomial against $p_0$ for majority,
+\paragraph{Tests.} All tests are exact, and the claim catalogue
+(Table~\ref{tab:catalogue}) gives the test of every group: a one-sided exact binomial against $p_0$ for majority,
 bar and data-derived nulls; modal-versus-runner-up, an exact binomial of the
 named cell against its strongest competitor, for argmax claims; Fisher's
 exact test \cite{fisher1935design} for two-arm and two-cohort contrasts. No
@@ -370,7 +372,9 @@ No group ships on plausibility. Each is screened against a permutation null
 (term-to-stage assignment permuted within each report, preserving report size,
 stage-size multiset, term frequencies and co-occurrence) for order, position
 and proximity groups; a degree-preserving \emph{edge swap} for association; a
-\emph{label shuffle} for two-cohort contrasts (Table~\ref{tab:screens}). The
+\emph{label shuffle} for two-cohort contrasts; every shipping group cleared
+its screen ($p_{\textrm{perm}} \leq 0.025$, most below the $0.0005$
+resolution). The
 screening history is itself a result: seven candidate two-cohort shapes were
 tested and one survived; a majority statistic was replaced after the screen
 showed its text and its test answered different questions; and a rank-test
@@ -423,7 +427,8 @@ the release: the harness is correct, whatever the text entails.
 \subsection{Statistics}
 \label{sec:stats}
 
-Table~\ref{tab:totals} summarises the release; the corpus, the group roster, the validity screens and the per-group statistics are tabulated in Appendix~\ref{app:stats}. The
+Table~\ref{tab:totals} summarises the release; the per-group pool sizes and
+median denominators are in the claim catalogue (Appendix~\ref{app:catalogue}). The
 earlier, uncapped version of the benchmark let one group contribute 46\% of all
 instances; the cap makes the eleven largest groups equal in size, and
 class balance is exact within every cohort group by construction.
@@ -503,7 +508,7 @@ sandbox and aggregates the rows into $(n, k)$ per arm together with the
 identifier sets, so the evidence is auditable against the gold sets.
 
 \textbf{S3 --- test.} A deterministic function runs the plan's test on the
-counts (Table~\ref{tab:tests}): the exact binomial against the plan's $p_0$
+counts (Table~\ref{tab:catalogue}): the exact binomial against the plan's $p_0$
 (for a data-derived null, against the chance sum over the retrieved
 denominator), Fisher's test for two arms, modal-versus-runner-up for argmax;
 applies the floor; and returns the verdict with both tails. Nothing is
