@@ -274,63 +274,6 @@ otherwise have read as a finding about the new claim families.
 
 
 
-\section{Baseline and system settings}
-\label{app:settings}
-
-Every row of Table~\ref{tab:main} runs on the same 1{,}500 test claims, the
-same annotation database, the same codebook text and, where the row has a
-test stage, the same exact tests. The rows differ as follows.
-
-\paragraph{EHRSQL, schema only; EHRSQL + codebook.} The EHRSQL protocol
-\cite{lee2022ehrsql} adapted to our schema: one prompt per claim to the SQL
-model, carrying the schema as a column listing with the views' semantics in
-comments and the row contract (one row per report with denominator,
-numerator, excluded and cell flags), and in the second row the codebook
-text as well. The query is executed in the read-only sandbox and the harness
-runs the exact test on the aggregated counts. No plan, no contract, no
-repair; the development-set variant with two plan-free repair rounds is in
-Appendix~\ref{app:dev}. For the Qwen2.5 pair the SQL model is the Coder.
-
-\paragraph{EHRAgent.} The authors' code \cite{shi2024ehragent} over the same
-database, in its end-to-end variant: the agent writes and executes its own
-code with error-driven retries (up to twelve), four demonstrations, and
-returns a verdict from its own computation; we parse the verdict and do not
-touch its evidence. The paper used GPT-4 and GPT-3.5; we run the 2024 Coder,
-qwen3.8-27B and GPT-5.6 (reasoning off, function calling replaced by the
-code-block path the open models use, so that all three take the same route)
-through the same OpenAI-compatible interface. A second variant that returns
-counts to our exact test is reported in the repository only.
-
-\paragraph{VERITAS.} The authors' code \cite{veritas2026} with the imaging
-phase bypassed: the hypothesis, statistics and interpretation agents run as
-released, our exact-test functions are bound in place of its statistics
-library, and the codebook is supplied as the data description. Each phase is
-capped at ten minutes; a claim whose run does not complete is scored as it
-stands. At nine minutes per claim it is run on a stratified 204-claim
-subsample (Appendix~\ref{app:subsample}) with the Qwen2.5 Coder.
-
-\paragraph{S1 alone; S2 alone.} S1 alone fills the plan with the model
-(toolbox frame, zero-shot, one verify-and-repair round) and the retrieval
-and test stages with gold. S2 alone hands the model the gold plan already
-resolved into its contract and lets it write the SQL (two repair rounds),
-with the exact test on its counts; the frontier S2 cells are not run, since
-with their own plans both models retrieved every denominator exactly.
-
-\paragraph{Model as statistician; \art{} + statistician.} The model receives
-counts and the claim and must name the test and return the verdict with its
-sub-type, with the test definitions in the prompt. In the first row the
-counts are gold; in the second they are the pipeline's own, with S1 and S2
-run with the verifier as in the main rows, so the difference between that
-row and \art{} + verifier is the exact test alone.
-
-\paragraph{\art{}.} S1 in the toolbox frame (zero-shot, the claim-type
-mapping withheld), S2 under the resolved contract, S3 the exact test; the
-verifier gives S1 up to one and S2 up to two repair rounds, reading only the
-contract, the codebook and the data. Open models run with thinking off and
-an 8k context; the Qwen2.5 pair uses the Instruct model at S1 and the Coder
-at S2. Prompt caching is used for the frontier models; prompts were frozen
-before the test set was run.
-
 \clearpage
 \section{The agentic subsample: every system on the identical 204 claims}
 \label{app:subsample}

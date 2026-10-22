@@ -584,25 +584,37 @@ studies (\S\ref{sec:cases}) cover single reports and paraphrase, and
 \subsection{Baselines}
 \label{sec:baselines}
 
-Three published systems are adapted to the benchmark; the tables name
-them, and their settings are given here and in Appendix~\ref{app:settings}.
-\emph{EHRSQL} \cite{lee2022ehrsql} is the single-query text-to-SQL protocol
-over our schema, which we call Straight-to-SQL in the text: one prompt takes
-the claim straight to its retrieval query, the same SQL model writes the
-per-report rows in one pass, given the schema only or the schema and the
-codebook (\emph{EHRSQL + codebook}), and S3 is the harness's, so these rows
-differ from our pipeline only in having no plan and no contract. \emph{Agentic}: EHRAgent \cite{shi2024ehragent}, a code-writing
-agent with error-driven retries over the same database, which runs its own
-test and returns its own verdict (its paper used GPT-4 and GPT-3.5; we run it
-with the 2024 Coder, qwen3.8 and GPT-5.6); VERITAS \cite{veritas2026}, run
-through its hypothesis, statistics and interpretation agents with imaging
-bypassed, given our exact-test functions and the codebook.
-\emph{Model as statistician}: the model receives the gold counts and must
-name the test and make the judgment call itself --- not a competitor but the
-floor of ``the model does the statistics''; \art{} + statistician is the
-same judgment on the pipeline's own counts. \emph{Ceilings}: S1 alone (gold
-S2 and S3) and S2 alone (the gold plan, resolved), each with the verifier at
-the pipeline's budget. Chance on the three-class cohort
+Three published systems are adapted to the benchmark, and all rows run on
+the same 1{,}500 claims, database and codebook text. \emph{EHRSQL}
+\cite{lee2022ehrsql} is the single-query text-to-SQL protocol over our
+schema, which we call Straight-to-SQL in the text: one prompt per claim to
+the SQL model, carrying the schema as a column listing and the row contract
+(one row per report with denominator, numerator and excluded flags), with or
+without the codebook (\emph{EHRSQL + codebook}); the query runs in the
+read-only sandbox and the harness runs the exact test, so these rows differ
+from our pipeline only in having no plan, no contract and no repair.
+\emph{EHRAgent} \cite{shi2024ehragent} runs the authors' code over the same
+database in its end-to-end variant: it writes and executes its own code with
+error-driven retries (up to twelve) and four demonstrations, runs its own
+test and returns a bare verdict. Its paper used GPT-4 and GPT-3.5; we run the
+2024 Coder, qwen3.8 and GPT-5.6, all through the code-block path.
+\emph{VERITAS} \cite{veritas2026} runs its hypothesis, statistics and
+interpretation agents as released with imaging bypassed, our exact-test
+functions bound in place of its statistics library and the codebook as the
+data description; each phase is capped at ten minutes, and at nine minutes
+per claim it is run with the Coder on a stratified 204-claim subsample
+(Appendix~\ref{app:subsample}).
+
+The ablations isolate parts of \art{}. \emph{Articulate alone} fills the plan
+with the model (one repair round) and retrieval and test with gold;
+\emph{Retrieve alone} hands the model the gold plan already resolved into its
+contract (two repair rounds) and runs the exact test on its counts.
+\emph{LLM as statistician} gives the model the gold counts and the test
+definitions and asks it to choose the test and return the verdict, the floor
+of ``the model does the statistics''; \emph{\art{} + LLM as statistician}
+asks the same on the pipeline's own counts, so it differs from \art{} only
+in the test stage. \emph{\art{} without verifier} removes the repair loops.
+Chance on the three-class cohort
 tiers is $\approx 0.33$; a per-group majority guesser scores at most 0.37.
 
 \subsection{Evaluation metrics}
@@ -668,32 +680,31 @@ information-versus-architecture grid is released with the code.
 test set, 1{,}500 cohort claims & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
  & \multicolumn{5}{c}{\textit{verdict accuracy \,(macro precision / recall / F1)}} \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{baselines (settings: \S\ref{sec:baselines}, Appendix~\ref{app:settings})}} \\
+\multicolumn{6}{@{}l}{\textit{baselines}} \\
 EHRSQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
 EHRSQL + codebook & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
 EHRAgent & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
 VERITAS$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{stage ceilings and ablations}} \\
-S1 alone & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
-S2 alone & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
-statistician, gold counts & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
-\art{} + statistician & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
+\multicolumn{6}{@{}l}{\textit{ablations}} \\
+Articulate alone & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
+Retrieve alone & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
+LLM as statistician & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
+\art{} + LLM as statistician & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ours}} \\
-\art{}, no verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
+\art{} without verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
 \textbf{\art{} + verifier} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
 \bottomrule
 \end{tabular}
 \caption{Main results on the test set: verdict accuracy, then macro
 precision / recall / F1 over the three verdict classes; only the model
 changes across columns. Intervals on accuracy are $\pm 0.02$ (0.6--0.9) and
-$\pm 0.01$ (above 0.98). Stage ceilings fill one stage with the model and
-the others with gold (all gold reproduces the labels, 1.000); the frontier S2
+$\pm 0.01$ (above 0.98). Articulate alone and Retrieve alone fill one stage
+with the model and the others with gold (all gold reproduces the labels, 1.000); the frontier S2
 cells are bounded below by their evidence F1 of 1.000 with their own plans.
 $^\dagger$VERITAS is run on a stratified 204-claim subsample
-(Appendix~\ref{app:subsample}). Row settings are in
-Appendix~\ref{app:settings}.}
+(Appendix~\ref{app:subsample}).}
 \label{tab:main}
 \end{table*}
 
@@ -850,7 +861,7 @@ Straight-to-SQL control with the 2024 Coder is right on 57\% of claims and
 right for the right reason on only 40\% of those: it admits same-stage
 reports into order denominators, defines the eligible set as the supporting
 set, and narrows presence splits to co-occurrence
-(Table~\ref{tab:attribution}). The model-as-statistician rows show the same
+(Table~\ref{tab:attribution}). The LLM-as-statistician rows show the same
 thing from the other side: handed the exact counts, the open models still
 return the wrong verdict on a quarter to a third of claims, so a correct
 verdict from them is not evidence of a correct computation. VERITAS's nine
@@ -932,12 +943,12 @@ plan, so the full pipeline compounds planner errors on a stage that was
 already failing. The 2026 models retrieve well with the gold plan, so their
 remaining loss is the plan, and gemma4 with the verifier sits within 0.01 of
 both its ceilings. The test stage is a function the open models cannot
-compute: as the statistician on the exact counts they are wrong on a quarter
-to a third of claims, and the row that makes the model the statistician on
+compute: as the statistician on the exact counts an LLM is wrong on a quarter
+to a third of claims, and the row that makes the LLM the statistician on
 its own counts shows the same pipeline losing 0.2 to 0.3 when it is asked to.
 
 \paragraph{Prose versus contract.} The hand-off between S1 and S2 is what the
-ceiling rows cannot see, because S2 alone receives the gold plan already
+ceiling rows cannot see, because Retrieve alone receives the gold plan already
 resolved. On the development set the same composed plan handed to S2 as
 prose with the codebook scores below the verified Straight-to-SQL model even
 after two repair rounds, while resolving the plan's named primitive into its
@@ -1008,7 +1019,7 @@ that do not.
 \midrule
 EHRSQL, schema only & 0.433 & 0.989 & 0.744 & --- & --- \\
 EHRSQL + codebook & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
-S1 alone & 1.000 & 1.000 & 1.000 & --- & --- \\
+Articulate alone & 1.000 & 1.000 & 1.000 & --- & --- \\
 \art{} + verifier & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
 \bottomrule
 \end{tabular}
