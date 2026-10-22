@@ -34,7 +34,9 @@ from __future__ import annotations
 
 from temporal_hypo.core.pseudonym import report_ref
 
+import dataclasses
 import json
+import os
 from dataclasses import replace
 from typing import Any, Mapping, Sequence
 
@@ -716,6 +718,11 @@ class LLMExtractor:
     @property
     def schema(self) -> dict:
         if self.frame == "toolbox":
+            if os.environ.get("MEDTEMPO_S1_COT") == "1":
+                # chain-of-thought baseline (2026-10-22): a free-text reasoning field written before the plan
+                props = {"reasoning": {"type": "string", "description": "Step-by-step reasoning about the claim, written before the plan fields."}}
+                props.update(PLAN_JSON_SCHEMA["properties"])
+                return {**PLAN_JSON_SCHEMA, "properties": props, "required": ["reasoning"] + list(PLAN_JSON_SCHEMA["required"])}
             return PLAN_JSON_SCHEMA
         return WHAT_JSON_SCHEMA if self.procedure_given else FLAT_JSON_SCHEMA
 
@@ -769,8 +776,21 @@ class LLMExtractor:
     # -- calls ---------------------------------------------------------------
 
     def _complete(self, messages: list[dict]) -> Completion:
+        if os.environ.get("MEDTEMPO_S1_COT") == "1" and self.frame == "toolbox" and messages and messages[0]["role"] == "system" \
+                and "Think step by step" not in messages[0]["content"]:
+            messages = [{"role": "system", "content": messages[0]["content"] + "\n\nThink step by step: first write your "
+                         "reasoning about the claim in the 'reasoning' field, then fill in the plan fields."}] + messages[1:]
+        cot = os.environ.get("MEDTEMPO_S1_COT") == "1" and self.frame == "toolbox"
         c = self.client.complete(messages, schema=self.schema, model=self.model,
-                                 temperature=self.temperature, max_tokens=self.max_tokens)
+                                 temperature=self.temperature, max_tokens=max(self.max_tokens, 1500) if cot else self.max_tokens)
+        if cot:
+            try:
+                obj = json.loads(c.text)
+                if isinstance(obj, dict) and "reasoning" in obj:
+                    self.last_notes.append("cot: " + str(obj.pop("reasoning"))[:400])
+                    c = dataclasses.replace(c, text=json.dumps(obj, ensure_ascii=False))
+            except ValueError:
+                pass
         self.last_completions.append(c)
         return c
 
