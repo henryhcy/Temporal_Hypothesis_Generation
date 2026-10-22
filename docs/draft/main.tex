@@ -40,7 +40,7 @@
 
 \begin{document}
 
-\title{STRATA: Staged Evaluation of Temporal--Statistical Claims over Annotated Clinical Timelines}
+\title{STRATA: Multistage, Evidence-Grounded Statistical Verification of Temporal Hypotheses in Clinical Timelines}
 %% working title
 
 \author{Anonymous Author(s)}
@@ -53,7 +53,7 @@
 \begin{abstract}
 Language-model systems increasingly claim to test hypotheses against data,
 but existing benchmarks score only the final answer and hand the system the
-relevant records already assembled. Over a corpus of annotated clinical
+relevant records already assembled. Over a corpus of clinical
 timelines, a claim such as ``after the Pfizer vaccine, headache tends to
 precede fatigue'' first requires deciding \emph{which reports count}, what the
 null is and which exact test applies; each decision can be wrong while the
@@ -61,7 +61,7 @@ verdict is right. Statistical-reasoning benchmarks and hypothesis-testing
 agents score none of these steps. We present \textsc{Strata}, a benchmark and
 staged evaluation framework for verifying temporal hypotheses about clinical
 event timelines by exact statistical tests. Claims
-are generated mechanically from the annotated timelines by a template-driven
+are generated mechanically from the timelines by a template-driven
 process that enumerates the cores that exist in the corpus, computes every
 stage of the gold (the plan, the exact evidence sets, the exact $p$-values
 and a three-decision verdict with sub-typed abstention) and validates it by

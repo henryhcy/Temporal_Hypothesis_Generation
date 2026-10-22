@@ -19,7 +19,7 @@
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/overview_slide.pdf}
-\caption{Overview. Top: \sys{} benchmark construction, from the annotated
+\caption{Overview. Top: \sys{} benchmark construction, from the clinical
 timelines (1.1) through the hypothesis templates (1.2) and the groups,
 families and difficulty levels (1.3) to the gold computed at every stage
 (1.4). Middle: the \art{} verification pipeline, articulate (S1), retrieve
@@ -38,8 +38,8 @@ run it and report a conclusion. Benchmarks for this ability
 \cite{miao2026fisher,zhu2024statqa,zhu2026statabench} score the final answer
 and hand the system the relevant data already assembled. In most real
 settings that is the easy half. For the claim \emph{``after the Pfizer
-vaccine, headache tends to precede fatigue''} over a corpus of annotated
-adverse-event reports, a system must first decide \emph{which reports count}
+vaccine, headache tends to precede fatigue''} over the clinical timelines
+of adverse-event reports, a system must first decide \emph{which reports count}
 (a report where the two events co-occur witnesses neither order), \emph{what
 ``no effect'' means} (a 50/50 split of the ordered reports) and \emph{which
 test applies} (a one-sided exact binomial with a minimum-count floor). Each
@@ -55,19 +55,19 @@ fall early in the clinical course is a claim about a population of timelines.
 No single report confirms it; it is verified only by an exact test over the
 reports whose timelines can witness it, against the null its wording implies.
 \sys{} (Staged Temporal-statistical Reasoning Assessment) is a benchmark and
-evaluation framework for this task over MedTempo, a corpus
-of 3{,}166 vaccine adverse-event reports whose clinical course is annotated
-as a \emph{leveled order} of events. Every instance carries its gold verdict
+evaluation framework for this task over the clinical timelines of 3{,}166
+vaccine adverse-event reports from MedTempo \cite{craft2026}, in which each
+report's clinical course is a \emph{leveled order} of events. Every instance carries its gold verdict
 (\emph{supported}, \emph{refuted} or a sub-typed \emph{insufficient}) and the
 gold of every stage that produced it: the structured plan, the exact report
 sets in the denominator and numerator, and the exact $p$-values, all
-computed mechanically from the annotations and reproduced by a deterministic
+computed mechanically from the timelines and reproduced by a deterministic
 oracle. We pair the benchmark with an instrumented reference pipeline,
 \art{} (articulate, retrieve, test): a stage that articulates the claim as a
 plan, a retrieval stage and a deterministic test stage, each with an output
 contract and a bounded verify-and-repair loop. Its stages can be filled with
 gold, its prompts can state or withhold the corpus \emph{codebook} (the
-stipulations about how the annotations are to be read, written as text), and
+stipulations about how the timelines are to be read, written as text), and
 its plan can be handed on either as prose or as a \emph{contract}, in which
 the harness expands each primitive the plan names into that primitive's
 exact rule. That separates what end-to-end evaluation conflates, the
@@ -93,7 +93,7 @@ set and a single-report case study, with structured plans, exact evidence
 sets, exact $p$-values and a three-decision verdict with sub-typed abstention
 (\S\ref{sec:dataset}).
 \item \textbf{A generation process that makes the codebook part of the
-task}: claims enumerated from the annotated timelines by templates, gold
+task}: claims enumerated from the clinical timelines by templates, gold
 computed mechanically by the exact test for each claim shape, screened
 against permutation nulls and validated by invariants and an oracle, and the
 stipulations that turn a temporal sentence into a testable population (which
@@ -147,10 +147,9 @@ scores one query per question with an abstention option, and EHRAgent
 \cite{shi2024ehragent} solves EHR questions with a code-writing agent and
 error-driven retries; our Straight-to-SQL baselines (\S\ref{sec:baselines})
 follow the EHRSQL protocol over our schema. TIMER \cite{timer2025} and CRAFT
-\cite{craft2026} extract and refine clinical timelines from narratives, and
-MedTempo, the corpus CRAFT introduced, is the expert-annotated set of such
-timelines we build on: a data source, not a competitor. We start where
-extraction ends.
+\cite{craft2026} extract and refine clinical timelines from narratives; we
+use the MedTempo timelines released with CRAFT as our data source, not as a
+competitor. We start where extraction ends.
 
 \paragraph{Positioning.} Table~\ref{tab:related-concise} compares the closest
 work. A plan-then-execute loop with a deterministic statistics layer (LATCH)
@@ -178,7 +177,7 @@ DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & open-ende
 EHRAgent / EHRSQL \cite{shi2024ehragent,lee2022ehrsql} & no (QA / SQL) & agent code / SQL & no & yes (EHR) & answer / execution & schema \\
 VERITAS \cite{veritas2026} & plans the analysis & own code + deterministic classifier & no & yes (imaging) & verdict vs.\ reference & data + description \\
 \midrule
-\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last, position, proximity, threshold & \textbf{yes}: annotated VAERS timelines & \textbf{every stage}: plan, evidence set, counts, $p$, verdict & stated codebook + dataset card \\
+\textbf{This work} & \textbf{yes}: null recipe (kind, $p_0$ or how to compute it, reference population), denominator, test family + rule & \textbf{deterministic harness} runs the stated rule; exact tests & \textbf{yes}: precedes, co-occur, sequence, first/last, position, proximity, threshold & \textbf{yes}: VAERS timelines & \textbf{every stage}: plan, evidence set, counts, $p$, verdict & stated codebook + dataset card \\
 \bottomrule
 \end{tabularx}
 \caption{Positioning against the closest benchmarks and systems. ``Gold at
@@ -198,16 +197,20 @@ within a record.}
 \toprule
 Work & Null & Test selection & Test execution & Event-order claims & Clinical data & Gold released \\
 \midrule
+\multicolumn{7}{@{}l}{\textit{benchmarks}} \\
 StatQA \cite{zhu2024statqa} & \cpart{applicability only} & \cyes{model picks from a catalogue, scored} & \cno{none run} & \cno{no} & \cno{no} & \cno{final answer} \\
 StatFormBench \cite{wang2026statformbench} & \cpart{test family} & \cpart{model names the family} & \cno{none run} & \cno{no} & \cno{textbook} & \cpart{formulation} \\
 StatABench \cite{zhu2026statabench} & \cpart{test choice} & \cyes{model picks, scored} & \cpart{fixed tool functions} & \cno{no} & \cno{no} & \cno{final answer} \\
 P-Bench / Fisher-R1 \cite{miao2026fisher} & \cno{given} & \cpart{model picks, unscored} & \cpart{model-written R} & \cpart{survival only} & \cpart{partly} & \cpart{reference $p$} \\
 DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & \cpart{open-ended} & \cpart{agent, rubric-scored} & \cpart{agent code} & \cno{no} & \cno{no} & \cpart{rubric} \\
-EHRSQL / EHRAgent \cite{lee2022ehrsql,shi2024ehragent} & \cno{none (QA)} & \cno{none} & \cno{SQL, agent code; no test} & \cno{no} & \cyes{EHR} & \cpart{answer, execution} \\
-LATCH \cite{gim2026latch} & \cno{given} & \cno{given by the source study} & \cyes{deterministic R pipelines} & \cno{no} & \cyes{NHANES} & \cpart{cohort $n$, CI} \\
-VERITAS \cite{veritas2026} & \cpart{planned by agent} & \cpart{agent plans} & \cpart{own code + rule} & \cno{no} & \cyes{imaging} & \cpart{verdict only} \\
+EHRSQL \cite{lee2022ehrsql} & \cno{none (QA)} & \cno{none} & \cno{SQL; no test} & \cno{no} & \cyes{EHR} & \cpart{SQL, answer, abstention} \\
 \midrule
-\textbf{\sys{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{derived from the plan} (null, arms); scored by plan EM} & \cyes{\textbf{harness}: three exact tests, floor} & \cyes{\textbf{7 families}} & \cyes{\textbf{annotated VAERS}} & \cyes{\textbf{plan, evidence, $p$, verdict}} \\
+\multicolumn{7}{@{}l}{\textit{systems}} \\
+EHRAgent \cite{shi2024ehragent} & \cno{none (QA)} & \cno{none} & \cno{agent code; no test} & \cno{no} & \cyes{EHR} & \cna{system} \\
+LATCH \cite{gim2026latch} & \cno{given} & \cno{given by the source study} & \cyes{deterministic R pipelines} & \cno{no} & \cyes{NHANES} & \cna{system} \\
+VERITAS \cite{veritas2026} & \cpart{planned by agent} & \cpart{agent plans} & \cpart{own code + rule} & \cno{no} & \cyes{imaging} & \cna{system} \\
+\midrule
+\textbf{\sys{} + \art{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{derived from the plan} (null, arms); scored by plan EM} & \cyes{\textbf{harness}: three exact tests, floor} & \cyes{\textbf{7 families}} & \cyes{\textbf{VAERS timelines}} & \cyes{\textbf{plan, evidence, $p$, verdict}} \\
 \bottomrule
 \end{tabularx}
 \caption{Positioning, concise form. \emph{Null}: who states the null and the
@@ -215,7 +218,8 @@ population it is tested over. \emph{Test selection}: who chooses the test
 and whether that choice is scored. \emph{Test execution}: what computes the
 statistic the verdict rests on, and with which tests. \emph{Event-order
 claims}: hypotheses about the order or timing of events within a record.
-\emph{Gold released}: what is scored besides the final answer. Marks: \cmark{} has it, \pmark{} partly,
+\emph{Gold released}: what a benchmark scores besides the final answer;
+systems release no gold of their own. Marks: \cmark{} has it, \pmark{} partly,
 \xmark{} lacks it, \nmark{} not applicable.}
 \label{tab:related-concise}
 \end{table*}
@@ -231,9 +235,9 @@ claims}: hypotheses about the order or timing of events within a record.
 stated as a claim in natural language --- a declarative sentence in one of
 four registers --- about a \emph{cohort} (the reports of one vaccine), a
 \emph{contrast} of two cohorts, or one named \emph{report}; and the
-annotations: for every report, its vaccine and the stage at which each event
+timelines: for every report, its vaccine and the stage at which each event
 term is first mentioned. The system must verify the hypothesis by a
-statistical test over the annotations and return a verdict in $\{\emph{supported}, \emph{refuted}, \emph{insufficient}\}$,
+statistical test over the timelines and return a verdict in $\{\emph{supported}, \emph{refuted}, \emph{insufficient}\}$,
 the last sub-typed as \emph{not-locatable} (no report qualifies),
 \emph{sparse} (too few qualify) or \emph{underpowered} (enough qualify, neither
 tail significant). It never sees report text.
@@ -256,7 +260,7 @@ whether a tie for ``first'' leaves the denominator, what ``more often than their
 separate rates would predict'' compares --- these are stipulations about the
 corpus, not facts about the sentence, and a system that was never told them
 cannot infer them. The benchmark therefore ships these stipulations as a
-\emph{codebook}, in the sense of an annotation codebook: a situation-phrased
+\emph{codebook}, in the sense of a coding manual: a situation-phrased
 text that any system may be given (\S\ref{sec:frames}); the experiments
 treat ``codebook given'' as a controlled condition. The
 claim-type \emph{mapping} --- which rule and which test go with which wording
@@ -266,16 +270,16 @@ claim-type \emph{mapping} --- which rule and which test go with which wording
 \subsection{Source corpus}
 \label{sec:corpus}
 
-MedTempo~\cite{craft2026} is a corpus of 3{,}166 VAERS adverse-event
-reports for three COVID-19 vaccines, annotated with a \emph{leveled order}: a
-single totally ordered chain of stages in which each stage holds the
+We use the clinical timelines of MedTempo~\cite{craft2026}: 3{,}166 VAERS
+adverse-event reports for three COVID-19 vaccines, each report's clinical
+course represented as a \emph{leveled order}, a single totally ordered chain of stages in which each stage holds the
 MedDRA-coded events reported at that point of the clinical course (1{,}164
 Janssen, 1{,}019 Pfizer and 983 Moderna reports; 1{,}660 distinct event
-terms; 7.2 events and 3.4 stages per report on average). Two annotation rules
-are load-bearing: when a term recurs, its \emph{first} mention
+terms; 7.2 events and 3.4 stages per report on average). Two rules of this
+representation are load-bearing: when a term recurs, its \emph{first} mention
 fixes its stage; events at one stage are temporally indistinguishable
-(\emph{co-exist}). The annotation, not the narrative, is both the benchmark's
-ground truth and the systems' input.
+(\emph{co-exist}). The timelines, not the narratives, are both the
+benchmark's ground truth and the systems' input.
 
 \subsection{Hypothesis space}
 \label{sec:space}
@@ -389,7 +393,7 @@ because template wording is fixed per group and a skewed group would teach a
 text-shape-to-label shortcut; the insufficient third is spread over its
 sub-types. \emph{Not-locatable} instances are minted deliberately from real
 cohort vocabulary whose joint count is zero, so the claim appears answerable and
-only querying the annotations reveals the empty denominator. Groups are capped
+only querying the timelines reveals the empty denominator. Groups are capped
 at 600 instances (200 per class) by a seeded draw that keeps mirror pairs
 together; report groups ship two classes of 200.
 
@@ -425,7 +429,7 @@ fact under two groups.
 see --- in the claim texts, in the released evidence and in the database --- is
 a keyed permutation of the public VAERS identifier. VAERS is public and in
 pretraining corpora; removing the lookup key removes the shortcut without
-touching the annotations.
+touching the timelines.
 
 \paragraph{Splits.} The release is an evaluation benchmark with no training
 split: a \emph{development set} of 200 instances (a seeded, class-balanced
@@ -527,7 +531,7 @@ stated or derived null on a shape with no such twin keeps the shape and costs
 one field.
 
 \textbf{S2 --- retrieve.} For each arm the model writes one SQL statement over
-the annotation database (two tables, two views) that returns \emph{one row per
+the timeline database (two tables, two views) that returns \emph{one row per
 report} with four flags: in the denominator, in the numerator, excluded, and an
 optional cell label for argmax claims. The harness executes it in a read-only
 sandbox and aggregates the rows into $(n, k)$ per arm together with the

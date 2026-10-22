@@ -159,9 +159,9 @@ header(0.17, "1", "STRATA Benchmark Construction", C["rust"])
 py, ph = 0.74, 2.56
 
 # 1.1 timelines
-panel(0.24, py, 3.1, ph, "1.1", "Annotated timelines", "(MedTempo)")
+panel(0.24, py, 3.1, ph, "1.1", "Clinical timelines", "(MedTempo)")
 icon("clipboard-plus", 0.34, py + 0.48, 0.46, C["rust"]); icon("file-text", 0.88, py + 0.48, 0.46)
-text(0.3, py + 1.02, 1.4, 1.5, ["3,166 VAERS reports, three vaccines, expert-annotated as a leveled order of events"], size=SZ["body"])
+text(0.3, py + 1.02, 1.4, 1.5, ["3,166 VAERS reports, three vaccines, each a leveled order of events"], size=SZ["body"])
 box(1.72, py + 0.44, 1.54, 2.02, fill=C["tint_grey"], line=None)
 text(1.76, py + 0.47, 1.48, 0.5, [[("Example timeline", {"bold": True, "size": SZ["small"]})], [("report MT-0482913", {"size": SZ["small"], "color": C["muted"]})]])
 ty = py + 1.15
@@ -202,7 +202,7 @@ for yy, hh, ic, title, body, fill in ((py + 0.44, 0.6, "brain", "26 groups", "9 
 arrow(10.12, py + 1.2, 10.36, py + 1.2)
 
 # 1.4 gold
-panel(10.4, py, 2.69, ph, "1.4", "Gold annotations")
+panel(10.4, py, 2.69, ph, "1.4", "Gold at every stage")
 for yy, hh, ic, title, body in ((py + 0.44, 0.6, "file-check", "Plan", "events, quantity, denominator primitive, arms, null, p0, tail, test, floor"),
                                 (py + 1.1, 0.52, "database", "Evidence sets", "denominator, numerator and excluded ids; n, k per arm"),
                                 (py + 1.68, 0.6, "chart-bar", "Statistics, verdict", "p on both tails, Wilson CI, Cohen's h; supported / refuted / insufficient")):
@@ -222,7 +222,7 @@ text(0.3, qy + 0.05, 2.3, 0.3, ["Inputs"], size=SZ["panel"], bold=True)
 icon("file-text", 0.32, qy + 0.42, 0.36); text(0.74, qy + 0.38, 1.9, 0.5, ["a claim in natural language, with its cohort and level"], size=SZ["body"], spacing=0.95)
 text(0.3, qy + 1.0, 2.3, 0.3, ["Resources (to S1)"], size=SZ["panel"], bold=True)
 icon("list-checks", 0.32, qy + 1.4, 0.36); text(0.74, qy + 1.34, 1.9, 0.6, ["codebook: the corpus stipulations as text; null sources; test definitions"], size=SZ["body"], spacing=0.95)
-icon("database", 0.32, qy + 2.02, 0.36); text(0.74, qy + 1.98, 1.9, 0.56, ["annotation DB: report, vaccine, term, first-mention stage"], size=SZ["body"], spacing=0.95)
+icon("database", 0.32, qy + 2.02, 0.36); text(0.74, qy + 1.98, 1.9, 0.56, ["timeline DB: report, vaccine, term, first-mention stage"], size=SZ["body"], spacing=0.95)
 arrow(2.68, qy + 0.6, 2.92, qy + 0.6); arrow(2.68, qy + 1.6, 2.92, qy + 1.6)
 
 # S1
