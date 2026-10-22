@@ -99,7 +99,7 @@ def fig_rounds():
     appendix)."""
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
-    cols = [DRIFT, DUNE, SLATE]  # coast set: drift, dune, slate
+    cols = [SLATE, DUNE, DRIFT]  # coast set: round 1 slate blue, then dune, drift (user 2026-10-21)
     for name, getter, title in (("rounds", acc, "verdict accuracy"), ("rounds_f1", den_f1, "evidence F1")):
         fig, ax = plt.subplots(figsize=(3.4, 2.5))
         ys = np.arange(len(MODELS))[::-1]; h = 0.26
@@ -273,9 +273,9 @@ def fig_registers():
         xs = x + (j - 1) * w
         ax.bar(xs, y, width=w, color=cols[j], label=label, edgecolor="white", linewidth=0.5, zorder=2)
         for xi, v in zip(xs, y):
-            ax.text(xi, v + 0.006, f"{v:.3f}", ha="center", va="bottom", fontsize=5.4, color=CHARCOAL, rotation=90)
+            ax.text(xi, v + 0.004, f"{v:.2f}", ha="center", va="bottom", fontsize=4.6, color=CHARCOAL)
     ax.set_xticks(x); ax.set_xticklabels(regs)
-    ax.set_ylim(0.6, 1.1); ax.set_yticks([0.6, 0.7, 0.8, 0.9, 1.0])
+    ax.set_ylim(0.6, 1.04); ax.set_yticks([0.6, 0.7, 0.8, 0.9, 1.0])
     ax.set_ylabel("verdict accuracy", fontsize=8)
     boldify(ax, size=7.5)
     ax.legend(frameon=False, ncol=3, loc="upper center", bbox_to_anchor=(0.5, -0.16), fontsize=6.4, handlelength=1.2, columnspacing=1.0)
