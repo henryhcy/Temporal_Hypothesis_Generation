@@ -584,13 +584,14 @@ studies (\S\ref{sec:cases}) cover single reports and paraphrase, and
 \subsection{Baselines}
 \label{sec:baselines}
 
-\emph{Straight-to-SQL} (rows A and B): one prompt takes the claim straight to
-its retrieval query, following the single-query text-to-SQL protocol of
-EHRSQL \cite{lee2022ehrsql}; the same SQL model receives the schema and the
-claim and writes the per-report rows in one pass,
-given the schema only (A) or the schema and the codebook (B); S3 is the
-harness's, so these rows differ from our pipeline only in having no plan and
-no contract. \emph{Agentic}: EHRAgent \cite{shi2024ehragent}, a code-writing
+Three published systems are adapted to the benchmark; the tables name
+them, and their settings are given here and in Appendix~\ref{app:settings}.
+\emph{EHRSQL} \cite{lee2022ehrsql} is the single-query text-to-SQL protocol
+over our schema, which we call Straight-to-SQL in the text: one prompt takes
+the claim straight to its retrieval query, the same SQL model writes the
+per-report rows in one pass, given the schema only or the schema and the
+codebook (\emph{EHRSQL + codebook}), and S3 is the harness's, so these rows
+differ from our pipeline only in having no plan and no contract. \emph{Agentic}: EHRAgent \cite{shi2024ehragent}, a code-writing
 agent with error-driven retries over the same database, which runs its own
 test and returns its own verdict (its paper used GPT-4 and GPT-3.5; we run it
 with the 2024 Coder, qwen3.8 and GPT-5.6); VERITAS \cite{veritas2026}, run
@@ -598,8 +599,10 @@ through its hypothesis, statistics and interpretation agents with imaging
 bypassed, given our exact-test functions and the codebook.
 \emph{Model as statistician}: the model receives the gold counts and must
 name the test and make the judgment call itself --- not a competitor but the
-floor of ``the model does the statistics''. \emph{Ceilings}: the planner alone (gold
-S2/S3) and the SQL stage alone (gold plan). Chance on the three-class cohort
+floor of ``the model does the statistics''; \art{} + statistician is the
+same judgment on the pipeline's own counts. \emph{Ceilings}: S1 alone (gold
+S2 and S3) and S2 alone (the gold plan, resolved), each with the verifier at
+the pipeline's budget. Chance on the three-class cohort
 tiers is $\approx 0.33$; a per-group majority guesser scores at most 0.37.
 
 \subsection{Evaluation metrics}
@@ -665,32 +668,32 @@ information-versus-architecture grid is released with the code.
 test set, 1{,}500 cohort claims & Qwen2.5-32B pair & qwen3.8-27B & gemma4-31B & Opus 5.5 & GPT-5.6 \\
  & \multicolumn{5}{c}{\textit{verdict accuracy \,(macro precision / recall / F1)}} \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{Straight-to-SQL (EHRSQL protocol) and agentic baselines}} \\
-A: Straight-to-SQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
-B: \quad + codebook & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
-EHRAgent, runs its own test & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
-VERITAS + codebook, our tests$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
+\multicolumn{6}{@{}l}{\textit{baselines (settings: \S\ref{sec:baselines}, Appendix~\ref{app:settings})}} \\
+EHRSQL, schema only & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
+EHRSQL + codebook & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
+EHRAgent & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
+VERITAS$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{stage ceilings (one stage by the model, the others at gold) and ablations}} \\
-S1 articulate, with the verifier (2 rounds) & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
-S2 retrieve, with the verifier (2 rounds) & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
-model as statistician: verdict from the gold counts (replaces S3) & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
-S1 + S2 with the verifier + model as statistician on its own counts & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
+\multicolumn{6}{@{}l}{\textit{stage ceilings and ablations}} \\
+S1 alone & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
+S2 alone & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
+statistician, gold counts & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
+\art{} + statistician & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{ours: \art{}, plan as contract, exact test}} \\
-\art{} (S1 + S2 + S3), no verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
+\multicolumn{6}{@{}l}{\textit{ours}} \\
+\art{}, no verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
 \textbf{\art{} + verifier} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
 \bottomrule
 \end{tabular}
 \caption{Main results on the test set: verdict accuracy, then macro
-precision / recall / F1 over the three verdict classes. Every row uses the
-same prompts, codebook, schema presentation and exact test; only the model
+precision / recall / F1 over the three verdict classes; only the model
 changes across columns. Intervals on accuracy are $\pm 0.02$ (0.6--0.9) and
-$\pm 0.01$ (above 0.98). The middle block fills one stage with the model and
-the others with gold (all gold reproduces the labels, 1.000); the frontier
-S2 cells are bounded below by their evidence F1 of 1.000 with their own
-plans. EHRAgent returns a verdict from its own code. $^\dagger$VERITAS is
-run on a stratified 204-claim subsample (Appendix~\ref{app:subsample}).}
+$\pm 0.01$ (above 0.98). Stage ceilings fill one stage with the model and
+the others with gold (all gold reproduces the labels, 1.000); the frontier S2
+cells are bounded below by their evidence F1 of 1.000 with their own plans.
+$^\dagger$VERITAS is run on a stratified 204-claim subsample
+(Appendix~\ref{app:subsample}). Row settings are in
+Appendix~\ref{app:settings}.}
 \label{tab:main}
 \end{table*}
 
@@ -1003,10 +1006,10 @@ that do not.
 \toprule
 180 single-report claims & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
 \midrule
-A: schema only & 0.433 & 0.989 & 0.744 & --- & --- \\
-B: + codebook & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
-planner alone & 1.000 & 1.000 & 1.000 & --- & --- \\
-D$'$ + verifier & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
+EHRSQL, schema only & 0.433 & 0.989 & 0.744 & --- & --- \\
+EHRSQL + codebook & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
+S1 alone & 1.000 & 1.000 & 1.000 & --- & --- \\
+\art{} + verifier & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
 \bottomrule
 \end{tabular}
 \caption{The report-tier case study: verdict accuracy on the 180
@@ -1073,21 +1076,21 @@ run; the other registers rerun the same 1{,}500 claims.}
 \cmidrule(lr){2-5}\cmidrule(lr){6-6}\cmidrule(lr){7-12}\cmidrule(lr){13-13}
 test set & all & \shortstack[c]{gold\\not-locatable} & \shortstack[c]{gold\\sparse} & \shortstack[c]{gold\\underpowered} & \shortstack[c]{with the right\\sub-type} & all & \shortstack[c]{query\\rejected} & \shortstack[c]{denominator\\empty} & \shortstack[c]{below\\the floor} & \shortstack[c]{wrong\\denominator} & \shortstack[c]{gold\\denominator} & \shortstack[c]{(no\\answer)} \\
 \midrule
-\multicolumn{13}{@{}l}{\textit{B: Straight-to-SQL, codebook given}} \\
+\multicolumn{13}{@{}l}{\textit{EHRSQL + codebook}} \\
 \quad Qwen2.5-32B pair & 0.234 & 0.131 & 0.134 & 0.430 & 0.791 & 0.388 & 0.017 & 0.026 & 0.108 & 0.204 & 0.033 & 0.000 \\
 \quad qwen3.8-27B & 0.141 & 0.080 & 0.083 & 0.256 & 0.855 & 0.224 & 0.050 & 0.016 & 0.085 & 0.066 & 0.006 & 0.000 \\
 \quad gemma4-31B & 0.036 & 0.040 & 0.013 & 0.052 & 0.893 & 0.182 & 0.098 & 0.001 & 0.043 & 0.039 & 0.000 & 0.000 \\
 \quad Opus 5.5 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
 \quad GPT-5.6 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.001 & 0.000 & 0.000 & 0.001 & 0.000 & 0.000 & 0.000 \\
 \midrule
-\multicolumn{13}{@{}l}{\textit{ours: \art{} with the verifier}} \\
+\multicolumn{13}{@{}l}{\textit{\art{} + verifier}} \\
 \quad Qwen2.5-32B pair & 0.032 & 0.011 & 0.051 & 0.035 & 0.871 & 0.216 & 0.134 & 0.021 & 0.009 & 0.047 & 0.005 & 0.031 \\
 \quad qwen3.8-27B & 0.046 & 0.062 & 0.025 & 0.047 & 0.966 & 0.066 & 0.013 & 0.006 & 0.014 & 0.029 & 0.004 & 0.025 \\
 \quad gemma4-31B & 0.010 & 0.000 & 0.019 & 0.012 & 0.970 & 0.023 & 0.012 & 0.001 & 0.002 & 0.005 & 0.003 & 0.000 \\
 \quad Opus 5.5 & 0.004 & 0.000 & 0.006 & 0.006 & 0.996 & 0.009 & 0.000 & 0.000 & 0.001 & 0.000 & 0.008 & 0.000 \\
 \quad GPT-5.6 & 0.020 & 0.000 & 0.057 & 0.006 & 0.998 & 0.011 & 0.000 & 0.000 & 0.000 & 0.001 & 0.010 & 0.000 \\
 \midrule
-\multicolumn{13}{@{}l}{\textit{EHRAgent, runs its own test (returns a bare verdict)}} \\
+\multicolumn{13}{@{}l}{\textit{EHRAgent}} \\
 \quad Qwen2.5-Coder-32B & 0.578 & 0.364 & 0.395 & 0.965 & --- & 0.033 & --- & --- & --- & --- & --- & 0.001 \\
 \quad qwen3.8-27B & 0.079 & 0.011 & 0.038 & 0.186 & --- & 0.191 & --- & --- & --- & --- & --- & 0.000 \\
 \quad GPT-5.6 & 0.145 & 0.057 & 0.210 & 0.174 & --- & 0.197 & --- & --- & --- & --- & --- & 0.000 \\

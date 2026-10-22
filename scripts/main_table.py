@@ -37,23 +37,23 @@ def veritas():
 
 rows = []
 def row(label, cells, bold=False): rows.append(label + " & " + " & ".join(fmt(c, bold) for c in cells) + " \\\\")
-rows.append("\\multicolumn{6}{@{}l}{\\textit{Straight-to-SQL (EHRSQL protocol) and agentic baselines}} \\\\")
-row("A: Straight-to-SQL, schema only", [cell_metrics(f"test_{k}_cellA") for k, _ in MODELS])
-row("B: \\quad + codebook", [cell_metrics(f"test_{k}_cellB") for k, _ in MODELS])
+rows.append("\\multicolumn{6}{@{}l}{\\textit{baselines (settings: \\S\\ref{sec:baselines}, Appendix~\\ref{app:settings})}} \\\\")
+row("EHRSQL, schema only", [cell_metrics(f"test_{k}_cellA") for k, _ in MODELS])
+row("EHRSQL + codebook", [cell_metrics(f"test_{k}_cellB") for k, _ in MODELS])
 ehr_cells = [ehr(E / "logs_testcohort_e2e_32b_min/predictions.jsonl"), None, None, None, None]
 for i, f in ((1, "logs_testcohort_e2e_qwen38"), (4, "logs_testcohort_e2e_gpt56")):
     p = E / f / "predictions.jsonl"  # filled once the run has all 1,500 claims (GPT-5.6 done 2026-10-20)
     if p.exists() and sum(1 for _ in open(p)) == 1500:
         ehr_cells[i] = ehr(p)
-row("EHRAgent, runs its own test", ehr_cells)
-row("VERITAS + conventions, our tests$^\\dagger$", [veritas(), None, None, None, None])
-rows.append("\\midrule\n\\multicolumn{6}{@{}l}{\\textit{stage ceilings (one stage by the model, the others at gold) and ablations}} \\\\")
-row("S1 articulate, with the verifier (2 rounds)", [cell_metrics(f"test_{k}_planner_verify2") for k, _ in MODELS])
+row("EHRAgent", ehr_cells)
+row("VERITAS$^\\dagger$", [veritas(), None, None, None, None])
+rows.append("\\midrule\n\\multicolumn{6}{@{}l}{\\textit{stage ceilings and ablations}} \\\\")
+row("S1 alone", [cell_metrics(f"test_{k}_planner_verify2") for k, _ in MODELS])
 s2 = [cell_metrics(f"test_{k}_sqlalone_verify2") for k, _ in MODELS]
 rows.append("S2 retrieve, with the verifier (2 rounds) & " + " & ".join(fmt(c) if c else "$\\geq$0.999" for c in s2) + " \\\\")
-row("model as statistician: verdict from the gold counts (replaces S3)", [cell_metrics(f"test_{k}_counts") for k, _ in MODELS])
-row("S1 + S2 with the verifier + model as statistician on its own counts", [cell_metrics(f"test_{k}_dprime_verify2_s3llm") for k, _ in MODELS])
-rows.append("\\midrule\n\\multicolumn{6}{@{}l}{\\textit{ours: plan as contract, exact test}} \\\\")
-row("S1 + S2 + S3, no verifier", [cell_metrics(f"test_{k}_dprime") for k, _ in MODELS])
-row("\\textbf{S1 + S2 + S3 + verifier}", [cell_metrics(f"test_{k}_dprime_verify2") for k, _ in MODELS], bold=True)
+row("statistician, gold counts", [cell_metrics(f"test_{k}_counts") for k, _ in MODELS])
+row("\\art{} + statistician", [cell_metrics(f"test_{k}_dprime_verify2_s3llm") for k, _ in MODELS])
+rows.append("\\midrule\n\\multicolumn{6}{@{}l}{\\textit{ours}} \\\\")
+row("\\art{}, no verifier", [cell_metrics(f"test_{k}_dprime") for k, _ in MODELS])
+row("\\textbf{\\art{} + verifier}", [cell_metrics(f"test_{k}_dprime_verify2") for k, _ in MODELS], bold=True)
 print("\n".join(rows))
