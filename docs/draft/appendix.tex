@@ -306,8 +306,8 @@ colour scale is square-root, so small errors remain visible.}
 \section{The agentic subsample: every system on the identical 204 claims}
 \label{app:subsample}
 
-VERITAS's three agent phases take nine minutes per claim, so it was run on
-204 claims of the test set (12 per cohort group, four per verdict, the test
+VERITAS's three agent phases take nine minutes per claim and DiscoveryBench's
+agent one to two, so both were run on 204 claims of the test set (12 per cohort group, four per verdict, the test
 set's own stratification; selected before any run). Table~\ref{tab:subsample}
 scores the other systems on the same 204 claims next to their full-set
 numbers, with 95\% bootstrap intervals over claims (2{,}000 resamples).
@@ -321,14 +321,18 @@ numbers, with 95\% bootstrap intervals over claims (2{,}000 resamples).
 system & full test set (1{,}500) & same 204 claims \\
 \midrule
 VERITAS + codebook, our tests (Coder-32B) & --- & 0.402 [0.333, 0.471] \\
+DiscoveryBench agent + codebook (qwen3.8-27B) & --- & 0.647 [0.583, 0.711] \\
+DiscoveryBench agent + codebook (gemma4-31B) & --- & 0.706 [0.642, 0.770] \\
 EHRAgent, own test (Coder-32B) & 0.605 [0.579, 0.629] & 0.559 [0.490, 0.623] \\
 EHRAgent, own test (qwen3.8-27B) & 0.839 [0.820, 0.857] & 0.868 [0.819, 0.912] \\
 EHRAgent, own test (GPT-5.6) & 0.792 [0.771, 0.812] & 0.784 [0.730, 0.838] \\
-EHRSQL-C (Coder-32B) & 0.575 [0.549, 0.599] & 0.593 [0.525, 0.662] \\
-D$'$ + verifier (Qwen2.5-32B pair) & 0.810 [0.791, 0.830] & 0.804 [0.750, 0.858] \\
-D$'$ + verifier (qwen3.8-27B) & 0.872 [0.855, 0.889] & 0.887 [0.843, 0.931] \\
-D$'$ + verifier (gemma4-31B) & 0.981 [0.974, 0.988] & 0.980 [0.961, 0.995] \\
-D$'$ (Opus 5.5) & 0.999 [0.997, 1.000] & 1.000 [1.000, 1.000] \\
+EHRSQL-C (Qwen2.5-32B pair) & 0.575 [0.549, 0.599] & 0.593 [0.525, 0.662] \\
+EHRSQL-C (qwen3.8-27B) & 0.748 [0.725, 0.769] & 0.755 [0.696, 0.809] \\
+EHRSQL-C (gemma4-31B) & 0.859 [0.839, 0.875] & 0.877 [0.833, 0.922] \\
+\art{} (Qwen2.5-32B pair) & 0.810 [0.791, 0.830] & 0.804 [0.750, 0.858] \\
+\art{} (qwen3.8-27B) & 0.872 [0.855, 0.889] & 0.887 [0.843, 0.931] \\
+\art{} (gemma4-31B) & 0.981 [0.974, 0.988] & 0.980 [0.961, 0.995] \\
+\art{} $-$ verifier (Opus 5.5) & 0.999 [0.997, 1.000] & 1.000 [1.000, 1.000] \\
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy on the 204-claim agentic subsample against the full
@@ -508,3 +512,5 @@ the gold set, so the loss is in the numerator, null or test). ``No answer'':
 no plan could be derived.}
 \label{tab:insufficient}
 \end{table*}
+
+\clearpage
