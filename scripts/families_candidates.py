@@ -255,3 +255,12 @@ if __name__ == "__main__" and "--radar2" in sys.argv:
     O, C, n = load()
     for name, cols in PALETTES_STRONG.items():
         c4(O, n, name, cols)
+
+
+# muted three-model combinations for the register bars (user 2026-10-21: meadow too bright)
+PALETTES_MUTED = {
+    "muted_meadow": ["#9E4A3B", "#C2A24A", "#6E8F5A"],   # desaturated poppy, goldenrod, grass
+    "avocado":      ["#8B6B4A", "#C9B38E", "#5C6B3A"],   # brown, tan, olive
+    "coast":        ["#8C7B5E", "#B9A98A", "#5B7E95"],   # drift, dune, slate
+    "slate_rust":   ["#A0522D", "#D4B483", "#4F6B75"],   # rust, wheat, slate blue
+}

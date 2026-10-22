@@ -131,10 +131,11 @@ the order of events within a record. We run two of them, EHRAgent
 scores one query per question with an abstention option, and EHRAgent
 \cite{shi2024ehragent} solves EHR questions with a code-writing agent and
 error-driven retries; our Straight-to-SQL baselines (\S\ref{sec:baselines})
-follow the EHRSQL protocol over our schema. The CRAFT/TIMER line
-\cite{craft2026,timer2025} extracts clinical timelines from narratives, and
-MedTempo \cite{medtempo2026} is the expert-annotated corpus of such timelines
-we build on: a data source, not a competitor. We start where extraction ends.
+follow the EHRSQL protocol over our schema. TIMER \cite{timer2025} and CRAFT
+\cite{craft2026} extract and refine clinical timelines from narratives, and
+MedTempo, the corpus CRAFT introduced, is the expert-annotated set of such
+timelines we build on: a data source, not a competitor. We start where
+extraction ends.
 
 \paragraph{Positioning.} Table~\ref{tab:related-concise} compares the closest
 work. A plan-then-execute loop with a deterministic statistics layer (LATCH)
@@ -249,7 +250,7 @@ claim-type \emph{mapping} --- which rule and which test go with which wording
 \subsection{Source corpus}
 \label{sec:corpus}
 
-MedTempo~\cite{medtempo2026} is a corpus of 3{,}166 VAERS adverse-event
+MedTempo~\cite{craft2026} is a corpus of 3{,}166 VAERS adverse-event
 reports for three COVID-19 vaccines, annotated with a \emph{leveled order}: a
 single totally ordered chain of stages in which each stage holds the
 MedDRA-coded events reported at that point of the clinical course (1{,}164
@@ -317,10 +318,11 @@ reports and events on the exact middle stage.
 them by claim shape: a one-sided exact binomial against $p_0$ for majority,
 bar and data-derived nulls; modal-versus-runner-up, an exact binomial of the
 named cell against its strongest competitor, for argmax claims; Fisher's
-exact test for two-arm and two-cohort contrasts. No $\chi^2$ approximation
-appears; the sole gate is a minimum denominator of 10, applied to both arms
-where two exist. Each instance releases both one-sided $p$-values, the
-Wilson interval and Cohen's $h$ against the null actually used.
+exact test \cite{fisher1935design} for two-arm and two-cohort contrasts. No
+$\chi^2$ approximation appears; the sole gate is a minimum denominator of 10,
+applied to both arms where two exist. Each instance releases both one-sided
+$p$-values, the Wilson interval \cite{wilson1927} and Cohen's $h$
+\cite{cohen1988} against the null actually used.
 
 \begin{table}[t]
 \centering
@@ -379,7 +381,7 @@ together; report groups ship two classes of 200.
 \label{sec:screens}
 
 No group ships on plausibility. Each is screened against a permutation null
-matched to its claim shape at 2{,}000 rounds: a \emph{level shuffle}
+\cite{good2005permutation} matched to its claim shape at 2{,}000 rounds: a \emph{level shuffle}
 (term-to-stage assignment permuted within each report, preserving report size,
 stage-size multiset, term frequencies and co-occurrence) for order, position
 and proximity groups; a degree-preserving \emph{edge swap} for association; a
@@ -640,11 +642,13 @@ case study reruns it in the three other registers); and the 180-claim
 report case study, kept apart because every capable system reads a single
 report at 0.98--1.00. Every system is run with each of five models in every
 model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
-Qwen2.5-Coder-32B (SQL); the 2026 open models qwen3.8-27B and gemma4-31B, one
+Qwen2.5-Coder-32B (SQL) \cite{qwen2025qwen25}; the 2026 open models
+qwen3.8-27B \cite{qwen2026qwen38} and gemma4-31B \cite{gemma2026gemma4}, one
 model for both stages, thinking off; and the frontier models Claude Opus~5.5
-and GPT-5.6. Open models run fully resident on one RTX A5000 with an 8k
+\cite{anthropic2026opus55} and GPT-5.6 \cite{openai2026gpt56}. Open models run fully resident on one RTX A5000 with an 8k
 context, frontier models over their APIs with prompt caching. Verdict
-accuracies carry 95\% bootstrap intervals over instances (1{,}000 resamples),
+accuracies carry 95\% bootstrap intervals \cite{efron1993bootstrap} over
+instances (1{,}000 resamples),
 about $\pm 0.02$ on the test set and $\pm 0.01$ above 0.98. Per-record cost
 and latency are in Appendix~\ref{app:cost}; a frontier column on the test set
 cost \$80--89 at list price, and the open models answer a claim in 10--14
@@ -1060,9 +1064,9 @@ run; the other registers rerun the same 1{,}500 claims.}
 \renewcommand{\arraystretch}{1.1}
 \begin{tabular}{@{}lrrrrrrrrrrrr@{}}
 \toprule
- & \multicolumn{4}{c}{gold \emph{insufficient} (505): decided anyway} & & \multicolumn{6}{c}{gold decisive (995): abstained} & \\
-\cmidrule(lr){2-5}\cmidrule(lr){7-12}
-test set & all & not-loc. & sparse & underp. & sub-type right & all & query failed & none found & too few & wrong set & gold set & no answer \\
+ & \multicolumn{4}{c}{overclaim: gold \emph{insufficient} (505) answered decisively} & abstentions & \multicolumn{6}{c}{underclaim: gold decisive (995) answered \emph{insufficient}, by cause} & no plan \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-6}\cmidrule(lr){7-12}\cmidrule(lr){13-13}
+test set & all & \shortstack[c]{gold\\not-locatable} & \shortstack[c]{gold\\sparse} & \shortstack[c]{gold\\underpowered} & \shortstack[c]{with the right\\sub-type} & all & \shortstack[c]{query\\rejected} & \shortstack[c]{denominator\\empty} & \shortstack[c]{below\\the floor} & \shortstack[c]{wrong\\denominator} & \shortstack[c]{gold\\denominator} & \shortstack[c]{(no\\answer)} \\
 \midrule
 \multicolumn{13}{@{}l}{\textit{B: Straight-to-SQL, codebook given}} \\
 \quad Qwen2.5-32B pair & 0.234 & 0.131 & 0.134 & 0.430 & 0.791 & 0.388 & 0.017 & 0.026 & 0.108 & 0.204 & 0.033 & 0.000 \\

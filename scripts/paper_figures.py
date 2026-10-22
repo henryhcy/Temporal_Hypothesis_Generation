@@ -262,7 +262,7 @@ def fig_registers():
     bar per open model, ART + verifier only; Original from the main test runs, the other registers from
     the test_*_registers_dprime_verify2 runs."""
     import families_candidates as FC  # noqa: E402
-    cols = FC.PALETTES_STRONG["meadow"]
+    cols = FC.PALETTES_MUTED["coast"]  # muted set (user 2026-10-21: meadow too bright here)
     models = [("q25pair", "Qwen2.5-32B pair"), ("qwen38_27b", "qwen3.8-27B"), ("gemma4_31b", "gemma4-31B")]
     regs = ["Original", "Research", "Media", "Clinical"]
     fig, ax = plt.subplots(figsize=(3.4, 2.4))
