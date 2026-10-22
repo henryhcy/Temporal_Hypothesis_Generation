@@ -386,29 +386,28 @@ def fig_groups():
 
 # ---- 6. difficulty levels: accuracy down the ladder, one-prompt baseline vs ART (user 2026-10-21) ----
 def fig_tiers():
+    """Verdict accuracy by difficulty level, ART only (user 2026-10-22: present our method only, as in the
+    radar; the EHRSQL-C ladder is given as numbers in the text)."""
     import tier_candidates as TC  # noqa: E402
-    import families_candidates as FC  # noqa: E402
     cols = MODEL_COLORS
     levels = ["Easy\none report", "Medium\none cohort", "Hard\ntwo cohorts"]
-    fig, axes = plt.subplots(2, 1, figsize=(3.4, 4.0), sharex=True)
-    for ax, suf, title in ((axes[0], "cellB", "EHRSQL-C"), (axes[1], "dprime_verify2", "ART")):
-        x = np.arange(3)
-        for j, (key, label) in enumerate(TC.MODELS):
-            y = TC.tier_acc(key, suf)
-            ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label, zorder=5 - j,
-                    ls=(0, (3, 1.5)) if key == "gpt" else "-")
-            if key in ("q25pair", "qwen38_27b", "gemma4_31b"):  # the frontier ends coincide near 1.0
-                ax.text(x[-1] + 0.07, y[-1], f"{y[-1]:.3f}", fontsize=5.6, color=cols[j], va="center", ha="left")
-        ax.set_xticks(x); ax.set_xticklabels(levels)
-        ax.set_xlim(-0.25, 2.6); ax.set_ylim(0.25, 1.06)
-        ax.set_title(title, loc="left", fontsize=8.5)
-        ax.set_ylabel("verdict accuracy", fontsize=8)
-        boldify(ax, size=7.5)
-        ax.grid(axis="y")
-    axes[1].legend(frameon=False, fontsize=6.2, loc="lower left", ncol=2, handlelength=1.3, columnspacing=0.9, labelspacing=0.3)
-    fig.tight_layout(h_pad=0.8)
+    fig, ax = plt.subplots(figsize=(3.4, 2.35))
+    x = np.arange(3)
+    for j, (key, label) in enumerate(TC.MODELS):
+        y = TC.tier_acc(key, "dprime_verify2")
+        ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label,
+                zorder=5 - j, ls=(0, (3, 1.5)) if key == "gpt" else "-")
+        if key in ("q25pair", "qwen38_27b", "gemma4_31b"):  # the frontier ends coincide near 1.0
+            ax.text(x[-1] + 0.07, y[-1], f"{y[-1]:.3f}", fontsize=5.8, color=cols[j], va="center", ha="left")
+    ax.set_xticks(x); ax.set_xticklabels(levels)
+    ax.set_xlim(-0.25, 2.6); ax.set_ylim(0.75, 1.02)
+    ax.set_ylabel("verdict accuracy", fontsize=8)
+    boldify(ax, size=7.5)
+    ax.grid(axis="y")
+    ax.legend(frameon=False, fontsize=6.0, loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=3, handlelength=1.3,
+              columnspacing=0.9, labelspacing=0.3)
+    fig.tight_layout()
     save(fig, "tiers")
-
 
 
 # ---- 7. repair rounds, vertical variant for comparison (user 2026-10-21; appendix) ----------------

@@ -887,22 +887,20 @@ model.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{Figures/tiers.pdf}
-\caption{Verdict accuracy by difficulty level, one line per model: the
-one-prompt baseline with the codebook (top) and \art{}
-(bottom). Easy is the 180-claim report case study; Medium and Hard are the
-1{,}418 cohort and 82 two-cohort claims of the test set.}
+\caption{Verdict accuracy of \art{} by difficulty level, one line per model.
+Easy is the 180-claim report case study; Medium and Hard are the 1{,}418
+cohort and 82 two-cohort claims of the test set.}
 \label{fig:tiers}
 \end{figure}
 
-\paragraph{By difficulty level.} The levels are a ladder for the one-prompt
-baseline and not for the pipeline (Figure~\ref{fig:tiers}). With the
-codebook but no contract, the open models lose a third to a half of their
-accuracy from Easy to Hard, the 2024 pair ending below chance on the
-two-cohort level, while the frontier models stay at 1.0. Under \art{} every
-model is level from Medium to Hard, and the open models gain most on the
-level they lost most on. The step the one-prompt systems cannot take is the
-one Hard adds, composing a second denominator and a two-sample test, which
-the contract states and the harness runs. The Hard level has 82 test claims
+\paragraph{By difficulty level.} Under \art{} the levels are not a ladder
+(Figure~\ref{fig:tiers}): every model is level from Medium to Hard, and the
+open models dip on Medium, where most families sit, rather than on Hard. The
+one-prompt baseline with the codebook is a ladder: from Easy to Hard the pair
+falls from 0.75 to 0.32, below chance, qwen3.8 from 1.00 to 0.52 and gemma4
+from 1.00 to 0.83, while the frontier models stay at 1.0. The step it cannot
+take is the one Hard adds, composing a second denominator and a two-sample
+test, which the contract states and the harness runs. Hard has 82 test claims
 (one group), so its intervals are about $\pm 0.08$.
 
 \subsection{RQ3: the evidence behind the verdicts}
@@ -1153,81 +1151,45 @@ breakdown is Table~\ref{tab:insufficient}.}
 \label{fig:insufficient}
 \end{figure}
 
-The three-decision verdict fails in two directions, deciding what the data
-cannot decide and abstaining on what it can, and Figure~\ref{fig:insufficient}
-separates them with the cause of each. Overclaim is the share of the 505
-gold-\emph{insufficient} claims given a decisive verdict, split by their gold
-sub-type (176 \emph{not-locatable}, 157 \emph{sparse}, 172
-\emph{underpowered}). Underclaim is the share of the 995 decisive claims
-answered \emph{insufficient}, split by what the prediction shows, which is
-also the sub-type the system claimed: the query was rejected; the denominator
-came back empty (claimed \emph{not-locatable}); it fell below the floor
-(claimed \emph{sparse}); or it was testable (claimed \emph{underpowered})
-and either not the gold set or the gold set, in which case the loss lies in
-the numerator, the null or the test. EHRAgent returns a bare verdict, so its
-causes cannot be observed. \emph{Overclaim is the agents' and the
-one-prompt models' failure.} EHRAgent with the 2024 Coder decides more than
-half of the claims the data cannot decide and nearly all of the
-\emph{underpowered} ones, because it runs its own test and finds
-significance where the exact test finds none; its newer models decide far
-fewer. The Straight-to-SQL control overclaims mostly on \emph{underpowered}
-claims, where a denominator that admits the wrong reports moves the tail.
-Our pipeline overclaims on a few percent at most, because the exact test,
-not the model, does the abstaining. On the \emph{not-locatable} claims,
-where no report has the combination and the right answer is an empty
-denominator, the one-prompt pair and EHRAgent return decisive verdicts on a
-tenth to a third of claims by filling the denominator with reports that do
-not qualify; under the contract this all but disappears, qwen3.8 being the
-one open model that still does it occasionally. When our pipeline abstains
-it names the right sub-type far more often than the control does.
+The three-decision verdict fails in two directions, and
+Figure~\ref{fig:insufficient} separates them. Overclaim is the share of the
+505 gold-\emph{insufficient} claims (176 \emph{not-locatable}, 157
+\emph{sparse}, 172 \emph{underpowered}) given a decisive verdict. Underclaim
+is the share of the 995 decisive claims answered \emph{insufficient}, split by
+what the prediction shows, which is also the sub-type the system claimed: an
+empty denominator claims \emph{not-locatable}, one below the floor
+\emph{sparse}, a testable one \emph{underpowered}. EHRAgent returns a bare
+verdict, so its causes cannot be observed.
 
-\emph{Underclaim is the open models' larger loss, and its cause differs by
-system.} The one-prompt pair abstains on nearly four decisive claims in ten,
-mostly because its denominator was testable but not the gold set or fell
-below the floor; gemma4 end to end abstains mainly on queries the database
-rejected. EHRAgent moves the other way as its model improves, from almost
-never abstaining with the Coder to abstaining on a fifth of the decisive
-claims with qwen3.8 and GPT-5.6: the stronger agents trade overclaim for
-underclaim rather than for correct verdicts. Under the contract the pair's
-remaining abstentions are mostly queries that still fail after two repairs,
-the Coder resubmitting the same statement, and the 2026 models abstain on a
-few percent. The frontier models' few abstentions all come with the gold
-denominator and all fall in one group, H-V5: the plan reads ``most often
-first, in at least half of the reports'' as an argmax claim and runs
-modal-versus-runner-up on the right counts instead of the exact binomial
-against the stated bar. The counts are exact and the test family is not,
-which is the one composition the frontier planners miss and the whole of
-their loss on the threshold family (\S\ref{sec:families}).
+\emph{Overclaim is the agents' and the one-prompt models' failure.} EHRAgent
+with the Coder decides more than half of the undecidable claims and nearly
+all \emph{underpowered} ones, because it runs its own test. EHRSQL-C
+overclaims mostly on \emph{underpowered} claims, where a wrong denominator
+moves the tail, and fills \emph{not-locatable} denominators with reports
+that do not qualify. \art{} overclaims on a few percent at most, because the
+exact test, not the model, abstains, and its abstentions name the right
+sub-type on 0.87--1.00 of claims against 0.79--1.00 for EHRSQL-C.
+\emph{Underclaim is the open models' larger loss.} The one-prompt pair
+abstains on nearly four decisive claims in ten, mostly on a wrong denominator
+or one below the floor; the stronger EHRAgent models trade overclaim for
+underclaim rather than for correct verdicts; under \art{} the pair's
+abstentions are mostly queries that still fail after two repairs. The
+frontier models' few abstentions all fall in one group, H-V5, where the plan
+reads a stated bar as an argmax claim and runs the wrong test on the right
+counts.
 
-\section{Conclusion and Limitations}
+\section{Conclusion}
 \label{sec:limitations}
 \label{sec:conclusion}
 
-\sys{} turns a temporal--statistical claim into a chain of scored decisions,
-which reports count, what the null is, which test applies and what the
-evidence was, and shows that the first of those, the temporal conditioning
-that decides which reports can witness the claim, is where systems fail and
-the last is what the verdict cannot see: systems a few points apart on
-accuracy are a factor of two apart on whether their evidence is right. On a
-1{,}500-claim test set no prompt decision was made on, frontier models verify
-the claims once the corpus codebook is stated and not before; open models
-need the plan to be a contract between the stages, and with it a 31B model
-run on one workstation GPU reaches the frontier's accuracy with an auditable
-denominator. The reference pipeline is a simple decomposition whose value is
-that each stage is checkable; handing the plan on as prose discards that
-value, and a model that does not need the verifier is not helped by it.
-Asking the model to be the statistician, to make the judgment call on counts
-it was handed, is the step the open models fail most often even with exact
-counts; the benchmark's design, and \art{}'s, takes that call away from the
-model and gives it to an exact test.
-
-Three limits bound the claims. The codebook is corpus-specific: porting the
-framework means writing another corpus's codebook and primitive definitions,
-a cost we have paid for one corpus and not measured for another. Decisive
-labels carry $\alpha$-rate false positives by construction, and the release
-is bounded by enumeration breadth rather than statistical power, three
-designed groups having too few cores to ship. Slot fillers are raw MedDRA
-terms and the registers are templated, so lexical variation is limited to
-the paraphrase case study, and a 7B model that cannot compose a plan is not
-helped by anything in the framework. Benchmarks of this kind should publish
-their codebook with their data, and score the evidence with the answer.
+\sys{} evaluates temporal hypothesis verification as a chain of scored
+decisions (which reports can witness a claim, what the null is, which exact
+test applies, what the evidence was) and shows that systems fail at the
+first and that the verdict hides it. Frontier models verify the claims once
+the codebook is stated; open models need the plan to be a contract, and with
+it a 31B model on one GPU reaches the frontier's accuracy with an auditable
+denominator, while models asked to make the statistical call themselves err
+even on exact counts. The limits are a corpus-specific codebook, $\alpha$-rate
+false positives in decisive labels by construction, and templated registers
+over raw MedDRA terms. Benchmarks of this kind should publish their codebook
+with their data and score the evidence with the answer.
