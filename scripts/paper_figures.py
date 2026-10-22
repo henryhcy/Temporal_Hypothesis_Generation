@@ -434,6 +434,94 @@ def fig_rounds_vertical():
     save(fig, "rounds_vertical")
 
 
+# ---- 9. the insufficient class: overclaim (left) and underclaim (right) per system x model ----
+def fig_insufficient():
+    """Single-column replacement for the 13-column insufficient table (user 2026-10-22). One row per
+    system x model; overclaim extends left, stacked by the gold sub-type (share of the 505
+    gold-insufficient claims); underclaim extends right, stacked by cause (share of the 995 decisive
+    claims). EHRAgent returns a bare verdict, so its underclaim is one grey bar. Rates from
+    scripts/insufficient_analysis.py; the full table is in the appendix."""
+    import sys
+    sys.path.insert(0, str(REPO / "scripts"))
+    import insufficient_analysis as ia
+    gold = ia.load_gold()
+    short = {"q25pair": "Qwen2.5-32B pair", "qwen38_27b": "qwen3.8-27B", "gemma4_31b": "gemma4-31B",
+             "opus": "Opus 5.5", "gpt": "GPT-5.6"}
+    groups = []
+    for suf, sname in (("cellB", "EHRSQL-C"), ("dprime_verify2", "ART")):
+        rows = []
+        for key, _ in ia.MODELS:
+            run = ia.R / f"test_{key}_{suf}"
+            if run.exists():
+                rows.append((short[key], ia.analyse(run, gold), False))
+        groups.append((sname, rows))
+    rows = []
+    for mname, path in ia.EHRAGENT:
+        c = ia.analyse_ehragent(path, gold)
+        if c:
+            rows.append(("Qwen2.5-Coder-32B" if mname.startswith("Qwen2.5") else mname, c, True))
+    groups.append(("EHRAgent", rows))
+
+    over_keys = [("over_not_locatable", "not-locatable", RUST), ("over_sparse", "sparse", "#C27C5C"),
+                 ("over_underpowered", "underpowered", "#DDA98F")]
+    under_keys = [("u_failed", "query rejected", INK), ("u_empty", "denominator empty", SLATE_M),
+                  ("u_thin", "below the floor", "#7F97A2"), ("u_power_wrong", "wrong denominator", "#B9C6CC"),
+                  ("u_power_exact", "gold denominator", GOLD)]
+    GREY = "#B8B8B8"
+
+    n = sum(len(r) for _, r in groups) + len(groups)          # one header slot per group
+    fig, ax = plt.subplots(figsize=(3.4, 3.5))
+    y = n - 1; ticks, labels, h = [], [], 0.62
+    for sname, rws in groups:
+        ax.text(-0.66, y, sname, ha="left", va="center", fontsize=7.2, fontweight="bold", color=CHARCOAL, style="italic")
+        y -= 1
+        for mname, c, ehr in rws:
+            ticks.append(y); labels.append(mname)
+            left = 0.0
+            for k, _, col in over_keys:                     # overclaim: leftwards, share of all 505
+                v = c[k] / c["ins_n"] if c["ins_n"] else 0.0
+                ax.barh(y, -v, left=-left, height=h, color=col, edgecolor="white", linewidth=0.4, zorder=2)
+                left += v
+            if left > 0.004:
+                ax.text(-left - 0.008, y, f"{left:.2f}", ha="right", va="center", fontsize=5.4, fontweight="bold", color=CHARCOAL)
+            right = 0.0
+            if ehr:
+                v = c["under"] / c["dec_n"]
+                ax.barh(y, v, height=h, color=GREY, edgecolor="white", linewidth=0.4, zorder=2)
+                right = v
+            else:
+                for k, _, col in under_keys:
+                    v = c[k] / c["dec_n"]
+                    ax.barh(y, v, left=right, height=h, color=col, edgecolor="white", linewidth=0.4, zorder=2)
+                    right += v
+            if right > 0.004:
+                ax.text(right + 0.008, y, f"{right:.2f}", ha="left", va="center", fontsize=5.4, fontweight="bold", color=CHARCOAL)
+            y -= 1
+    ax.axvline(0, color=CHARCOAL, lw=0.8, zorder=3)
+    ax.set_yticks(ticks); ax.set_yticklabels(labels)
+    ax.set_ylim(-0.7, n - 0.3)
+    ax.set_xlim(-0.68, 0.5)
+    ax.set_xticks([-0.6, -0.4, -0.2, 0, 0.2, 0.4]); ax.set_xticklabels(["0.6", "0.4", "0.2", "0", "0.2", "0.4"])
+    ax.grid(axis="x"); ax.grid(False, axis="y")
+    boldify(ax, size=6.6)
+    ax.tick_params(axis="y", length=0)
+    ax.text(-0.02, n - 0.25, "\u2190  overclaim", ha="right", va="bottom", fontsize=6.8, fontweight="bold", color=RUST)
+    ax.text(0.02, n - 0.25, "underclaim  \u2192", ha="left", va="bottom", fontsize=6.8, fontweight="bold", color=SLATE_M)
+    ax.set_ylim(-0.7, n + 0.55)
+    from matplotlib.patches import Patch
+    hl = [Patch(color=col, label=lab) for _, lab, col in over_keys]
+    hr = [Patch(color=col, label=lab) for _, lab, col in under_keys] + [Patch(color=GREY, label="cause not observable")]
+    l1 = fig.legend(handles=hl, title="overclaim, by gold sub-type", loc="lower left", bbox_to_anchor=(0.0, 0.0), ncol=1,
+                    frameon=False, fontsize=5.6, title_fontsize=5.9, handlelength=0.9, handleheight=0.8, labelspacing=0.2,
+                    alignment="left", borderaxespad=0.2)
+    fig.legend(handles=hr, title="underclaim, by cause", loc="lower left", bbox_to_anchor=(0.42, 0.0), ncol=2,
+               frameon=False, fontsize=5.6, title_fontsize=5.9, handlelength=0.9, handleheight=0.8, labelspacing=0.2,
+               columnspacing=0.7, alignment="left", borderaxespad=0.2)
+    fig.add_artist(l1)
+    fig.subplots_adjust(left=0.27, right=0.98, top=0.99, bottom=0.21)
+    save(fig, "insufficient")
+
+
 if __name__ == "__main__":
     fig_rounds()
     fig_families()
@@ -443,3 +531,4 @@ if __name__ == "__main__":
     fig_family_radar()
     fig_tiers()
     fig_rounds_vertical()
+    fig_insufficient()
