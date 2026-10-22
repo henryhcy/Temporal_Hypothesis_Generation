@@ -75,8 +75,9 @@ exact rule. That separates what end-to-end evaluation conflates, the
 
 On a 1{,}500-claim test set that no prompt decision was made on, with five
 models from the 2024 open generation to the 2026 frontier, three findings
-answer three questions: the codebook is the information the task measures,
-and frontier models solve the task once they have it; for open models the
+answer three questions: end to end, even frontier models verify the claims
+only once the corpus's conditioning rules are stated, and agents that write
+their own analysis do no better than a single query; for open models the
 contract is what makes the verdict stand on the right evidence, carrying a
 31B model to within 0.02 of the frontier at zero API cost; and systems fail
 at the temporal conditioning of the denominator, deciding which reports can
@@ -595,9 +596,9 @@ The experiments answer three questions, each on the test set and each with
 the same five models in every model slot.
 
 \begin{itemize}
-\item \textbf{RQ1.} How well do current language models verify these claims
-end to end, as a single query or as an agent, and what does the corpus
-codebook supply that they cannot infer?
+\item \textbf{RQ1.} How well do current language models verify these
+temporal hypotheses end to end, as a single query or as an agent, and where
+do they fail?
 \item \textbf{RQ2.} What does the staged pipeline add over Straight-to-SQL
 verification for each model, and which stage and which claim families
 account for the errors that remain?
@@ -799,11 +800,11 @@ Table~\ref{tab:main} reports every system, the stage ceilings and the
 ablations on the same 1{,}500 claims. The three research
 questions are answered in turn.
 
-\subsection{RQ1: end-to-end verification and the codebook}
+\subsection{RQ1: end-to-end verification}
 \label{sec:main}
 
-\paragraph{The codebook is the information the task measures.} Without the
-codebook, a single query verifies 0.53--0.88 of the claims across the five
+\paragraph{Frontier models verify the claims once the stipulations are
+stated.} Without the codebook, a single query verifies 0.53--0.88 of the claims across the five
 models (EHRSQL in Table~\ref{tab:main}); with it, the same query reaches
 0.58--1.00 (EHRSQL-C). The gain grows with the model's ability to apply
 the text: 0.05 for the 2024 pair, 0.16 for qwen3.8, 0.22 for gemma4 and
@@ -815,8 +816,8 @@ admitting most co-existing reports into order denominators but starts
 writing queries that define the eligible set as the supporting set
 ($n = k$, 325 claims), and gains almost nothing.
 
-\paragraph{What the codebook supplies.} Every error a model makes without the
-codebook is a stipulation about which reports can witness a temporal claim,
+\paragraph{End-to-end errors are conditioning errors.} Every error a model
+makes without the codebook is a stipulation about which reports can witness a temporal claim,
 and the attribution of Appendix~\ref{app:attribution} names it per claim.
 The frontier models' errors fall on four such rules: first/last denominators
 that admit reports missing one of the candidates (102--150 claims, first/last
@@ -828,8 +829,8 @@ larger numbers and add the one the codebook states first, co-existing reports
 in order denominators (281--325 claims). None of these is a failure of SQL:
 the queries run and count the wrong reports.
 
-\paragraph{An agent loop does not replace the codebook.} The agents that
-write and run their own analysis do not close the gap. Without the codebook,
+\paragraph{Agents do not close the gap.} The agents that write and run their
+own analysis do no better. Without the codebook,
 EHRAgent's retries help the models that also fail the single query, by 0.08
 for the Coder and 0.25 for qwen3.8, but cost GPT-5.6 0.08 (0.792 against
 0.876): free to choose, it keeps ties in first/last denominators, applies
