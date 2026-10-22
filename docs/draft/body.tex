@@ -336,8 +336,8 @@ A)$ over the whole cohort. \emph{Immediate} order counts reports where the two
 events are at consecutive occupied stages; \emph{position} drops single-stage
 reports and events on the exact middle stage.
 
-\paragraph{Tests.} All tests are exact, and Table~\ref{tab:tests} lists
-them by claim shape: a one-sided exact binomial against $p_0$ for majority,
+\paragraph{Tests.} All tests are exact, and Table~\ref{tab:tests}
+(Appendix~\ref{app:tests}) lists them by claim shape: a one-sided exact binomial against $p_0$ for majority,
 bar and data-derived nulls; modal-versus-runner-up, an exact binomial of the
 named cell against its strongest competitor, for argmax claims; Fisher's
 exact test \cite{fisher1935design} for two-arm and two-cohort contrasts. No
@@ -345,31 +345,6 @@ $\chi^2$ approximation appears; the sole gate is a minimum denominator of 10,
 applied to both arms where two exist. Each instance releases both one-sided
 $p$-values, the Wilson interval \cite{wilson1927} and Cohen's $h$
 \cite{cohen1988} against the null actually used.
-
-\begin{table}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\renewcommand{\arraystretch}{1.15}
-\begin{tabularx}{\columnwidth}{@{}p{2.25cm} Y Y p{1.05cm}@{}}
-\toprule
-claim shape (groups) & null & exact test & floor \\
-\midrule
-order majority: precedes, co-occurs, immediate order (P-V1, P-V3, C-V1, Y-V1, Y-V2) & symmetric, $p_0 = 0.5$ & one-sided binomial on the conditioned proportion & $n \geq 10$ \\
-argmax: first, last, most common co-occurrence (F-V1--F-V3, C-V3) & named cell vs.\ its strongest competitor & modal-versus-runner-up: binomial on the two cells & $n \geq 10$ \\
-two-arm contrast within a cohort: antecedent, pair-vs-pair, association (P-V2, P-V4, C-V2) & equality of two rates & Fisher's exact test & $n \geq 10$ per arm \\
-two-cohort contrast (P-M2) & equality of two cohorts' rates & Fisher's exact test & $n \geq 10$ per cohort \\
-threshold: bar stated in the text (H-V1, H-V5) & $p_0$ read from the wording ($2/3$, $1/2$) & one-sided binomial, tested per orientation & $n \geq 10$ \\
-data-derived: position, proximity rate (T-V1, Y-V3) & $p_0$ computed from the denominator reports (structural early rate; $2/L$ adjacency chance) & one-sided binomial against the summed chance & $n \geq 10$ \\
-report tier (9 groups) & none & none: a deterministic reading of one timeline & --- \\
-\bottomrule
-\end{tabularx}
-\caption{The tests, by claim shape. Every test is exact and one-sided in the
-claim's direction; the floor is the minimum conditioned denominator below
-which the verdict is \emph{sparse} ($0 < n <$ floor) or \emph{not-locatable}
-($n = 0$).}
-\label{tab:tests}
-\end{table}
 
 \paragraph{The three-decision rule and oriented statistics.} A claim is
 \emph{supported} only when its own one-sided tail is significant at
@@ -487,7 +462,7 @@ Supported / refuted / insufficient & 3{,}521 / 3{,}521 / 1{,}721 \\
 Mirror pairs & 3{,}060 \\
 Negated instances & 643 \\
 \midrule
-Conditioned $n$, median (IQR) & 21 (14--41) \\
+Test denominator $n$ after conditioning, median (IQR) & 21 (14--41) \\
 $|$Cohen's $h|$ on decisive, median & 0.65 \\
 $p$ on supported claims, median & 0.008 \\
 \bottomrule
@@ -983,16 +958,15 @@ Wilson intervals over claims.}
 \paragraph{By difficulty level.} The three levels contain different
 families, so their pooled accuracies mix difficulty with family;
 Figure~\ref{fig:tiers} holds the claim shape fixed instead and compares
-\art{} with EHRSQL-C, the controlled reference. Difficulty is real: under
+\art{} with EHRSQL-C, which differs from it only in the plan, the contract
+and the repair. Difficulty is real: under
 \art{} every model verifies the single-report and one-cohort claims, and the
 open models lose 0.15 (pair), 0.10 (qwen3.8) and 0.01 (gemma4) when a second
 cohort adds a second denominator and a two-sample test. EHRSQL-C loses far
 more over the same steps, 0.68, 0.48 and 0.17, the pair already 0.38 at the
 one-cohort step, while the frontier models stay at or near 1.0 in both. The
 contract does not remove the cost of the harder level; it cuts it by a
-factor of five or more for the open models. EHRAgent, the strongest published
-baseline, also drops from Medium to Hard, by 0.19 with qwen3.8 and 0.21 with
-GPT-5.6. The Hard level has 82 claims, so its intervals are about
+factor of five or more for the open models. The Hard level has 82 claims, so its intervals are about
 $\pm 0.08$.
 
 \subsection{RQ3: evidence and abstention}
@@ -1018,8 +992,7 @@ half its runs within a ten-minute cap per phase.
 \includegraphics[width=\columnwidth]{Figures/insufficient.pdf}
 \caption{The \emph{insufficient} class on the test set, one row per system
 and model. Left: overclaim, by gold sub-type. Right: underclaim, by cause;
-grey where the cause is not observable. Numbers are row totals; the full
-breakdown is Table~\ref{tab:insufficient}.}
+grey where the cause is not observable. Numbers are row totals.}
 \label{fig:insufficient}
 \end{figure}
 
@@ -1143,7 +1116,7 @@ decomposition pays mainly when the plan is a contract.
 \paragraph{Repair rounds.} Figure~\ref{fig:rounds} runs the pipeline with
 zero to three verify-and-repair rounds. For the 2026 open models the first
 round does almost all of the work, about $+0.13$ in accuracy with evidence
-F1 rising with it (Appendix~\ref{app:rounds}), and the next two rounds add a
+F1 rising with it, and the next two rounds add a
 few thousandths; the 2024 pair gains little per round because its Coder
 resubmits the same mistake when told what was wrong. At the frontier every
 round costs a little, since the checks fire on statements that are already
@@ -1177,8 +1150,7 @@ verdict accuracy / evidence F1.}
 \includegraphics[width=\columnwidth]{Figures/rounds.pdf}
 \caption{What each verify-and-repair round adds: the change in verdict
 accuracy from the previous round, for rounds one to three, on the test set;
-gains extend to the right, losses to the left (the same plot for evidence F1
-is in Appendix~\ref{app:rounds}).}
+gains extend to the right, losses to the left.}
 \label{fig:rounds}
 \end{figure}
 

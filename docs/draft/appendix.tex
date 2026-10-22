@@ -277,6 +277,34 @@ otherwise have read as a finding about the new claim families.
 
 \fi  % end of development-set analyses (app:dev)
 
+\section{Tests by claim shape}
+\label{app:tests}
+
+\begin{table}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\renewcommand{\arraystretch}{1.15}
+\begin{tabularx}{\columnwidth}{@{}p{2.25cm} Y Y p{1.05cm}@{}}
+\toprule
+claim shape (groups) & null & exact test & floor \\
+\midrule
+order majority: precedes, co-occurs, immediate order (P-V1, P-V3, C-V1, Y-V1, Y-V2) & symmetric, $p_0 = 0.5$ & one-sided binomial on the conditioned proportion & $n \geq 10$ \\
+argmax: first, last, most common co-occurrence (F-V1--F-V3, C-V3) & named cell vs.\ its strongest competitor & modal-versus-runner-up: binomial on the two cells & $n \geq 10$ \\
+two-arm contrast within a cohort: antecedent, pair-vs-pair, association (P-V2, P-V4, C-V2) & equality of two rates & Fisher's exact test & $n \geq 10$ per arm \\
+two-cohort contrast (P-M2) & equality of two cohorts' rates & Fisher's exact test & $n \geq 10$ per cohort \\
+threshold: bar stated in the text (H-V1, H-V5) & $p_0$ read from the wording ($2/3$, $1/2$) & one-sided binomial, tested per orientation & $n \geq 10$ \\
+data-derived: position, proximity rate (T-V1, Y-V3) & $p_0$ computed from the denominator reports (structural early rate; $2/L$ adjacency chance) & one-sided binomial against the summed chance & $n \geq 10$ \\
+report tier (9 groups) & none & none: a deterministic reading of one timeline & --- \\
+\bottomrule
+\end{tabularx}
+\caption{The tests, by claim shape. Every test is exact and one-sided in the
+claim's direction; the floor is the minimum conditioned denominator below
+which the verdict is \emph{sparse} ($0 < n <$ floor) or \emph{not-locatable}
+($n = 0$).}
+\label{tab:tests}
+\end{table}
+
 \section{Evidence by claim family}
 \label{app:families}
 
@@ -383,6 +411,7 @@ between stages.}
 \label{tab:cost}
 \end{table}
 
+\iffalse  % removed from the paper 2026-10-22 (user); source, figures (Figures/rounds_f1.pdf, rounds_vertical.pdf) and script (paper_figures.fig_rounds, fig_rounds_vertical) stay in the repo
 \section{Repair rounds: evidence F1, and an alternative rendering}
 \label{app:rounds}
 \label{app:rounds-vertical}
@@ -411,6 +440,7 @@ Figure~\ref{fig:rounds}.}
 \label{fig:rounds-f1}
 \label{fig:rounds-vertical}
 \end{figure*}
+\fi
 
 \section{Retrieval failures by the rule violated}
 \label{app:attribution}
@@ -465,6 +495,7 @@ resting on the exact gold set.}
 \label{tab:attribution}
 \end{table*}
 
+\iffalse  % removed from the paper 2026-10-22 (user); regenerate with scripts/insufficient_analysis.py --tex
 \section{The \emph{insufficient} class: full breakdown}
 \label{app:insufficient}
 
@@ -512,5 +543,6 @@ the gold set, so the loss is in the numerator, null or test). ``No answer'':
 no plan could be derived.}
 \label{tab:insufficient}
 \end{table*}
+\fi
 
 \clearpage
