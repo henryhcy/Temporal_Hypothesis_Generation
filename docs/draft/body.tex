@@ -608,9 +608,8 @@ it can?
 \end{itemize}
 
 \S\ref{sec:main}--\S\ref{sec:evidence} answer each in turn; the ablations
-(\S\ref{sec:modular}) separate the stages and the repair budget, the case
-studies (\S\ref{sec:cases}) cover single reports and paraphrase, and
-\S\ref{sec:insufficient} analyses the \emph{insufficient} class.
+(\S\ref{sec:modular}) separate the stages and the repair budget, and the
+case studies (\S\ref{sec:cases}) cover single reports and paraphrase.
 
 \subsection{Baselines}
 \label{sec:baselines}
@@ -839,7 +838,8 @@ either term, each a defensible convention that is not this corpus's. Given
 the codebook, both agents score below the single query with the same model
 on the same 204 claims: DiscoveryBench's agent 0.65 and 0.71 against 0.76 and
 0.88 for qwen3.8 and gemma4, and VERITAS 0.40 against 0.59 for the Coder
-(Appendix~\ref{app:subsample}). An agent that writes its own denominator
+(Appendix~\ref{app:subsample}, where every other system scores within its
+own interval on the same claims). An agent that writes its own denominator
 and test has more ways to depart from the stipulations it was given, and
 nothing checks that it did not.
 
@@ -857,11 +857,9 @@ produce even when it is right. For the open models the contract is what
 makes the verdict stand on the right evidence: with the contract and the
 verifier every open model gains between 0.12 and 0.24 in verdict accuracy
 over the Straight-to-SQL control, and gemma4-31B lands within 0.02 of the
-frontier at zero API cost. The evidence margin is larger and does not shrink
-with model quality: under the contract 86--97\% of right verdicts rest on the
-exact denominator, against 40--86\% end to end, and overclaim falls by a
-factor of four or more. The contract does not make the models better at SQL;
-it removes the interpretation step on which they were failing.
+frontier at zero API cost. The contract does not make the models better at
+SQL; it removes the interpretation step on which they were failing, and
+\S\ref{sec:evidence} shows the same gain on the evidence.
 
 \iffalse  % family table kept in source; Figure~\ref{fig:groups} (ours by group) and Figure~\ref{fig:families} (evidence vs B) carry it (user 2026-10-20)
 \begin{table*}[t]
@@ -936,28 +934,62 @@ near 1.0 in both systems. The contract does not remove the cost of the harder
 level; it cuts it by a factor of five or more for the open models. The
 two-cohort level has 82 claims, so its intervals are about $\pm 0.08$.
 
-\subsection{RQ3: the evidence behind the verdicts}
+\subsection{RQ3: evidence and abstention}
 \label{sec:evidence}
+\label{sec:insufficient}
 
-\paragraph{The denominator is where systems fail, and the verdict hides it.}
-The agents' evidence cannot be audited at all: EHRAgent and DiscoveryBench's
-agent return a verdict from their own code, and EHRAgent with the Coder
-decides more than half of the claims the data cannot decide
-(\S\ref{sec:insufficient}); VERITAS, with the codebook and our exact tests,
-completes fewer than half its runs within a ten-minute cap per phase and
-abstains on most decisive claims. Where the evidence can be checked, it
-diverges from the verdict. Straight-to-SQL control with the 2024 Coder is right on 57\% of claims and
-right for the right reason on only 40\% of those: it admits same-stage
-reports into order denominators, defines the eligible set as the supporting
-set, and narrows presence splits to co-occurrence (every failure attributed to
-its rule in Appendix~\ref{app:attribution}). The StatQA row shows the same
-thing from the other side: handed the exact counts, the open models still
-return the wrong verdict on a fifth to two fifths of claims, so a correct
-verdict from them is not evidence of a correct computation. VERITAS and
-DiscoveryBench run on a 204-claim stratified subsample of the test set;
-every other system scores within its own interval on those claims
-(Appendix~\ref{app:subsample}).
+\paragraph{Right verdicts often rest on the wrong evidence.} Every
+prediction records the reports it counted, so each verdict can be checked
+against the gold sets. End to end, verdict accuracy overstates what the
+systems computed: the one-prompt query with the codebook rests 40\% (pair),
+69\% (qwen3.8) and 86\% (gemma4) of its right verdicts on the exact
+denominator, so the pair's 0.575 accuracy is 0.23 right for the right
+reason. Under the contract the same shares are 86\%, 97\% and 94\%, a
+larger gain than in accuracy and largest for the weakest model, and the
+frontier models are exact on all but a handful of claims in both systems.
+The agents cannot be checked at all: EHRAgent and DiscoveryBench's agent
+return a verdict from their own code, so a right verdict from them says
+nothing about which reports it counted, and VERITAS completes fewer than
+half its runs within a ten-minute cap per phase.
 
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/insufficient.pdf}
+\caption{The \emph{insufficient} class on the test set, one row per system
+and model. Left: overclaim, by gold sub-type. Right: underclaim, by cause;
+grey where the cause is not observable. Numbers are row totals; the full
+breakdown is Table~\ref{tab:insufficient}.}
+\label{fig:insufficient}
+\end{figure}
+
+\paragraph{Abstention fails in two directions.} The three-decision verdict
+can decide what the data cannot decide or abstain on what it can, and
+Figure~\ref{fig:insufficient} separates the two. Overclaim is the share of the
+505 gold-\emph{insufficient} claims (176 \emph{not-locatable}, 157
+\emph{sparse}, 172 \emph{underpowered}) given a decisive verdict. Underclaim
+is the share of the 995 decisive claims answered \emph{insufficient}, split by
+what the prediction shows, which is also the sub-type the system claimed: an
+empty denominator claims \emph{not-locatable}, one below the floor
+\emph{sparse}, a testable one \emph{underpowered}. EHRAgent returns a bare
+verdict, so its causes cannot be observed.
+
+\paragraph{Overclaim is the agents' and the one-prompt models' failure.} EHRAgent
+with the Coder decides more than half of the undecidable claims and nearly
+all \emph{underpowered} ones, because it runs its own test. EHRSQL-C
+overclaims mostly on \emph{underpowered} claims, where a wrong denominator
+moves the tail, and fills \emph{not-locatable} denominators with reports
+that do not qualify. \art{} overclaims on a few percent at most, because the
+exact test, not the model, abstains, and its abstentions name the right
+sub-type on 0.87--1.00 of claims against 0.79--1.00 for EHRSQL-C.
+
+\paragraph{Underclaim is the open models' larger loss.} The one-prompt pair
+abstains on nearly four decisive claims in ten, mostly on a wrong denominator
+or one below the floor; the stronger EHRAgent models trade overclaim for
+underclaim rather than for correct verdicts; under \art{} the pair's
+abstentions are mostly queries that still fail after two repairs. The
+frontier models' few abstentions all fall in one group, H-V5, where the plan
+reads a stated bar as an argmax claim and runs the wrong test on the right
+counts.
 
 \subsection{Ablations}
 \label{sec:modular}
@@ -1164,46 +1196,6 @@ three open models under \art{}. Original is the main test
 run; the other registers rerun the same 1{,}500 claims.}
 \label{fig:registers}
 \end{figure}
-
-\subsection{Error analysis: the \emph{insufficient} class}
-\label{sec:insufficient}
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{Figures/insufficient.pdf}
-\caption{The \emph{insufficient} class on the test set, one row per system
-and model. Left: overclaim, by gold sub-type. Right: underclaim, by cause;
-grey where the cause is not observable. Numbers are row totals; the full
-breakdown is Table~\ref{tab:insufficient}.}
-\label{fig:insufficient}
-\end{figure}
-
-The three-decision verdict fails in two directions, and
-Figure~\ref{fig:insufficient} separates them. Overclaim is the share of the
-505 gold-\emph{insufficient} claims (176 \emph{not-locatable}, 157
-\emph{sparse}, 172 \emph{underpowered}) given a decisive verdict. Underclaim
-is the share of the 995 decisive claims answered \emph{insufficient}, split by
-what the prediction shows, which is also the sub-type the system claimed: an
-empty denominator claims \emph{not-locatable}, one below the floor
-\emph{sparse}, a testable one \emph{underpowered}. EHRAgent returns a bare
-verdict, so its causes cannot be observed.
-
-\emph{Overclaim is the agents' and the one-prompt models' failure.} EHRAgent
-with the Coder decides more than half of the undecidable claims and nearly
-all \emph{underpowered} ones, because it runs its own test. EHRSQL-C
-overclaims mostly on \emph{underpowered} claims, where a wrong denominator
-moves the tail, and fills \emph{not-locatable} denominators with reports
-that do not qualify. \art{} overclaims on a few percent at most, because the
-exact test, not the model, abstains, and its abstentions name the right
-sub-type on 0.87--1.00 of claims against 0.79--1.00 for EHRSQL-C.
-\emph{Underclaim is the open models' larger loss.} The one-prompt pair
-abstains on nearly four decisive claims in ten, mostly on a wrong denominator
-or one below the floor; the stronger EHRAgent models trade overclaim for
-underclaim rather than for correct verdicts; under \art{} the pair's
-abstentions are mostly queries that still fail after two repairs. The
-frontier models' few abstentions all fall in one group, H-V5, where the plan
-reads a stated bar as an argmax claim and runs the wrong test on the right
-counts.
 
 \section{Conclusion}
 \label{sec:limitations}

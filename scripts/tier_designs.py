@@ -158,6 +158,147 @@ def design1b(D):
               "EHRAgent", [None if v is None else round(v, 3) for v in e] if e else None)
 
 
+SYS = [("cellB", "EHRSQL-C"), ("ehragent", "EHRAgent"), ("dprime_verify2", "ART")]
+
+
+def series(D, sysk, k):
+    if sysk == "ehragent":
+        return ehragent_ladder(k)
+    return D[sysk][k]
+
+
+def design4(D):
+    """Drop lines: one row per system and model, a line from Easy (open tick) through Medium (hollow) to Hard
+    (filled); the line's length is what difficulty costs."""
+    rows = []
+    for k, _, c in PF.MODELS:
+        for sk, sn in SYS:
+            v = series(D, sk, k)
+            if v:
+                rows.append((k, c, sk, sn, v))
+    fig, ax = plt.subplots(figsize=(3.4, 3.3))
+    y, ticks, labels, seps = 0, [], [], []
+    last = None
+    for k, c, sk, sn, v in rows:
+        if last and k != last:
+            y += 0.6; seps.append(y - 0.8)
+        col = c if sk == "dprime_verify2" else (PF.GOLD if sk == "ehragent" else GREY)
+        pts = [(i, a) for i, a in enumerate(v) if a is not None]
+        xs = [a for _, a in pts]
+        ax.plot([min(xs), max(xs)], [y, y], color=col, lw=2.2 if sk == "dprime_verify2" else 1.4, alpha=0.9, solid_capstyle="round", zorder=2)
+        for i, a in pts:
+            if i == 0:
+                ax.plot(a, y, marker="|", ms=7, color=col, mew=1.4, zorder=3)
+            elif i == 1:
+                ax.plot(a, y, marker="o", ms=4.2, mfc="white", mec=col, mew=1.2, zorder=4)
+            else:
+                ax.plot(a, y, marker="o", ms=4.6, color=col, mec="white", mew=0.5, zorder=5)
+                ax.text(a - 0.015, y, f"{a:.2f}", ha="right", va="center", fontsize=5.4, color=PF.CHARCOAL)
+        ticks.append(y); labels.append(f"{SHORT[k]} · {sn}" if sn == "EHRSQL-C" or last != k else sn)
+        last = k; y += 1
+    ax.set_yticks(ticks); ax.set_yticklabels([("" if " · " not in l else "") + l for l in labels], fontsize=5.8)
+    ax.invert_yaxis()
+    ax.set_xlim(0.25, 1.04); ax.set_xticks([0.4, 0.6, 0.8, 1.0])
+    ax.set_xlabel("verdict accuracy (| Easy, ○ Medium, ● Hard)", fontsize=6.8)
+    ax.grid(axis="x", lw=0.4); ax.grid(False, axis="y"); ax.tick_params(axis="y", length=0)
+    for sy in seps:
+        ax.axhline(sy, color="#E4E1D8", lw=0.6)
+    PF.boldify(ax, size=6.2)
+    fig.tight_layout()
+    save(fig, "tiers_design4")
+
+
+def _labels_no_overlap(ends, gap=0.05):
+    """ends: list of (y, name, colour). Models ending at the same value share one label ("Opus, GPT 1.00");
+    the remaining labels are spread so they do not overlap."""
+    ends = sorted(ends, key=lambda t: -t[0])
+    groups = []
+    for y, n, c in ends:
+        if groups and abs(groups[-1][0] - y) < 0.012:
+            groups[-1][1].append(n); groups[-1][2] = PF.CHARCOAL
+        else:
+            groups.append([y, [n], c])
+    out, prev = [], None
+    for y, ns, c in groups:
+        yy = y if prev is None or prev - y >= gap else prev - gap
+        out.append((yy, f"{', '.join(ns)} {y:.2f}", c)); prev = yy
+    return out
+
+
+def design5(D):
+    """Slopegraph in three panels (EHRSQL-C, EHRAgent, ART), one line per model, direct labels, no legend."""
+    fig, axes = plt.subplots(1, 3, figsize=(3.45, 2.2), sharey=True, gridspec_kw={"wspace": 0.55})
+    x = np.arange(3)
+    for ax, (sk, sn) in zip(axes, SYS):
+        ends = []
+        for k, _, c in PF.MODELS:
+            v = series(D, sk, k)
+            if not v:
+                continue
+            xs = [i for i, a in enumerate(v) if a is not None]; ys = [a for a in v if a is not None]
+            ax.plot(xs, ys, color=c, lw=1.5, clip_on=False, marker="o", ms=2.8, markeredgecolor="white", markeredgewidth=0.4,
+                    ls=(0, (3, 1.5)) if k == "gpt" else "-")
+            ends.append((ys[-1], {"q25pair": "pair", "qwen38_27b": "qwen3.8", "gemma4_31b": "gemma4", "opus": "Opus", "gpt": "GPT"}[k], c))
+        for y, t, c in _labels_no_overlap(ends):
+            ax.text(2.15, y, t, fontsize=4.7, color=c, va="center", ha="left", clip_on=False, zorder=10)
+        ax.set_title(sn, fontsize=7, loc="left", pad=3)
+        ax.set_facecolor("none")
+        ax.set_xticks(x); ax.set_xticklabels(["E", "M", "H"], fontsize=6.2)
+        ax.set_xlim(-0.2, 2.15); ax.set_ylim(0.28, 1.05)
+        ax.tick_params(axis="y", labelsize=6, length=2); ax.tick_params(axis="x", length=0)
+        ax.grid(axis="y", lw=0.4)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    axes[0].set_ylabel("verdict accuracy", fontsize=6.8); axes[0].set_yticks([0.4, 0.6, 0.8, 1.0])
+    fig.subplots_adjust(wspace=0.95, left=0.12, right=0.84, top=0.88, bottom=0.12)
+    save(fig, "tiers_design5")
+
+
+def design6(D):
+    """Heatmap with every system: rows models, column blocks EHRSQL-C | EHRAgent | ART x Easy, Medium, Hard;
+    runs not made are hatched."""
+    cmap = LinearSegmentedColormap.from_list("cream_rust", ["#FBF8F3", "#EBD3BF", "#D9A48C", PF.RUST, "#6E3519"])
+    norm = PowerNorm(gamma=0.5, vmin=0, vmax=0.7)
+    fig, axes = plt.subplots(1, 3, figsize=(3.45, 1.95), sharey=True)
+    for ax, (sk, sn) in zip(axes, SYS):
+        A = np.full((len(PF.MODELS), 3), np.nan)
+        for i, (k, _, _) in enumerate(PF.MODELS):
+            v = series(D, sk, k)
+            if v:
+                A[i] = [np.nan if a is None else a for a in v]
+        ax.imshow(np.ma.masked_invalid(1 - A), cmap=cmap, norm=norm, aspect="auto")
+        for i in range(A.shape[0]):
+            for j in range(3):
+                if np.isnan(A[i, j]):
+                    ax.add_patch(plt.Rectangle((j - 0.5, i - 0.5), 1, 1, facecolor="#F4F2EE", edgecolor="#D8D3C8", hatch="////", lw=0))
+                else:
+                    e = 1 - A[i, j]
+                    ax.text(j, i, f"{A[i, j]:.2f}", ha="center", va="center", fontsize=5.4,
+                            color="white" if e > 0.35 else PF.CHARCOAL, fontweight="bold" if sk == "dprime_verify2" else "normal")
+        ax.set_xticks(range(3)); ax.set_xticklabels(["E", "M", "H"], fontsize=6)
+        ax.set_yticks(range(len(PF.MODELS))); ax.set_yticklabels([SHORT[k] for k, _, _ in PF.MODELS], fontsize=6.2)
+        ax.set_title(sn, fontsize=7, loc="left", pad=3)
+        ax.tick_params(length=0); ax.grid(False)
+        for sp in ax.spines.values():
+            sp.set_visible(False)
+        ax.set_xticks(np.arange(-0.5, 3, 1), minor=True); ax.set_yticks(np.arange(-0.5, 5, 1), minor=True)
+        ax.grid(which="minor", color="white", lw=1.0); ax.tick_params(which="minor", length=0)
+    fig.text(0.99, 0.01, "hatched: not run", fontsize=5.2, ha="right", color="#6B6F73")
+    fig.subplots_adjust(wspace=0.06, left=0.2, right=0.99, top=0.88, bottom=0.12)
+    save(fig, "tiers_design6")
+
+
+def sheet2():
+    import matplotlib.image as mpimg
+    names = [("tiers_design1b", "1b: small multiples + EHRAgent"), ("tiers_design4", "4: drop lines"),
+             ("tiers_design5", "5: slopegraph by system"), ("tiers_design6", "6: heatmap, all systems")]
+    fig, axes = plt.subplots(2, 2, figsize=(9, 7))
+    for ax, (n, t) in zip(axes.flat, names):
+        ax.imshow(mpimg.imread(OUT / f"{n}.png")); ax.set_title(t, fontsize=10); ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(OUT / "tiers_designs_sheet2.png", dpi=170); plt.close(fig); print("wrote", OUT / "tiers_designs_sheet2.png")
+
+
 def sheet():
     import matplotlib.image as mpimg
     names = ["tiers", "tiers_design1", "tiers_design2", "tiers_design3"]
@@ -173,3 +314,4 @@ def sheet():
 if __name__ == "__main__":
     D = data()
     design1(D); design1b(D); design2(D); design3(D); sheet()
+    design4(D); design5(D); design6(D); sheet2()
