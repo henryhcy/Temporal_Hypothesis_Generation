@@ -596,8 +596,8 @@ the same five models in every model slot.
 
 \begin{itemize}
 \item \textbf{RQ1.} How well do current language models verify these claims
-end to end, and how much does giving them the corpus codebook change the
-result?
+end to end, as a single query or as an agent, and what does the corpus
+codebook supply that they cannot infer?
 \item \textbf{RQ2.} What does the staged pipeline add over Straight-to-SQL
 verification for each model, and which stage and which claim families
 account for the errors that remain?
@@ -799,19 +799,48 @@ Table~\ref{tab:main} reports every system, the stage ceilings and the
 ablations on the same 1{,}500 claims. The three research
 questions are answered in turn.
 
-\subsection{RQ1: Straight-to-SQL verification and the codebook}
+\subsection{RQ1: end-to-end verification and the codebook}
 \label{sec:main}
 
-\paragraph{With the codebook, frontier models solve the task; without it
-they do not.} Given the codebook, Opus~5.5 and GPT-5.6 verify essentially
-every claim end to end with every denominator exact. Without it the same
-models lose a tenth of their verdicts and a fifth of their denominators: they
-infer most of the stipulations from the schema and the wording and miss the
-rest. The open models lose far more without it. The benchmark is therefore
-not hard for a frontier model that has the information; it measures whether
-the information is used. \art{} adds nothing to such a model, and its
-verifier costs it a little, because the plan checks flag a few correct
-$n = k$ statements and the pipeline abstains rather than guess.
+\paragraph{The codebook is the information the task measures.} Without the
+codebook, a single query verifies 0.53--0.88 of the claims across the five
+models (EHRSQL in Table~\ref{tab:main}); with it, the same query reaches
+0.58--1.00 (EHRSQL-C). The gain grows with the model's ability to apply
+the text: 0.05 for the 2024 pair, 0.16 for qwen3.8, 0.22 for gemma4 and
+0.11--0.12 for the frontier models, which then verify 0.98--1.00 of the claims
+with every denominator but one exact. The task is therefore not hard for a
+frontier model that has the stipulations; it measures whether they are known
+and applied. The 2024 pair cannot apply them: given the codebook it stops
+admitting most co-existing reports into order denominators but starts
+writing queries that define the eligible set as the supporting set
+($n = k$, 325 claims), and gains almost nothing.
+
+\paragraph{What the codebook supplies.} Every error a model makes without the
+codebook is a stipulation about which reports can witness a temporal claim,
+and the attribution of Appendix~\ref{app:attribution} names it per claim.
+The frontier models' errors fall on four such rules: first/last denominators
+that admit reports missing one of the candidates (102--150 claims, first/last
+accuracy 0.66--0.74); adjacency counted across co-existing events (35--63
+claims, proximity 0.79--0.90); position claims over reports that have no
+earlier half (up to 31); and order and co-occurrence denominators that admit
+reports with only one of the events. The open models make the same errors in
+larger numbers and add the one the codebook states first, co-existing reports
+in order denominators (281--325 claims). None of these is a failure of SQL:
+the queries run and count the wrong reports.
+
+\paragraph{An agent loop does not replace the codebook.} The agents that
+write and run their own analysis do not close the gap. Without the codebook,
+EHRAgent's retries help the models that also fail the single query, by 0.08
+for the Coder and 0.25 for qwen3.8, but cost GPT-5.6 0.08 (0.792 against
+0.876): free to choose, it keeps ties in first/last denominators, applies
+multiple-comparison corrections and counts co-occurrence over reports with
+either term, each a defensible convention that is not this corpus's. Given
+the codebook, both agents score below the single query with the same model
+on the same 204 claims: DiscoveryBench's agent 0.65 and 0.71 against 0.76 and
+0.88 for qwen3.8 and gemma4, and VERITAS 0.40 against 0.59 for the Coder
+(Appendix~\ref{app:subsample}). An agent that writes its own denominator
+and test has more ways to depart from the stipulations it was given, and
+nothing checks that it did not.
 
 \subsection{RQ2: the staged pipeline and where errors remain}
 \label{sec:families}
@@ -887,39 +916,36 @@ model.
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{Figures/tiers.pdf}
-\caption{Verdict accuracy of \art{} by difficulty level, one line per model.
-Easy is the 180-claim report case study; Medium and Hard are the 1{,}418
-cohort and 82 two-cohort claims of the test set.}
+\caption{Verdict accuracy of \art{} on one claim shape, \emph{A precedes B},
+at the three difficulty levels: read off one report (P-R1), tested in one
+cohort (P-V1) and compared across two cohorts (P-M2). One line per model;
+lines at 1.0 coincide.}
 \label{fig:tiers}
 \end{figure}
 
-\paragraph{By difficulty level.} Under \art{} the levels are not a ladder
-(Figure~\ref{fig:tiers}): every model is level from Medium to Hard, and the
-open models dip on Medium, where most families sit, rather than on Hard. The
-one-prompt baseline with the codebook is a ladder: from Easy to Hard the pair
-falls from 0.75 to 0.32, below chance, qwen3.8 from 1.00 to 0.52 and gemma4
-from 1.00 to 0.83, while the frontier models stay at 1.0. The step it cannot
-take is the one Hard adds, composing a second denominator and a two-sample
-test, which the contract states and the harness runs. Hard has 82 test claims
-(one group), so its intervals are about $\pm 0.08$.
+\paragraph{By difficulty level.} The three levels contain different
+families, so their pooled accuracies mix difficulty with family; Figure~\ref{fig:tiers}
+holds the claim shape fixed instead. Difficulty is real: under \art{} every
+model verifies the single-report and one-cohort claims, and the open models
+lose 0.15 (pair), 0.10 (qwen3.8) and 0.01 (gemma4) when a second cohort adds
+a second denominator and a two-sample test. The one-prompt baseline with the
+codebook loses far more over the same steps, 0.68, 0.48 and 0.17, the pair
+already 0.38 at the one-cohort step, while the frontier models stay at or
+near 1.0 in both systems. The contract does not remove the cost of the harder
+level; it cuts it by a factor of five or more for the open models. The
+two-cohort level has 82 claims, so its intervals are about $\pm 0.08$.
 
 \subsection{RQ3: the evidence behind the verdicts}
 \label{sec:evidence}
 
 \paragraph{The denominator is where systems fail, and the verdict hides it.}
-The published agentic baseline is within 0.03 of the Straight-to-SQL control
-with the 2024 Coder and below \art{} with every newer model, and its evidence
-cannot be audited: it returns a verdict from its own code, and with the
-Coder it decides more than half of the claims the data cannot decide
-(\S\ref{sec:insufficient}). VERITAS, given the same codebook and our exact
-tests, shows the opposite failure, completing fewer than half its runs
-within a ten-minute cap per phase and abstaining on most decisive claims.
-DiscoveryBench's agent, also given the codebook, is right on 0.65 (qwen3.8)
-and 0.71 (gemma4) of the subsample, below the one-prompt EHRSQL-C with the
-same models on the same claims (0.76 and 0.88): an open-ended agent with the
-codebook still writes its own denominator and test, and loses to a single
-query that leaves the test to the harness. The
-Straight-to-SQL control with the 2024 Coder is right on 57\% of claims and
+The agents' evidence cannot be audited at all: EHRAgent and DiscoveryBench's
+agent return a verdict from their own code, and EHRAgent with the Coder
+decides more than half of the claims the data cannot decide
+(\S\ref{sec:insufficient}); VERITAS, with the codebook and our exact tests,
+completes fewer than half its runs within a ten-minute cap per phase and
+abstains on most decisive claims. Where the evidence can be checked, it
+diverges from the verdict. Straight-to-SQL control with the 2024 Coder is right on 57\% of claims and
 right for the right reason on only 40\% of those: it admits same-stage
 reports into order denominators, defines the eligible set as the supporting
 set, and narrows presence splits to co-occurrence (every failure attributed to

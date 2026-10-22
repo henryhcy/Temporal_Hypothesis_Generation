@@ -385,29 +385,45 @@ def fig_groups():
 
 
 # ---- 6. difficulty levels: accuracy down the ladder, one-prompt baseline vs ART (user 2026-10-21) ----
+LADDER = [("testrep", "P-R1", "Easy: one report"), ("test", "P-V1", "Medium: one cohort"), ("test", "P-M2", "Hard: two cohorts")]
+
+
+def ladder_acc(key: str, suf: str):
+    """Verdict accuracy on ONE claim shape (A precedes B) at the three difficulty levels: P-R1 (in one report),
+    P-V1 (in one cohort), P-M2 (compared across two cohorts). Matched by shape so the levels do not differ in
+    family mix (user 2026-10-22)."""
+    out = []
+    for pre, g, _ in LADDER:
+        m = json.loads((R / f"{pre}_{key}_{suf}" / "metrics.json").read_text())["per_group"][g]
+        out.append((m["accuracy"], m["n"]))
+    return out
+
+
 def fig_tiers():
-    """Verdict accuracy by difficulty level, ART only (user 2026-10-22: present our method only, as in the
-    radar; the EHRSQL-C ladder is given as numbers in the text)."""
-    import tier_candidates as TC  # noqa: E402
+    """Difficulty analysis independent of the levels' family mix: ART on the precedes shape at the three
+    levels, one line per model (the EHRSQL-C drops over the same steps are given in the text)."""
     cols = MODEL_COLORS
-    levels = ["Easy\none report", "Medium\none cohort", "Hard\ntwo cohorts"]
-    fig, ax = plt.subplots(figsize=(3.4, 2.35))
+    ns = [n for _, n in ladder_acc("gemma4_31b", "dprime_verify2")]
+    levels = [lab.replace(": ", "\n") + f"\n(n={n})" for (_, _, lab), n in zip(LADDER, ns)]
+    fig, ax = plt.subplots(figsize=(3.4, 2.5))
     x = np.arange(3)
-    for j, (key, label) in enumerate(TC.MODELS):
-        y = TC.tier_acc(key, "dprime_verify2")
+    for j, (key, label, _) in enumerate(MODELS):
+        y = [a for a, _ in ladder_acc(key, "dprime_verify2")]
         ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label,
                 zorder=5 - j, ls=(0, (3, 1.5)) if key == "gpt" else "-")
-        if key in ("q25pair", "qwen38_27b", "gemma4_31b"):  # the frontier ends coincide near 1.0
+        if key in ("q25pair", "qwen38_27b"):
             ax.text(x[-1] + 0.07, y[-1], f"{y[-1]:.3f}", fontsize=5.8, color=cols[j], va="center", ha="left")
     ax.set_xticks(x); ax.set_xticklabels(levels)
-    ax.set_xlim(-0.25, 2.6); ax.set_ylim(0.75, 1.02)
+    ax.set_xlim(-0.25, 2.6); ax.set_ylim(0.8, 1.02)
     ax.set_ylabel("verdict accuracy", fontsize=8)
     boldify(ax, size=7.5)
     ax.grid(axis="y")
-    ax.legend(frameon=False, fontsize=6.0, loc="upper center", bbox_to_anchor=(0.5, -0.28), ncol=3, handlelength=1.3,
+    ax.legend(frameon=False, fontsize=6.0, loc="upper center", bbox_to_anchor=(0.5, -0.40), ncol=3, handlelength=1.3,
               columnspacing=0.9, labelspacing=0.3)
     fig.tight_layout()
     save(fig, "tiers")
+    for suf in ("cellB", "dprime_verify2"):
+        print(suf, {k: [round(a, 3) for a, _ in ladder_acc(k, suf)] for k, _, _ in MODELS})
 
 
 # ---- 7. repair rounds, vertical variant for comparison (user 2026-10-21; appendix) ----------------
