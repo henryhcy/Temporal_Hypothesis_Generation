@@ -47,7 +47,7 @@ A_BROWN = "#8B6B4A"; A_TAN = "#C9B38E"; A_CREAM = "#F3F0E4"; A_LIME = "#C8C46E";
 RUST, WHEAT, SAGE, SLATE_M, INK, GOLD = "#A0522D", "#D4B483", "#7A9A7E", "#4F6B75", "#2B3A42", "#A8812E"
 CREAM = "#F3EFE8"
 MODEL_COLORS = [RUST, WHEAT, SAGE, SLATE_M, INK]
-ROUND_RAMP = ["#B9C6CC", "#7F97A2", SLATE_M]                      # rounds 1, 2, 3
+ROUND_RAMP = [SLATE_M, "#7F97A2", "#B9C6CC"]                      # rounds 1, 2, 3: dark to light, round 1 gains most
 DIVERGING = [RUST, "#D9A48C", CREAM, "#9FB3BD", SLATE_M]          # loss -> 0 -> gain
 MODELS = [("q25pair", "Qwen2.5-32B pair", RUST),
           ("qwen38_27b", "qwen3.8-27B", WHEAT),
@@ -309,7 +309,7 @@ def fig_family_radar(palette: str = "paper", suffix: str = ""):
     for j, (key, label, _) in enumerate(MODELS):
         v = np.concatenate([O[:, j], O[:1, j]])
         ax.plot(ang_c, v, color=cols[j], lw=lws[j], marker="o", ms=3.4, markeredgecolor="white", markeredgewidth=0.5,
-                label=label, zorder=5 - j)
+                label=label, zorder=5 - j, ls=(0, (3, 1.5)) if key == "gpt" else "-")
         ax.fill(ang_c, v, color=cols[j], alpha=0.10, zorder=1)
     ax.set_theta_offset(np.pi / 2); ax.set_theta_direction(-1)
     ax.set_xticks(ang)
@@ -383,7 +383,8 @@ def fig_tiers():
         x = np.arange(3)
         for j, (key, label) in enumerate(TC.MODELS):
             y = TC.tier_acc(key, suf)
-            ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label, zorder=5 - j)
+            ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label, zorder=5 - j,
+                    ls=(0, (3, 1.5)) if key == "gpt" else "-")
             if key in ("q25pair", "qwen38_27b", "gemma4_31b"):  # the frontier ends coincide near 1.0
                 ax.text(x[-1] + 0.07, y[-1], f"{y[-1]:.3f}", fontsize=5.6, color=cols[j], va="center", ha="left")
         ax.set_xticks(x); ax.set_xticklabels(levels)
