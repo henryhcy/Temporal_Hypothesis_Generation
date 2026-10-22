@@ -98,8 +98,8 @@ def fig_rounds():
     left (user 2026-10-21). rounds.pdf (verdict accuracy, main text) and rounds_f1.pdf (evidence F1,
     appendix)."""
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
-    short = {"q25pair": "Qwen2.5-32B pair", "qwen38_27b": "qwen3.8-27B", "gemma4_31b": "gemma4-31B", "opus": "Opus 5.5", "gpt": "GPT-5.6"}
-    cols = [SLATE, SEA, MIST]
+    short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
+    cols = [DRIFT, DUNE, SLATE]  # coast set: drift, dune, slate
     for name, getter, title in (("rounds", acc, "verdict accuracy"), ("rounds_f1", den_f1, "evidence F1")):
         fig, ax = plt.subplots(figsize=(3.4, 2.5))
         ys = np.arange(len(MODELS))[::-1]; h = 0.26
@@ -117,7 +117,7 @@ def fig_rounds():
                 ax.text(v + (0.003 if v >= 0 else -0.003), yi, f"{v:+.3f}", ha="left" if v >= 0 else "right",
                         va="center", fontsize=5.4, color=CHARCOAL, fontweight="bold")
         ax.axvline(0, color=CHARCOAL, lw=0.8)
-        ax.set_yticks(ys); ax.set_yticklabels([short[m[0]] for m in MODELS])
+        ax.set_yticks(ys); ax.set_yticklabels([short[m[0]] for m in MODELS], linespacing=1.1)
         ax.set_xlim(-0.04, 0.17); ax.set_xticks([0.0, 0.05, 0.10, 0.15])
         ax.set_xlabel(f"change in {title} from the previous round", fontsize=7.5)
         ax.grid(axis="x"); ax.grid(False, axis="y")
@@ -262,7 +262,7 @@ def fig_registers():
     bar per open model, ART + verifier only; Original from the main test runs, the other registers from
     the test_*_registers_dprime_verify2 runs."""
     import families_candidates as FC  # noqa: E402
-    cols = FC.PALETTES_MUTED["coast"]  # muted set (user 2026-10-21: meadow too bright here)
+    cols = FC.PALETTES_MUTED["slate_rust"]  # muted set (user 2026-10-21)
     models = [("q25pair", "Qwen2.5-32B pair"), ("qwen38_27b", "qwen3.8-27B"), ("gemma4_31b", "gemma4-31B")]
     regs = ["Original", "Research", "Media", "Clinical"]
     fig, ax = plt.subplots(figsize=(3.4, 2.4))
