@@ -4,7 +4,7 @@ Four figures, each placed next to the table it visualises (the tables stay):
   rounds.pdf     repair rounds: change in verdict accuracy per round, per model (rounds_f1.pdf: evidence F1, appendix)
   families.pdf   heatmap: the contract's gain over the end-to-end control by claim family and model
   modular.pdf    stage ceilings per model: all gold -> S1 alone -> S2 alone -> full pipeline -> + verifier
-  registers.pdf  paraphrase case study (development set, 32B pair): accuracy by register
+  registers.pdf  paraphrase case study (test set, three open models): accuracy by register
   family_radar.pdf  verdict accuracy by claim family, ours with the verifier only, one polygon per model
   groups.pdf     per-group heatmap of the same (not in the draft)
 
@@ -258,27 +258,32 @@ def fig_modular():
 
 # ---- 4. paraphrase registers (dev, 32B pair) -------------------------------------
 def fig_registers():
+    """Paraphrase registers on the TEST set (2026-10-21): the three open models, ART + verifier and the
+    planner alone; Original from the main test runs, the other registers from the test_*_registers_* runs."""
+    import families_candidates as FC  # noqa: E402
+    cols = FC.PALETTES_STRONG["meadow"]
+    models = [("q25pair", "Qwen2.5-32B pair"), ("qwen38_27b", "qwen3.8-27B"), ("gemma4_31b", "gemma4-31B")]
     regs = ["Original", "Research", "Media", "Clinical"]
-    # development set, claim form (scripts/dev_claim_rescore.py, 2026-10-21); planner row at one round
-    rows = [("planner alone (S2, S3 at gold)", [0.965, 0.850, 0.860, 0.935], MIST),
-            ("D$'$", [0.865, 0.790, 0.755, 0.825], SEA),
-            ("D$'$ + verifier", [0.870, 0.815, 0.770, 0.840], SLATE),
-            ("B (end-to-end control)", [0.640, 0.587, 0.600, 0.557], DUNE)]
-    fig, ax = plt.subplots(figsize=(4.6, 2.5))
-    x = np.arange(len(regs)); w = 0.2
-    for i, (label, vals, col) in enumerate(rows):
-        ax.bar(x + (i - 1.5) * w, vals, width=w, color=col, label=label, edgecolor="white", linewidth=0.5)
-        for xi, v in zip(x + (i - 1.5) * w, vals):
-            ax.text(xi, v + 0.008, f"{v:.3f}", ha="center", va="bottom", fontsize=5.6, color=CHARCOAL, rotation=90)
-    ax.set_xticks(x)
-    ax.set_xticklabels(regs)
-    boldify(ax)
-    ax.set_ylim(0.4, 1.08)
-    ax.set_ylabel("verdict accuracy")
-    ax.set_title("paraphrase registers, development set, Qwen2.5-32B pair", loc="left", fontsize=8.5)
-    ax.legend(frameon=False, ncol=4, loc="upper center", bbox_to_anchor=(0.5, -0.14), fontsize=6.6,
-              handlelength=1.2, columnspacing=1.0)
-    fig.tight_layout()
+    def series(key, suf):
+        orig = acc(f"test_{key}_{suf}")
+        pr = metric(f"test_{key}_registers_{suf}", "consistency", "invariance", "per_register_accuracy")
+        return [orig, pr["research"], pr["media"], pr["clinical"]]
+    fig, axes = plt.subplots(2, 1, figsize=(3.4, 3.9), sharex=True)
+    for ax, suf, title in ((axes[0], "dprime_verify2", "ART + verifier"), (axes[1], "planner_verify2", "planner alone")):
+        x = np.arange(4)
+        for j, (key, label) in enumerate(models):
+            y = series(key, suf)
+            ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label, zorder=5 - j)
+            for xi, v in zip(x, y):
+                ax.text(xi, v + 0.012, f"{v:.3f}", fontsize=5.2, color=cols[j], ha="center", va="bottom")
+        ax.set_xticks(x); ax.set_xticklabels(regs)
+        ax.set_xlim(-0.3, 3.3); ax.set_ylim(0.7, 1.04)
+        ax.set_title(title, loc="left", fontsize=8.5)
+        ax.set_ylabel("verdict accuracy", fontsize=8)
+        boldify(ax, size=7.5)
+        ax.grid(axis="y")
+    axes[1].legend(frameon=False, fontsize=6.4, loc="lower left", ncol=1, handlelength=1.3, labelspacing=0.3)
+    fig.tight_layout(h_pad=0.8)
     save(fig, "registers")
 
 

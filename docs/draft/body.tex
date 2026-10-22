@@ -635,7 +635,8 @@ denominator) and $p$-agreement with the exact computation.
 The splits are those of \S\ref{sec:release}: the 200-instance development
 set, on which every prompt decision was made and from which no number enters
 the main table; the 1{,}500-claim test set, run once after the prompts were
-frozen, in the \textsc{Original} register and claim form; and the 180-claim
+frozen, in the \textsc{Original} register and claim form (the paraphrase
+case study reruns it in the three other registers); and the 180-claim
 report case study, kept apart because every capable system reads a single
 report at 0.98--1.00. Every system is run with each of five models in every
 model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
@@ -1006,15 +1007,15 @@ single-report claims.}
 \end{table}
 
 
-\paragraph{Paraphrase.} The development set carries three paraphrase
-registers of every instance, and the case study uses the weakest model, the
-2024 pair, so that any sensitivity would show. The planner alone and the full
-pipeline lose the same amount across registers (Figure~\ref{fig:registers}):
-the cost of paraphrase is paid at planning and passes through the contract
-unchanged, while the Straight-to-SQL control loses a similar amount from a
-lower base. Paraphrase changes neither the ranking of systems nor the size of
-the contract's margin. The registers are templated; free paraphrase and the
-stronger models are left to future work.
+\paragraph{Paraphrase.} Every test claim also exists in three paraphrase
+registers (research, media, clinical), and the case study reruns the three
+open models on all of them (Figure~\ref{fig:registers}). The research
+register costs the most, 0.05 to 0.13 of accuracy, the media and clinical
+registers far less, and the planner alone loses almost exactly what the full
+pipeline loses: the cost of paraphrase is paid at planning and passes through
+the contract unchanged. The ranking of the models does not change in any
+register. The registers are templated; free paraphrase and the frontier
+models are left to future work.
 
 \iffalse  % registers table kept in source; Figure~\ref{fig:registers} carries it (user 2026-10-20)
 \begin{table}[t]
@@ -1039,9 +1040,10 @@ B (Straight-to-SQL control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{Figures/registers.pdf}
-\caption{Verdict accuracy by paraphrase register on the 200 development
-instances (claim form), Qwen2.5-32B pair: the planner alone (S2, S3 at gold),
-the pipeline without and with the verifier, and the Straight-to-SQL control.}
+\caption{Verdict accuracy by paraphrase register on the test set for the
+three open models: \art{} with the verifier (top) and the planner alone
+(bottom). Original is the main test run; the other registers rerun the same
+1{,}500 claims.}
 \label{fig:registers}
 \end{figure}
 

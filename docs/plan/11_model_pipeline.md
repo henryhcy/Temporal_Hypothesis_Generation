@@ -2112,3 +2112,19 @@ qwen3.8 **0.839** (0.863/0.839/0.843); on the 204-claim subsample 0.784 and
 0.079 (qwen3.8) / 0.145 (GPT-5.6), underclaim 0.033 / 0.191 / 0.197. S3-LLM
 ablation: pair 0.512, qwen3.8 0.568, gemma4 0.770. Draft cells filled (main
 table, abstention table, subsample table, RQ3 and error-analysis prose).
+**12:46 (user: "do it sooner by using both GPUs").** The pair's four-register test
+run (single GPU, 573/4,500 at 13.6 s per record, ETA Thu 03:30) stopped and split:
+GPU 0 runs research (all 1,500; the 573 done records replay from the cache) then
+media subset A (1,037 instances); GPU 1 runs clinical (1,500) then media subset B
+(463). `results/chains/test_registers_pair_split.sh`; the finisher
+`test_registers_pair_finish.sh` then replays the full three-register run from the
+cache into the canonical dir and runs the planner row, and writes REGISTERS DONE
+to the GPU-0 log. The partial single-GPU output is kept as
+`test_q25pair_registers_dprime_verify2_partial573`. ETA about 20:40 today.
+**20:27.** Four-register test runs done for all three open models (pair halves
+r/c/mA/mB, replay into the canonical dir 19:55, planner 19:58). ART+verifier
+by register (original / research / media / clinical): pair 0.810 / 0.761 /
+0.771 / 0.775; qwen3.8 0.872 / 0.750 / 0.863 / 0.861; gemma4 0.981 / 0.855 /
+0.956 / 0.911. Planner alone: pair 0.953 / 0.848 / 0.913 / 0.926; qwen3.8
+0.917 / 0.786 / 0.902 / 0.904; gemma4 0.992 / 0.864 / 0.969 / 0.923. The
+register figure and the paraphrase paragraph now use the test set.
