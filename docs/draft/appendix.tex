@@ -351,34 +351,31 @@ between stages.}
 \label{tab:cost}
 \end{table}
 
-\section{Repair rounds: evidence F1}
+\section{Repair rounds: evidence F1, and an alternative rendering}
 \label{app:rounds}
+\label{app:rounds-vertical}
 
-Figure~\ref{fig:rounds-f1} is the evidence-F1 counterpart of
+Figure~\ref{fig:rounds-f1} (left) is the evidence-F1 counterpart of
 Figure~\ref{fig:rounds}: the change in evidence F1 from the previous
 verify-and-repair round. The first round raises evidence F1 by 0.05--0.12 for
 the open models; the second adds 0.003--0.020 and the third at most 0.006;
-the frontier models' evidence F1 moves by less than 0.005 in any round.
+the frontier models' evidence F1 moves by less than 0.005 in any round. The
+right panel shows the verdict-accuracy data of Figure~\ref{fig:rounds} as
+vertical bars, gains up and losses down, for comparison with the horizontal
+rendering in the main text.
 
-\begin{figure}[htbp]
+\begin{figure*}[htbp]
 \centering
-\includegraphics[width=\columnwidth]{Figures/rounds_f1.pdf}
-\caption{Change in evidence F1 per verify-and-repair round, test set, same
-layout as Figure~\ref{fig:rounds}.}
+\begin{minipage}[t]{0.48\textwidth}\centering
+\includegraphics[width=\linewidth]{Figures/rounds_f1.pdf}
+\end{minipage}\hfill
+\begin{minipage}[t]{0.48\textwidth}\centering
+\includegraphics[width=\linewidth]{Figures/rounds_vertical.pdf}
+\end{minipage}
+\caption{Left: change in evidence F1 per verify-and-repair round, test set,
+same layout as Figure~\ref{fig:rounds}. Right: change in verdict accuracy
+per round as vertical bars, the alternative rendering of
+Figure~\ref{fig:rounds}.}
 \label{fig:rounds-f1}
-\end{figure}
-
-\section{Alternative rendering of the repair-round figure}
-\label{app:rounds-vertical}
-
-Figure~\ref{fig:rounds-vertical} shows the data of Figure~\ref{fig:rounds}
-as vertical bars, gains up and losses down, for comparison with the
-horizontal rendering in the main text.
-
-\begin{figure}[htbp]
-\centering
-\includegraphics[width=\columnwidth]{Figures/rounds_vertical.pdf}
-\caption{Change in verdict accuracy per verify-and-repair round, test set,
-vertical rendering of Figure~\ref{fig:rounds}.}
 \label{fig:rounds-vertical}
-\end{figure}
+\end{figure*}
