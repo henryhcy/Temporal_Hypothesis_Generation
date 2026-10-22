@@ -686,27 +686,47 @@ EHRSQL + codebook & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsiz
 EHRAgent & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
 VERITAS$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
-\multicolumn{6}{@{}l}{\textit{ablations}} \\
-Articulate alone & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
-Retrieve alone & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
-LLM as statistician & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
-\art{} + LLM as statistician & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
-\midrule
 \multicolumn{6}{@{}l}{\textit{ours}} \\
-\art{} without verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
 \textbf{\art{} + verifier} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
 \bottomrule
 \end{tabular}
 \caption{Main results on the test set: verdict accuracy, then macro
 precision / recall / F1 over the three verdict classes; only the model
 changes across columns. Intervals on accuracy are $\pm 0.02$ (0.6--0.9) and
-$\pm 0.01$ (above 0.98). Articulate alone and Retrieve alone fill one stage
-with the model and the others with gold (all gold reproduces the labels, 1.000); the frontier S2
-cells are bounded below by their evidence F1 of 1.000 with their own plans.
-$^\dagger$VERITAS is run on a stratified 204-claim subsample
-(Appendix~\ref{app:subsample}).}
+$\pm 0.01$ (above 0.98). $^\dagger$VERITAS is run with the Coder on a
+stratified 204-claim subsample (Appendix~\ref{app:subsample}); a dash marks
+a model a system was not run with.}
 \label{tab:main}
 \end{table*}
+
+\begin{table}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+verdict accuracy, test set & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{stage ceilings (other stages at gold)}} \\
+Articulate alone & 0.953 & 0.917 & 0.992 & 0.993 & 0.993 \\
+Retrieve alone & 0.836 & 0.944 & 0.989 & $\geq$0.999 & $\geq$0.999 \\
+LLM as statistician & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
+\midrule
+\multicolumn{6}{@{}l}{\textit{ablations of \art{}}} \\
+\art{} + verifier & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & 0.993 & 0.983 \\
+\quad $-$ verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
+\quad $-$ exact test (LLM as statistician) & 0.512 & 0.568 & 0.770 & --- & --- \\
+\quad $-$ contract (plan as prose) & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
+\quad $-$ plan and contract (EHRSQL + codebook) & 0.575 & 0.748 & 0.859 & 1.000 & 0.984 \\
+\bottomrule
+\end{tabular}
+\caption{Stage ceilings and ablations on the test set. The ceilings fill one
+stage with the model and the others with gold (all gold reproduces the
+labels, 1.000); the frontier Retrieve-alone cells are bounded below by their
+evidence F1 of 1.000 with their own plans. Each ablation removes one part of
+\art{} with the verifier; a dash marks a run not made.}
+\label{tab:ablation}
+\end{table}
 
 \iffalse  % evidence table kept in source; Figure~\ref{fig:families} carries these metrics (user 2026-10-20)
 \begin{table*}[t]
@@ -737,8 +757,9 @@ answered \emph{insufficient}.}
 \end{table*}
 \fi
 
-Table~\ref{tab:main} reports every system on the same 1{,}500 claims and
-Figure~\ref{fig:families} what their verdicts stand on. The three research
+Table~\ref{tab:main} reports every system on the same 1{,}500 claims,
+Table~\ref{tab:ablation} the stage ceilings and ablations, and
+Figure~\ref{fig:families} the evidence behind \art{}'s verdicts. The three research
 questions are answered in turn.
 
 \subsection{RQ1: Straight-to-SQL verification and the codebook}
@@ -809,6 +830,15 @@ sizes in parentheses.}
 \label{fig:families-radar}
 \end{figure}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/families.pdf}
+\caption{The four evidence measures of \art{} with the verifier on the test
+set, by claim family and model. Darker is better in every panel; overclaim
+and underclaim are lower-is-better, so their scale is reversed.}
+\label{fig:families}
+\end{figure*}
+
 \paragraph{By claim family.} The families do not fail together
 (Figure~\ref{fig:families-radar}). The 2024 pair's losses sit in two
 families whose rule it cannot carry out: first/last, an argmax over three
@@ -818,12 +848,19 @@ each misses a different family, qwen3.8 on position and on the precedes
 variant whose null is a data-derived rate, gemma4 only on proximity and
 threshold. Threshold is the one family where the frontier models also drop,
 and their planner-alone rows drop by the same amount, so the loss is in
-composing the bar into the plan, not in retrieval. Figure~\ref{fig:families}
-shows where the contract helps relative to the control on each evidence
-measure: its largest gains are in faithfulness and overclaim on the families
-whose rule it states, and the few cells where it loses are the 2024 pair's
-underclaim on first/last, where it abstains rather than decide, and gemma4's
-faithfulness on proximity.
+composing the bar into the plan, not in retrieval. The evidence behind
+these verdicts follows the same map (Figure~\ref{fig:families}): under
+\art{}, evidence F1 and faithfulness are at or near 1.0 on every family for
+gemma4 and the frontier models and on most families for the 2026 open models,
+and overclaim stays at a few percent everywhere. The light cells are the
+failures that remain, and each has a cause the plan exposes: the 2024 pair's
+first/last row, where it retrieves the wrong set and abstains on four claims
+in five rather than decide; qwen3.8's first/last overclaim; gemma4's
+faithfulness on proximity, where a fifth of its right verdicts rest on a
+denominator that admits non-adjacent pairs; and the frontier models'
+threshold underclaim, the H-V5 test-family slip of \S\ref{sec:insufficient}.
+The Straight-to-SQL control on the same families is far lighter: its
+faithfulness falls to 0.06--0.41 on first/last for every open model.
 
 \begin{figure}[t]
 \centering
@@ -869,15 +906,6 @@ minutes per claim confine it to a 204-claim stratified subsample of the test
 set; every other system scores within its own interval on those claims
 (Appendix~\ref{app:subsample}).
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{Figures/families.pdf}
-\caption{The four evidence measures by claim family and model, as the
-contract's change over the Straight-to-SQL control (ours minus B, sign
-flipped for the two lower-is-better measures so that green is better in
-every panel); the two underlying values are printed beneath each cell.}
-\label{fig:families}
-\end{figure*}
 
 \subsection{Ablations}
 \label{sec:modular}
@@ -932,8 +960,8 @@ contract.}
 \end{figure*}
 \fi
 
-\paragraph{Stage ceilings and the test stage.} The middle block of
-Table~\ref{tab:main} fills one stage at a time with the model and leaves the
+\paragraph{Stage ceilings and the test stage.} The stage ceilings in
+Table~\ref{tab:ablation} fill one stage at a time with the model and leaves the
 others at gold, so each row is the loss attributable to that stage alone.
 Planning is nearly solved by every model: with the mapping withheld and the
 codebook given, the plan is composed right on at least nine claims in ten,

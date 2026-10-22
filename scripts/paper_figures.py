@@ -153,6 +153,8 @@ def _records(run: Path, gold: dict):
         f1s, exact = [], bool(parms) and rt.get("ok") is not False
         for ga, pa in zip(g["retrieval"]["arms"], parms):
             G = set(ga["denominator_ids"]); P = set(pa.get("denominator_ids") or [])
+            if not G and not P:          # not-locatable claim retrieved as empty: exact (F1 = 1)
+                f1s.append(1.0); continue
             tp = len(G & P); prec = tp / len(P) if P else 0.0; rec = tp / len(G) if G else 0.0
             f1s.append(2 * prec * rec / (prec + rec) if prec + rec else 0.0)
             exact = exact and (G == P)
@@ -182,30 +184,26 @@ def _family_metrics(recs):
 
 
 def fig_families():
+    """The four evidence measures of ART with the verifier, absolute values, by claim family and model
+    (user 2026-10-22: show our method, not the difference to EHRSQL + codebook). Darker is better in every
+    panel: the two lower-is-better panels use the reversed scale."""
     gold = {json.loads(l)["hypothesis_id"]: json.loads(l) for l in (R / "test_gold_sets" / "predictions.jsonl").open()}
     fams = [("P", "precedes"), ("C", "co-occurs"), ("F", "first/last"), ("Y", "proximity"), ("H", "threshold"), ("T", "position")]
-    metrics = [("evidence F1", 0, +1), ("faithfulness", 1, +1),
-               ("overclaim (lower is better)", 2, -1), ("underclaim (lower is better)", 3, -1)]
+    metrics = [("evidence F1", 0, False), ("faithfulness", 1, False), ("overclaim (lower is better)", 2, True), ("underclaim (lower is better)", 3, True)]
     ours = {k: _family_metrics(_records(R / f"test_{k}_dprime_verify2", gold)) for k, _, _ in MODELS}
-    ctrl = {k: _family_metrics(_records(R / f"test_{k}_cellB", gold)) for k, _, _ in MODELS}
-    cmap = LinearSegmentedColormap.from_list("rust_slate", DIVERGING)
-    norm = TwoSlopeNorm(vmin=-0.25, vcenter=0.0, vmax=0.8)
+    seq = LinearSegmentedColormap.from_list("cream_slate", [CREAM, "#9FB3BD", SLATE_M, INK])
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
-    # four panels in one row at the 2x2 version's per-panel size and fonts; LaTeX scales the whole
-    # row to the text width (user 2026-10-20: keep the rendering, shrink in LaTeX, one row)
     fig, axes = plt.subplots(1, 4, figsize=(14.6, 3.1))
     fig.subplots_adjust(wspace=0.22)
-    for ax, (title, idx, sign) in zip(axes.flat, metrics):
-        D = np.full((len(fams), len(MODELS)), np.nan); O = D.copy(); C = D.copy()
+    for ax, (title, idx, lower) in zip(axes.flat, metrics):
+        V = np.full((len(fams), len(MODELS)), np.nan)
         for j, (k, _, _) in enumerate(MODELS):
             for i, (code, _) in enumerate(fams):
-                o = ours[k].get(code, (np.nan,) * 4)[idx]; c = ctrl[k].get(code, (np.nan,) * 4)[idx]
-                O[i, j], C[i, j] = o, c
-                D[i, j] = sign * (o - c)
+                V[i, j] = ours[k].get(code, (np.nan,) * 4)[idx]
+        G = (1 - V) if lower else V          # goodness: 1 is best in every panel
         ax.grid(False)
-        im = ax.imshow(D, cmap=cmap, norm=norm, aspect="auto")
-        ax.set_xticks(range(len(MODELS)))
-        ax.set_xticklabels([short[m[0]] for m in MODELS])
+        im = ax.imshow(G, cmap=seq, vmin=0.4, vmax=1.0, aspect="auto")
+        ax.set_xticks(range(len(MODELS))); ax.set_xticklabels([short[m[0]] for m in MODELS])
         ax.set_yticks(range(len(fams))); ax.set_yticklabels([f[1] for f in fams] if ax is axes[0] else [""] * len(fams))
         boldify(ax, size=8)
         for lab in ax.get_xticklabels():
@@ -215,20 +213,15 @@ def fig_families():
         ax.tick_params(length=0)
         for i in range(len(fams)):
             for j in range(len(MODELS)):
-                d = D[i, j]
-                if np.isnan(d):
+                v, g = V[i, j], G[i, j]
+                if np.isnan(v):
                     continue
-                dark = d > 0.5 or d < -0.17
-                dtxt = f"{d:+.3f}" if abs(d) >= 0.0005 else "0.000"
-                ax.text(j, i - 0.14, dtxt, ha="center", va="center", fontsize=7.2, fontweight="bold",
-                        color="white" if dark else CHARCOAL)
-                ax.text(j, i + 0.22, f"{O[i, j]:.2f} vs {C[i, j]:.2f}", ha="center", va="center", fontsize=5.6,
-                        color="white" if dark else "#6B6F73")
+                ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=7.6, fontweight="bold",
+                        color="white" if g > 0.8 else CHARCOAL)
         ax.set_title(title, loc="left", fontsize=9)
     cb = fig.colorbar(im, ax=axes, fraction=0.012, pad=0.012)
-    cb.set_ticks([-0.2, -0.1, 0.0, 0.2, 0.4, 0.6, 0.8])
+    cb.set_ticks([0.4, 0.6, 0.8, 1.0]); cb.set_ticklabels(["worse", "", "", "better"])
     cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=7)
-    cb.set_label("improvement of the contract over the end-to-end control\n(ours $-$ B; sign flipped for the two lower-is-better metrics)", fontsize=7)
     fig.savefig(OUT / "families.pdf", bbox_inches="tight"); fig.savefig(OUT / "families.png", bbox_inches="tight", dpi=200)
     plt.close(fig); print("wrote", OUT / "families.pdf")
 
