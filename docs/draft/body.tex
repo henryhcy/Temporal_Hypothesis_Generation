@@ -128,36 +128,61 @@ and Fisher-R1 \cite{miao2026fisher} come closest to our setting: an agent
 receives a hypothesis with its null stated, a CSV of the relevant data and a
 glossary, writes R to compute a $p$-value, and is scored on the decision and
 the $p$-value. In all of these the data are already the relevant subset and
-the null is given or trivial; the step we score first, deciding which records
-a statistic is computed over, has no counterpart, and no intermediate stage
-has gold.
+the null is given or trivial. The step we score first, deciding which
+records a statistic is computed over, has no counterpart, and no
+intermediate stage has gold.
 
-\paragraph{Hypothesis-testing agents.} VERITAS \cite{veritas2026} is a
-multi-agent co-scientist with a deterministic evidence classifier, built for
-image-derived cohorts; LATCH \cite{gim2026latch} runs LLM-chosen analyses
-through deterministic R pipelines on EHR data with the method given;
-DiscoveryBench and BLADE \cite{majumder2025discoverybench,gu2024blade}
-evaluate open-ended discovery agents against rubrics. They share our
-plan-then-execute shape and our insistence on auditable computation, but
-none scores the conditioning of the evidence and none has hypotheses about
-the order of events within a record. We run DiscoveryBench's reference
-agent as a baseline, together with EHRAgent \cite{shi2024ehragent}.
+\paragraph{Hypothesis-testing and discovery agents.} VERITAS
+\cite{veritas2026} is a multi-agent co-scientist with a deterministic
+evidence classifier, built for image-derived cohorts; LATCH
+\cite{gim2026latch} runs LLM-chosen analyses through deterministic R
+pipelines on EHR data with the method given; DiscoveryBench and BLADE
+\cite{majumder2025discoverybench,gu2024blade} evaluate open-ended discovery
+agents against rubrics. They share our plan-then-execute shape and our
+insistence on auditable computation, but none scores the conditioning of the
+evidence, and their hypotheses are about variables in a table rather than
+the order of events within a record. We run DiscoveryBench's reference agent
+as a baseline.
 
-\paragraph{Clinical text-to-SQL and timelines.} EHRSQL \cite{lee2022ehrsql}
-scores one query per question with an abstention option, and EHRAgent
-\cite{shi2024ehragent} solves EHR questions with a code-writing agent and
-error-driven retries; our Straight-to-SQL baselines (\S\ref{sec:baselines})
-follow the EHRSQL protocol over our schema. TIMER \cite{timer2025} and CRAFT
-\cite{craft2026} extract and refine clinical timelines from narratives; we
-use the MedTempo timelines released with CRAFT as our data source, not as a
-competitor. We start where extraction ends.
+\paragraph{Temporal reasoning.} Temporal benchmarks for language models ask
+about the order, duration or frequency of events in a passage or a synthetic
+event graph \cite{wang2024tram,fatemi2025testoftime}, and clinical temporal
+relation extraction labels the order of events within one narrative
+\cite{sun2013i2b2,bethard2016clinicaltempeval}; TIMER \cite{timer2025} and
+CRAFT \cite{craft2026} extract and refine clinical timelines with language
+models. In all of these the answer is a fact about one text or one timeline.
+A temporal hypothesis is a claim about a population of timelines, and
+verifying it adds the decisions this paper scores: which timelines can
+witness the order at all, what chance looks like given how events crowd the
+early stages, and which exact test decides. We use the MedTempo timelines
+released with CRAFT as our data source and start where extraction ends.
 
-\paragraph{Positioning.} Table~\ref{tab:related-concise} compares the closest
-work. A plan-then-execute loop with a deterministic statistics layer (LATCH)
-and ``hypothesis and data in, $p$ out'' (P-Bench) are not new; what is new
-is a model-formulated null executed deterministically with gold at every
-stage, a scored eligibility rule, and claims about event order with the
-conditioning semantics those claims carry.
+\paragraph{Clinical question answering over databases.} EHRSQL
+\cite{lee2022ehrsql} scores one query per question with an abstention option,
+and EHRAgent \cite{shi2024ehragent} answers EHR questions with a
+code-writing agent and error-driven retries; our Straight-to-SQL baselines
+follow the EHRSQL protocol over our schema, and we run EHRAgent's released
+code on our database.
+Open text-to-SQL models such as OmniSQL \cite{li2025omnisql} and XiYanSQL
+\cite{gao2025xiyansql} serve as our retrieval-stage baselines. These tasks
+score a query's answer; a temporal hypothesis needs a query whose rows are
+exactly the reports that can witness the claim, and a test on top of it.
+
+\paragraph{Scoring intermediate steps.} Process supervision shows that
+grading each step of a solution finds errors that outcome grading misses
+\cite{lightman2024verify}, but it relies on human step labels. Here every
+stage has mechanical gold, so a verdict can be checked for whether it is
+right for the right reason: the plan against the gold plan, the counted
+reports against the gold sets, and the test against the exact computation.
+
+\paragraph{Positioning.} Taken together, prior work either hands the system
+the relevant data and scores the answer, or lets an agent choose its own
+analysis and scores a rubric. What is new here is a model-formulated plan,
+including its null, executed deterministically with gold at every stage; a
+scored eligibility rule deciding which records count; and claims about
+event order with the conditioning semantics those claims carry.
+Table~\ref{tab:related-concise} (Appendix~\ref{app:positioning}) compares
+the closest work along these lines.
 
 \iffalse  % prose positioning table kept in source only (user 2026-10-21); Table~\ref{tab:related-concise} is the live one
 \begin{table*}[t]
@@ -188,42 +213,6 @@ within a record.}
 \label{tab:related}
 \end{table*}
 \fi
-
-\begin{table*}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{4pt}
-\renewcommand{\arraystretch}{1.25}
-\begin{tabularx}{\textwidth}{@{}p{2.5cm} Y Y Y Y Y Y@{}}
-\toprule
-Work & Null & Test selection & Test execution & Event-order claims & Clinical data & Gold released \\
-\midrule
-\multicolumn{7}{@{}l}{\textit{benchmarks}} \\
-StatQA \cite{zhu2024statqa} & \cpart{applicability only} & \cyes{model picks from a catalogue, scored} & \cno{none run} & \cno{no} & \cno{no} & \cno{final answer} \\
-StatFormBench \cite{wang2026statformbench} & \cpart{test family} & \cpart{model names the family} & \cno{none run} & \cno{no} & \cno{textbook} & \cpart{formulation} \\
-StatABench \cite{zhu2026statabench} & \cpart{test choice} & \cyes{model picks, scored} & \cpart{fixed tool functions} & \cno{no} & \cno{no} & \cno{final answer} \\
-P-Bench / Fisher-R1 \cite{miao2026fisher} & \cno{given} & \cpart{model picks, unscored} & \cpart{model-written R} & \cpart{survival only} & \cpart{partly} & \cpart{reference $p$} \\
-DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & \cpart{open-ended} & \cpart{agent, rubric-scored} & \cpart{agent code} & \cno{no} & \cno{no} & \cpart{rubric} \\
-EHRSQL \cite{lee2022ehrsql} & \cno{none (QA)} & \cno{none} & \cno{SQL; no test} & \cno{no} & \cyes{EHR} & \cpart{SQL, answer, abstention} \\
-\midrule
-\multicolumn{7}{@{}l}{\textit{systems}} \\
-EHRAgent \cite{shi2024ehragent} & \cno{none (QA)} & \cno{none} & \cno{agent code; no test} & \cno{no} & \cyes{EHR} & \cna{system} \\
-LATCH \cite{gim2026latch} & \cno{given} & \cno{given by the source study} & \cyes{deterministic R pipelines} & \cno{no} & \cyes{NHANES} & \cna{system} \\
-VERITAS \cite{veritas2026} & \cpart{planned by agent} & \cpart{agent plans} & \cpart{own code + rule} & \cno{no} & \cyes{imaging} & \cna{system} \\
-\midrule
-\textbf{\sys{} + \art{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{derived from the plan} (null, arms); scored by plan EM} & \cyes{\textbf{harness}: three exact tests, floor} & \cyes{\textbf{7 families}} & \cyes{\textbf{VAERS timelines}} & \cyes{\textbf{plan, evidence, $p$, verdict}} \\
-\bottomrule
-\end{tabularx}
-\caption{Positioning, concise form. \emph{Null}: who states the null and the
-population it is tested over. \emph{Test selection}: who chooses the test
-and whether that choice is scored. \emph{Test execution}: what computes the
-statistic the verdict rests on, and with which tests. \emph{Event-order
-claims}: hypotheses about the order or timing of events within a record.
-\emph{Gold released}: what a benchmark scores besides the final answer;
-systems release no gold of their own. Marks: \cmark{} has it, \pmark{} partly,
-\xmark{} lacks it, \nmark{} not applicable.}
-\label{tab:related-concise}
-\end{table*}
 
 \section{The \sys{} Benchmark}
 \label{sec:dataset}

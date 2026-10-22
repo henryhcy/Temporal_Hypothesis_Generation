@@ -4,6 +4,48 @@
 % validity screens and the per-group release statistics.
 % ---------------------------------------------------------------------------
 \appendix
+\section{Positioning against related work}
+\label{app:positioning}
+
+Table~\ref{tab:related-concise} sets the closest benchmarks and systems
+against \sys{} along the decisions of \S\ref{sec:related}.
+
+\begin{table*}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{4pt}
+\renewcommand{\arraystretch}{1.25}
+\begin{tabularx}{\textwidth}{@{}p{2.5cm} Y Y Y Y Y Y@{}}
+\toprule
+Work & Null & Test selection & Test execution & Event-order claims & Clinical data & Gold released \\
+\midrule
+\multicolumn{7}{@{}l}{\textit{benchmarks}} \\
+StatQA \cite{zhu2024statqa} & \cpart{applicability only} & \cyes{model picks from a catalogue, scored} & \cno{none run} & \cno{no} & \cno{no} & \cno{final answer} \\
+StatFormBench \cite{wang2026statformbench} & \cpart{test family} & \cpart{model names the family} & \cno{none run} & \cno{no} & \cno{textbook} & \cpart{formulation} \\
+StatABench \cite{zhu2026statabench} & \cpart{test choice} & \cyes{model picks, scored} & \cpart{fixed tool functions} & \cno{no} & \cno{no} & \cno{final answer} \\
+P-Bench / Fisher-R1 \cite{miao2026fisher} & \cno{given} & \cpart{model picks, unscored} & \cpart{model-written R} & \cpart{survival only} & \cpart{partly} & \cpart{reference $p$} \\
+DiscoveryBench / BLADE \cite{majumder2025discoverybench,gu2024blade} & \cpart{open-ended} & \cpart{agent, rubric-scored} & \cpart{agent code} & \cno{no} & \cno{no} & \cpart{rubric} \\
+EHRSQL \cite{lee2022ehrsql} & \cno{none (QA)} & \cno{none} & \cno{SQL; no test} & \cno{no} & \cyes{EHR} & \cpart{SQL, answer, abstention} \\
+\midrule
+\multicolumn{7}{@{}l}{\textit{systems}} \\
+EHRAgent \cite{shi2024ehragent} & \cno{none (QA)} & \cno{none} & \cno{agent code; no test} & \cno{no} & \cyes{EHR} & \cna{system} \\
+LATCH \cite{gim2026latch} & \cno{given} & \cno{given by the source study} & \cyes{deterministic R pipelines} & \cno{no} & \cyes{NHANES} & \cna{system} \\
+VERITAS \cite{veritas2026} & \cpart{planned by agent} & \cpart{agent plans} & \cpart{own code + rule} & \cno{no} & \cyes{imaging} & \cna{system} \\
+\midrule
+\textbf{\sys{} + \art{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{derived from the plan} (null, arms); scored by plan EM} & \cyes{\textbf{harness}: three exact tests, floor} & \cyes{\textbf{7 families}} & \cyes{\textbf{VAERS timelines}} & \cyes{\textbf{plan, evidence, $p$, verdict}} \\
+\bottomrule
+\end{tabularx}
+\caption{Positioning against related work (a comparison of what each work asks and scores, not of results). \emph{Null}: who states the null and the
+population it is tested over. \emph{Test selection}: who chooses the test
+and whether that choice is scored. \emph{Test execution}: what computes the
+statistic the verdict rests on, and with which tests. \emph{Event-order
+claims}: hypotheses about the order or timing of events within a record.
+\emph{Gold released}: what a benchmark scores besides the final answer;
+systems release no gold of their own. Marks: \cmark{} has it, \pmark{} partly,
+\xmark{} lacks it, \nmark{} not applicable.}
+\label{tab:related-concise}
+\end{table*}
+
 \section{Corpus, roster and per-group statistics}
 \label{app:stats}
 
