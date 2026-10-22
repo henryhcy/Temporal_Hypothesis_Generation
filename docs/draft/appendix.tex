@@ -334,8 +334,8 @@ colour scale is square-root, so small errors remain visible.}
 \section{The agentic subsample: every system on the identical 204 claims}
 \label{app:subsample}
 
-VERITAS's three agent phases take nine minutes per claim and DiscoveryBench's
-agent one to two, so both were run on 204 claims of the test set (12 per cohort group, four per verdict, the test
+DiscoveryBench's agent takes one to two minutes per claim, so it was run on
+204 claims of the test set (12 per cohort group, four per verdict, the test
 set's own stratification; selected before any run). Table~\ref{tab:subsample}
 scores the other systems on the same 204 claims next to their full-set
 numbers, with 95\% bootstrap intervals over claims (2{,}000 resamples).
@@ -348,7 +348,7 @@ numbers, with 95\% bootstrap intervals over claims (2{,}000 resamples).
 \toprule
 system & full test set (1{,}500) & same 204 claims \\
 \midrule
-VERITAS + codebook, our tests (Coder-32B) & --- & 0.402 [0.333, 0.471] \\
+% VERITAS + codebook, our tests (Coder-32B) & --- & 0.402 [0.333, 0.471] \\  (removed from the paper 2026-10-22; results in ~/veritas_baseline/runs/scored_D.json)
 DiscoveryBench agent + codebook (qwen3.8-27B) & --- & 0.647 [0.583, 0.711] \\
 DiscoveryBench agent + codebook (gemma4-31B) & --- & 0.706 [0.642, 0.770] \\
 EHRAgent, own test (Coder-32B) & 0.605 [0.579, 0.629] & 0.559 [0.490, 0.623] \\

@@ -22,10 +22,10 @@
 \caption{Overview. Top: \sys{} benchmark construction, from the clinical
 timelines (1.1) through the hypothesis templates (1.2) and the groups,
 families and difficulty levels (1.3) to the gold computed at every stage
-(1.4). Middle: the \art{} verification pipeline, articulate (S1), retrieve
+(1.4). Bottom: the \art{} verification pipeline, articulate (S1), retrieve
 (S2) and test (S3), with the contract between S1 and S2 and the
-verify-and-repair loops. Bottom: stage-level evaluation of the plan, the
-evidence sets and the verdict against their gold.}
+verify-and-repair loops; beneath each stage, the measure that scores its
+output against the gold (3).}
 \label{fig:overview}
 \end{figure*}
 
@@ -140,9 +140,8 @@ DiscoveryBench and BLADE \cite{majumder2025discoverybench,gu2024blade}
 evaluate open-ended discovery agents against rubrics. They share our
 plan-then-execute shape and our insistence on auditable computation, but
 none scores the conditioning of the evidence and none has hypotheses about
-the order of events within a record. We run VERITAS and DiscoveryBench's
-reference agent as baselines, together with EHRAgent
-\cite{shi2024ehragent}.
+the order of events within a record. We run DiscoveryBench's reference
+agent as a baseline, together with EHRAgent \cite{shi2024ehragent}.
 
 \paragraph{Clinical text-to-SQL and timelines.} EHRSQL \cite{lee2022ehrsql}
 scores one query per question with an abstention option, and EHRAgent
@@ -589,10 +588,10 @@ case studies (\S\ref{sec:cases}) cover single reports and paraphrase.
 \subsection{Baselines}
 \label{sec:baselines}
 
-Four published systems are adapted to the benchmark. All read the same
-database, and those given the codebook receive the same text; the two
-slowest agents run on a stratified 204-claim subsample, the rest on all
-1{,}500 claims. \emph{EHRSQL}
+Three published systems are adapted to the benchmark. All read the same
+database, and those given the codebook receive the same text; the slowest
+agent runs on a stratified 204-claim subsample, the rest on all 1{,}500
+claims. \emph{EHRSQL}
 \cite{lee2022ehrsql} is the single-query text-to-SQL protocol over our
 schema, which we call Straight-to-SQL in the text: one prompt per claim to
 the SQL model, carrying the schema as a column listing and the row contract
@@ -608,12 +607,6 @@ two exact-test functions, the verdict semantics and the floors, but not the
 codebook: as in the original system, its knowledge stage writes the analysis
 plan itself. Its paper used GPT-4 and GPT-3.5; we run the 2024 Coder,
 qwen3.8 and GPT-5.6, all through the code-block path.
-\emph{VERITAS} \cite{veritas2026} runs its hypothesis, statistics and
-interpretation agents as released with imaging bypassed, our exact-test
-functions bound in place of its statistics library and the codebook as the
-data description; each phase is capped at ten minutes, and at nine minutes
-per claim it is run with the Coder on a stratified 204-claim subsample
-(Appendix~\ref{app:subsample}).
 \emph{DiscoveryBench} \cite{majumder2025discoverybench} contributes its
 reference discovery agent, a ReAct loop with a Python interpreter, run as
 released over the same three tables exported as CSV with column
@@ -700,8 +693,8 @@ the code.
 \ifsplitmaintable
 \begin{table*}[t]
 \centering
-\scriptsize
-\setlength{\tabcolsep}{2.2pt}
+\footnotesize
+\setlength{\tabcolsep}{2.4pt}
 \renewcommand{\arraystretch}{1.12}
 \begin{tabular}{@{}lrrrr@{\hspace{6pt}}rrrr@{\hspace{6pt}}rrrr@{\hspace{6pt}}rrrr@{\hspace{6pt}}rrrr@{}}
 \toprule
@@ -713,7 +706,6 @@ test set, 1{,}500 cohort claims & \multicolumn{4}{c}{\textbf{Qwen2.5-32B pair}} 
 EHRSQL & .529 & .555 & .528 & .518 & .587 & .605 & .587 & .582 & .635 & .647 & .634 & .629 & .878 & .882 & .878 & .878 & .876 & .877 & .876 & .876 \\
 EHRSQL-C & .575 & .604 & .574 & .570 & .748 & .764 & .747 & .748 & .859 & .885 & .858 & .861 & 1.000 & 1.000 & 1.000 & 1.000 & .984 & .984 & .984 & .984 \\
 EHRAgent & .605 & .694 & .606 & .600 & .839 & .863 & .839 & .843 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & .792 & .808 & .792 & .794 \\
-VERITAS$^\dagger$ & .402 & .501 & .402 & .335 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 DiscoveryBench$^\dagger$ & \multicolumn{4}{c}{---} & .647 & .812 & .647 & .711 & .706 & .784 & .706 & .729 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 \midrule
 \multicolumn{21}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
@@ -742,8 +734,7 @@ same timeline database and returns the three-way verdict, and its name
 identifies the protocol or released system, not its original setting
 (\S\ref{sec:baselines}). $^\ddagger$Fine-tuned from Qwen2.5-Coder-32B, so
 listed under the 2024 pair. $^\dagger$Run on a stratified 204-claim subsample
-(Appendix~\ref{app:subsample}): VERITAS with the Coder, DiscoveryBench's agent
-with the two 2026 open models. A dash marks a run not made.}
+(Appendix~\ref{app:subsample}), with the two 2026 open models. A dash marks a run not made.}
 \label{tab:main}
 \end{table*}
 \else
@@ -761,7 +752,6 @@ test set, 1{,}500 cohort claims & \textbf{Qwen2.5-32B pair} & \textbf{qwen3.8-27
 EHRSQL & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
 EHRSQL-C & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
 EHRAgent & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
-VERITAS$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 DiscoveryBench$^\dagger$ & --- & 0.647\,{\scriptsize(0.812/0.647/0.711)} & 0.706\,{\scriptsize(0.784/0.706/0.729)} & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
@@ -790,8 +780,7 @@ same timeline database and returns the three-way verdict, and its name
 identifies the protocol or released system, not its original setting
 (\S\ref{sec:baselines}). $^\ddagger$Fine-tuned from Qwen2.5-Coder-32B, so
 listed under the 2024 pair. $^\dagger$Run on a stratified 204-claim subsample
-(Appendix~\ref{app:subsample}): VERITAS with the Coder, DiscoveryBench's agent
-with the two 2026 open models. A dash marks a run not made.}
+(Appendix~\ref{app:subsample}), with the two 2026 open models. A dash marks a run not made.}
 \label{tab:main}
 \end{table*}
 \fi
@@ -866,10 +855,9 @@ for the Coder and 0.25 for qwen3.8, but cost GPT-5.6 0.08 (0.792 against
 0.876): free to choose, it keeps ties in first/last denominators, applies
 multiple-comparison corrections and counts co-occurrence over reports with
 either term, each a defensible convention that is not this corpus's. Given
-the codebook, both agents score below the single query with the same model
+the codebook, DiscoveryBench's agent scores below the single query with the same model
 on the same 204 claims: DiscoveryBench's agent 0.65 and 0.71 against 0.76 and
-0.88 for qwen3.8 and gemma4, and VERITAS 0.40 against 0.59 for the Coder
-(Appendix~\ref{app:subsample}, where every other system scores within its
+0.88 for qwen3.8 and gemma4 (Appendix~\ref{app:subsample}, where every other system scores within its
 own interval on the same claims). An agent that writes its own denominator
 and test has more ways to depart from the stipulations it was given, and
 nothing checks that it did not.
@@ -984,8 +972,7 @@ larger gain than in accuracy and largest for the weakest model, and the
 frontier models are exact on all but a handful of claims in both systems.
 The agents cannot be checked at all: EHRAgent and DiscoveryBench's agent
 return a verdict from their own code, so a right verdict from them says
-nothing about which reports it counted, and VERITAS completes fewer than
-half its runs within a ten-minute cap per phase.
+nothing about which reports it counted.
 
 \begin{figure}[t]
 \centering
