@@ -673,9 +673,9 @@ instances (1{,}000 resamples),
 about $\pm 0.02$ on the test set and $\pm 0.01$ above 0.98. Per-record cost
 and latency are in Appendix~\ref{app:cost}; a frontier column on the test set
 cost \$80--89 at list price, and the open models answer a claim in 10--14
-seconds on one workstation GPU. The development-set analyses behind the
-frozen configuration are in Appendix~\ref{app:dev}, and the full
-information-versus-architecture grid is released with the code.
+seconds on one workstation GPU. Prompts and settings were frozen on the
+development set before any test run; those tuning analyses are released with
+the code.
 
 \section{Results}
 \label{sec:results}
@@ -898,8 +898,7 @@ within a ten-minute cap per phase and abstaining on most decisive claims. The
 Straight-to-SQL control with the 2024 Coder is right on 57\% of claims and
 right for the right reason on only 40\% of those: it admits same-stage
 reports into order denominators, defines the eligible set as the supporting
-set, and narrows presence splits to co-occurrence
-(Table~\ref{tab:attribution}). The StatQA row shows the same
+set, and narrows presence splits to co-occurrence. The StatQA row shows the same
 thing from the other side: handed the exact counts, the open models still
 return the wrong verdict on a quarter to a third of claims, so a correct
 verdict from them is not evidence of a correct computation. VERITAS's nine
@@ -984,11 +983,14 @@ the model's verdict on the pipeline's own counts loses 0.2 to 0.3.
 
 \paragraph{Prose versus contract.} The hand-off between S1 and S2 is what the
 stage rows cannot see, because Retrieve receives the gold plan already
-resolved. On the development set the same composed plan handed to S2 as
-prose with the codebook scores below the verified Straight-to-SQL model even
-after two repair rounds, while resolving the plan's named primitive into its
-rule adds about 0.3 with the same plan and the same model. The decomposition
-pays only when the plan is a contract.
+resolved. The \emph{$-$ contract} row hands the same composed plan to S2 as
+prose with the codebook, so the plan, the model and the repair rounds are
+unchanged and only the resolution of the named primitive into its rule is
+removed.
+% TODO(test contract ablation): fill with the test-set numbers for the pair,
+% qwen3.8 and gemma4 once test_*_prose_verify2 finish. The development-set
+% version of this comparison (prose below verified EHRSQL-C; contract +~0.3)
+% is kept in the repo only (appendix.tex, commented section app:dev).
 
 \paragraph{Repair rounds.} Figure~\ref{fig:rounds} runs the pipeline with
 zero to three verify-and-repair rounds. For the 2026 open models the first
