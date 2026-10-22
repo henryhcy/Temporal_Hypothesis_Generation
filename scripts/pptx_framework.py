@@ -33,7 +33,7 @@ C = dict(rust="A0522D", wheat="D4B483", slate="4F6B75", gold="A8812E",
          text="2B2B2B", muted="5F5F5F", border="B8BEC4", panel="FFFFFF",
          band1="E7ECEF", band2="F1E9DF", band3="ECEAE7",
          tint_slate="E3EAED", tint_wheat="F3EBDD", tint_rust="F1E2DA", tint_grey="F2F2F2")
-SZ = dict(band=18, panel=12, stage=14, stagesub=10.5, body=10, small=9, badge=10)
+SZ = dict(band=16, panel=12, stage=14, stagesub=10.5, body=10, small=9, badge=10)
 W, H = 13.333, 8.15
 
 
@@ -60,6 +60,9 @@ def rgb(h):
 def _no_style_effects(sh):
     for ref in sh._element.iter(qn("a:effectRef")):
         ref.set("idx", "0")
+    sppr = sh._element.find(qn("p:spPr"))
+    if sppr is not None and sppr.find(qn("a:effectLst")) is None:
+        etree.SubElement(sppr, qn("a:effectLst"))
 
 
 def box(x, y, w, h, fill=C["panel"], line=C["border"], radius=0.05, lw=0.75):
@@ -120,6 +123,7 @@ def arrow(x1, y1, x2, y2, color=C["muted"], lw=1.75):
     conn.line.color.rgb = rgb(color); conn.line.width = Pt(lw)
     ln = conn.line._get_or_add_ln()
     tail = etree.SubElement(ln, qn("a:tailEnd")); tail.set("type", "triangle"); tail.set("w", "med"); tail.set("len", "med")
+    _no_style_effects(conn)
     return conn
 
 
@@ -128,7 +132,7 @@ def icon(name, x, y, size=0.36, color=None):
 
 
 def band(y, h, fill):
-    return box(0.12, y, W - 0.24, h, fill=fill, line=None, radius=0.03)
+    return box(0.1, y, W - 0.2, h, fill=fill, line=None, radius=0.03)
 
 
 def header(y, number, title, color):
@@ -161,7 +165,7 @@ text(0.3, py + 1.02, 1.4, 1.5, ["3,166 VAERS reports, three vaccines, expert-ann
 box(1.72, py + 0.44, 1.54, 2.02, fill=C["tint_grey"], line=None)
 text(1.76, py + 0.47, 1.48, 0.5, [[("Example timeline", {"bold": True, "size": SZ["small"]})], [("report MT-0482913", {"size": SZ["small"], "color": C["muted"]})]])
 ty = py + 1.15
-ln = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(1.86), Inches(ty), Inches(3.12), Inches(ty)); ln.line.color.rgb = rgb(C["slate"]); ln.line.width = Pt(1.75)
+ln = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(1.86), Inches(ty), Inches(3.12), Inches(ty)); ln.line.color.rgb = rgb(C["slate"]); ln.line.width = Pt(1.75); _no_style_effects(ln)
 for cx, lab, col in ((1.94, "Fever", C["slate"]), (2.49, "Headache", C["rust"]), (3.04, "Fatigue", C["gold"])):
     circle(cx - 0.07, ty - 0.07, 0.14, col, "")
     text(cx - 0.4, ty + 0.08, 0.8, 0.22, [lab], size=7, bold=True, color=col, align=PP_ALIGN.CENTER)
@@ -198,14 +202,14 @@ for yy, hh, ic, title, body, fill in ((py + 0.44, 0.6, "brain", "26 groups", "9 
 arrow(10.12, py + 1.2, 10.36, py + 1.2)
 
 # 1.4 gold
-panel(10.4, py, 2.81, ph, "1.4", "Gold annotations")
+panel(10.4, py, 2.69, ph, "1.4", "Gold annotations")
 for yy, hh, ic, title, body in ((py + 0.44, 0.6, "file-check", "Plan", "events, quantity, denominator primitive, arms, null, p0, tail, test, floor"),
                                 (py + 1.1, 0.52, "database", "Evidence sets", "denominator, numerator and excluded ids; n, k per arm"),
                                 (py + 1.68, 0.6, "chart-bar", "Statistics, verdict", "p on both tails, Wilson CI, Cohen's h; supported / refuted / insufficient")):
-    box(10.48, yy, 2.65, hh, fill=C["tint_wheat"], line=None, radius=0.1)
+    box(10.48, yy, 2.53, hh, fill=C["tint_wheat"], line=None, radius=0.1)
     icon(ic, 10.54, yy + (hh - 0.34) / 2, 0.34, C["gold"])
-    text(10.92, yy + 0.02, 2.2, hh - 0.04, [[(title, {"bold": True, "size": SZ["body"] + 1})], [(body, {"size": SZ["small"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
-text(10.48, py + 2.3, 2.65, 0.24, ["validated by invariants and an oracle; permutation-screened"], size=SZ["small"] - 1.5, color=C["muted"], italic=True)
+    text(10.92, yy + 0.02, 2.08, hh - 0.04, [[(title, {"bold": True, "size": SZ["body"] + 1})], [(body, {"size": SZ["small"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
+text(10.48, py + 2.3, 2.53, 0.24, ["validated by invariants and an oracle; permutation-screened"], size=SZ["small"] - 1.5, color=C["muted"], italic=True)
 
 # ====================================================================== band 2: ART pipeline
 band(3.5, 3.3, C["band2"])
@@ -253,15 +257,15 @@ for yy, ic, lab in ((qy + 0.72, "code", "told the schema and the contract; one S
 arrow(10.9, qy + 1.3, 11.14, qy + 1.3)
 
 # S3
-box(11.18, qy, 2.03, qh, fill=C["tint_slate"], line=None)
+box(11.18, qy, 1.91, qh, fill=C["tint_slate"], line=None)
 circle(11.26, qy + 0.07, 0.54, C["gold"], "S3", size=13, sub="function")
-text(11.86, qy + 0.04, 1.33, 0.6, [[("Test", {"bold": True, "size": SZ["stage"], "color": C["gold"]})], [("exact, deterministic", {"size": SZ["stagesub"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
+text(11.86, qy + 0.04, 1.21, 0.6, [[("Test", {"bold": True, "size": SZ["stage"], "color": C["gold"]})], [("exact, deterministic", {"size": SZ["stagesub"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
 icon("settings", 11.26, qy + 0.76, 0.32, C["gold"])
-text(11.62, qy + 0.7, 1.55, 1.1, ["exact binomial vs p0; Fisher's exact test for two arms; modal-vs-runner-up for argmax; floor n ≥ 10"], size=SZ["small"], spacing=0.95)
+text(11.62, qy + 0.7, 1.45, 1.1, ["exact binomial vs p0; Fisher's test, two arms; modal-vs-runner-up, argmax; floor n ≥ 10"], size=SZ["small"], spacing=0.95)
 for k, (lab, ic, col) in enumerate((("Supported", "circle-check", C["slate"]), ("Refuted", "circle-x", C["rust"]), ("Insufficient", "circle-help", C["gold"]))):
     yy = qy + 1.78 + k * 0.26
     icon(ic, 11.26, yy, 0.22, col)
-    text(11.52, yy - 0.03, 1.6, 0.28, [lab], size=SZ["small"], bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    text(11.52, yy - 0.03, 1.5, 0.28, [lab], size=SZ["small"], bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
 # ====================================================================== band 3: stage-level evaluation
 band(6.9, 1.15, C["band3"])
@@ -272,8 +276,8 @@ evals = [("file-check", "Plan correctness", "plan EM, claim-type EM", C["slate"]
          ("database", "Evidence correctness", "evidence F1, co-exist / tie leak, faithfulness", C["rust"]),
          ("scale", "Verdict and abstention", "accuracy, macro P/R/F1, overclaim, underclaim", C["gold"])]
 for k, (ic, title, metrics, col) in enumerate(evals):
-    ex = 4.0 + k * 3.08
-    box(ex, 7.0, 2.98, 0.95)
+    ex = 4.0 + k * 3.065
+    box(ex, 7.0, 2.96, 0.95)
     icon(ic, ex + 0.1, 7.24, 0.46, col)
     text(ex + 0.66, 7.04, 2.3, 0.88, [[(title, {"bold": True, "size": SZ["panel"], "color": col})], [(metrics, {"size": SZ["small"], "color": C["muted"]})]], spacing=0.95, anchor=MSO_ANCHOR.MIDDLE)
 
