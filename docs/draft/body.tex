@@ -708,7 +708,7 @@ Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 \multicolumn{6}{@{}l}{\textit{ablations of \art{}}} \\
 \quad $-$ verifier & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
 \quad $-$ exact test (model verdict) & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
-\quad $-$ contract (plan as prose) & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
+\quad $-$ contract (plan as prose) & 0.663\,{\scriptsize(0.704/0.663/0.671)} & \pend{running} & \pend{running} & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ours}} \\
 \textbf{\art{}} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
@@ -987,9 +987,12 @@ stage rows cannot see, because Retrieve receives the gold plan already
 resolved. The \emph{$-$ contract} row hands the same composed plan to S2 as
 prose with the codebook, so the plan, the model and the repair rounds are
 unchanged and only the resolution of the named primitive into its rule is
-removed.
-% TODO(test contract ablation): fill with the test-set numbers for the pair,
-% qwen3.8 and gemma4 once test_*_prose_verify2 finish. The development-set
+removed. For the Qwen2.5 pair this costs 0.15 of verdict accuracy (0.810 to
+0.663), which leaves the decomposed pipeline barely above the one-prompt
+baseline given the same codebook and the same two repair rounds (0.638): the
+decomposition pays mainly when the plan is a contract.
+% TODO(test contract ablation): add qwen3.8 and gemma4 once
+% test_{qwen38_27b,gemma4_31b}_prose_verify2 finish. The development-set
 % version of this comparison (prose below verified EHRSQL-C; contract +~0.3)
 % is kept in the repo only (appendix.tex, commented section app:dev).
 
