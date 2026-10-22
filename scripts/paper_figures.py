@@ -40,11 +40,20 @@ DRIFT = "#8C7B5E"
 PAPER = "#FBFAF7"
 # avocado set for the heatmap (brown for losses, cream at zero, green for gains)
 A_BROWN = "#8B6B4A"; A_TAN = "#C9B38E"; A_CREAM = "#F3F0E4"; A_LIME = "#C8C46E"; A_AVO = "#8A9A55"; A_OLIVE = "#5C6B3A"
-MODELS = [("q25pair", "Qwen2.5-32B pair", DRIFT),
-          ("qwen38_27b", "qwen3.8-27B", DUNE),
-          ("gemma4_31b", "gemma4-31B", SLATE),
-          ("opus", "Opus 5.5", CHARCOAL),
-          ("gpt", "GPT-5.6", SEA)]
+# ---- the paper's palette (slate_rust, user 2026-10-22), used by role everywhere:
+#   models: one categorical colour each, fixed across figures
+#   ordinal quantities (repair rounds): a slate ramp; signed quantities (heatmap): rust -> cream -> slate
+#   structure/status (slide stages, table marks): the same hues, never beside models
+RUST, WHEAT, SAGE, SLATE_M, INK, GOLD = "#A0522D", "#D4B483", "#7A9A7E", "#4F6B75", "#2B3A42", "#A8812E"
+CREAM = "#F3EFE8"
+MODEL_COLORS = [RUST, WHEAT, SAGE, SLATE_M, INK]
+ROUND_RAMP = ["#B9C6CC", "#7F97A2", SLATE_M]                      # rounds 1, 2, 3
+DIVERGING = [RUST, "#D9A48C", CREAM, "#9FB3BD", SLATE_M]          # loss -> 0 -> gain
+MODELS = [("q25pair", "Qwen2.5-32B pair", RUST),
+          ("qwen38_27b", "qwen3.8-27B", WHEAT),
+          ("gemma4_31b", "gemma4-31B", SAGE),
+          ("opus", "Opus 5.5", SLATE_M),
+          ("gpt", "GPT-5.6", INK)]
 
 plt.rcParams.update({
     "font.family": "sans-serif",
@@ -99,7 +108,7 @@ def fig_rounds():
     appendix)."""
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
-    cols = [SLATE, DUNE, DRIFT]  # coast set: round 1 slate blue, then dune, drift (user 2026-10-21)
+    cols = ROUND_RAMP  # ordinal: slate ramp (user 2026-10-22)
     for name, getter, title in (("rounds", acc, "verdict accuracy"), ("rounds_f1", den_f1, "evidence F1")):
         fig, ax = plt.subplots(figsize=(3.4, 2.5))
         ys = np.arange(len(MODELS))[::-1]; h = 0.26
@@ -179,7 +188,7 @@ def fig_families():
                ("overclaim (lower is better)", 2, -1), ("underclaim (lower is better)", 3, -1)]
     ours = {k: _family_metrics(_records(R / f"test_{k}_dprime_verify2", gold)) for k, _, _ in MODELS}
     ctrl = {k: _family_metrics(_records(R / f"test_{k}_cellB", gold)) for k, _, _ in MODELS}
-    cmap = LinearSegmentedColormap.from_list("avocado", [A_BROWN, A_TAN, A_CREAM, A_LIME, A_AVO, A_OLIVE])
+    cmap = LinearSegmentedColormap.from_list("rust_slate", DIVERGING)
     norm = TwoSlopeNorm(vmin=-0.25, vcenter=0.0, vmax=0.8)
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
     # four panels in one row at the 2x2 version's per-panel size and fonts; LaTeX scales the whole
@@ -209,7 +218,7 @@ def fig_families():
                 d = D[i, j]
                 if np.isnan(d):
                     continue
-                dark = d > 0.45 or d < -0.15
+                dark = d > 0.5 or d < -0.17
                 dtxt = f"{d:+.3f}" if abs(d) >= 0.0005 else "0.000"
                 ax.text(j, i - 0.14, dtxt, ha="center", va="center", fontsize=7.2, fontweight="bold",
                         color="white" if dark else CHARCOAL)
@@ -262,7 +271,7 @@ def fig_registers():
     bar per open model, ART + verifier only; Original from the main test runs, the other registers from
     the test_*_registers_dprime_verify2 runs."""
     import families_candidates as FC  # noqa: E402
-    cols = FC.PALETTES_MUTED["slate_rust"]  # muted set (user 2026-10-21)
+    cols = MODEL_COLORS[:3]  # the paper palette (user 2026-10-22)
     models = [("q25pair", "Qwen2.5-32B pair"), ("qwen38_27b", "qwen3.8-27B"), ("gemma4_31b", "gemma4-31B")]
     regs = ["Original", "Research", "Media", "Clinical"]
     fig, ax = plt.subplots(figsize=(3.4, 2.4))
@@ -284,12 +293,12 @@ def fig_registers():
 
 
 # ---- 5. per-group verdict accuracy of our pipeline (ours only; user 2026-10-20) ------------------
-def fig_family_radar(palette: str = "meadow", suffix: str = ""):
+def fig_family_radar(palette: str = "paper", suffix: str = ""):
     """Verdict accuracy by claim family on the test set, our pipeline with the verifier only, one polygon
     per model (user 2026-10-20: radar, no end-to-end comparison, meadow palette)."""
     import families_candidates as FC  # noqa: E402
     O, _, n = FC.load()
-    cols = FC.PALETTES_STRONG[palette]
+    cols = MODEL_COLORS if palette == "paper" else FC.PALETTES_STRONG[palette]
     K = len(FC.FAMS)
     ang = np.linspace(0, 2 * np.pi, K, endpoint=False)
     ang_c = np.concatenate([ang, ang[:1]])
@@ -329,7 +338,7 @@ def fig_groups():
         for i, g in enumerate(order):
             if g in d:
                 M[i, j] = d[g][0] / d[g][1]; N[i] = d[g][1]
-    cmap = LinearSegmentedColormap.from_list("avocado_seq", [A_BROWN, A_TAN, A_CREAM, A_LIME, A_AVO, A_OLIVE])
+    cmap = LinearSegmentedColormap.from_list("cream_slate", [CREAM, "#9FB3BD", SLATE_M, INK])
     fig, ax = plt.subplots(figsize=(4.4, 5.2))
     ax.grid(False)
     im = ax.imshow(M, cmap=cmap, vmin=0.4, vmax=1.0, aspect="auto")
@@ -367,7 +376,7 @@ def fig_groups():
 def fig_tiers():
     import tier_candidates as TC  # noqa: E402
     import families_candidates as FC  # noqa: E402
-    cols = FC.PALETTES_STRONG["meadow"]
+    cols = MODEL_COLORS
     levels = ["Easy\none report", "Medium\none cohort", "Hard\ntwo cohorts"]
     fig, axes = plt.subplots(2, 1, figsize=(3.4, 4.0), sharex=True)
     for ax, suf, title in ((axes[0], "cellB", "Straight-to-SQL + codebook"), (axes[1], "dprime_verify2", "ART + verifier")):
@@ -393,7 +402,7 @@ def fig_tiers():
 def fig_rounds_vertical():
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
-    cols = [SLATE, SEA, MIST]
+    cols = ROUND_RAMP
     fig, ax = plt.subplots(figsize=(3.4, 2.1))
     x = np.arange(len(MODELS)); w = 0.26
     for r in (1, 2, 3):
