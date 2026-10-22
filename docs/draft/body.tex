@@ -47,9 +47,15 @@ decision is a stipulation about what the sentence means for this corpus,
 each can be wrong independently, and a verdict can be right while all of
 them are wrong.
 
-This paper makes that chain of decisions the object of evaluation. \sys{}
-(Staged Temporal-statistical Reasoning Assessment) is a benchmark and
-evaluation framework for temporal--statistical claims over MedTempo, a corpus
+This paper makes that chain of decisions the object of evaluation, in a
+setting where every one of them is hard: verifying temporal hypotheses about
+clinical event timelines by statistical testing. A hypothesis that one event
+tends to precede another, follow it immediately, come first among several or
+fall early in the clinical course is a claim about a population of timelines.
+No single report confirms it; it is verified only by an exact test over the
+reports whose timelines can witness it, against the null its wording implies.
+\sys{} (Staged Temporal-statistical Reasoning Assessment) is a benchmark and
+evaluation framework for this task over MedTempo, a corpus
 of 3{,}166 vaccine adverse-event reports whose clinical course is annotated
 as a \emph{leveled order} of events. Every instance carries its gold verdict
 (\emph{supported}, \emph{refuted} or a sub-typed \emph{insufficient}) and the
@@ -72,28 +78,41 @@ models from the 2024 open generation to the 2026 frontier, three findings
 answer three questions: the codebook is the information the task measures,
 and frontier models solve the task once they have it; for open models the
 contract is what makes the verdict stand on the right evidence, carrying a
-31B model to within 0.02 of the frontier at zero API cost; and the
-denominator is where systems fail, which verdict accuracy hides. Our
-contributions are:
+31B model to within 0.02 of the frontier at zero API cost; and systems fail
+at the temporal conditioning of the denominator, deciding which reports can
+witness the claim, a failure that verdict accuracy hides. Our contributions
+are:
 \begin{itemize}
-\item \textbf{A benchmark with gold at every stage}: temporal--statistical
-claims in 26 groups and seven families over three difficulty levels, released
-as a development set, a fact-disjoint test set and a single-report case
-study, with structured plans, exact evidence sets, exact $p$-values and a
-three-decision verdict with sub-typed abstention (\S\ref{sec:dataset}).
+\item \textbf{Temporal hypothesis verification as statistical testing, with
+gold at every stage}: a benchmark of hypotheses about the order, adjacency,
+position and co-occurrence of clinical events across patients' timelines,
+each verified by a one-sided exact test whose population, null and test
+follow from the claim's temporal shape; 26 groups and seven families over
+three difficulty levels, released as a development set, a fact-disjoint test
+set and a single-report case study, with structured plans, exact evidence
+sets, exact $p$-values and a three-decision verdict with sub-typed abstention
+(\S\ref{sec:dataset}).
 \item \textbf{A generation process that makes the codebook part of the
 task}: claims enumerated from the annotated timelines by templates, gold
-computed mechanically, screened against permutation nulls and validated by
-invariants and an oracle, and the stipulations the labels depend on shipped
-as text any system can be given (\S\ref{sec:dataset}).
-\item \textbf{A staged verification method}, \art{}, whose plan is handed to
-retrieval as a contract resolved by the harness, with bounded repair at each
-stage and a deterministic exact test, so that any stage can be set to gold
-and information and architecture are separately controllable
+computed mechanically by the exact test for each claim shape, screened
+against permutation nulls and validated by invariants and an oracle, and the
+stipulations that turn a temporal sentence into a testable population (which
+reports can witness an order, how ties and co-existing events count, what
+chance means for an early event) shipped as text any system can be given
+(\S\ref{sec:dataset}).
+\item \textbf{A staged verification method}, \art{}, that articulates a
+temporal hypothesis as a plan naming its conditioning rule, null and test,
+retrieves the conditioned report sets, and decides with a deterministic exact
+test, so that the verdict is a statistical decision rather than a model
+judgment; the plan is handed to retrieval as a contract resolved by the
+harness, each stage has bounded repair, and any stage can be set to gold
 (\S\ref{sec:method}).
 \item \textbf{A study of five models and two agentic systems} under three
-research questions, with stage and repair-budget ablations, case studies and
-an error analysis of the \emph{insufficient} class
+research questions, showing that systems fail at the temporal conditioning
+of the evidence rather than at the verdict, and that open models asked to
+make the statistical call themselves err on a fifth to two fifths of claims
+even with exact counts; with stage and repair-budget ablations, case studies and an
+error analysis of the \emph{insufficient} class
 (\S\ref{sec:experiments}, \S\ref{sec:results}).
 \end{itemize}
 
@@ -208,12 +227,13 @@ claims}: hypotheses about the order or timing of events within a record.
 \label{sec:task}
 
 
-\paragraph{Input and output.} A \emph{record} is a claim in natural language
---- a declarative sentence in one of four registers --- about a
-\emph{cohort} (the reports of one vaccine), a \emph{contrast} of two cohorts, or
-one named \emph{report}; and the annotations: for every report, its vaccine
-and the stage at which each event term is first mentioned. The system must
-return a verdict in $\{\emph{supported}, \emph{refuted}, \emph{insufficient}\}$,
+\paragraph{Input and output.} A \emph{record} is a temporal hypothesis
+stated as a claim in natural language --- a declarative sentence in one of
+four registers --- about a \emph{cohort} (the reports of one vaccine), a
+\emph{contrast} of two cohorts, or one named \emph{report}; and the
+annotations: for every report, its vaccine and the stage at which each event
+term is first mentioned. The system must verify the hypothesis by a
+statistical test over the annotations and return a verdict in $\{\emph{supported}, \emph{refuted}, \emph{insufficient}\}$,
 the last sub-typed as \emph{not-locatable} (no report qualifies),
 \emph{sparse} (too few qualify) or \emph{underpowered} (enough qualify, neither
 tail significant). It never sees report text.
@@ -474,9 +494,13 @@ $p$ on supported claims, median & 0.008 \\
 \label{sec:framework}
 \label{sec:method}
 
-Our reference pipeline, \art{}, verifies a claim in three stages, articulate,
-retrieve and test, and is built so that each stage can be scored against its gold, filled
-with gold, or told more or less about the corpus. This section gives the
+Our reference pipeline, \art{}, verifies a temporal hypothesis in three
+stages: it \emph{articulates} the claim as a plan naming its temporal
+conditioning rule, null and exact test, \emph{retrieves} the report sets the
+plan conditions on, and \emph{tests} them with a deterministic exact test,
+so the verdict is a statistical decision rather than a model judgment. It is
+built so that each stage can be scored against its gold, filled with gold, or
+told more or less about the corpus. This section gives the
 stage contracts, the two prompt frames that control what the model is told,
 and the verification loop; the systems it is compared against are in
 \S\ref{sec:baselines}. Unless stated otherwise, \art{} includes the
@@ -901,7 +925,7 @@ reports into order denominators, defines the eligible set as the supporting
 set, and narrows presence splits to co-occurrence (every failure attributed to
 its rule in Appendix~\ref{app:attribution}). The StatQA row shows the same
 thing from the other side: handed the exact counts, the open models still
-return the wrong verdict on a quarter to a third of claims, so a correct
+return the wrong verdict on a fifth to two fifths of claims, so a correct
 verdict from them is not evidence of a correct computation. VERITAS's nine
 minutes per claim confine it to a 204-claim stratified subsample of the test
 set; every other system scores within its own interval on those claims
@@ -979,7 +1003,7 @@ already failing. The 2026 models retrieve well with the gold plan, so their
 remaining loss is the plan, and gemma4 under \art{} sits within 0.01 of
 both its ceilings. The test stage is a function the open models cannot
 compute: under the StatQA protocol on the exact counts the open models are
-wrong on a quarter to a third of claims, and replacing the exact test with
+wrong on a fifth to two fifths of claims, and replacing the exact test with
 the model's verdict on the pipeline's own counts loses 0.2 to 0.3.
 
 \paragraph{Prose versus contract.} The hand-off between S1 and S2 is what the
@@ -1121,23 +1145,25 @@ run; the other registers rerun the same 1{,}500 claims.}
 \centering
 \includegraphics[width=\columnwidth]{Figures/insufficient.pdf}
 \caption{The \emph{insufficient} class on the test set, one row per system
-and model. Bars to the left: overclaim, the share of the 505
-gold-\emph{insufficient} claims given a decisive verdict, stacked by the gold
-sub-type (\emph{not-locatable} 176 claims, \emph{sparse} 157,
-\emph{underpowered} 172). Bars to the right: underclaim, the share of the 995
-decisive claims answered \emph{insufficient}, stacked by what the prediction
-shows (query rejected; denominator empty; below the floor; testable but not
-the gold set; the gold set, so the loss is in the numerator, null or test).
-EHRAgent returns a bare verdict, so its cause is not observable. The number at
-each bar end is the row's total. The full breakdown, with the share of
-abstentions that name the right sub-type, is Table~\ref{tab:insufficient} in
-Appendix~\ref{app:insufficient}.}
+and model. Left: overclaim, by gold sub-type. Right: underclaim, by cause;
+grey where the cause is not observable. Numbers are row totals; the full
+breakdown is Table~\ref{tab:insufficient}.}
 \label{fig:insufficient}
 \end{figure}
 
 The three-decision verdict fails in two directions, deciding what the data
 cannot decide and abstaining on what it can, and Figure~\ref{fig:insufficient}
-separates them with the cause of each. \emph{Overclaim is the agents' and the
+separates them with the cause of each. Overclaim is the share of the 505
+gold-\emph{insufficient} claims given a decisive verdict, split by their gold
+sub-type (176 \emph{not-locatable}, 157 \emph{sparse}, 172
+\emph{underpowered}). Underclaim is the share of the 995 decisive claims
+answered \emph{insufficient}, split by what the prediction shows, which is
+also the sub-type the system claimed: the query was rejected; the denominator
+came back empty (claimed \emph{not-locatable}); it fell below the floor
+(claimed \emph{sparse}); or it was testable (claimed \emph{underpowered})
+and either not the gold set or the gold set, in which case the loss lies in
+the numerator, the null or the test. EHRAgent returns a bare verdict, so its
+causes cannot be observed. \emph{Overclaim is the agents' and the
 one-prompt models' failure.} EHRAgent with the 2024 Coder decides more than
 half of the claims the data cannot decide and nearly all of the
 \emph{underpowered} ones, because it runs its own test and finds
@@ -1177,7 +1203,8 @@ their loss on the threshold family (\S\ref{sec:families}).
 
 \sys{} turns a temporal--statistical claim into a chain of scored decisions,
 which reports count, what the null is, which test applies and what the
-evidence was, and shows that the first of those is where systems fail and
+evidence was, and shows that the first of those, the temporal conditioning
+that decides which reports can witness the claim, is where systems fail and
 the last is what the verdict cannot see: systems a few points apart on
 accuracy are a factor of two apart on whether their evidence is right. On a
 1{,}500-claim test set no prompt decision was made on, frontier models verify
