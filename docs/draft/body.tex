@@ -719,6 +719,59 @@ the code.
 \section{Results}
 \label{sec:results}
 
+% Main table: split layout (one column per score under each model, user 2026-10-22) is live; the
+% previous one-cell-per-model layout is kept below. Set \splitmaintablefalse to switch back.
+\newif\ifsplitmaintable \splitmaintabletrue
+\ifsplitmaintable
+\begin{table*}[t]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{2.2pt}
+\renewcommand{\arraystretch}{1.12}
+\begin{tabular}{@{}lrrrr@{\hspace{6pt}}rrrr@{\hspace{6pt}}rrrr@{\hspace{6pt}}rrrr@{\hspace{6pt}}rrrr@{}}
+\toprule
+test set, 1{,}500 cohort claims & \multicolumn{4}{c}{\textbf{Qwen2.5-32B pair}} & \multicolumn{4}{c}{\textbf{qwen3.8-27B}} & \multicolumn{4}{c}{\textbf{gemma4-31B}} & \multicolumn{4}{c}{\textbf{Opus 5.5}} & \multicolumn{4}{c}{\textbf{GPT-5.6}} \\
+\cmidrule(lr){2-5}\cmidrule(lr){6-9}\cmidrule(lr){10-13}\cmidrule(lr){14-17}\cmidrule(lr){18-21}
+ & Acc & P & R & F1 & Acc & P & R & F1 & Acc & P & R & F1 & Acc & P & R & F1 & Acc & P & R & F1 \\
+\midrule
+\multicolumn{21}{@{}l}{\textit{adapted baselines}} \\
+EHRSQL & .529 & .555 & .528 & .518 & .587 & .605 & .587 & .582 & .635 & .647 & .634 & .629 & .878 & .882 & .878 & .878 & .876 & .877 & .876 & .876 \\
+EHRSQL-C & .575 & .604 & .574 & .570 & .748 & .764 & .747 & .748 & .859 & .885 & .858 & .861 & 1.000 & 1.000 & 1.000 & 1.000 & .984 & .984 & .984 & .984 \\
+EHRAgent & .605 & .694 & .606 & .600 & .839 & .863 & .839 & .843 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & .792 & .808 & .792 & .794 \\
+VERITAS$^\dagger$ & .402 & .501 & .402 & .335 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+DiscoveryBench$^\dagger$ & \multicolumn{4}{c}{---} & .647 & .812 & .647 & .711 & .706 & .784 & .706 & .729 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\midrule
+\multicolumn{21}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
+Articulate: \art{} & .953 & .985 & .953 & .969 & .917 & .942 & .917 & .928 & .992 & .992 & .992 & .992 & .993 & .993 & .993 & .993 & .993 & .993 & .993 & .993 \\
+\quad chain-of-thought & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+Retrieve: \art{} & .836 & .879 & .835 & .840 & .944 & .945 & .944 & .944 & .989 & .990 & .989 & .989 & \multicolumn{4}{c}{$\geq$.999 on all four} & \multicolumn{4}{c}{$\geq$.999 on all four} \\
+\quad OmniSQL-32B$^\ddagger$ & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad XiYanSQL-32B$^\ddagger$ & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
+\quad StatQA & .611 & .706 & .609 & .575 & .619 & .784 & .617 & .539 & .777 & .816 & .776 & .776 & .999 & .999 & .999 & .999 & .999 & .999 & .999 & .999 \\
+\midrule
+\multicolumn{21}{@{}l}{\textit{ablations of \art{}}} \\
+\quad $-$ verifier & .761 & .845 & .760 & .777 & .735 & .815 & .734 & .744 & .844 & .886 & .843 & .848 & .999 & .999 & .999 & .999 & .999 & .999 & .999 & .999 \\
+\quad $-$ exact test (model verdict) & .512 & .651 & .510 & .482 & .568 & .612 & .566 & .503 & .770 & .809 & .769 & .769 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad $-$ contract (plan as prose) & .663 & .704 & .663 & .671 & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\midrule
+\multicolumn{21}{@{}l}{\textit{ours}} \\
+\textbf{\art{}} & \textbf{.810} & \textbf{.876} & \textbf{.809} & \textbf{.827} & \textbf{.872} & \textbf{.895} & \textbf{.872} & \textbf{.882} & \textbf{.981} & \textbf{.982} & \textbf{.981} & \textbf{.981} & \textbf{.993} & \textbf{.993} & \textbf{.993} & \textbf{.993} & \textbf{.983} & \textbf{.983} & \textbf{.983} & \textbf{.983} \\
+\bottomrule
+\end{tabular}
+\caption{Main results on the test set. Under each model: verdict accuracy
+(Acc) and macro precision, recall and F1 (P, R, F1) over the three verdict
+classes, leading zeros dropped; only the model changes across column groups. Intervals on accuracy are $\pm 0.02$ (0.6--0.9) and
+$\pm 0.01$ (above 0.98). Every baseline is adapted to \sys{}: it reads the
+same timeline database and returns the three-way verdict, and its name
+identifies the protocol or released system, not its original setting
+(\S\ref{sec:baselines}). $^\ddagger$Fine-tuned from Qwen2.5-Coder-32B, so
+listed under the 2024 pair. $^\dagger$Run on a stratified 204-claim subsample
+(Appendix~\ref{app:subsample}): VERITAS with the Coder, DiscoveryBench's agent
+with the two 2026 open models. A dash marks a run not made.}
+\label{tab:main}
+\end{table*}
+\else
 \begin{table*}[t]
 \centering
 \scriptsize
@@ -766,6 +819,7 @@ listed under the 2024 pair. $^\dagger$Run on a stratified 204-claim subsample
 with the two 2026 open models. A dash marks a run not made.}
 \label{tab:main}
 \end{table*}
+\fi
 
 
 \iffalse  % evidence table kept in source; Figure~\ref{fig:families} carries these metrics (user 2026-10-20)
