@@ -970,8 +970,9 @@ verdict accuracy / evidence F1.}
 \centering
 \includegraphics[width=\columnwidth]{Figures/rounds.pdf}
 \caption{What each verify-and-repair round adds: the change in verdict
-accuracy from the previous round, for rounds one to three, on the test set
-(the same plot for evidence F1 is in Appendix~\ref{app:rounds}).}
+accuracy from the previous round, for rounds one to three, on the test set;
+gains extend to the right, losses to the left (the same plot for evidence F1
+is in Appendix~\ref{app:rounds}).}
 \label{fig:rounds}
 \end{figure}
 
@@ -1011,11 +1012,11 @@ single-report claims.}
 registers (research, media, clinical), and the case study reruns the three
 open models on all of them (Figure~\ref{fig:registers}). The research
 register costs the most, 0.05 to 0.13 of accuracy, the media and clinical
-registers less (at most 0.07). For the 2026 models the planner alone loses
-almost exactly what the full pipeline loses, so the cost of paraphrase is
-paid at planning and passes through the contract unchanged; the 2024 pair's
-pipeline loses less than its planner, because its retrieval stage rather than
-its plan is the bottleneck. gemma4 stays ahead in every register, while
+registers less (at most 0.07). Rerunning the planner alone on the same
+registers (not shown) loses almost exactly what the full pipeline loses for
+the 2026 models, so the cost of paraphrase is paid at planning and passes
+through the contract unchanged; the 2024 pair's pipeline loses less than its
+planner, because its retrieval stage rather than its plan is the bottleneck. gemma4 stays ahead in every register, while
 qwen3.8 and the pair swap places on the research register, where qwen3.8's
 planner loses most. The registers are templated; free paraphrase and the
 frontier models are left to future work.
@@ -1044,9 +1045,8 @@ B (Straight-to-SQL control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \centering
 \includegraphics[width=\columnwidth]{Figures/registers.pdf}
 \caption{Verdict accuracy by paraphrase register on the test set for the
-three open models: \art{} with the verifier (top) and the planner alone
-(bottom). Original is the main test run; the other registers rerun the same
-1{,}500 claims.}
+three open models under \art{} with the verifier. Original is the main test
+run; the other registers rerun the same 1{,}500 claims.}
 \label{fig:registers}
 \end{figure}
 

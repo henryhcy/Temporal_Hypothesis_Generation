@@ -94,36 +94,36 @@ def save(fig, name):
 
 # ---- 1. repair rounds: the gain of each round over the previous one (design 4, user 2026-10-20) ----
 def fig_rounds():
-    """One panel per file, sized for one column: rounds.pdf (verdict accuracy, main text) and
-    rounds_f1.pdf (evidence F1, appendix) (user 2026-10-21)."""
+    """Change per verify-and-repair round as horizontal bars: gains extend to the right, losses to the
+    left (user 2026-10-21). rounds.pdf (verdict accuracy, main text) and rounds_f1.pdf (evidence F1,
+    appendix)."""
     suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
-    short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
+    short = {"q25pair": "Qwen2.5-32B pair", "qwen38_27b": "qwen3.8-27B", "gemma4_31b": "gemma4-31B", "opus": "Opus 5.5", "gpt": "GPT-5.6"}
     cols = [SLATE, SEA, MIST]
     for name, getter, title in (("rounds", acc, "verdict accuracy"), ("rounds_f1", den_f1, "evidence F1")):
-        fig, ax = plt.subplots(figsize=(3.4, 2.1))
-        x = np.arange(len(MODELS)); w = 0.26
+        fig, ax = plt.subplots(figsize=(3.4, 2.5))
+        ys = np.arange(len(MODELS))[::-1]; h = 0.26
         for r in (1, 2, 3):
             d = []
             for k, _, _ in MODELS:
                 cur, prev = getter(f"test_{k}_{suffix[r]}"), getter(f"test_{k}_{suffix[r - 1]}")
                 d.append(None if cur is None or prev is None else cur - prev)
-            xs = x + (r - 2) * w
-            ax.bar(xs, [v or 0 for v in d], width=w, color=cols[r - 1], edgecolor="white", linewidth=0.5,
-                   label=f"round {r}", zorder=2)
-            for xi, v in zip(xs, d):
+            yy = ys + (2 - r) * h
+            ax.barh(yy, [v or 0 for v in d], height=h, color=cols[r - 1], edgecolor="white", linewidth=0.5,
+                    label=f"round {r}", zorder=2)
+            for yi, v in zip(yy, d):
                 if v is None:
                     continue
-                ax.text(xi, v + (0.003 if v >= 0 else -0.003), f"{v:+.3f}", ha="center",
-                        va="bottom" if v >= 0 else "top", fontsize=5.0, rotation=90, color=CHARCOAL, fontweight="bold")
-        ax.axhline(0, color=CHARCOAL, lw=0.8)
-        ax.set_xticks(x); ax.set_xticklabels([short[m[0]] for m in MODELS])
-        ax.set_title(f"{title}: change per repair round", loc="left", fontsize=8.5)
-        ax.set_ylim(-0.03, 0.16)
-        ax.set_yticks([0.0, 0.05, 0.10, 0.15])
+                ax.text(v + (0.003 if v >= 0 else -0.003), yi, f"{v:+.3f}", ha="left" if v >= 0 else "right",
+                        va="center", fontsize=5.4, color=CHARCOAL, fontweight="bold")
+        ax.axvline(0, color=CHARCOAL, lw=0.8)
+        ax.set_yticks(ys); ax.set_yticklabels([short[m[0]] for m in MODELS])
+        ax.set_xlim(-0.04, 0.17); ax.set_xticks([0.0, 0.05, 0.10, 0.15])
+        ax.set_xlabel(f"change in {title} from the previous round", fontsize=7.5)
+        ax.grid(axis="x"); ax.grid(False, axis="y")
         boldify(ax, size=7.5)
-        ax.tick_params(axis="x", length=0)
-        ax.set_ylabel("change from\nthe previous round", fontsize=8)
-        ax.legend(frameon=False, loc="upper right", fontsize=7, handlelength=1.2, labelspacing=0.3)
+        ax.tick_params(axis="y", length=0)
+        ax.legend(frameon=False, loc="lower right", fontsize=6.6, handlelength=1.2, labelspacing=0.3)
         fig.tight_layout()
         save(fig, name)
 
@@ -258,30 +258,28 @@ def fig_modular():
 
 # ---- 4. paraphrase registers (dev, 32B pair) -------------------------------------
 def fig_registers():
-    """Paraphrase registers on the TEST set (2026-10-21): the three open models, ART + verifier and the
-    planner alone; Original from the main test runs, the other registers from the test_*_registers_* runs."""
+    """Paraphrase registers on the TEST set (user 2026-10-21): grouped bars, one group per register, one
+    bar per open model, ART + verifier only; Original from the main test runs, the other registers from
+    the test_*_registers_dprime_verify2 runs."""
     import families_candidates as FC  # noqa: E402
     cols = FC.PALETTES_STRONG["meadow"]
     models = [("q25pair", "Qwen2.5-32B pair"), ("qwen38_27b", "qwen3.8-27B"), ("gemma4_31b", "gemma4-31B")]
     regs = ["Original", "Research", "Media", "Clinical"]
-    def series(key, suf):
-        orig = acc(f"test_{key}_{suf}")
-        pr = metric(f"test_{key}_registers_{suf}", "consistency", "invariance", "per_register_accuracy")
-        return [orig, pr["research"], pr["media"], pr["clinical"]]
-    fig, axes = plt.subplots(2, 1, figsize=(3.4, 3.9), sharex=True)
-    for ax, suf, title in ((axes[0], "dprime_verify2", "ART + verifier"), (axes[1], "planner_verify2", "planner alone")):
-        x = np.arange(4)
-        for j, (key, label) in enumerate(models):
-            y = series(key, suf)
-            ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label, zorder=5 - j)
-        ax.set_xticks(x); ax.set_xticklabels(regs)
-        ax.set_xlim(-0.3, 3.3); ax.set_ylim(0.7, 1.04)
-        ax.set_title(title, loc="left", fontsize=8.5)
-        ax.set_ylabel("verdict accuracy", fontsize=8)
-        boldify(ax, size=7.5)
-        ax.grid(axis="y")
-    axes[0].legend(frameon=False, fontsize=6.4, loc="lower right", ncol=1, handlelength=1.3, labelspacing=0.3)
-    fig.tight_layout(h_pad=0.8)
+    fig, ax = plt.subplots(figsize=(3.4, 2.4))
+    x = np.arange(4); w = 0.26
+    for j, (key, label) in enumerate(models):
+        pr = metric(f"test_{key}_registers_dprime_verify2", "consistency", "invariance", "per_register_accuracy")
+        y = [acc(f"test_{key}_dprime_verify2"), pr["research"], pr["media"], pr["clinical"]]
+        xs = x + (j - 1) * w
+        ax.bar(xs, y, width=w, color=cols[j], label=label, edgecolor="white", linewidth=0.5, zorder=2)
+        for xi, v in zip(xs, y):
+            ax.text(xi, v + 0.006, f"{v:.3f}", ha="center", va="bottom", fontsize=5.4, color=CHARCOAL, rotation=90)
+    ax.set_xticks(x); ax.set_xticklabels(regs)
+    ax.set_ylim(0.6, 1.1); ax.set_yticks([0.6, 0.7, 0.8, 0.9, 1.0])
+    ax.set_ylabel("verdict accuracy", fontsize=8)
+    boldify(ax, size=7.5)
+    ax.legend(frameon=False, ncol=3, loc="upper center", bbox_to_anchor=(0.5, -0.16), fontsize=6.4, handlelength=1.2, columnspacing=1.0)
+    fig.tight_layout()
     save(fig, "registers")
 
 
