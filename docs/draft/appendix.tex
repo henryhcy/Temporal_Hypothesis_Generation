@@ -277,6 +277,32 @@ otherwise have read as a finding about the new claim families.
 
 \fi  % end of development-set analyses (app:dev)
 
+\section{Evidence by claim family}
+\label{app:families}
+
+Figure~\ref{fig:families} gives \art{}'s four evidence measures by claim
+family and model, as error rates. Under \art{} almost every cell is at or near
+zero for gemma4 and the frontier models and for most families of the 2026
+open models, and overclaim stays at a few percent everywhere. The dark cells
+are the failures that remain, and each has a cause the plan exposes: the 2024
+pair's first/last row, where it retrieves the wrong set and abstains on four
+claims in five rather than decide; qwen3.8's first/last overclaim; gemma4's
+faithfulness on proximity, where a fifth of its right verdicts rest on a
+denominator that admits non-adjacent pairs; and the frontier models'
+threshold underclaim, the H-V5 test-family slip of \S\ref{sec:insufficient}.
+
+\begin{figure*}[htbp]
+\centering
+\includegraphics[width=\textwidth]{Figures/families.pdf}
+\caption{The four evidence measures of \art{} on the test set, by claim
+family and model, drawn as error rates so that 0 is perfect in every panel:
+the share of wrongly counted reports ($1-$evidence F1), of right verdicts
+resting on the wrong evidence ($1-$faithfulness), of undecidable claims
+decided (overclaim) and of decidable claims abstained on (underclaim). The
+colour scale is square-root, so small errors remain visible.}
+\label{fig:families}
+\end{figure*}
+
 \section{The agentic subsample: every system on the identical 204 claims}
 \label{app:subsample}
 

@@ -308,7 +308,7 @@ def fig_family_radar(palette: str = "paper", suffix: str = ""):
     ang_c = np.concatenate([ang, ang[:1]])
     # column-width rendering with the legend on one line below (user 2026-10-21)
     fig, ax = plt.subplots(figsize=(3.4, 3.5), subplot_kw={"projection": "polar"})
-    fig.subplots_adjust(left=0.13, right=0.87, top=0.90, bottom=0.17)
+    fig.subplots_adjust(left=0.20, right=0.80, top=0.88, bottom=0.18)
     lws = [1.8, 1.8, 1.8, 1.3, 1.3]
     for j, (key, label, _) in enumerate(MODELS):
         v = np.concatenate([O[:, j], O[:1, j]])
@@ -316,8 +316,16 @@ def fig_family_radar(palette: str = "paper", suffix: str = ""):
                 label=label, zorder=5 - j, ls=(0, (3, 1.5)) if key == "gpt" else "-")
         ax.fill(ang_c, v, color=cols[j], alpha=0.10, zorder=1)
     ax.set_theta_offset(np.pi / 2); ax.set_theta_direction(-1)
-    ax.set_xticks(ang)
-    ax.set_xticklabels([f"{f[1]}\n(n={n[f[0]]})" for f in FC.FAMS], fontsize=8, fontweight="bold")
+    ax.set_xticks(ang); ax.set_xticklabels([])
+    # family labels placed by hand just outside the outer ring, anchored away from the plot so the side labels
+    # (first/last, threshold) no longer sit on the polygons (user 2026-10-22)
+    for a, f in zip(ang, FC.FAMS):
+        x = np.sin(a)                                 # theta offset pi/2, clockwise: sin > 0 is the right side
+        ha = "left" if x > 0.2 else "right" if x < -0.2 else "center"
+        r = 1.07 if ha == "center" else 1.10
+        va = "bottom" if np.cos(a) > 0.9 else "top" if np.cos(a) < -0.9 else "center"
+        ax.text(a, r, f"{f[1]}\n(n={n[f[0]]})", ha=ha, va=va, fontsize=8, fontweight="bold", color=CHARCOAL,
+                linespacing=1.05, clip_on=False)
     ax.set_ylim(0.3, 1.0); ax.set_yticks([0.4, 0.6, 0.8, 1.0])
     ax.set_yticklabels(["0.4", "0.6", "0.8", "1.0"], fontsize=6, color="#6B6F73")
     ax.set_rlabel_position(0)
