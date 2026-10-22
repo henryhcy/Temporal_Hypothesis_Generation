@@ -54,6 +54,6 @@ rows.append("S2 retrieve, with the verifier (2 rounds) & " + " & ".join(fmt(c) i
 row("LLM as statistician", [cell_metrics(f"test_{k}_counts") for k, _ in MODELS])
 row("\\art{} + LLM as statistician", [cell_metrics(f"test_{k}_dprime_verify2_s3llm") for k, _ in MODELS])
 rows.append("\\midrule\n\\multicolumn{6}{@{}l}{\\textit{ours}} \\\\")
-row("\\art{} without verifier", [cell_metrics(f"test_{k}_dprime") for k, _ in MODELS])
-row("\\textbf{\\art{} + verifier}", [cell_metrics(f"test_{k}_dprime_verify2") for k, _ in MODELS], bold=True)
+row("\\art{} $-$ verifier", [cell_metrics(f"test_{k}_dprime") for k, _ in MODELS])
+row("\\textbf{\\art{}}", [cell_metrics(f"test_{k}_dprime_verify2") for k, _ in MODELS], bold=True)
 print("\n".join(rows))

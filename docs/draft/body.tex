@@ -479,7 +479,8 @@ retrieve and test, and is built so that each stage can be scored against its gol
 with gold, or told more or less about the corpus. This section gives the
 stage contracts, the two prompt frames that control what the model is told,
 and the verification loop; the systems it is compared against are in
-\S\ref{sec:baselines}.
+\S\ref{sec:baselines}. Unless stated otherwise, \art{} includes the
+verify-and-repair loops of \S\ref{sec:verify}.
 
 \subsection{Stage contracts}
 \label{sec:contracts}
@@ -613,7 +614,8 @@ contract (two repair rounds) and runs the exact test on its counts.
 definitions and asks it to choose the test and return the verdict, the floor
 of ``the model does the statistics''; \emph{\art{} + LLM as statistician}
 asks the same on the pipeline's own counts, so it differs from \art{} only
-in the test stage. \emph{\art{} without verifier} removes the repair loops.
+in the test stage. \emph{\art{} $-$ verifier} removes the repair loops;
+everywhere else \art{} includes the verifier.
 Chance on the three-class cohort
 tiers is $\approx 0.33$; a per-group majority guesser scores at most 0.37.
 
@@ -687,7 +689,7 @@ EHRAgent & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0
 VERITAS$^\dagger$ & 0.402\,{\scriptsize(0.501/0.402/0.335)} & --- & --- & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ours}} \\
-\textbf{\art{} + verifier} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
+\textbf{\art{}} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
 \bottomrule
 \end{tabular}
 \caption{Main results on the test set: verdict accuracy, then macro
@@ -713,7 +715,7 @@ Retrieve alone & 0.836 & 0.944 & 0.989 & $\geq$0.999 & $\geq$0.999 \\
 LLM as statistician & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ablations of \art{}}} \\
-\art{} + verifier & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & 0.993 & 0.983 \\
+\art{} & \textbf{0.810} & \textbf{0.872} & \textbf{0.981} & 0.993 & 0.983 \\
 \quad $-$ verifier & 0.761 & 0.735 & 0.844 & 0.999 & 0.999 \\
 \quad $-$ exact test (LLM as statistician) & 0.512 & 0.568 & 0.770 & --- & --- \\
 \quad $-$ contract (plan as prose) & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
@@ -724,7 +726,7 @@ LLM as statistician & 0.611 & 0.619 & 0.777 & 0.999 & 0.999 \\
 stage with the model and the others with gold (all gold reproduces the
 labels, 1.000); the frontier Retrieve-alone cells are bounded below by their
 evidence F1 of 1.000 with their own plans. Each ablation removes one part of
-\art{} with the verifier; a dash marks a run not made.}
+\art{}; a dash marks a run not made.}
 \label{tab:ablation}
 \end{table}
 
@@ -833,7 +835,7 @@ sizes in parentheses.}
 \begin{figure*}[t]
 \centering
 \includegraphics[width=\textwidth]{Figures/families.pdf}
-\caption{The four evidence measures of \art{} with the verifier on the test
+\caption{The four evidence measures of \art{} on the test
 set, by claim family and model. Darker is better in every panel; overclaim
 and underclaim are lower-is-better, so their scale is reversed.}
 \label{fig:families}
@@ -866,7 +868,7 @@ faithfulness falls to 0.06--0.41 on first/last for every open model.
 \centering
 \includegraphics[width=\columnwidth]{Figures/tiers.pdf}
 \caption{Verdict accuracy by difficulty level, one line per model: the
-one-prompt baseline with the codebook (top) and \art{} with the verifier
+one-prompt baseline with the codebook (top) and \art{}
 (bottom). Easy is the 180-claim report case study; Medium and Hard are the
 1{,}418 cohort and 82 two-cohort claims of the test set.}
 \label{fig:tiers}
@@ -969,7 +971,7 @@ and the gemma4 planner matches the frontier. Retrieval is where the 2024
 pair loses, its Coder dropping a sixth of the claims even with the gold
 plan, so the full pipeline compounds planner errors on a stage that was
 already failing. The 2026 models retrieve well with the gold plan, so their
-remaining loss is the plan, and gemma4 with the verifier sits within 0.01 of
+remaining loss is the plan, and gemma4 under \art{} sits within 0.01 of
 both its ceilings. The test stage is a function the open models cannot
 compute: as the statistician on the exact counts an LLM is wrong on a quarter
 to a third of claims, and the row that makes the LLM the statistician on
@@ -1048,7 +1050,7 @@ that do not.
 EHRSQL, schema only & 0.433 & 0.989 & 0.744 & --- & --- \\
 EHRSQL + codebook & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
 Articulate alone & 1.000 & 1.000 & 1.000 & --- & --- \\
-\art{} + verifier & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
+\art{} & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
 \bottomrule
 \end{tabular}
 \caption{The report-tier case study: verdict accuracy on the 180
@@ -1096,7 +1098,7 @@ B (Straight-to-SQL control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \centering
 \includegraphics[width=\columnwidth]{Figures/registers.pdf}
 \caption{Verdict accuracy by paraphrase register on the test set for the
-three open models under \art{} with the verifier. Original is the main test
+three open models under \art{}. Original is the main test
 run; the other registers rerun the same 1{,}500 claims.}
 \label{fig:registers}
 \end{figure}
@@ -1122,7 +1124,7 @@ test set & all & \shortstack[c]{gold\\not-locatable} & \shortstack[c]{gold\\spar
 \quad Opus 5.5 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 & 0.000 \\
 \quad GPT-5.6 & 0.000 & 0.000 & 0.000 & 0.000 & 1.000 & 0.001 & 0.000 & 0.000 & 0.001 & 0.000 & 0.000 & 0.000 \\
 \midrule
-\multicolumn{13}{@{}l}{\textit{\art{} + verifier}} \\
+\multicolumn{13}{@{}l}{\textit{\art{}}} \\
 \quad Qwen2.5-32B pair & 0.032 & 0.011 & 0.051 & 0.035 & 0.871 & 0.216 & 0.134 & 0.021 & 0.009 & 0.047 & 0.005 & 0.031 \\
 \quad qwen3.8-27B & 0.046 & 0.062 & 0.025 & 0.047 & 0.966 & 0.066 & 0.013 & 0.006 & 0.014 & 0.029 & 0.004 & 0.025 \\
 \quad gemma4-31B & 0.010 & 0.000 & 0.019 & 0.012 & 0.970 & 0.023 & 0.012 & 0.001 & 0.002 & 0.005 & 0.003 & 0.000 \\
