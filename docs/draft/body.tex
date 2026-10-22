@@ -1011,11 +1011,14 @@ single-report claims.}
 registers (research, media, clinical), and the case study reruns the three
 open models on all of them (Figure~\ref{fig:registers}). The research
 register costs the most, 0.05 to 0.13 of accuracy, the media and clinical
-registers far less, and the planner alone loses almost exactly what the full
-pipeline loses: the cost of paraphrase is paid at planning and passes through
-the contract unchanged. The ranking of the models does not change in any
-register. The registers are templated; free paraphrase and the frontier
-models are left to future work.
+registers less (at most 0.07). For the 2026 models the planner alone loses
+almost exactly what the full pipeline loses, so the cost of paraphrase is
+paid at planning and passes through the contract unchanged; the 2024 pair's
+pipeline loses less than its planner, because its retrieval stage rather than
+its plan is the bottleneck. gemma4 stays ahead in every register, while
+qwen3.8 and the pair swap places on the research register, where qwen3.8's
+planner loses most. The registers are templated; free paraphrase and the
+frontier models are left to future work.
 
 \iffalse  % registers table kept in source; Figure~\ref{fig:registers} carries it (user 2026-10-20)
 \begin{table}[t]

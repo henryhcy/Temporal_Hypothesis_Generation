@@ -274,15 +274,13 @@ def fig_registers():
         for j, (key, label) in enumerate(models):
             y = series(key, suf)
             ax.plot(x, y, color=cols[j], lw=1.7, marker="o", ms=4, markeredgecolor="white", markeredgewidth=0.6, label=label, zorder=5 - j)
-            for xi, v in zip(x, y):
-                ax.text(xi, v + 0.012, f"{v:.3f}", fontsize=5.2, color=cols[j], ha="center", va="bottom")
         ax.set_xticks(x); ax.set_xticklabels(regs)
         ax.set_xlim(-0.3, 3.3); ax.set_ylim(0.7, 1.04)
         ax.set_title(title, loc="left", fontsize=8.5)
         ax.set_ylabel("verdict accuracy", fontsize=8)
         boldify(ax, size=7.5)
         ax.grid(axis="y")
-    axes[1].legend(frameon=False, fontsize=6.4, loc="lower left", ncol=1, handlelength=1.3, labelspacing=0.3)
+    axes[0].legend(frameon=False, fontsize=6.4, loc="lower right", ncol=1, handlelength=1.3, labelspacing=0.3)
     fig.tight_layout(h_pad=0.8)
     save(fig, "registers")
 
