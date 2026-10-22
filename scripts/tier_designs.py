@@ -299,6 +299,108 @@ def sheet2():
     fig.savefig(OUT / "tiers_designs_sheet2.png", dpi=170); plt.close(fig); print("wrote", OUT / "tiers_designs_sheet2.png")
 
 
+def wilson(p, n, z=1.96):
+    if not n:
+        return (np.nan, np.nan)
+    d = 1 + z * z / n; c = (p + z * z / (2 * n)) / d; h = z * np.sqrt(p * (1 - p) / n + z * z / (4 * n * n)) / d
+    return c - h, c + h
+
+
+def design7(D):
+    """Where the loss happens: per model, accuracy lost at the Medium step and at the Hard step, stacked;
+    EHRSQL-C (hatched) above ART (solid)."""
+    fig, ax = plt.subplots(figsize=(3.4, 2.3))
+    ys = np.arange(len(PF.MODELS))[::-1]; h = 0.36
+    for y, (k, _, c) in zip(ys, PF.MODELS):
+        for off, sk, solid in ((h / 2, "cellB", False), (-h / 2, "dprime_verify2", True)):
+            e, m, hh = D[sk][k]
+            s1, s2 = max(e - m, 0), max(m - hh, 0)
+            kw = dict(height=h, lw=0.6, zorder=2)
+            if solid:
+                ax.barh(y + off, s1, color=c, alpha=0.55, edgecolor="white", **kw)
+                ax.barh(y + off, s2, left=s1, color=c, edgecolor="white", **kw)
+            else:
+                ax.barh(y + off, s1, color="white", edgecolor=c, hatch="....", **kw)
+                ax.barh(y + off, s2, left=s1, color="white", edgecolor=c, hatch="////", **kw)
+            tot = s1 + s2
+            ax.text(tot + 0.012, y + off, f"{tot:.2f}", va="center", fontsize=5.6, color=PF.CHARCOAL,
+                    fontweight="bold" if solid else "normal")
+    ax.set_yticks(ys); ax.set_yticklabels([SHORT[k] for k, _, _ in PF.MODELS])
+    ax.set_xlim(0, 0.78); ax.set_xticks([0, 0.2, 0.4, 0.6])
+    ax.set_xlabel("accuracy lost: Easy→Medium (light) + Medium→Hard (dark)", fontsize=6.6)
+    ax.grid(axis="x"); ax.grid(False, axis="y"); ax.tick_params(axis="y", length=0)
+    PF.boldify(ax, size=6.8)
+    hd = [Patch(facecolor="white", edgecolor=PF.CHARCOAL, hatch="////", label="EHRSQL-C (upper bar)"),
+          Patch(color=PF.CHARCOAL, label="ART (lower bar)")]
+    ax.legend(handles=hd, frameon=False, fontsize=6, loc="lower right", handlelength=1.4)
+    fig.tight_layout()
+    save(fig, "tiers_design7")
+
+
+def design8(D):
+    """Trajectory plot: each model is a path Easy -> Medium -> Hard in the plane (EHRSQL-C accuracy, ART
+    accuracy). Paths that run left along the top are losses the contract prevents."""
+    fig, ax = plt.subplots(figsize=(3.4, 3.0))
+    ax.plot([0.25, 1.02], [0.25, 1.02], color="#D8D3C8", lw=0.8, ls=(0, (3, 2)), zorder=1)
+    for k, _, c in PF.MODELS:
+        xs, ys = D["cellB"][k], D["dprime_verify2"][k]
+        if k in ("opus", "gpt"):
+            jit = 0.006 if k == "gpt" else -0.006
+            xs = [x + jit for x in xs]
+        for i in range(2):
+            if abs(xs[i + 1] - xs[i]) + abs(ys[i + 1] - ys[i]) > 0.004:
+                ax.annotate("", xy=(xs[i + 1], ys[i + 1]), xytext=(xs[i], ys[i]),
+                            arrowprops=dict(arrowstyle="-|>", color=c, lw=1.4, mutation_scale=7, shrinkA=2, shrinkB=2), zorder=3)
+        ax.scatter(xs, ys, s=[14, 14, 26], color=[c, c, c], edgecolor="white", lw=0.5, zorder=4)
+        if k in ("q25pair", "qwen38_27b", "gemma4_31b"):
+            ax.text(xs[-1], ys[-1] - 0.035, SHORT[k], fontsize=5.8, color=c, ha="center", va="top", fontweight="bold")
+    ax.text(1.0, 1.035, "Opus, GPT stay here", fontsize=5.6, color=PF.CHARCOAL, ha="right", va="bottom")
+    ax.set_xlim(0.25, 1.04); ax.set_ylim(0.7, 1.06)
+    ax.set_xlabel("EHRSQL-C accuracy", fontsize=7.2); ax.set_ylabel("ART accuracy", fontsize=7.2)
+    ax.grid(True, lw=0.4)
+    PF.boldify(ax, size=6.6)
+    ax.text(0.27, 0.715, "each path: Easy → Medium → Hard\n(larger dot = Hard)", fontsize=5.6, color="#6B6F73", va="bottom")
+    fig.tight_layout()
+    save(fig, "tiers_design8")
+
+
+def design9(D):
+    """Small multiples with 95% Wilson intervals: ART (model colour) and EHRSQL-C (grey), shaded bands."""
+    ns = [n for _, n in PF.ladder_acc("gemma4_31b", "dprime_verify2")]
+    fig, axes = plt.subplots(1, 5, figsize=(3.45, 1.85), sharey=True)
+    x = np.arange(3)
+    for ax, (k, _, c) in zip(axes, PF.MODELS):
+        for sk, col, lw, ls in (("cellB", GREY, 1.2, (0, (2.5, 1.5))), ("dprime_verify2", c, 1.8, "-")):
+            v = np.array(D[sk][k]); lo, hi = zip(*[wilson(a, n) for a, n in zip(v, ns)])
+            ax.fill_between(x, lo, hi, color=col, alpha=0.16, lw=0)
+            ax.plot(x, v, color=col, lw=lw, ls=ls, marker="o", ms=2.8, markeredgecolor="white", markeredgewidth=0.4)
+        ax.set_title(SHORT[k], fontsize=6.4, pad=3)
+        ax.set_xticks(x); ax.set_xticklabels(["E", "M", "H"], fontsize=6.2)
+        ax.set_ylim(0.15, 1.04); ax.set_xlim(-0.3, 2.3)
+        ax.tick_params(axis="y", labelsize=6, length=2); ax.tick_params(axis="x", length=0)
+        ax.grid(axis="y", lw=0.4)
+        for sp in ("top", "right"):
+            ax.spines[sp].set_visible(False)
+    axes[0].set_ylabel("verdict accuracy", fontsize=6.8); axes[0].set_yticks([0.2, 0.4, 0.6, 0.8, 1.0])
+    h = [Line2D([], [], color=PF.SLATE_M, lw=1.8, marker="o", ms=3, label="ART (model colour)"),
+         Line2D([], [], color=GREY, lw=1.2, ls=(0, (2.5, 1.5)), marker="o", ms=3, label="EHRSQL-C"),
+         Patch(color=GREY, alpha=0.3, label="95% interval")]
+    fig.legend(handles=h, loc="lower center", bbox_to_anchor=(0.5, 0.0), ncol=3, frameon=False, fontsize=5.8, handlelength=1.6)
+    fig.subplots_adjust(wspace=0.12, bottom=0.22, top=0.88, left=0.13, right=0.99)
+    save(fig, "tiers_design9")
+
+
+def sheet3():
+    import matplotlib.image as mpimg
+    names = [("tiers_design7", "7: where the loss happens"), ("tiers_design8", "8: trajectories"),
+             ("tiers_design9", "9: small multiples with 95% intervals"), ("tiers_design6", "6: heatmap (for reference)")]
+    fig, axes = plt.subplots(2, 2, figsize=(9, 7))
+    for ax, (n, t) in zip(axes.flat, names):
+        ax.imshow(mpimg.imread(OUT / f"{n}.png")); ax.set_title(t, fontsize=10); ax.axis("off")
+    fig.tight_layout()
+    fig.savefig(OUT / "tiers_designs_sheet3.png", dpi=170); plt.close(fig); print("wrote", OUT / "tiers_designs_sheet3.png")
+
+
 def sheet():
     import matplotlib.image as mpimg
     names = ["tiers", "tiers_design1", "tiers_design2", "tiers_design3"]
@@ -315,3 +417,4 @@ if __name__ == "__main__":
     D = data()
     design1(D); design1b(D); design2(D); design3(D); sheet()
     design4(D); design5(D); design6(D); sheet2()
+    design7(D); design8(D); design9(D); sheet3()
