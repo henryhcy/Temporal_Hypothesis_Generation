@@ -388,6 +388,38 @@ def fig_tiers():
     save(fig, "tiers")
 
 
+
+# ---- 7. repair rounds, vertical variant for comparison (user 2026-10-21; appendix) ----------------
+def fig_rounds_vertical():
+    suffix = {0: "dprime", 1: "dprime_verify1", 2: "dprime_verify2", 3: "dprime_verify3"}
+    short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
+    cols = [SLATE, SEA, MIST]
+    fig, ax = plt.subplots(figsize=(3.4, 2.1))
+    x = np.arange(len(MODELS)); w = 0.26
+    for r in (1, 2, 3):
+        d = []
+        for k, _, _ in MODELS:
+            cur, prev = acc(f"test_{k}_{suffix[r]}"), acc(f"test_{k}_{suffix[r - 1]}")
+            d.append(None if cur is None or prev is None else cur - prev)
+        xs = x + (r - 2) * w
+        ax.bar(xs, [v or 0 for v in d], width=w, color=cols[r - 1], edgecolor="white", linewidth=0.5, label=f"round {r}", zorder=2)
+        for xi, v in zip(xs, d):
+            if v is None:
+                continue
+            ax.text(xi, v + (0.003 if v >= 0 else -0.003), f"{v:+.3f}", ha="center", va="bottom" if v >= 0 else "top",
+                    fontsize=5.0, rotation=90, color=CHARCOAL, fontweight="bold")
+    ax.axhline(0, color=CHARCOAL, lw=0.8)
+    ax.set_xticks(x); ax.set_xticklabels([short[m[0]] for m in MODELS])
+    ax.set_title("verdict accuracy: change per repair round", loc="left", fontsize=8.5)
+    ax.set_ylim(-0.03, 0.16); ax.set_yticks([0.0, 0.05, 0.10, 0.15])
+    boldify(ax, size=7.5)
+    ax.tick_params(axis="x", length=0)
+    ax.set_ylabel("change from\nthe previous round", fontsize=8)
+    ax.legend(frameon=False, loc="upper right", fontsize=7, handlelength=1.2, labelspacing=0.3)
+    fig.tight_layout()
+    save(fig, "rounds_vertical")
+
+
 if __name__ == "__main__":
     fig_rounds()
     fig_families()
@@ -396,3 +428,4 @@ if __name__ == "__main__":
     fig_groups()
     fig_family_radar()
     fig_tiers()
+    fig_rounds_vertical()
