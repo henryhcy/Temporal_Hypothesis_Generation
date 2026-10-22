@@ -184,25 +184,30 @@ def _family_metrics(recs):
 
 
 def fig_families():
-    """The four evidence measures of ART with the verifier, absolute values, by claim family and model
-    (user 2026-10-22: show our method, not the difference to EHRSQL + codebook). Darker is better in every
-    panel: the two lower-is-better panels use the reversed scale."""
+    """ART's four evidence measures by claim family and model, drawn as ERRORS so that every panel reads the
+    same way (0 = perfect, cream; failures in rust) and small departures stay visible (square-root scale).
+    User 2026-10-22: the absolute-value version was unreadable because nearly every cell is near 1."""
+    from matplotlib.colors import PowerNorm
     gold = {json.loads(l)["hypothesis_id"]: json.loads(l) for l in (R / "test_gold_sets" / "predictions.jsonl").open()}
     fams = [("P", "precedes"), ("C", "co-occurs"), ("F", "first/last"), ("Y", "proximity"), ("H", "threshold"), ("T", "position")]
-    metrics = [("evidence F1", 0, False), ("faithfulness", 1, False), ("overclaim (lower is better)", 2, True), ("underclaim (lower is better)", 3, True)]
+    panels = [("evidence error", "1 $-$ evidence F1: wrong reports counted", 0, True),
+              ("unfaithful verdicts", "1 $-$ faithfulness: right verdict, wrong evidence", 1, True),
+              ("overclaim", "undecidable claims decided", 2, False),
+              ("underclaim", "decidable claims abstained on", 3, False)]
     ours = {k: _family_metrics(_records(R / f"test_{k}_dprime_verify2", gold)) for k, _, _ in MODELS}
-    seq = LinearSegmentedColormap.from_list("cream_slate", [CREAM, "#9FB3BD", SLATE_M, INK])
+    cmap = LinearSegmentedColormap.from_list("cream_rust", ["#FBF8F3", "#EBD3BF", "#D9A48C", RUST, "#6E3519"])
+    norm = PowerNorm(gamma=0.5, vmin=0.0, vmax=0.8)
     short = {"q25pair": "Qwen2.5\n32B pair", "qwen38_27b": "qwen3.8\n27B", "gemma4_31b": "gemma4\n31B", "opus": "Opus\n5.5", "gpt": "GPT\n5.6"}
-    fig, axes = plt.subplots(1, 4, figsize=(14.6, 3.1))
-    fig.subplots_adjust(wspace=0.22)
-    for ax, (title, idx, lower) in zip(axes.flat, metrics):
-        V = np.full((len(fams), len(MODELS)), np.nan)
+    fig, axes = plt.subplots(1, 4, figsize=(14.6, 3.3))
+    fig.subplots_adjust(wspace=0.18)
+    for ax, (title, sub, idx, invert) in zip(axes.flat, panels):
+        E = np.full((len(fams), len(MODELS)), np.nan)
         for j, (k, _, _) in enumerate(MODELS):
             for i, (code, _) in enumerate(fams):
-                V[i, j] = ours[k].get(code, (np.nan,) * 4)[idx]
-        G = (1 - V) if lower else V          # goodness: 1 is best in every panel
+                v = ours[k].get(code, (np.nan,) * 4)[idx]
+                E[i, j] = (1 - v) if invert else v
         ax.grid(False)
-        im = ax.imshow(G, cmap=seq, vmin=0.4, vmax=1.0, aspect="auto")
+        im = ax.imshow(E, cmap=cmap, norm=norm, aspect="auto")
         ax.set_xticks(range(len(MODELS))); ax.set_xticklabels([short[m[0]] for m in MODELS])
         ax.set_yticks(range(len(fams))); ax.set_yticklabels([f[1] for f in fams] if ax is axes[0] else [""] * len(fams))
         boldify(ax, size=8)
@@ -211,17 +216,23 @@ def fig_families():
         for sp in ax.spines.values():
             sp.set_visible(False)
         ax.tick_params(length=0)
+        ax.set_xticks(np.arange(-0.5, len(MODELS), 1), minor=True); ax.set_yticks(np.arange(-0.5, len(fams), 1), minor=True)
+        ax.grid(which="minor", color="white", linewidth=1.2); ax.tick_params(which="minor", length=0)
         for i in range(len(fams)):
             for j in range(len(MODELS)):
-                v, g = V[i, j], G[i, j]
-                if np.isnan(v):
+                e = E[i, j]
+                if np.isnan(e):
                     continue
-                ax.text(j, i, f"{v:.3f}", ha="center", va="center", fontsize=7.6, fontweight="bold",
-                        color="white" if g > 0.8 else CHARCOAL)
-        ax.set_title(title, loc="left", fontsize=9)
+                if e < 0.005:
+                    ax.text(j, i, "0", ha="center", va="center", fontsize=7, color="#B5ADA2")
+                else:
+                    ax.text(j, i, f"{e:.2f}", ha="center", va="center", fontsize=7.8, fontweight="bold",
+                            color="white" if e > 0.3 else CHARCOAL)
+        ax.set_title(f"{title}\n", loc="left", fontsize=9.5)
+        ax.text(0.0, 1.02, sub, transform=ax.transAxes, fontsize=7.2, color="#6B6F73", ha="left", va="bottom")
     cb = fig.colorbar(im, ax=axes, fraction=0.012, pad=0.012)
-    cb.set_ticks([0.4, 0.6, 0.8, 1.0]); cb.set_ticklabels(["worse", "", "", "better"])
-    cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=7)
+    cb.set_ticks([0, 0.05, 0.2, 0.4, 0.8]); cb.outline.set_visible(False); cb.ax.tick_params(length=0, labelsize=7)
+    cb.set_label("error rate (0 = perfect)", fontsize=7.5)
     fig.savefig(OUT / "families.pdf", bbox_inches="tight"); fig.savefig(OUT / "families.png", bbox_inches="tight", dpi=200)
     plt.close(fig); print("wrote", OUT / "families.pdf")
 
