@@ -345,92 +345,71 @@ $|$Cohen's $h|$ on decisive claims, median & 0.65 \\
 \section{Method}
 \label{sec:framework}
 \label{sec:method}
+\label{sec:contracts}
+\label{sec:verify}
 
 Our reference pipeline, \art{}, verifies a temporal hypothesis in three
 stages: it \emph{articulates} the claim as a plan naming its temporal
 conditioning rule, null and exact test, \emph{retrieves} the report sets the
 plan conditions on, and \emph{tests} them with a deterministic exact test,
-so the verdict is a statistical decision rather than a model judgment. It is
-built so that each stage can be scored against its gold, filled with gold, or
-told more or less about the corpus. This section gives the
-stage contracts, the two prompt frames that control what the model is told,
-and the verification loop; the systems it is compared against are in
-\S\ref{sec:baselines}. Unless stated otherwise, \art{} includes the
-verify-and-repair loops of \S\ref{sec:verify}.
+so the verdict is a statistical decision rather than a model judgment
+(Figure~\ref{fig:overview}). Each stage has an explicit output contract and
+can be scored against its gold or filled with gold; the two model stages also
+have a bounded verify-and-repair loop that reads only the contract, the
+codebook and the data, never the gold. Unless stated otherwise, \art{}
+includes these loops.
 
-\subsection{Stage contracts}
-\label{sec:contracts}
-
-The reference pipeline decomposes verification into three stages with explicit
-output contracts (Figure~\ref{fig:overview}).
-
-\textbf{S1 --- articulate.} From the record (text, level, cohort) the model composes
-a plan: \texttt{events}, \texttt{quantity}, \texttt{denominator} (a named
-primitive: \emph{ordered\_pair}, \emph{both\_present},
-\emph{all\_present\_unique\_first}, \emph{consecutive\_pair},
-\emph{present\_offmid}, \emph{presence\_split}, \emph{single\_report}, \ldots),
-\texttt{arms}, \texttt{null\_kind} with $p_0$ or a reference population,
-\texttt{tail}, \texttt{test\_family} and a rule for the floor. The harness
-derives the claim type from the plan by reverse lookup over the plan's fields;
-a plan that names no known shape is \emph{underdetermined} and scored as
-insufficient. Two normalisation folds are applied before lookup: a
-consecutive-pair denominator implies the immediate-order quantity, and a
-stated or derived null on a shape with no such twin keeps the shape and costs
-one field.
-
-\textbf{S2 --- retrieve.} For each arm the model writes one SQL statement over
-the timeline database (two tables, two views) that returns \emph{one row per
-report} with four flags: in the denominator, in the numerator, excluded, and an
-optional cell label for argmax claims. The harness executes it in a read-only
-sandbox and aggregates the rows into $(n, k)$ per arm together with the
-identifier sets, so the evidence is auditable against the gold sets.
-
-\textbf{S3 --- test.} A deterministic function runs the plan's test on the
-counts (Table~\ref{tab:catalogue}): the exact binomial against the plan's $p_0$
-(for a data-derived null, $p_0$ is the mean chance over the retrieved
-denominator), Fisher's test for two arms, modal-versus-runner-up for argmax;
-applies the floor; and returns the verdict with both tails. Nothing is
-inferred at S3.
-
-\subsection{Information: what the model is told}
+\subsection{S1: Articulate}
 \label{sec:frames}
 
-The S1 prompt comes in two frames. The \emph{catalogue} frame hands the model
-the table of claim types with their conditioning rule, null and test, so
-planning reduces to classification and lookup; it is an answer-injected upper
-bound. The \emph{toolbox} frame withholds that mapping and states the
-codebook by situation --- ``a report with two events tied for earliest has no
-answer and is excluded''; ``order words are distance-blind; only wording that
-says the two are adjacent conditions on consecutive stages''; ``association
-wording compares the rate of $B$ among reports with $A$ against reports without
-$A$'' --- together with a computed dataset card, the null sources and the test
-definitions, and the model composes the plan. Zero-shot is the headline
-condition: a worked plan is a mapping row.
+From the record (text, level, cohort) the model composes a plan:
+\texttt{events}, \texttt{quantity}, \texttt{denominator} (a named primitive:
+\emph{ordered\_pair}, \emph{both\_present}, \emph{all\_present\_unique\_first},
+\emph{consecutive\_pair}, \emph{present\_offmid}, \emph{presence\_split},
+\emph{single\_report}, \ldots), \texttt{arms}, \texttt{null\_kind} with $p_0$
+or a reference population, \texttt{tail}, \texttt{test\_family} and a rule for
+the floor. The prompt states the codebook by situation (``a report with two
+events tied for earliest has no answer and is excluded''; ``order words are
+distance-blind; only wording that says the two are adjacent conditions on
+consecutive stages'') together with a computed dataset card, the null sources
+and the test definitions, but withholds the mapping from wording to claim
+type, so the model composes the plan rather than looking it up; the headline
+condition is zero-shot, since a worked plan would be a mapping row. The
+harness derives the claim type from the plan by reverse lookup over its
+fields, and a plan that names no known shape is \emph{underdetermined} and
+scored as insufficient. The plan is then checked for consistency with the
+codebook (a quantity against its denominator, a null kind against its
+situation, a stated bar against the wording, a valid test family) and re-asked
+once with the violations named.
 
-The S2 prompt is where the plan is handed over, and it can be handed over in
-two ways. As \emph{prose}: the plan's JSON and the full codebook, from
-which the SQL model must work out what the named primitive means. As a
-\emph{contract}: the harness resolves the plan's claim type and supplies that
-type's conditioning rule and arm plan in the prompt --- the same stipulation,
-stated once, for the one primitive the plan names. The second is the
-pipeline's design; the first is the ablation that shows why.
+\subsection{S2: Retrieve}
 
-\subsection{Verification}
-\label{sec:verify}
+For each arm the model writes one SQL statement over the timeline database
+(two tables, two views) that returns \emph{one row per report} with four
+flags: in the denominator, in the numerator, excluded, and an optional cell
+label for argmax claims. The plan reaches this stage as a \emph{contract}:
+the harness resolves the plan's claim type and states that type's
+conditioning rule and arm plan in the prompt, the stipulation for the one
+primitive the plan names. The alternative, handing over the plan's JSON with
+the full codebook as \emph{prose} and leaving the model to work out what the
+primitive means, is the ablation that shows why. The harness executes the
+statement in a read-only sandbox and aggregates the rows into $(n, k)$ per arm
+with the identifier sets, so the evidence is auditable against the gold
+sets. A statement the database rejects, an arm whose denominator equals its
+numerator, an empty arm beside a full one, and rows that violate the plan's
+primitive (co-existing reports in an order denominator, ties in a first/last
+denominator, non-consecutive pairs in an immediate denominator) trigger a
+re-ask, up to two rounds. The EHRSQL baselines receive the same loop with the
+checks that need no plan.
 
-Each stage has a bounded verify-and-repair loop that reads only the contract,
-the codebook and the data --- never the gold. At S1 the plan is
-checked for consistency with the codebook (a quantity against its
-denominator, a null kind against its situation, a stated bar against the
-wording, a valid test family) and re-asked once with the violations named. At
-S2 a statement that the database rejects, an arm whose denominator equals its
-numerator, an empty arm beside a full one, and --- when a plan exists --- rows
-that violate the plan's primitive (co-existing reports in an order
-denominator, ties in a first/last denominator, non-consecutive pairs in an
-immediate denominator) trigger a re-ask, up to two rounds. The EHRSQL
-baselines receive the same loop with the checks that need no plan, which is
-the control for what verification is worth without a contract. The planner
-alone settles after one round; the SQL stage after two.
+\subsection{S3: Test}
+
+A deterministic function runs the plan's test on the counts
+(Table~\ref{tab:catalogue}): the exact binomial against the plan's $p_0$ (for
+a data-derived null, $p_0$ is the mean chance over the retrieved
+denominator), Fisher's test for two arms, and modal-versus-runner-up for
+argmax claims. It applies the floor and returns the verdict with both tails.
+Nothing is inferred at this stage, so it needs no verification.
 
 \section{Experiments}
 \label{sec:experiments}
