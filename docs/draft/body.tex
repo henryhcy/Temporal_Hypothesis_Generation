@@ -47,8 +47,8 @@ confirms it. It is verified by an exact test over the reports whose
 timelines can witness it, against the null its wording implies.
 
 \sys{} (Staged Temporal-statistical Reasoning Assessment) is a benchmark and
-evaluation framework for this task, built on the clinical timelines of
-3{,}166 vaccine adverse-event reports from MedTempo \cite{craft2026}, where
+evaluation framework for this task. It is built on the MedTempo clinical
+timelines \cite{craft2026} of 3{,}166 vaccine adverse-event reports, where
 each report's clinical course is a \emph{leveled order} of events. Every
 instance carries its gold verdict (\emph{supported}, \emph{refuted} or a
 sub-typed \emph{insufficient}) and the gold of every stage that produced it:
@@ -306,7 +306,7 @@ fact-disjoint from a 200-instance development set, a 180-claim single-report
 case study, and the full enumerated pool of 8{,}763 instances with its
 generator. Inputs and gold are in separate files, every report identifier is
 a keyed pseudonym of its VAERS identifier, and a \texttt{fact\_id} keys every
-split.
+split. The full release, with the code, follows acceptance.
 
 \begin{table}[t]
 \centering
@@ -476,7 +476,9 @@ claims answered \emph{insufficient}.
 
 Every result in Table~\ref{tab:main} is on the 1{,}500-claim test set (\S\ref{sec:release}), run
 once in the \textsc{Original} register after every prompt was frozen on the
-development set. Every system is run with each of five models in every
+development set. A review copy with the development set, its gold at every
+stage, the timeline database, \art{}'s outputs on the development set and a
+scorer is at \url{https://anonymous.4open.science/r/STRATA-WWW2027/}. Every system is run with each of five models in every
 model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
 Qwen2.5-Coder-32B (SQL) \cite{qwen2025qwen25}; the 2026 open models
 qwen3.8-27B \cite{qwen2026qwen38} and gemma4-31B \cite{gemma2026gemma4}, one
