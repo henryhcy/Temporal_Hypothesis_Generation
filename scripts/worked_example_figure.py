@@ -38,6 +38,8 @@ def icon(cv, name, x, y, s, color):
         subprocess.run(["curl", "-sL", "-m", "30", "-o", str(svg), f"https://unpkg.com/lucide-static@latest/icons/{name}.svg"], check=True)
     src = svg.read_text().replace('stroke="currentColor"', f'stroke="{color}"').replace('stroke-width="2"', 'stroke-width="2.1"')
     png = cairosvg.svg2png(bytestring=src.encode(), output_width=256, output_height=256)
+    if hasattr(cv, "picture"):          # editable PowerPoint canvas (scripts/pptx_worked_example_comic.py)
+        cv.picture(png, x, y, s); return
     cv.add(f'<image x="{x:.1f}" y="{y:.1f}" width="{s}" height="{s}" href="data:image/png;base64,{base64.b64encode(png).decode()}"/>')
 
 
@@ -67,8 +69,8 @@ def arrow(cv, x1, y, x2, color=INK):
     cv.arrow(x1, y, x2, y, color, sw=0.9, head=2.8)
 
 
-def draw():
-    cv = Canvas("#FFFFFF")
+def draw(make=Canvas):
+    cv = make("#FFFFFF")
     M, PW = 5.0, W - 10.0
     y = M
 
