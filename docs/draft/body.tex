@@ -220,7 +220,20 @@ reports in each arm's denominator and numerator; (3) the exact test with a
 per-family minimum-count floor and $\alpha = 0.05$ one-sided in the claim's
 direction. \emph{Refuted} requires significance in the opposite direction, never
 ``failed to prove''. A report-tier claim is a single deterministic observation
-over one report and carries no test.
+over one report and carries no test. Figure~\ref{fig:example} follows one
+test claim through these steps.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/worked_example.pdf}
+\caption{One test claim (P-V1) end to end. (a) Four Moderna reports, one per
+case: counted with Pain first, counted with Asthenia first, excluded because
+the two events share a stage, and excluded because Asthenia is absent; the
+counts below them are over the whole cohort. (b) The EHRSQL-C query and the
+counts it returns. (c) \art{}'s plan, query and test. Both systems use
+qwen3.8; all counts come from the test run.}
+\label{fig:example}
+\end{figure}
 
 Several readings of a claim are stipulations about the corpus rather than
 facts about the sentence: whether a report with both events at the same stage
@@ -930,7 +943,9 @@ against the gold sets. End to end, verdict accuracy overstates what the
 systems computed: the one-prompt query with the codebook rests 40\% (pair),
 69\% (qwen3.8) and 86\% (gemma4) of its right verdicts on the exact
 denominator, so the pair's 0.575 accuracy is 0.23 right for the right
-reason. Under the contract the same shares are 86\%, 97\% and 94\%, a
+reason. Figure~\ref{fig:example}(b) shows one such case from qwen3.8: the
+query admits only the reports that support the claim, so $n = k$ and the
+verdict is \emph{supported} whatever the data say. Under the contract the same shares are 86\%, 97\% and 94\%, a
 larger gain than in accuracy and largest for the weakest model, and the
 frontier models are exact on all but a handful of claims in both systems.
 The agents cannot be checked at all: EHRAgent and DiscoveryBench's agent
