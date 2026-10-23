@@ -17,10 +17,10 @@ import s2_attribution as S2  # noqa: E402
 
 R = HERE.parent / "results"
 MODELS = [("q25pair", "pair"), ("qwen38_27b", "qwen3.8"), ("gemma4_31b", "gemma4"), ("opus", "Opus"), ("gpt", "GPT")]
-BLOCKS = [("EHRSQL", "cellA", ["q25pair"]),
+# 2026-10-23 (user): the three systems the main text compares, every model; EHRSQL is the source of the
+# per-rule counts in RQ1. The repaired-baseline and no-repair blocks were dropped (not discussed in the text).
+BLOCKS = [("EHRSQL", "cellA", [m for m, _ in MODELS]),
           ("EHRSQL-C", "cellB", [m for m, _ in MODELS]),
-          ("EHRSQL-C + repair", "cellB_verify2", ["q25pair", "qwen38_27b", "gemma4_31b"]),
-          ("\\art{} $-$ verifier", "dprime", ["q25pair"]),
           ("\\art{}", "dprime_verify2", [m for m, _ in MODELS])]
 ROWS = [("no plan (S2 not run)", "no plan from S1 (S2 not run)"),
         ("no valid SQL", "SQL failed to execute"),
