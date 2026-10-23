@@ -222,8 +222,9 @@ timelines: for every report, its vaccine and the stage at which each event
 term is first mentioned. The system must verify the hypothesis by a
 statistical test over the timelines and return a verdict in $\{\emph{supported}, \emph{refuted}, \emph{insufficient}\}$,
 the last sub-typed as \emph{not-locatable} (no report qualifies),
-\emph{sparse} (too few qualify) or \emph{underpowered} (enough qualify, neither
-tail significant). It never sees report text.
+\emph{sparse} (too few qualify) or \emph{underpowered} (enough qualify but
+neither tail is significant; the name marks an inconclusive test, not a formal
+power calculation). It never sees report text.
 
 For a cohort-tier claim the gold is
 computed in three steps that are themselves released: (1) a \emph{plan} ---
@@ -262,7 +263,11 @@ terms; 7.2 events and 3.4 stages per report on average). Two rules of this
 representation are load-bearing: when a term recurs, its \emph{first} mention
 fixes its stage; events at one stage are temporally indistinguishable
 (\emph{co-exist}). The timelines, not the narratives, are both the
-benchmark's ground truth and the systems' input.
+benchmark's ground truth and the systems' input, so an error is an error of
+verification rather than of reading a narrative, which is the task CRAFT
+studies. The claims describe how reported events are ordered in VAERS reports,
+which are unverified and self-selected; they are not evidence that a vaccine
+causes an event.
 
 \subsection{Hypothesis space}
 \label{sec:space}
@@ -319,11 +324,16 @@ A)$ over the whole cohort. \emph{Immediate} order counts reports where the two
 events are at consecutive occupied stages; \emph{position} drops single-stage
 reports and events on the exact middle stage.
 
-All tests are exact, and the claim catalogue
-(Table~\ref{tab:catalogue}) gives the test of every group: a one-sided exact binomial against $p_0$ for majority,
-bar and data-derived nulls; modal-versus-runner-up, an exact binomial of the
-named cell against its strongest competitor, for argmax claims; Fisher's
-exact test \cite{fisher1935design} for two-arm and two-cohort contrasts. No
+The claim catalogue (Table~\ref{tab:catalogue}) gives the test of every
+group: a one-sided exact binomial against $p_0$ for majority and bar nulls;
+for a data-derived null, a one-sided binomial at the mean of the per-report
+chance rates, which is conservative relative to the exact distribution over
+reports with unequal chances; modal-versus-runner-up, an exact binomial of the
+named cell against its strongest competitor, for argmax claims; and Fisher's
+exact test \cite{fisher1935design} for two-arm and two-cohort contrasts. An
+argmax claim asserts that the named cell beats every competitor, and the
+pairwise $p$-value is largest against the strongest one, so beating it implies
+beating all of them and no multiplicity correction is needed. No
 $\chi^2$ approximation appears; the sole gate is a minimum denominator of 10,
 applied to both arms where two exist. Each instance releases both one-sided
 $p$-values, the Wilson interval \cite{wilson1927} and Cohen's $h$
@@ -415,7 +425,9 @@ orders, direction, verdict-against-tails including the floor, and independent
 recomputation through a separate database path --- are checked over the whole
 enumerated universe (56{,}138 instances). A deterministic oracle (reverse
 template parser into the reference SQL compiler) reproduces every gold label of
-the release: the harness is correct, whatever the text entails.
+the release. This checks internal consistency, that every label follows from
+the stated rules; whether a template's wording carries those rules is what the
+codebook states explicitly.
 
 \subsection{Statistics}
 \label{sec:stats}
@@ -502,7 +514,7 @@ identifier sets, so the evidence is auditable against the gold sets.
 
 \textbf{S3 --- test.} A deterministic function runs the plan's test on the
 counts (Table~\ref{tab:catalogue}): the exact binomial against the plan's $p_0$
-(for a data-derived null, against the chance sum over the retrieved
+(for a data-derived null, $p_0$ is the mean chance over the retrieved
 denominator), Fisher's test for two arms, modal-versus-runner-up for argmax;
 applies the floor; and returns the verdict with both tails. Nothing is
 inferred at S3.
@@ -637,7 +649,7 @@ fields. \emph{Evidence F1} is the F1 between the set of reports a system
 placed in an arm's denominator and the gold set, averaged over arms: it
 measures whether the system counted the right reports, whatever it concluded
 from them. \emph{Faithfulness} is the share of correct verdicts whose
-evidence set is exactly the gold set, that is, the probability that a right
+denominator is exactly the gold set in every arm, that is, the probability that a right
 answer is right for the right reason. Two abstention measures complete the
 picture: \emph{overclaim}, the share of gold-\emph{insufficient} claims
 given a decisive verdict (deciding what the data cannot decide), and
@@ -697,9 +709,9 @@ DiscoveryBench$^\dagger$ & \multicolumn{4}{c}{---} & .647 & .812 & .647 & .711 &
 \midrule
 \multicolumn{21}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
 Articulate: \art{} & .953 & .985 & .953 & .969 & .917 & .942 & .917 & .928 & .992 & .992 & .992 & .992 & .993 & .993 & .993 & .993 & .993 & .993 & .993 & .993 \\
-\quad chain-of-thought & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad chain-of-thought & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & .995 & .995 & .995 & .995 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 Retrieve: \art{} & .836 & .879 & .835 & .840 & .944 & .945 & .944 & .944 & .989 & .990 & .989 & .989 & \multicolumn{4}{c}{$\geq$.999 on all four} & \multicolumn{4}{c}{$\geq$.999 on all four} \\
-\quad OmniSQL-32B$^\ddagger$ & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad OmniSQL-32B$^\ddagger$ & .772 & .814 & .771 & .775 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 \quad XiYanSQL-32B$^\ddagger$ & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 \quad StatQA & .611 & .706 & .609 & .575 & .619 & .784 & .617 & .539 & .777 & .816 & .776 & .776 & .999 & .999 & .999 & .999 & .999 & .999 & .999 & .999 \\
@@ -743,9 +755,9 @@ DiscoveryBench$^\dagger$ & --- & 0.647\,{\scriptsize(0.812/0.647/0.711)} & 0.706
 \midrule
 \multicolumn{6}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
 Articulate: \art{} & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
-\quad chain-of-thought & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
+\quad chain-of-thought & \pend{running} & \pend{running} & 0.995\,{\scriptsize(0.995/0.995/0.995)} & --- & --- \\
 Retrieve: \art{} & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
-\quad OmniSQL-32B$^\ddagger$ & \pend{running} & --- & --- & --- & --- \\
+\quad OmniSQL-32B$^\ddagger$ & 0.772\,{\scriptsize(0.814/0.771/0.775)} & --- & --- & --- & --- \\
 \quad XiYanSQL-32B$^\ddagger$ & \pend{running} & --- & --- & --- & --- \\
 Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 \quad StatQA & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
@@ -1226,7 +1238,14 @@ first and that the verdict hides it. Frontier models verify the claims once
 the codebook is stated; open models need the plan to be a contract, and with
 it a 31B model on one GPU reaches the frontier's accuracy with an auditable
 denominator, while models asked to make the statistical call themselves err
-even on exact counts. The limits are a corpus-specific codebook, $\alpha$-rate
-false positives in decisive labels by construction, and templated registers
-over raw MedDRA terms. Benchmarks of this kind should publish their codebook
+even on exact counts. Benchmarks of this kind should publish their codebook
 with their data and score the evidence with the answer.
+
+The study has four limits. It uses one corpus, so the codebook and the
+primitive definitions are specific to MedTempo, and porting the framework
+means writing them for another corpus. The claims are generated from
+templates over raw MedDRA terms, so their wording varies only across the four
+registers, and the oracle shows that labels follow from the stated rules, not
+that free-form wording would carry them. Decisive labels carry false positives
+at the $\alpha$ rate by construction. And the patterns are statistical
+regularities in spontaneous reports, not causal findings.
