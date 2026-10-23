@@ -554,7 +554,7 @@ S2 a statement that the database rejects, an arm whose denominator equals its
 numerator, an empty arm beside a full one, and --- when a plan exists --- rows
 that violate the plan's primitive (co-existing reports in an order
 denominator, ties in a first/last denominator, non-consecutive pairs in an
-immediate denominator) trigger a re-ask, up to two rounds. The Straight-to-SQL
+immediate denominator) trigger a re-ask, up to two rounds. The EHRSQL
 baselines receive the same loop with the checks that need no plan, which is
 the control for what verification is worth without a contract. The planner
 alone settles after one round; the SQL stage after two.
@@ -572,7 +572,7 @@ the same five models in every model slot.
 \item \textbf{RQ1.} How well do current language models verify these
 temporal hypotheses end to end, as a single query or as an agent, and where
 do they fail?
-\item \textbf{RQ2.} What does the staged pipeline add over Straight-to-SQL
+\item \textbf{RQ2.} What does the staged pipeline add over single-query
 verification for each model, and which stage and which claim families
 account for the errors that remain?
 \item \textbf{RQ3.} Do correct verdicts rest on correct evidence, and how
@@ -587,54 +587,33 @@ case studies (\S\ref{sec:cases}) cover single reports and paraphrase.
 \subsection{Baselines}
 \label{sec:baselines}
 
-Three published systems are adapted to the benchmark. All read the same
-database, and those given the codebook receive the same text; the slowest
-agent runs on a stratified 204-claim subsample, the rest on all 1{,}500
-claims. \emph{EHRSQL}
-\cite{lee2022ehrsql} is the single-query text-to-SQL protocol over our
-schema, which we call Straight-to-SQL in the text: one prompt per claim to
-the SQL model, carrying the schema as a column listing and the row contract
-(one row per report with denominator, numerator and excluded flags);
-\emph{EHRSQL-C} adds the codebook to the same prompt. The query runs in the
-read-only sandbox and the harness runs the exact test, so these rows differ
-from our pipeline only in having no plan, no contract and no repair.
-\emph{EHRAgent} \cite{shi2024ehragent} runs the authors' code over the same
-database in its end-to-end variant: it writes and executes its own code with
-error-driven retries (up to twelve) and four demonstrations, runs its own
-test and returns a bare verdict. It receives the schema, the database tools,
-two exact-test functions, the verdict semantics and the floors, but not the
-codebook: as in the original system, its knowledge stage writes the analysis
-plan itself. Its paper used GPT-4 and GPT-3.5; we run the 2024 Coder,
-qwen3.8 and GPT-5.6, all through the code-block path.
-\emph{DiscoveryBench} \cite{majumder2025discoverybench} contributes its
-reference discovery agent, a ReAct loop with a Python interpreter, run as
-released over the same three tables exported as CSV with column
-descriptions, the codebook as its domain knowledge and the claim as the
-query, with one added instruction to end on a verdict line. It writes its own
-analysis and test and returns a bare verdict; we give it up to 25 steps and a
-fresh interpreter per claim, return malformed steps to the agent as
-observations, and run it with qwen3.8 and gemma4 on the same subsample.
+Three published systems are adapted to the benchmark, all over the same
+database. \emph{EHRSQL} \cite{lee2022ehrsql} follows the single-query
+text-to-SQL protocol: one prompt per claim asks for one query over our schema
+that marks each report as in the denominator, the numerator or neither, and
+the harness runs the query and the exact test. \emph{EHRSQL-C} adds the
+codebook to the prompt, so it differs from \art{} only in having no plan, no
+contract and no repair. \emph{EHRAgent} \cite{shi2024ehragent} runs as
+released, writing and executing its own code with up to twelve error-driven
+retries and four demonstrations, and running its own test; it receives the
+schema, the exact-test functions and the floors but not the codebook, since
+its knowledge stage writes the plan itself. \emph{DiscoveryBench}'s reference
+agent \cite{majumder2025discoverybench} runs as released on the same tables
+exported as CSV, with the codebook as its domain knowledge, an instruction to
+end on a verdict line and up to 25 steps; at one to two minutes per claim it
+runs on a stratified 204-claim subsample (Appendix~\ref{app:subsample}).
 
-\emph{Stage baselines} compare each stage of \art{} with an established
-method for that step, the other stages set to gold. For Articulate, the
-same model plans from a plain prompt: the dataset description, the
-codebook and the plan's output schema, without \art{}'s explanations of
-nulls and tests, its field rules or its verify round; a second variant adds
-zero-shot chain-of-thought \cite{kojima2022zeroshot}. \art{}'s own
-Articulate stage with chain-of-thought prompting \cite{wei2022cot} is
-reported beside it as an ablation. For Retrieve, OmniSQL
-\cite{li2025omnisql}, an open text-to-SQL model fine-tuned from the same
-Qwen2.5-Coder-32B base as our 2024 SQL model, writes the SQL from the gold
-plan under the same contract. For Test, StatQA's protocol \cite{zhu2024statqa} hands the model
-the gold counts, the claim and the test definitions and asks it to choose
-the applicable test and return the verdict. The corresponding rows for
-\art{} fill the same stage with its own component: Articulate and Retrieve
-with the model under the contract (one and two repair rounds), Test with the
-exact test, a deterministic function the harness calls rather than a tool
-the model chooses to call, which therefore reproduces every label.
-
-Chance on the three-class cohort
-tiers is $\approx 0.33$; a per-group majority guesser scores at most 0.37.
+\emph{Stage baselines} replace one stage of \art{} with an established method
+for that step and set the other stages to gold. For Articulate, a plain prompt
+gives the model the dataset description, the codebook and the plan schema,
+without \art{}'s explanations, field rules or verify round, with and without
+zero-shot chain-of-thought \cite{kojima2022zeroshot}. For Retrieve, OmniSQL
+\cite{li2025omnisql}, fine-tuned from the same base as our 2024 SQL model,
+writes the SQL from the gold plan. For Test, the StatQA protocol
+\cite{zhu2024statqa} gives the model the gold counts and the test definitions
+and asks for the test and the verdict. The matching \art{} rows fill the same
+stage with \art{}'s own component, and \art{}'s Articulate stage with
+chain-of-thought is reported as an ablation.
 
 \subsection{Evaluation metrics}
 \label{sec:metrics}
@@ -877,7 +856,7 @@ per arm, and a test the harness ran, which the one-prompt query does not
 produce even when it is right. For the open models the contract is what
 makes the verdict stand on the right evidence: with the contract and the
 verifier every open model gains between 0.12 and 0.24 in verdict accuracy
-over the Straight-to-SQL control, and gemma4-31B lands within 0.02 of the
+over EHRSQL-C, and gemma4-31B lands within 0.02 of the
 frontier at zero API cost. The contract does not make the models better at
 SQL; it removes the interpretation step on which they were failing, and
 \S\ref{sec:evidence} shows the same gain on the evidence.
@@ -984,8 +963,8 @@ the wrong set and abstains on four claims in five rather than decide;
 qwen3.8's overclaim on first/last; and the frontier models' underclaim on
 threshold, the H-V5 slip discussed below. One failure is invisible in the
 verdicts: gemma4 is right on 0.97 of proximity claims, but a fifth of those
-right verdicts rest on a denominator that admits non-adjacent pairs. The
-Straight-to-SQL control is weaker on the same families, with faithfulness of
+right verdicts rest on a denominator that admits non-adjacent pairs.
+EHRSQL-C is weaker on the same families, with faithfulness of
 0.06--0.41 on first/last for every open model.
 
 \begin{figure}[t]
