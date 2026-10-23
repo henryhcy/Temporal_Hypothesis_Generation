@@ -136,11 +136,11 @@ def draw(make=Canvas):
     brace(bx, bx + cw * k, bar_y + bh2 + 1.2, False, f"k = {k}: Pain first", RUST)
     brace(bx + cw * k, bx + cw * n, bar_y + bh2 + 1.2, False, f"{n - k}: A first", SLATE)
 
-    # ---------------- 2: a one-query baseline
+    # ---------------- 2: a single-query baseline
     y += h1 + 4
     h2 = 61
     panel(cv, M, y, PW, h2, FILL["p2"], 2)
-    caption(cv, M + 6, y + 13, "2  A one-query baseline")
+    caption(cv, M + 6, y + 13, "2  A single-query baseline")
     icon(cv, "bot", M + 6, y + 19, 20, RUST)
     cv.bubble(M + 32, y + 19, PW - 38, 16, (M + 27, y + 27.5), "#FFFFFF", INK, sw=0.8)
     cv.line(M + 39, y + 29.7, [("“I count a report only if ", INK, 400), ("Pain comes first", RUST, 700), (".”", INK, 400)], BODY, SZ)
