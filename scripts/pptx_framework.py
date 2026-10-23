@@ -25,13 +25,14 @@ from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 REPO = Path(__file__).resolve().parents[1]
-# SLIDE_STYLE=comic: Comic Sans MS body with Times New Roman titles, as in the hand-drawn figure style the
-# user shared (2026-10-22); written to a separate candidate file. Default: Verdana throughout (Figure 1).
-STYLE = os.environ.get("SLIDE_STYLE", "")
-OUT = REPO / "docs" / "draft" / "Figures" / ("STRATA_framework_editable.pptx" if not STYLE else f"candidates/STRATA_framework_{STYLE}.pptx")
+# Figure 1 style (user 2026-10-22, swapped in the same day): Comic Sans MS body with Times New Roman titles.
+# SLIDE_STYLE=verdana rebuilds the earlier Verdana version as a candidate file.
+STYLE = os.environ.get("SLIDE_STYLE", "comic")
+OUT = REPO / "docs" / "draft" / "Figures" / ("STRATA_framework_editable.pptx" if STYLE == "comic" else f"candidates/STRATA_framework_{STYLE}.pptx")
 ICONS = REPO / "docs" / "draft" / "Figures" / "icons"
 ICONS.mkdir(parents=True, exist_ok=True)
 FONT, TITLE_FONT = {"comic": ("Comic Sans MS", "Times New Roman")}.get(STYLE, ("Verdana", "Verdana"))
+# Rendering on Linux: ~/.config/fontconfig/conf.d/60-comic-sans-alias.conf maps Comic Sans MS to Comic Neue (OFL).
 
 C = dict(rust="A0522D", wheat="D4B483", slate="4F6B75", gold="A8812E",
          text="2B2B2B", muted="5F5F5F", border="B8BEC4", panel="FFFFFF",
