@@ -618,11 +618,10 @@ observations, and run it with qwen3.8 and gemma4 on the same subsample.
 \emph{Stage baselines} compare each stage of \art{} with an established
 method for that step, the other stages set to gold. For Articulate, the
 same model plans with chain-of-thought prompting \cite{wei2022cot}: it
-writes its reasoning before the plan fields. For Retrieve, two open
-text-to-SQL models fine-tuned from the same Qwen2.5-Coder-32B base as our
-2024 SQL model, OmniSQL \cite{li2025omnisql} and XiYanSQL
-\cite{gao2025xiyansql}, write the SQL from the gold plan under the same
-contract. For Test, StatQA's protocol \cite{zhu2024statqa} hands the model
+writes its reasoning before the plan fields. For Retrieve, OmniSQL
+\cite{li2025omnisql}, an open text-to-SQL model fine-tuned from the same
+Qwen2.5-Coder-32B base as our 2024 SQL model, writes the SQL from the gold
+plan under the same contract. For Test, StatQA's protocol \cite{zhu2024statqa} hands the model
 the gold counts, the claim and the test definitions and asks it to choose
 the applicable test and return the verdict. The corresponding rows for
 \art{} fill the same stage with its own component: Articulate and Retrieve
@@ -712,7 +711,6 @@ Articulate: \art{} & .953 & .985 & .953 & .969 & .917 & .942 & .917 & .928 & .99
 \quad chain-of-thought & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & .995 & .995 & .995 & .995 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 Retrieve: \art{} & .836 & .879 & .835 & .840 & .944 & .945 & .944 & .944 & .989 & .990 & .989 & .989 & \multicolumn{4}{c}{$\geq$.999 on all four} & \multicolumn{4}{c}{$\geq$.999 on all four} \\
 \quad OmniSQL-32B$^\ddagger$ & .772 & .814 & .771 & .775 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
-\quad XiYanSQL-32B$^\ddagger$ & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 \quad StatQA & .611 & .706 & .609 & .575 & .619 & .784 & .617 & .539 & .777 & .816 & .776 & .776 & .999 & .999 & .999 & .999 & .999 & .999 & .999 & .999 \\
 \midrule
@@ -758,7 +756,6 @@ Articulate: \art{} & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsi
 \quad chain-of-thought & \pend{running} & \pend{running} & 0.995\,{\scriptsize(0.995/0.995/0.995)} & --- & --- \\
 Retrieve: \art{} & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
 \quad OmniSQL-32B$^\ddagger$ & 0.772\,{\scriptsize(0.814/0.771/0.775)} & --- & --- & --- & --- \\
-\quad XiYanSQL-32B$^\ddagger$ & \pend{running} & --- & --- & --- & --- \\
 Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
 \quad StatQA & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
 \midrule
