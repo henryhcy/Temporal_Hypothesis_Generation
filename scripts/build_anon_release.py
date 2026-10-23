@@ -8,6 +8,10 @@ Contents (claim form only, the paper's evaluation format):
                                   plan, evidence sets per arm, reference SQL, verdict
   data/codebook.txt, data/dataset_card.txt, data/schema.sql   the texts the models are given
   data/medtempo_eval.db           the timeline database (pseudonymous ids, no report text), fresh VACUUM copy
+  data/dev/outputs/*.jsonl        ART's dev-set outputs (claim form, Original register) for the Qwen2.5 pair and
+                                  GPT-5.6: plan, SQL, report sets, counts, verdict, repair-round counts. The repair
+                                  messages, latency and token counts are left out.
+  score.py (written by hand in the release repo) scores any of these files against the dev gold.
 
 The gold-stage file is the rules+compiler run on the dev subset (no model calls):
     PYTHONPATH=src .venv313/bin/python scripts/run_eval.py --pipeline rules+compiler --condition blind-group \
@@ -34,7 +38,10 @@ REL = REPO / "data" / "release" / "v1.2"
 DEV = REPO / "results" / "subsets" / "smoke_200_v1.2_s0.json"
 DROP_GOLD = {"test_verdict", "core_test_verdict"}       # test_verdict is the canonical, not the oriented, verdict (issue 25)
 STAGE_KEYS = ("hypothesis_id", "instance_id", "group_id", "claim", "retrieval", "prediction")
-FORBIDDEN = re.compile(r"henryhcy|chengyang|stevens|che14|/home/|vaers_id", re.I)
+OUTPUTS = {"art_qwen2.5-32b-pair.jsonl": ("v12f_smoke200_cellC2_catalogueS2_instruct32b_coder32b_verify2_final",
+                                          "Qwen2.5-32B-Instruct (plan) + Qwen2.5-Coder-32B (SQL)"),
+           "art_gpt-5.6.jsonl": ("dev_gpt_gpt-5_6-sol_dprime_verify2_claim", "GPT-5.6")}
+FORBIDDEN = re.compile(r"henryhcy|chengyang|stevens|che14|/home/|vaers_id|gpt-5\.6-sol|\+toolbox", re.I)
 
 
 def main() -> None:
@@ -83,6 +90,23 @@ def main() -> None:
     sqlite3.connect(REPO / "data" / "medtempo_eval.db").execute(f"VACUUM INTO '{db}'")
     names = {r[0] for r in sqlite3.connect(db).execute("SELECT name FROM sqlite_master WHERE type IN ('table','view')")}
     assert names == {"reports", "level_terms", "first_mention", "first_mention_rank", "report_terms"}, names
+
+    (out / "dev" / "outputs").mkdir(exist_ok=True)
+    for name, (run, label) in OUTPUTS.items():
+        with open(out / "dev" / "outputs" / name, "w") as f:
+            for line in open(REPO / "results" / run / "predictions.jsonl"):
+                x = json.loads(line)
+                if x["format"] != "claim" or x["register"] != "original":
+                    continue
+                rt, v = x.get("retrieval") or {}, x.get("verify") or {}
+                if x.get("claim"):
+                    x["claim"]["source"] = "model"      # the internal model id and frame name stay out
+                f.write(json.dumps({"hypothesis_id": x["hypothesis_id"], "instance_id": x["instance_id"],
+                                    "group_id": x["group_id"], "model": label, "claim": x.get("claim"),
+                                    "retrieval": {k: rt.get(k) for k in ("ok", "arms", "levels", "queries") if k in rt},
+                                    "prediction": x.get("prediction"),
+                                    "repair_rounds": {"plan": v.get("s1_rounds"), "sql": v.get("s2_rounds")},
+                                    "error": x.get("error")}) + "\n")
 
     for p in a.out.rglob("*"):                      # nothing identifying may leave
         if p.is_file() and ".git" not in p.parts:
