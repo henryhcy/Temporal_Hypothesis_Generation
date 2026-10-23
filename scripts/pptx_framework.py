@@ -39,7 +39,7 @@ C = dict(rust="A0522D", wheat="D4B483", slate="4F6B75", gold="A8812E",
          band1="E7ECEF", band2="F1E9DF", band3="ECEAE7",
          tint_slate="E3EAED", tint_wheat="F3EBDD", tint_rust="F1E2DA", tint_grey="F2F2F2")
 SZ = dict(band=16, panel=12, stage=14, stagesub=10.5, body=10, small=9, badge=10)
-W, H = 13.333, 6.96   # flatter (user 2026-10-22): evaluation folded into band 2, panels tightened
+W, H = 11.0, 5.34     # compact (user 2026-10-23): narrower canvas so the same point sizes print ~20% larger; flatter panels
 
 
 def icon_png(name: str, color: str, px: int = 256) -> Path:
@@ -160,32 +160,34 @@ def rows(x, y, w, items, size=None, color=C["text"], spacing=1.0):
 
 
 # ====================================================================== band 1: benchmark construction
-band(0.1, 3.0, C["band1"])
-header(0.17, "1", "STRATA Benchmark Construction", C["rust"])
-py, ph = 0.68, 2.3
+band(0.08, 2.2, C["band1"])
+header(0.13, "1", "STRATA Benchmark Construction", C["rust"])
+py, ph = 0.62, 1.58
+X = [(0.2, 2.15), (2.57, 3.15), (5.94, 2.3), (8.46, 2.34)]
 
 # 1.1 timelines
-panel(0.24, py, 3.1, ph, "1.1", "Clinical timelines", "(MedTempo)")
-icon("clipboard-plus", 0.34, py + 0.46, 0.46, C["rust"]); icon("file-text", 0.88, py + 0.46, 0.46)
-text(0.3, py + 0.98, 1.4, 1.2, ["3,166 VAERS reports, three vaccines, each a leveled order of events"], size=SZ["body"])
-box(1.72, py + 0.42, 1.54, 1.8, fill=C["tint_grey"], line=None)
-text(1.76, py + 0.45, 1.48, 0.5, [[("Example timeline", {"bold": True, "size": SZ["small"]})], [("report MT-0482913", {"size": SZ["small"], "color": C["muted"]})]])
-ty = py + 1.08
-ln = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(1.86), Inches(ty), Inches(3.12), Inches(ty)); ln.line.color.rgb = rgb(C["slate"]); ln.line.width = Pt(1.75); _no_style_effects(ln)
-for cx, lab, col in ((1.94, "Fever", C["slate"]), (2.49, "Headache", C["rust"]), (3.04, "Fatigue", C["gold"])):
-    circle(cx - 0.07, ty - 0.07, 0.14, col, "")
-    text(cx - 0.4, ty + 0.08, 0.8, 0.22, [lab], size=7, bold=True, color=col, align=PP_ALIGN.CENTER)
-text(1.76, py + 1.4, 1.48, 0.8, ["stage → events; the first mention fixes the stage; events at one stage co-exist"], size=SZ["small"], color=C["muted"], align=PP_ALIGN.CENTER)
-arrow(3.38, py + 1.1, 3.62, py + 1.1)
+x, w = X[0]
+panel(x, py, w, ph, "1.1", "Clinical timelines")
+icon("clipboard-plus", x + 0.1, py + 0.44, 0.36, C["rust"]); icon("file-text", x + 0.5, py + 0.44, 0.36)
+text(x + 0.92, py + 0.4, w - 0.98, 0.5, ["3,166 VAERS reports, 3 vaccines (MedTempo)"], size=SZ["small"], spacing=0.95)
+ty = py + 1.12
+ln = slide.shapes.add_connector(MSO_CONNECTOR.STRAIGHT, Inches(x + 0.22), Inches(ty), Inches(x + w - 0.22), Inches(ty)); ln.line.color.rgb = rgb(C["slate"]); ln.line.width = Pt(1.75); _no_style_effects(ln)
+for k, (lab, col) in enumerate((("Fever", C["slate"]), ("Headache", C["rust"]), ("Fatigue", C["gold"]))):
+    cx = x + 0.32 + k * (w - 0.64) / 2
+    circle(cx - 0.08, ty - 0.08, 0.16, col, "")
+    text(cx - 0.5, ty + 0.1, 1.0, 0.24, [lab], size=SZ["small"], bold=True, color=col, align=PP_ALIGN.CENTER)
+text(x + 0.1, py + 0.86, w - 0.2, 0.2, ["a leveled order: one stage per circle"], size=SZ["small"] - 1, color=C["muted"], align=PP_ALIGN.CENTER)
+arrow(x + w + 0.02, py + ph / 2, x + w + 0.2, py + ph / 2)
 
 # 1.2 templates (editable table)
-panel(3.66, py, 3.1, ph, "1.2", "Hypothesis templates")
+x, w = X[1]
+panel(x, py, w, ph, "1.2", "Hypothesis templates")
 trows = [("Precedes", "A tends to precede B"), ("Co-occurs", "A and B tend to co-occur"), ("Sequence", "A, then B, then C"),
          ("First / Last", "A is most often first (last)"), ("Position", "A falls in the earlier half"),
          ("Proximity", "A occurs right before B"), ("Threshold", "A precedes B in ≥ 2/3")]
-TH = 1.78
-tbl = slide.shapes.add_table(len(trows), 2, Inches(3.74), Inches(py + 0.42), Inches(2.94), Inches(TH)).table
-tbl.columns[0].width = Inches(0.98); tbl.columns[1].width = Inches(1.96)
+TH = 1.12
+tbl = slide.shapes.add_table(len(trows), 2, Inches(x + 0.08), Inches(py + 0.42), Inches(w - 0.16), Inches(TH)).table
+tbl.columns[0].width = Inches(1.0); tbl.columns[1].width = Inches(w - 1.16)
 tints = [C["tint_slate"], C["tint_wheat"], C["tint_rust"]] * 3
 for i, (fam, tpl) in enumerate(trows):
     tbl.rows[i].height = Inches(TH / len(trows))
@@ -196,96 +198,100 @@ for i, (fam, tpl) in enumerate(trows):
         p_ = cell.text_frame.paragraphs[0]; r = p_.add_run(); r.text = s_
         r.font.name = FONT; r.font.size = Pt(SZ["small"]); r.font.bold = (j == 0); r.font.color.rgb = rgb(C["text"])
         cell.vertical_anchor = MSO_ANCHOR.MIDDLE
-arrow(6.8, py + 1.1, 7.04, py + 1.1)
+arrow(x + w + 0.02, py + ph / 2, x + w + 0.2, py + ph / 2)
+
+
+def items(x, w, rows_, fill, icol):
+    for k, (ic, title, body) in enumerate(rows_):
+        yy = py + 0.42 + k * 0.38
+        box(x + 0.08, yy, w - 0.16, 0.35, fill=fill, line=None, radius=0.12)
+        icon(ic, x + 0.13, yy + 0.04, 0.27, icol)
+        text(x + 0.46, yy + 0.0, w - 0.56, 0.35, [[(title, {"bold": True, "size": SZ["body"]})], [(body, {"size": SZ["small"] - 0.5, "color": C["muted"]})]],
+             anchor=MSO_ANCHOR.MIDDLE, spacing=0.85)
+
 
 # 1.3 groups / families / levels
-panel(7.08, py, 3.0, ph, "1.3", "Groups, families, levels")
-for yy, hh, ic, title, body, fill in ((py + 0.42, 0.54, "brain", "26 groups", "9 report, 16 cohort, 1 two-cohort", C["tint_slate"]),
-                                      (py + 1.02, 0.66, "network", "7 claim families", "precedes, co-occurs, sequence, first/last, position, proximity, threshold", C["tint_wheat"]),
-                                      (py + 1.74, 0.5, "chart-no-axes-column", "3 difficulty levels", "Easy one report; Medium one cohort; Hard two cohorts", C["tint_rust"])):
-    box(7.16, yy, 2.84, hh, fill=fill, line=None, radius=0.1)
-    icon(ic, 7.22, yy + (hh - 0.36) / 2, 0.36, C["slate"] if fill != C["tint_rust"] else C["rust"])
-    text(7.62, yy + 0.02, 2.36, hh - 0.04, [[(title, {"bold": True, "size": SZ["body"] + 1})], [(body, {"size": SZ["small"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
-arrow(10.12, py + 1.1, 10.36, py + 1.1)
+x, w = X[2]
+panel(x, py, w, ph, "1.3", "Groups and levels")
+items(x, w, [("brain", "26 groups", "9 report, 16 cohort, 1 two-cohort"),
+             ("network", "7 claim families", "order, timing and position"),
+             ("chart-no-axes-column", "3 difficulty levels", "Easy, Medium, Hard")], C["tint_slate"], C["slate"])
+arrow(x + w + 0.02, py + ph / 2, x + w + 0.2, py + ph / 2)
 
 # 1.4 gold
-panel(10.4, py, 2.69, ph, "1.4", "Gold at every stage")
-for yy, hh, ic, title, body in ((py + 0.42, 0.62, "file-check", "Plan", "events, quantity, denominator primitive, arms, null, p0, tail, test, floor"),
-                                (py + 1.1, 0.52, "database", "Evidence sets", "denominator, numerator and excluded ids; n, k per arm"),
-                                (py + 1.68, 0.56, "chart-bar", "Statistics, verdict", "p on both tails, Wilson CI, Cohen's h; three-way verdict")):
-    box(10.48, yy, 2.53, hh, fill=C["tint_wheat"], line=None, radius=0.1)
-    icon(ic, 10.54, yy + (hh - 0.34) / 2, 0.34, C["gold"])
-    text(10.92, yy + 0.02, 2.08, hh - 0.04, [[(title, {"bold": True, "size": SZ["body"] + 1})], [(body, {"size": SZ["small"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
+x, w = X[3]
+panel(x, py, w, ph, "1.4", "Gold at every stage")
+items(x, w, [("file-check", "Plan", "rule, null, tail, test, floor"),
+             ("database", "Evidence", "report ids per arm; n, k"),
+             ("chart-bar", "Statistics, verdict", "p, Wilson CI, Cohen's h")], C["tint_wheat"], C["gold"])
 
-# ====================================================================== band 2: ART pipeline + stage-level evaluation
-B2 = 3.18
-qy, qh = B2 + 0.58, 2.3
-ey, eh = qy + qh + 0.1, 0.68            # evaluation row, aligned under the stage each measure scores
-band(B2, ey + eh + 0.1 - B2, C["band2"])
-header(B2 + 0.07, "2", "ART Verification Pipeline", C["rust"])
+# ====================================================================== band 2: ART pipeline + evaluation
+B2 = 2.36
+qy, qh = B2 + 0.5, 1.62
+ey, eh = qy + qh + 0.08, 0.6
+band(B2, ey + eh + 0.08 - B2, C["band2"])
+header(B2 + 0.05, "2", "ART Verification Pipeline", C["rust"])
+CX = [(0.2, 1.5), (1.92, 4.0), (6.14, 2.5), (8.86, 1.94)]
 
 # inputs
-box(0.24, qy, 2.42, qh)
-text(0.3, qy + 0.05, 2.3, 0.3, ["Inputs"], size=SZ["panel"], bold=True)
-icon("file-text", 0.32, qy + 0.4, 0.36); text(0.74, qy + 0.36, 1.9, 0.5, ["a claim in natural language, with its cohort and level"], size=SZ["body"], spacing=0.95)
-text(0.3, qy + 0.9, 2.3, 0.3, ["Resources (to S1)"], size=SZ["panel"], bold=True)
-icon("list-checks", 0.32, qy + 1.26, 0.36); text(0.74, qy + 1.2, 1.9, 0.6, ["codebook: the corpus stipulations as text; null sources; test definitions"], size=SZ["body"], spacing=0.95)
-icon("database", 0.32, qy + 1.82, 0.36); text(0.74, qy + 1.76, 1.9, 0.52, ["timeline DB: report, vaccine, term, first-mention stage"], size=SZ["body"], spacing=0.95)
-arrow(2.68, qy + 0.55, 2.92, qy + 0.55); arrow(2.68, qy + 1.45, 2.92, qy + 1.45)
+x, w = CX[0]
+box(x, qy, w, qh)
+text(x + 0.06, qy + 0.04, w - 0.12, 0.3, ["Inputs"], size=SZ["panel"], bold=True)
+for k, (ic, lab) in enumerate((("file-text", "claim, cohort"), ("list-checks", "codebook"), ("database", "timeline DB"))):
+    yy = qy + 0.44 + k * 0.38
+    icon(ic, x + 0.08, yy, 0.3); text(x + 0.44, yy - 0.02, w - 0.5, 0.34, [lab], size=SZ["body"], anchor=MSO_ANCHOR.MIDDLE)
+arrow(x + w + 0.02, qy + qh / 2, x + w + 0.2, qy + qh / 2)
 
 # S1
-box(2.96, qy, 4.86, qh, fill=C["tint_slate"], line=None)
-circle(3.04, qy + 0.07, 0.54, C["slate"], "S1", size=13, sub="LLM")
-text(3.64, qy + 0.04, 4.15, 0.6, [[("Articulate", {"bold": True, "size": SZ["stage"], "color": C["slate"]})], [("form a structured plan; the claim-type mapping is withheld", {"size": SZ["stagesub"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
-steps = [("1", "file-search", "Parse the claim", "events, cohort, quantity, direction"),
-         ("2", "git-branch", "Choose the primitive", "denominator rule; arms"),
-         ("3", "sigma", "Compose the plan", "null, p0, tail, test family, floor"),
-         ("4", "timer-reset", "Verify, 1 round", "plan vs the codebook; re-ask once")]
-for k, (n, ic, title, body) in enumerate(steps):
-    sx = 3.04 + k * 1.185
-    box(sx, qy + 0.68, 1.13, 1.1, fill=C["panel"], line=None, radius=0.08)
-    circle(sx + 0.06, qy + 0.74, 0.26, C["slate"], n, size=9)
-    text(sx + 0.34, qy + 0.7, 0.78, 0.5, [title], size=SZ["body"], bold=True, anchor=MSO_ANCHOR.MIDDLE, spacing=0.9)
-    icon(ic, sx + 0.07, qy + 1.24, 0.3)
-    text(sx + 0.39, qy + 1.18, 0.74, 0.6, [body], size=SZ["small"] - 0.5, spacing=0.95)
+x, w = CX[1]
+box(x, qy, w, qh, fill=C["tint_slate"], line=None)
+circle(x + 0.08, qy + 0.07, 0.46, C["slate"], "S1", size=12, sub="LLM")
+text(x + 0.62, qy + 0.04, w - 0.68, 0.52, [[("Articulate", {"bold": True, "size": SZ["stage"], "color": C["slate"]})], [("a structured plan; the mapping is withheld", {"size": SZ["small"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.9)
+steps = [("1", "Parse", "events, cohort"), ("2", "Primitive", "denominator rule"), ("3", "Compose", "null, p0, test"), ("4", "Verify", "1 round")]
+sw_ = (w - 0.16 - 3 * 0.06) / 4
+for k, (n, title, body) in enumerate(steps):
+    sx = x + 0.08 + k * (sw_ + 0.06)
+    box(sx, qy + 0.62, sw_, 0.62, fill=C["panel"], line=None, radius=0.1)
+    circle(sx + 0.04, qy + 0.68, 0.2, C["slate"], n, size=8)
+    text(sx + 0.25, qy + 0.645, sw_ - 0.26, 0.26, [title], size=SZ["body"], bold=True, anchor=MSO_ANCHOR.MIDDLE)
+    text(sx + 0.05, qy + 0.92, sw_ - 0.08, 0.3, [body], size=SZ["small"], spacing=0.9)
     if k < 3:
-        arrow(sx + 1.13, qy + 1.23, sx + 1.185, qy + 1.23, lw=1.25)
-box(3.04, qy + 1.84, 4.7, 0.4, fill=C["tint_rust"], line=C["rust"], lw=1.0, radius=0.1)
-text(3.1, qy + 1.84, 4.6, 0.4, [[("Contract: ", {"bold": True, "color": C["rust"], "size": SZ["small"]}), ("the harness resolves the plan's primitive into its exact rule and states it to S2", {"size": SZ["small"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
-arrow(7.84, qy + 1.15, 8.08, qy + 1.15, color=C["rust"], lw=2.25)
+        arrow(sx + sw_, qy + 0.93, sx + sw_ + 0.06, qy + 0.93, lw=1.0)
+box(x + 0.08, qy + 1.3, w - 0.16, 0.26, fill=C["tint_rust"], line=C["rust"], lw=0.8, radius=0.12)
+text(x + 0.12, qy + 1.3, w - 0.24, 0.26, [[("Contract: ", {"bold": True, "color": C["rust"], "size": SZ["small"]}), ("the harness resolves the primitive into its exact rule", {"size": SZ["small"]})]], anchor=MSO_ANCHOR.MIDDLE)
+arrow(x + w + 0.02, qy + qh / 2, x + w + 0.2, qy + qh / 2, color=C["rust"], lw=2.0)
 
 # S2
-box(8.12, qy, 2.76, qh, fill=C["tint_wheat"], line=None)
-circle(8.2, qy + 0.07, 0.54, C["rust"], "S2", size=13, sub="LLM")
-text(8.8, qy + 0.04, 2.05, 0.6, [[("Retrieve", {"bold": True, "size": SZ["stage"], "color": C["rust"]})], [("plan to evidence sets", {"size": SZ["stagesub"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE)
-for yy, ic, lab in ((qy + 0.68, "code", "told the schema and the contract; one SQL per arm, one row per report"),
-                    (qy + 1.22, "table-2", "sandbox: read-only execution → n, k and report ids per arm"),
-                    (qy + 1.74, "timer-reset", "verify, up to 2 rounds: rejected SQL, n = k, empty arm, rule leaks")):
-    icon(ic, 8.2, yy + 0.04, 0.32, C["rust"]); text(8.58, yy, 2.28, 0.56, [lab], size=SZ["small"], spacing=0.95)
-arrow(10.9, qy + 1.15, 11.14, qy + 1.15)
+x, w = CX[2]
+box(x, qy, w, qh, fill=C["tint_wheat"], line=None)
+circle(x + 0.08, qy + 0.07, 0.46, C["rust"], "S2", size=12, sub="LLM")
+text(x + 0.62, qy + 0.04, w - 0.68, 0.52, [[("Retrieve", {"bold": True, "size": SZ["stage"], "color": C["rust"]})], [("plan to evidence sets", {"size": SZ["small"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.9)
+for k, (ic, lab) in enumerate((("code", "one SQL per arm"), ("table-2", "sandbox: n, k, report ids"), ("timer-reset", "repair: up to 2 rounds"))):
+    yy = qy + 0.66 + k * 0.31
+    icon(ic, x + 0.1, yy, 0.26, C["rust"]); text(x + 0.42, yy - 0.02, w - 0.48, 0.3, [lab], size=SZ["small"], anchor=MSO_ANCHOR.MIDDLE)
+arrow(x + w + 0.02, qy + qh / 2, x + w + 0.2, qy + qh / 2)
 
 # S3
-box(11.18, qy, 1.91, qh, fill=C["tint_slate"], line=None)
-circle(11.26, qy + 0.07, 0.54, C["gold"], "S3", size=13, sub="function")
-text(11.86, qy + 0.04, 1.21, 0.6, [[("Test", {"bold": True, "size": SZ["stage"], "color": C["gold"]})], [("exact, deterministic", {"size": SZ["stagesub"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.95)
-icon("settings", 11.26, qy + 0.72, 0.32, C["gold"])
-text(11.62, qy + 0.66, 1.45, 0.9, ["exact binomial vs p0; Fisher's test, two arms; modal-vs-runner-up, argmax; floor n ≥ 10"], size=SZ["small"], spacing=0.95)
-for k, (lab, ic, col) in enumerate((("Supported", "circle-check", C["slate"]), ("Refuted", "circle-x", C["rust"]), ("Insufficient", "circle-help", C["gold"]))):
-    yy = qy + 1.56 + k * 0.24
-    icon(ic, 11.26, yy, 0.22, col)
-    text(11.52, yy - 0.03, 1.5, 0.28, [lab], size=SZ["small"], bold=True, anchor=MSO_ANCHOR.MIDDLE)
+x, w = CX[3]
+box(x, qy, w, qh, fill=C["tint_slate"], line=None)
+circle(x + 0.08, qy + 0.07, 0.46, C["gold"], "S3", size=12, sub="function")
+text(x + 0.62, qy + 0.04, w - 0.68, 0.52, [[("Test", {"bold": True, "size": SZ["stage"], "color": C["gold"]})], [("exact, deterministic", {"size": SZ["small"], "color": C["muted"]})]], anchor=MSO_ANCHOR.MIDDLE, spacing=0.9)
+text(x + 0.1, qy + 0.6, w - 0.16, 0.42, ["binomial, Fisher or modal vs runner-up; floor n ≥ 10"], size=SZ["small"], spacing=0.9)
+for k, (lab, ic, col) in enumerate((("supported", "circle-check", C["slate"]), ("refuted", "circle-x", C["rust"]), ("insufficient", "circle-help", C["gold"]))):
+    yy = qy + 1.04 + k * 0.19
+    icon(ic, x + 0.12, yy, 0.17, col)
+    text(x + 0.34, yy - 0.04, w - 0.4, 0.24, [lab], size=SZ["small"], bold=True, anchor=MSO_ANCHOR.MIDDLE)
 
-# 3: stage-level evaluation, one row under the stages (was a separate band)
-circle(0.26, ey + 0.08, 0.46, C["slate"], "3", size=15)
-text(0.8, ey + 0.02, 1.9, 0.32, ["Evaluation"], size=SZ["panel"], bold=True, color=C["slate"], anchor=MSO_ANCHOR.MIDDLE)
-text(0.8, ey + 0.3, 1.86, 0.4, ["per stage; any stage can be set to gold"], size=SZ["small"], color=C["muted"], spacing=0.92)
-for (x0, w0), (ic, title, metrics, col) in zip(((2.96, 4.86), (8.12, 2.76), (11.18, 1.91)),
-                                              (("file-check", "Plan correctness", "plan EM, claim-type EM", C["slate"]),
-                                               ("database", "Evidence correctness", "evidence F1, co-exist / tie leak, faithfulness", C["rust"]),
-                                               ("scale", "Verdict", "accuracy, P/R/F1, over- and underclaim", C["gold"]))):
+# 3: stage-level evaluation, under the stage each measure scores
+circle(0.24, ey + 0.08, 0.42, C["slate"], "3", size=14)
+text(0.74, ey + 0.02, 1.2, 0.3, ["Evaluation"], size=SZ["panel"], bold=True, color=C["slate"], anchor=MSO_ANCHOR.MIDDLE)
+text(0.74, ey + 0.3, 1.25, 0.3, ["any stage can be set to gold"], size=SZ["small"] - 1, color=C["muted"], spacing=0.9)
+for (x0, w0), (ic, title, metrics, col) in zip(CX[1:], (("file-check", "Plan correctness", "plan EM, claim-type EM", C["slate"]),
+                                                       ("database", "Evidence correctness", "evidence F1, leaks, faithfulness", C["rust"]),
+                                                       ("scale", "Verdict", "accuracy, P/R/F1, abstention", C["gold"]))):
     box(x0, ey, w0, eh)
-    icon(ic, x0 + 0.08, ey + (eh - 0.36) / 2, 0.36, col)
-    text(x0 + 0.5, ey + 0.01, w0 - 0.54, eh - 0.02, [[(title, {"bold": True, "size": SZ["body"] + 1, "color": col})], [(metrics, {"size": SZ["small"], "color": C["muted"]})]], spacing=0.92, anchor=MSO_ANCHOR.MIDDLE)
+    icon(ic, x0 + 0.08, ey + (eh - 0.32) / 2, 0.32, col)
+    text(x0 + 0.46, ey + 0.02, w0 - 0.5, eh - 0.04, [[(title, {"bold": True, "size": SZ["body"], "color": col})], [(metrics, {"size": SZ["small"], "color": C["muted"]})]], spacing=0.9, anchor=MSO_ANCHOR.MIDDLE)
 
 prs.save(OUT)
 print("wrote", OUT)

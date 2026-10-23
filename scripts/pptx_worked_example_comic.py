@@ -2,7 +2,7 @@
 of scripts/worked_example_figure.py onto a canvas that writes native PowerPoint objects instead of SVG: rectangles,
 rounded rectangles, ovals and freeforms for every box, pill, bubble, brace and burst; text boxes for every line;
 connectors with arrowheads; the line icons as pictures. Coordinates are printed points, so the slide is the figure's
-printed size (240 x 361 pt). The halftone dot pattern of the PDF is omitted.
+printed size (240 x 325 pt). The halftone dot pattern of the PDF is omitted.
 
 Fonts: Comic Neue (body) and Bangers (captions), both OFL; copies with their licence are in
 docs/draft/Figures/fonts/ -- install them before editing, or PowerPoint substitutes another face.

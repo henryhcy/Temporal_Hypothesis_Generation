@@ -75,14 +75,14 @@ def draw(make=Canvas):
     y = M
 
     # ---------------- claim
-    bh = 30
+    bh = 27
     cv.rect(M, y, PW, bh, r=0, fill=FILL["banner"], stroke=INK, sw=BW)
     icon(cv, "message-square-quote", M + 6, y + 6, 18, GOLD)
     cv.para(M + 30, y + 12.5, PW - 36, [("Claim:", GOLD, 700), (" " + CLAIM, INK, 700)], BODY, SZ + 0.4, lh=1.2)
 
     # ---------------- 1: which reports count
-    y += bh + 5
-    h1 = 160
+    y += bh + 4
+    h1 = 150
     panel(cv, M, y, PW, h1, FILL["p1"], 1)
     caption(cv, M + 6, y + 13, "1  Which reports count?")
     icon(cv, "search", M + PW - 22, y + 4, 15, SLATE)
@@ -90,7 +90,7 @@ def draw(make=Canvas):
     for i, (rid, counted, why) in enumerate(ROWS):
         icon(cv, "circle-check" if counted else "circle-x", M + 6, ry + 3, 11, SAGE if counted else RUST)
         cv.text(M + 20, ry + 8.6, "counted" if counted else "excluded", BODY, SZ - 0.6, SAGE if counted else RUST, 700)
-        cv.text(M + 20, ry + 16.8, why, BODY, SZ - 0.9, INK, 400)
+        cv.text(M + 20, ry + 16.0, why, BODY, SZ - 0.9, INK, 400)
         px = M + 80
         st = stages(rid)
         for j, (keys, nother) in enumerate(st):
@@ -107,9 +107,9 @@ def draw(make=Canvas):
             if j < len(st) - 1:
                 arrow(cv, px + pw + 1.2, ry + 10, px + pw + 7.8)
             px += pw + 9
-        ry += 19.5
+        ry += 17.5
     # legend
-    ly = ry + 6
+    ly = ry + 8
     cv.circle(M + 10, ly - 2.6, 4.2, RUST, stroke=INK, sw=0.5); cv.text(M + 10, ly - 0.3, "P", BODY, 6.2, "#FFFFFF", 700, anchor="middle")
     lx = cv.runs_line(M + 17, ly, [("Pain   ", INK, 400)], BODY, SZ - 0.9)
     cv.circle(lx + 3, ly - 2.6, 4.2, SLATE, stroke=INK, sw=0.5); cv.text(lx + 3, ly - 0.3, "A", BODY, 6.2, "#FFFFFF", 700, anchor="middle")
@@ -117,11 +117,11 @@ def draw(make=Canvas):
     cv.circle(lx + 2, ly - 2.6, 1.8, GREY)
     cv.runs_line(lx + 7, ly, [("other event;  one box = one stage", INK, 400)], BODY, SZ - 0.9)
     # count bar: the 30 Moderna reports with both events
-    by = ly + 8
+    by = ly + 7
     n_both, n, k, co = D["both"], D["pb"] + D["ap"], D["pb"], D["co"]
     cv.line(M + 6, by + 6.5, [(f"{D['mod']} Moderna reports; ", INK, 400), (f"{n_both} mention both events:", INK, 700)], BODY, SZ - 0.4)
     bx, cw, bh2 = M + 6, (PW - 12) / n_both, 9.0
-    bar_y = by + 21
+    bar_y = by + 20
     for i in range(n_both):
         col = RUST if i < k else SLATE if i < n else "#E3DED6"
         cv.rect(bx + i * cw, bar_y, cw, bh2, r=0, fill=col, stroke="#FFFFFF", sw=0.5)
@@ -137,26 +137,26 @@ def draw(make=Canvas):
     brace(bx + cw * k, bx + cw * n, bar_y + bh2 + 1.2, False, f"{n - k}: A first", SLATE)
 
     # ---------------- 2: a one-query baseline
-    y += h1 + 5
-    h2 = 70
+    y += h1 + 4
+    h2 = 61
     panel(cv, M, y, PW, h2, FILL["p2"], 2)
     caption(cv, M + 6, y + 13, "2  A one-query baseline")
-    icon(cv, "bot", M + 6, y + 21, 22, RUST)
-    cv.bubble(M + 34, y + 21, PW - 40, 17, (M + 29, y + 30), "#FFFFFF", INK, sw=0.8)
-    cv.line(M + 41, y + 32.2, [("“I count a report only if ", INK, 400), ("Pain comes first", RUST, 700), (".”", INK, 400)], BODY, SZ)
-    ry = y + 44
+    icon(cv, "bot", M + 6, y + 19, 20, RUST)
+    cv.bubble(M + 32, y + 19, PW - 38, 16, (M + 27, y + 27.5), "#FFFFFF", INK, sw=0.8)
+    cv.line(M + 39, y + 29.7, [("“I count a report only if ", INK, 400), ("Pain comes first", RUST, 700), (".”", INK, 400)], BODY, SZ)
+    ry = y + 38
     x2 = chip(cv, M + 6, ry, f"n = {D['pb']}, k = {D['pb']}", RUST, 700)
     arrow(cv, x2 + 1.5, ry + 6, x2 + 7.5)
     x3 = chip(cv, x2 + 9, ry, "p < 0.0001")
     arrow(cv, x3 + 1.5, ry + 6, x3 + 7.5)
     chip(cv, x3 + 9, ry, "supported")
-    cv.burst(M + PW - 19, y + 50, 13.5, 8.5, 11, FILL["cap"], INK, sw=0.9, rot=0.2)
-    cv.text(M + PW - 19, y + 53, "n = k!", "Bangers", 7.8, RUST, 400, anchor="middle")
-    cv.line(M + 6, y + 65, [("The ", INK, 400), (f"{D['ap']} Asthenia-first reports", SLATE, 700), (" vanish, so n = k.", INK, 400)], BODY, SZ - 0.4)
+    cv.burst(M + PW - 19, y + 44, 13.5, 8.5, 11, FILL["cap"], INK, sw=0.9, rot=0.2)
+    cv.text(M + PW - 19, y + 47, "n = k!", "Bangers", 7.8, RUST, 400, anchor="middle")
+    cv.line(M + 6, y + 57.5, [("The ", INK, 400), (f"{D['ap']} Asthenia-first reports", SLATE, 700), (" vanish, so n = k.", INK, 400)], BODY, SZ - 0.4)
 
     # ---------------- 3: our staged pipeline (S1, S2, S3)
-    y += h2 + 5
-    h3 = 76
+    y += h2 + 4
+    h3 = 65
     panel(cv, M, y, PW, h3, FILL["p3"], 3)
     caption(cv, M + 6, y + 13, "3  Our staged pipeline")
     icon(cv, "bot", M + PW - 23, y + 3, 16, SAGE)
@@ -166,14 +166,14 @@ def draw(make=Canvas):
     sw_ = (PW - 12 - 2 * 8) / 3
     sx = M + 6
     for i, (tag, name, col, lines) in enumerate(stages3):
-        cv.rect(sx, y + 20, sw_, 50, r=5, fill="#FFFFFF", stroke=INK, sw=0.75)
-        cv.circle(sx + 9, y + 29, 6.4, col)
-        cv.text(sx + 9, y + 31.6, tag, BODY, 6.6, "#FFFFFF", 700, anchor="middle")
-        cv.text(sx + 18.5, y + 31.8, name, BODY, SZ - 0.2, col, 700)
+        cv.rect(sx, y + 19, sw_, 42, r=5, fill="#FFFFFF", stroke=INK, sw=0.75)
+        cv.circle(sx + 9, y + 27.5, 6.2, col)
+        cv.text(sx + 9, y + 30.0, tag, BODY, 6.6, "#FFFFFF", 700, anchor="middle")
+        cv.text(sx + 18.5, y + 30.3, name, BODY, SZ - 0.2, col, 700)
         for j, ln in enumerate(lines):
-            cv.text(sx + 5, y + 44 + j * 8.6, ln, BODY, SZ - 1.0, INK, 700 if (i and j == 2) else 400)
+            cv.text(sx + 5, y + 40.6 + j * 8.2, ln, BODY, SZ - 1.0, INK, 700 if (i and j == 2) else 400)
         if i < 2:
-            arrow(cv, sx + sw_ + 1.2, y + 45, sx + sw_ + 6.8)
+            arrow(cv, sx + sw_ + 1.2, y + 40, sx + sw_ + 6.8)
         sx += sw_ + 8
     H = y + h3 + M
     cv.save_to = None
