@@ -210,264 +210,120 @@ within a record.}
 \section{The \sys{} Benchmark}
 \label{sec:dataset}
 
-\subsection{Task}
+\subsection{Task definition}
 \label{sec:task}
 
-
-A \emph{record} is a temporal hypothesis
-stated as a claim in natural language --- a declarative sentence in one of
-four registers --- about a \emph{cohort} (the reports of one vaccine), a
-\emph{contrast} of two cohorts, or one named \emph{report}; and the
+A record is a temporal hypothesis stated as a claim in natural language, in
+one of four registers, about a \emph{cohort} (the reports of one vaccine), a
+\emph{contrast} of two cohorts, or one named \emph{report}, together with the
 timelines: for every report, its vaccine and the stage at which each event
-term is first mentioned. The system must verify the hypothesis by a
-statistical test over the timelines and return a verdict in $\{\emph{supported}, \emph{refuted}, \emph{insufficient}\}$,
-the last sub-typed as \emph{not-locatable} (no report qualifies),
-\emph{sparse} (too few qualify) or \emph{underpowered} (enough qualify but
-neither tail is significant; the name marks an inconclusive test, not a formal
-power calculation). It never sees report text.
+term is first mentioned. The system never sees report text. It must verify the
+hypothesis by a statistical test over the timelines and return
+\emph{supported}, \emph{refuted} or \emph{insufficient}. A claim is supported
+only when its own one-sided tail is significant at $\alpha = 0.05$ and refuted
+only when the opposite tail is, never for failing to prove it; otherwise it is
+insufficient, sub-typed as \emph{not-locatable} (no report qualifies),
+\emph{sparse} (fewer than the minimum count qualify) or \emph{underpowered}
+(enough qualify but neither tail is significant; the name marks an
+inconclusive test, not a power calculation).
 
-For a cohort-tier claim the gold is
-computed in three steps that are themselves released: (1) a \emph{plan} ---
-the events named, the quantity compared, the \emph{denominator primitive}
-(which reports count), the number of arms, the null (a fixed proportion, a bar
-stated in the text, a rate derived from the data, or equality of two arms), the
-tail and the test family; (2) the \emph{evidence} --- the identifiers of the
-reports in each arm's denominator and numerator; (3) the exact test with a
-per-family minimum-count floor and $\alpha = 0.05$ one-sided in the claim's
-direction. \emph{Refuted} requires significance in the opposite direction, never
-``failed to prove''. A report-tier claim is a single deterministic observation
-over one report and carries no test. Figure~\ref{fig:example} follows one
-test claim through these steps.
+For a cohort-tier claim the gold is computed in three released steps: (1) a
+\emph{plan}, giving the events, the quantity compared, the \emph{denominator
+primitive} (which reports count), the number of arms, the null, the tail and
+the test family; (2) the \emph{evidence}, the identifiers of the reports in
+each arm's denominator and numerator; and (3) the exact test with its minimum
+count. A report-tier claim is one deterministic reading of a report's timeline
+and carries no test. Figure~\ref{fig:example} follows one test claim through
+these steps.
 
 Several readings of a claim are stipulations about the corpus rather than
-facts about the sentence: whether a report with both events at the same stage
-counts for ``precedes'', what ``typically'' means, whether a tie for ``first''
-leaves the denominator, and what ``more often than their separate rates would
-predict'' compares. A system that was never told them cannot infer them. The benchmark therefore ships these stipulations as a
-\emph{codebook}, in the sense of a coding manual: a situation-phrased
-text that any system may be given (\S\ref{sec:frames}); the experiments
-treat ``codebook given'' as a controlled condition. The
-claim-type \emph{mapping} --- which rule and which test go with which wording
---- is what we withhold: a system is scored on composing it.
+facts about the sentence, such as whether a report with both events at one
+stage counts for ``precedes'' or whether a tie for ``first'' leaves the
+denominator. The benchmark ships them as a \emph{codebook} that any system may
+be given (\S\ref{sec:frames}) and withholds only the \emph{mapping} from
+wording to rule and test, which a system is scored on composing.
 
-
-\subsection{Source corpus}
+\subsection{Benchmark construction}
+\label{sec:construction}
 \label{sec:corpus}
 
 We use the clinical timelines of MedTempo~\cite{craft2026}: 3{,}166 VAERS
-adverse-event reports for three COVID-19 vaccines, each report's clinical
-course represented as a \emph{leveled order}, a single totally ordered chain of stages in which each stage holds the
-MedDRA-coded events reported at that point of the clinical course (1{,}164
-Janssen, 1{,}019 Pfizer and 983 Moderna reports; 1{,}660 distinct event
-terms; 7.2 events and 3.4 stages per report on average). Two rules of this
-representation are load-bearing: when a term recurs, its \emph{first} mention
-fixes its stage; events at one stage are temporally indistinguishable
-(\emph{co-exist}). The timelines, not the narratives, are both the
-benchmark's ground truth and the systems' input, so an error is an error of
-verification rather than of reading a narrative, which is the task CRAFT
-studies. The claims describe how reported events are ordered in VAERS reports,
-which are unverified and self-selected; they are not evidence that a vaccine
-causes an event.
+adverse-event reports for three COVID-19 vaccines (1{,}164 Janssen, 1{,}019
+Pfizer, 983 Moderna; 1{,}660 event terms; 7.2 events and 3.4 stages per
+report on average), each represented as a \emph{leveled order}, a chain of
+stages in which each stage holds the MedDRA-coded events reported at that
+point. A term's \emph{first} mention fixes its stage, and events at one stage
+\emph{co-exist}, with no order between them. Systems receive the timelines
+rather than the narratives, so an error is an error of verification rather
+than of reading, which is the task CRAFT studies.
 
-\subsection{Hypothesis space}
-\label{sec:space}
-
-Twenty-six template groups span seven claim families at three scopes;
-Figure~\ref{fig:overview} shows one template per family, and the claim
-catalogue (Table~\ref{tab:catalogue}, Appendix~\ref{app:catalogue}) lists
-every group with its wording, denominator rule, null and test. Four families concern order and co-occurrence ---
-\emph{precedes}, \emph{co-occurs}, strict \emph{sequence} of three events,
-\emph{first/last} among candidates --- and three, added to diversify the null,
-concern \emph{position} (an event in the earlier half of a timeline),
+\label{sec:space}\label{sec:realization}
+Hypotheses come from 26 template groups in seven claim families:
+\emph{precedes}, \emph{co-occurs}, \emph{sequence} of three events,
+\emph{first/last} among candidates, and, to diversify the null,
+\emph{position} (an event in the earlier half of a timeline),
 \emph{proximity} (two events at consecutive stages) and \emph{threshold} (a
-rate at least a stated bar). Claims come at three \emph{levels of
-difficulty}, ordered by what a claim asks of a reader, not by how systems
-score on it. \emph{Easy} (the report tier) asks about one named report: the
-verdict is a deterministic reading of its timeline (did $A$ precede $B$ in
-this report), there is no null and no test, and \emph{insufficient} does not
-arise (9 groups). \emph{Medium} (the cohort tier) asks about the reports of
-one vaccine: a denominator has to be assembled under the family's rule, a
-null stated, and an exact test run with a floor on the count, so all three
-verdicts are possible (16 groups). \emph{Hard} (the two-cohort tier)
-contrasts two vaccines' cohorts: two denominators, two rates, and a
-two-sample exact test (1 group). Within the cohort tier, three groups are
-themselves two-arm contrasts: whether $B$ follows $A$ more often than it follows $C$; whether $A$
-precedes $B$ more often than $C$ precedes $D$; and whether $A$ and $B$ occur
-together more often than their separate rates predict (association). Each
-group is realised as a declarative claim in four registers (a canonical
-\textsc{Original} plus \textsc{Research}, \textsc{Media} and
-\textsc{Clinical}) by mechanical slot-filling with no model-generated
-rewriting; answers are \textsc{Bool} or \textsc{Choice}.
+rate of at least a stated bar). They span three difficulty levels:
+\emph{Easy} claims read one report's timeline (9 groups), \emph{Medium}
+claims test a rate within one cohort (16 groups), and \emph{Hard} claims
+compare two cohorts (1 group). Figure~\ref{fig:overview} shows one template
+per family, and Table~\ref{tab:catalogue} (Appendix~\ref{app:catalogue})
+lists every group. Each group is rendered in four registers
+(\textsc{Original}, \textsc{Research}, \textsc{Media}, \textsc{Clinical}) by
+mechanical slot-filling, with no model-written text. Every decisive core is
+posed both ways, as a \emph{supported} claim and its \emph{refuted} mirror
+over identical evidence, so a system that supports both directions of one
+fact is caught. Each cohort group ships equal thirds of supported, refuted
+and insufficient, balanced per group so that fixed template wording cannot
+teach a shortcut from wording to label, and is capped at 600 instances by a
+seeded draw that keeps mirror pairs together. \emph{Not-locatable} claims are
+minted from real cohort vocabulary whose joint count is zero, so the claim
+looks answerable and only querying the timelines reveals the empty
+denominator.
 
-The benchmark uses five kinds of null. Order claims test a proportion against the
-symmetry value $0.5$; argmax claims (``most common first'', ``most common
-ordering'') test the named cell against its strongest competitor; two-arm
-claims test the equality of two rates; threshold claims read their null off
-the text (``in at least two thirds''); and the position and proximity-rate
-claims use a null \emph{derived from the data} --- the structural early-rate of
-the denominator reports, or the chance $2/L$ that two events of an $L$-stage
-report are adjacent --- which no lookup table can supply. The last two kinds
-are what make ``formulate the null'' a scored capability rather than a
-classification.
-
-\subsection{Gold labels}
 \label{sec:gold}
-
-Each family fixes its denominator, and these
-distinctions are the substantive content of the task. \emph{Precedes} counts
-only reports where both events occupy distinct stages. \emph{Co-occurs} counts
-all reports containing both, because co-existence is the event of interest.
-\emph{Sequence} requires all three events at distinct stages. \emph{First/last}
-requires every candidate present and drops tie reports entirely. Association
-conditions on presence alone, comparing $P(B \mid A)$ against $P(B \mid \neg
-A)$ over the whole cohort. \emph{Immediate} order counts reports where the two
-events are at consecutive occupied stages; \emph{position} drops single-stage
-reports and events on the exact middle stage.
-
-The claim catalogue (Table~\ref{tab:catalogue}) gives the test of every
-group: a one-sided exact binomial against $p_0$ for majority and bar nulls;
-for a data-derived null, a one-sided binomial at the mean of the per-report
-chance rates, which is conservative relative to the exact distribution over
-reports with unequal chances; modal-versus-runner-up, an exact binomial of the
-named cell against its strongest competitor, for argmax claims; and Fisher's
-exact test \cite{fisher1935design} for two-arm and two-cohort contrasts. An
-argmax claim asserts that the named cell beats every competitor, and the
-pairwise $p$-value is largest against the strongest one, so beating it implies
-beating all of them and no multiplicity correction is needed. No
-$\chi^2$ approximation appears; the sole gate is a minimum denominator of 10,
-applied to both arms where two exist. Each instance releases both one-sided
+Gold labels are computed mechanically from the timelines. Each family fixes
+its denominator, and these rules are the substance of the task:
+\emph{precedes} counts only reports with both events at distinct stages,
+whereas \emph{co-occurs} counts every report with both, because co-existence
+is what it asks about, and \emph{first/last} drops reports in which
+candidates tie; the catalogue gives every rule. Five kinds of null appear: the
+symmetric $0.5$ for order claims, the named cell against its strongest
+competitor for argmax claims, equality of two rates for contrasts, a bar read
+off the wording for threshold claims, and a rate derived from the data for
+position and proximity claims, which no lookup table can supply. Order and bar
+claims use a one-sided exact binomial; data-derived nulls use a one-sided
+binomial at the mean of the per-report chance rates, which is conservative
+relative to the exact distribution over reports with unequal chances; argmax
+claims use an exact binomial of the named cell against its strongest
+competitor, which suffices because beating the strongest competitor implies
+beating all of them; and contrasts use Fisher's exact test
+\cite{fisher1935design}. No $\chi^2$ approximation appears, and the only gate
+is a minimum denominator of 10 per arm. Each instance releases both one-sided
 $p$-values, the Wilson interval \cite{wilson1927} and Cohen's $h$
-\cite{cohen1988} against the null actually used.
+\cite{cohen1988}, all describing the claim as that instance asserts it.
 
-A claim is
-\emph{supported} only when its own one-sided tail is significant at
-$\alpha = 0.05$, \emph{refuted} only when the opposite tail is, and otherwise
-\emph{insufficient} (\emph{underpowered}, \emph{sparse}: $0 < n <$ floor, or
-\emph{not-locatable}: $n = 0$). Both tails are computed for every instance.
-Every released statistic --- both $p$-values, the Wilson interval, Cohen's $h$
-against the null actually used --- describes the claim as that instance asserts
-it.
-
-\subsection{Instance realisation and composition}
-\label{sec:realization}
-
-Every decisive core is posed \emph{both ways}: oriented with its effect
-(\emph{supported}) and against it (\emph{refuted}), a mirror pair over
-identical evidence, so a system answering \emph{supported} to both directions
-of one fact is caught immediately. Direction-asking groups re-orient by
-swapping slots; symmetric claims re-orient by authored negation, written into
-the template rather than derived; threshold claims are tested per orientation
-(both directions can be refuted) and carry no mirror. Each cohort group ships
-equal thirds --- supported, refuted, insufficient --- balanced \emph{per group}
-because template wording is fixed per group and a skewed group would teach a
-text-shape-to-label shortcut; the insufficient third is spread over its
-sub-types. \emph{Not-locatable} instances are minted deliberately from real
-cohort vocabulary whose joint count is zero, so the claim appears answerable and
-only querying the timelines reveals the empty denominator. Groups are capped
-at 600 instances (200 per class) by a seeded draw that keeps mirror pairs
-together; report groups ship two classes of 200.
-
-\subsection{Validity screens}
 \label{sec:screens}
+Before shipping, every group cleared a permutation null matched to its claim
+shape \cite{good2005permutation}. Six families of mechanical invariants are
+checked over the whole enumerated universe of 56{,}138 instances, and a
+deterministic oracle that parses each template back into the reference SQL
+reproduces every gold label, which shows that the labels follow from the
+stated rules.
 
-No group ships on plausibility. Each is screened against a permutation null
-\cite{good2005permutation} matched to its claim shape at 2{,}000 rounds: a \emph{level shuffle}
-(term-to-stage assignment permuted within each report, preserving report size,
-stage-size multiset, term frequencies and co-occurrence) for order, position
-and proximity groups; a degree-preserving \emph{edge swap} for association; a
-\emph{label shuffle} for two-cohort contrasts; every shipping group cleared
-its screen ($p_{\textrm{perm}} \leq 0.025$, most below the $0.0005$
-resolution). The
-screening history is itself a result: seven candidate two-cohort shapes were
-tested and one survived; a majority statistic was replaced after the screen
-showed its text and its test answered different questions; and a rank-test
-track was retired when the Mann--Whitney approximation proved anti-conservative
-on tie-heavy ordinal data (${\sim}11\%$ of cores decisive under shuffled labels
-at a nominal 5\%).
-
-\subsection{Release, splits and leakage}
-\label{sec:release}
-
-The release has two files. The questions file carries one row per rendering and
-only the input fields (identifier, group, level, answer type, register,
-text, options, cohort); the answers file carries one row per instance with the
-gold verdict and sub-type, the oriented counts, both $p$-values, the test, the
-floor, interval and effect size, and the \emph{evidence identifiers}. The writer
-refuses to emit a gold field into the questions file. A group-independent
-\texttt{fact\_id} keys every split, because answer-type twins pose the same
-fact under two groups.
-
-Every report identifier a system can
-see --- in the claim texts, in the released evidence and in the database --- is
-a keyed permutation of the public VAERS identifier. VAERS is public and in
-pretraining corpora; removing the lookup key removes the shortcut without
-touching the timelines.
-
-The release is an evaluation benchmark with no training
-split: a \emph{development set} of 200 instances (a seeded, class-balanced
-draw over every group and tier, in all four registers) on
-which every prompt and design decision in this paper was made, and a
-\emph{test set} of 1{,}500 cohort- and multi-tier instances in claim form,
-90 per group where the corpus allows it and every eligible instance where it
-does not, class-balanced, mirror pairs and facts kept together, and
-fact-disjoint from the development set. A further 180 single-report instances
-(20 per report group) form a case study rather than part of the test set,
-because that tier is read at 0.98--1.00 by every capable system. The full
-enumerated pool (Table~\ref{tab:totals}) is released as supplementary
-material with the generator, so larger or differently balanced draws can be
-made with the same recipe. The release also carries a question-form rendering
-of every record; this paper presents and studies the claim form only. The
-test set was run once, after the prompts were frozen.
-
-Six families of mechanical invariants --- evidence
-arithmetic, set algebra, per-family conditioning re-derived from the leveled
-orders, direction, verdict-against-tails including the floor, and independent
-recomputation through a separate database path --- are checked over the whole
-enumerated universe (56{,}138 instances). A deterministic oracle (reverse
-template parser into the reference SQL compiler) reproduces every gold label of
-the release. This checks internal consistency, that every label follows from
-the stated rules; whether a template's wording carries those rules is what the
-codebook states explicitly.
-
-\subsection{Statistics}
-\label{sec:stats}
-
-Table~\ref{tab:totals} summarises the release; the per-group pool sizes and
-median denominators are in the claim catalogue (Appendix~\ref{app:catalogue}). The
-earlier, uncapped version of the benchmark let one group contribute 46\% of all
-instances; the cap makes the eleven largest groups equal in size, and
-class balance is exact within every cohort group by construction.
-
-\begin{table}[t]
-\centering
-\small
-\begin{tabular}{lr}
-\toprule
-\multicolumn{2}{l}{\textit{Released evaluation sets}} \\
-Development set (all tiers, 4 registers) & 200 instances \\
-Test set (cohort/multi tiers, claim form) & 1{,}500 instances \\
-Single-report case study (claim form) & 180 instances \\
-\midrule
-\multicolumn{2}{l}{\textit{Enumerated pool (supplementary)}} \\
-Records (instance $\times$ register, claim form) & 35{,}052 \\
-Instances & 8{,}763 \\
-Groups / families / tiers & 26 / 7 / 3 \\
-Distinct cores & 5{,}703 \\
-Distinct facts (split key) & 4{,}761 \\
-\midrule
-Supported / refuted / insufficient & 3{,}521 / 3{,}521 / 1{,}721 \\
-\quad underpowered / sparse / not-locatable & 605 / 498 / 618 \\
-Mirror pairs & 3{,}060 \\
-Negated instances & 643 \\
-\midrule
-Test denominator $n$ after conditioning, median (IQR) & 21 (14--41) \\
-$|$Cohen's $h|$ on decisive, median & 0.65 \\
-$p$ on supported claims, median & 0.008 \\
-\bottomrule
-\end{tabular}
-\caption{Aggregate statistics of the release.}
-\label{tab:totals}
-\end{table}
+\label{sec:release}\label{sec:stats}
+The release separates what a system may see from the gold: the verdicts,
+counts, statistics and evidence identifiers sit in a separate file. Every
+report identifier a system can see is a keyed permutation of the public VAERS
+identifier, so pretraining exposure to VAERS cannot serve as a lookup. A
+group-independent \texttt{fact\_id} keys every split. The test set holds
+1{,}500 cohort and two-cohort claims, 90 per group where the corpus allows,
+class-balanced and fact-disjoint from a 200-instance development set on which
+every prompt and design decision was made; it was run once, after the prompts
+were frozen. A further 180 single-report claims, 20 per report group, form a
+case study, because every capable system reads that tier at 0.98--1.00. The
+full enumerated pool of 8{,}763 instances ships as supplementary material with
+the generator; Appendix~\ref{app:datastats} gives its statistics.
 
 \section{Method}
 \label{sec:framework}

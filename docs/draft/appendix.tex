@@ -46,6 +46,44 @@ systems release no gold of their own. Marks: \cmark{} has it, \pmark{} partly,
 \label{tab:related-concise}
 \end{table*}
 
+\section{Dataset statistics}
+\label{app:datastats}
+
+Table~\ref{tab:totals} summarises the released evaluation sets and the full
+enumerated pool; per-group sizes and median denominators are in the claim
+catalogue (Appendix~\ref{app:catalogue}).
+
+\begin{table}[htbp]
+\centering
+\small
+\begin{tabular}{lr}
+\toprule
+\multicolumn{2}{l}{\textit{Released evaluation sets}} \\
+Development set (all tiers, 4 registers) & 200 instances \\
+Test set (cohort/multi tiers, claim form) & 1{,}500 instances \\
+Single-report case study (claim form) & 180 instances \\
+\midrule
+\multicolumn{2}{l}{\textit{Enumerated pool (supplementary)}} \\
+Records (instance $\times$ register, claim form) & 35{,}052 \\
+Instances & 8{,}763 \\
+Groups / families / tiers & 26 / 7 / 3 \\
+Distinct cores & 5{,}703 \\
+Distinct facts (split key) & 4{,}761 \\
+\midrule
+Supported / refuted / insufficient & 3{,}521 / 3{,}521 / 1{,}721 \\
+\quad underpowered / sparse / not-locatable & 605 / 498 / 618 \\
+Mirror pairs & 3{,}060 \\
+Negated instances & 643 \\
+\midrule
+Test denominator $n$ after conditioning, median (IQR) & 21 (14--41) \\
+$|$Cohen's $h|$ on decisive, median & 0.65 \\
+$p$ on supported claims, median & 0.008 \\
+\bottomrule
+\end{tabular}
+\caption{Aggregate statistics of the release.}
+\label{tab:totals}
+\end{table}
+
 \section{Claim catalogue}
 \label{app:stats}
 \label{app:catalogue}
