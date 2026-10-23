@@ -617,8 +617,12 @@ observations, and run it with qwen3.8 and gemma4 on the same subsample.
 
 \emph{Stage baselines} compare each stage of \art{} with an established
 method for that step, the other stages set to gold. For Articulate, the
-same model plans with chain-of-thought prompting \cite{wei2022cot}: it
-writes its reasoning before the plan fields. For Retrieve, OmniSQL
+same model plans from a plain prompt: the dataset description, the
+codebook and the plan's output schema, without \art{}'s explanations of
+nulls and tests, its field rules or its verify round; a second variant adds
+zero-shot chain-of-thought \cite{kojima2022zeroshot}. \art{}'s own
+Articulate stage with chain-of-thought prompting \cite{wei2022cot} is
+reported beside it as an ablation. For Retrieve, OmniSQL
 \cite{li2025omnisql}, an open text-to-SQL model fine-tuned from the same
 Qwen2.5-Coder-32B base as our 2024 SQL model, writes the SQL from the gold
 plan under the same contract. For Test, StatQA's protocol \cite{zhu2024statqa} hands the model
@@ -708,7 +712,9 @@ DiscoveryBench$^\dagger$ & \multicolumn{4}{c}{---} & .647 & .812 & .647 & .711 &
 \midrule
 \multicolumn{21}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
 Articulate: \art{} & .953 & .985 & .953 & .969 & .917 & .942 & .917 & .928 & .992 & .992 & .992 & .992 & .993 & .993 & .993 & .993 & .993 & .993 & .993 & .993 \\
-\quad chain-of-thought & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & .995 & .995 & .995 & .995 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad \art{} + chain-of-thought & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & .995 & .995 & .995 & .995 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad plain prompt & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad plain prompt + chain-of-thought & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{\pend{running}} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 Retrieve: \art{} & .836 & .879 & .835 & .840 & .944 & .945 & .944 & .944 & .989 & .990 & .989 & .989 & \multicolumn{4}{c}{$\geq$.999 on all four} & \multicolumn{4}{c}{$\geq$.999 on all four} \\
 \quad OmniSQL-32B$^\ddagger$ & .772 & .814 & .771 & .775 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
@@ -753,7 +759,9 @@ DiscoveryBench$^\dagger$ & --- & 0.647\,{\scriptsize(0.812/0.647/0.711)} & 0.706
 \midrule
 \multicolumn{6}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
 Articulate: \art{} & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
-\quad chain-of-thought & \pend{running} & \pend{running} & 0.995\,{\scriptsize(0.995/0.995/0.995)} & --- & --- \\
+\quad \art{} + chain-of-thought & \pend{running} & \pend{running} & 0.995\,{\scriptsize(0.995/0.995/0.995)} & --- & --- \\
+\quad plain prompt & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
+\quad plain prompt + chain-of-thought & \pend{running} & \pend{running} & \pend{running} & --- & --- \\
 Retrieve: \art{} & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
 \quad OmniSQL-32B$^\ddagger$ & 0.772\,{\scriptsize(0.814/0.771/0.775)} & --- & --- & --- & --- \\
 Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\

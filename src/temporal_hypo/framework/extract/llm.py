@@ -464,6 +464,33 @@ def conventions_block(dataset_card: str | None = None) -> str:
     return "\n\n".join(x for x in (dataset_card, conv) if x)
 
 
+def plain_system_prompt(*, dataset_card: str, blind_group: bool = True) -> str:
+    """Plain-prompt planner baseline (2026-10-23, user): the information of the toolbox frame (dataset card and
+    codebook) and the plan's output schema, but none of ART's Articulate scaffolding -- no null-source or
+    test-toolbox explanations, no procedure text, no field rules -- and it is run without a verify round.
+    Selected with MEDTEMPO_S1_PLAIN=1 on the toolbox frame."""
+    conv = (CONVENTIONS_TEXT
+            .replace("ALPHA_TEXT_PLACEHOLDER", ALPHA_TEXT)
+            .replace("FLOORS_PLACEHOLDER",
+                     f"{PAIRWISE_FLOOR} per arm for claims about pairs, first/last and "
+                     f"co-occurrence, {SEQUENCE_FLOOR} for three-event orderings"))
+    parts = [
+        "Given a natural-language hypothesis about a dataset of adverse-event timelines, write the statistical "
+        "plan that verifies it.",
+        "",
+        "INPUT: a JSON object with the hypothesis text, its level, answer type and cohort"
+        + ("" if blind_group else ", and group_id") + ".",
+        "",
+        dataset_card,
+        "",
+        conv,
+        "",
+        "OUTPUT: exactly one JSON object matching this schema (no prose, no code fences):",
+        json.dumps(PLAN_JSON_SCHEMA, ensure_ascii=False),
+    ]
+    return "\n".join(parts)
+
+
 def toolbox_system_prompt(*, dataset_card: str, blind_group: bool = True) -> str:
     """The toolbox frame: task card + conventions + null sources + test toolbox + procedure.
 
@@ -729,8 +756,8 @@ class LLMExtractor:
     def _system_message(self, blind_group: bool) -> str:
         if self.frame == "toolbox":
             if blind_group not in self._system:
-                self._system[blind_group] = toolbox_system_prompt(
-                    dataset_card=self.dataset_card or "", blind_group=blind_group)
+                build = plain_system_prompt if os.environ.get("MEDTEMPO_S1_PLAIN") == "1" else toolbox_system_prompt
+                self._system[blind_group] = build(dataset_card=self.dataset_card or "", blind_group=blind_group)
             return self._system[blind_group]
         if blind_group not in self._system:
             self._system[blind_group] = system_prompt(tier_hint=self.tier_hint,
