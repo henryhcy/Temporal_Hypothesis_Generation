@@ -16,18 +16,7 @@
 \newcommand{\sys}{\textsc{Strata}}
 \newcommand{\art}{\textsc{Art}}
 
-\begin{figure*}[t]
-\centering
-\includegraphics[width=\textwidth]{Figures/overview_slide.pdf}
-\caption{Overview. Top: \sys{} benchmark construction, from the clinical
-timelines (1.1) through the hypothesis templates (1.2) and the groups,
-families and difficulty levels (1.3) to the gold computed at every stage
-(1.4). Bottom: the \art{} verification pipeline, articulate (S1), retrieve
-(S2) and test (S3), with the contract between S1 and S2 and the
-verify-and-repair loops; beneath each stage, the measure that scores its
-output against the gold (3).}
-\label{fig:overview}
-\end{figure*}
+
 
 \section{Introduction}
 \label{sec:intro}
@@ -48,17 +37,6 @@ sentence means for this corpus, each can be wrong independently, and a
 verdict can be right while they are wrong: in Figure~\ref{fig:example} a
 one-query baseline counts only the reports that support the claim and still
 returns the correct verdict.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{Figures/worked_example.pdf}
-\caption{One test claim end to end, with real counts. (1) Four Moderna
-reports, one per case; the bar splits the 30 reports that mention both
-events into the denominator $n$ and the numerator $k$. (2) A one-query
-baseline and (3) our staged pipeline, both run with the same open model
-(\S\ref{sec:baselines}, \S\ref{sec:method}).}
-\label{fig:example}
-\end{figure}
 
 This paper makes that chain of decisions the object of evaluation, in a
 setting where every one of them is hard: verifying temporal hypotheses about
@@ -129,6 +107,30 @@ even with exact counts; with stage and repair-budget ablations, case studies and
 error analysis of the \emph{insufficient} class
 (\S\ref{sec:experiments}, \S\ref{sec:results}).
 \end{itemize}
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/worked_example.pdf}
+\caption{One test claim end to end, with real counts. (1) Four Moderna
+reports, one per case; the bar splits the 30 reports that mention both
+events into the denominator $n$ and the numerator $k$. (2) A one-query
+baseline and (3) our staged pipeline, both run with the same open model
+(\S\ref{sec:baselines}, \S\ref{sec:method}).}
+\label{fig:example}
+\end{figure}
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/overview_slide.pdf}
+\caption{Overview. Top: \sys{} benchmark construction, from the clinical
+timelines (1.1) through the hypothesis templates (1.2) and the groups,
+families and difficulty levels (1.3) to the gold computed at every stage
+(1.4). Bottom: the \art{} verification pipeline, articulate (S1), retrieve
+(S2) and test (S3), with the contract between S1 and S2 and the
+verify-and-repair loops; beneath each stage, the measure that scores its
+output against the gold (3).}
+\label{fig:overview}
+\end{figure*}
 
 \section{Related Work}
 \label{sec:related}
