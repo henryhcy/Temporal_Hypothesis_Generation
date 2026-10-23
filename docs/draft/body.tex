@@ -907,17 +907,8 @@ cores each in the corpus) and appears in the report-tier case study only.}
 \end{table*}
 \fi
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{Figures/family_radar.pdf}
-\caption{Verdict accuracy by claim family on the test set, our pipeline with
-the verifier, one polygon per model; rings at 0.4, 0.6, 0.8 and 1.0, family
-sizes in parentheses.}
-\label{fig:families-radar}
-\end{figure}
-
 Accuracy under \art{} varies by claim family, and the families do not fail
-together (Figure~\ref{fig:families-radar}). The 2024 pair's losses sit in two
+together (Figure~\ref{fig:families-radar}, Appendix~\ref{app:families-radar}). The 2024 pair's losses sit in two
 families whose rule it cannot carry out: first/last, an argmax over three
 candidates with ties dropped from the denominator, and threshold, where one
 group states its bar in the text. The 2026 open models clear first/last and
@@ -1190,7 +1181,7 @@ single-report claims.}
 
 Every test claim also exists in three paraphrase
 registers (research, media, clinical), and the case study reruns the three
-open models on all of them (Figure~\ref{fig:registers}); the open models are
+open models on all of them (Figure~\ref{fig:registers}, Appendix~\ref{app:registers}); the open models are
 the ones with headroom to lose, and the frontier models, at 0.98--1.00 on the
 original wording, would show little, so they are left to future work with
 free paraphrase. The research
@@ -1222,15 +1213,6 @@ B (Straight-to-SQL control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \label{tab:registers}
 \end{table}
 \fi
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{Figures/registers.pdf}
-\caption{Verdict accuracy by paraphrase register on the test set for the
-three open models under \art{}. Original is the main test
-run; the other registers rerun the same 1{,}500 claims.}
-\label{fig:registers}
-\end{figure}
 
 \section{Conclusion}
 \label{sec:limitations}
