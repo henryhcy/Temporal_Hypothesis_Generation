@@ -473,8 +473,8 @@ family for each model, the data behind the claim-family discussion in
 \begin{figure}[htbp]
 \centering
 \includegraphics[width=\columnwidth]{Figures/family_radar.pdf}
-\caption{Verdict accuracy by claim family on the test set, our pipeline with
-the verifier, one polygon per model; rings at 0.4, 0.6, 0.8 and 1.0, family
+\caption{Verdict accuracy by claim family on the test set under \art{}, one
+polygon per model; rings at 0.4, 0.6, 0.8 and 1.0, family
 sizes in parentheses.}
 \label{fig:families-radar}
 \end{figure}
@@ -524,7 +524,7 @@ EHRSQL-C (gemma4-31B) & 0.859 [0.839, 0.875] & 0.877 [0.833, 0.922] \\
 \art{} (Qwen2.5-32B pair) & 0.810 [0.791, 0.830] & 0.804 [0.750, 0.858] \\
 \art{} (qwen3.8-27B) & 0.872 [0.855, 0.889] & 0.887 [0.843, 0.931] \\
 \art{} (gemma4-31B) & 0.981 [0.974, 0.988] & 0.980 [0.961, 0.995] \\
-\art{} $-$ verifier (Opus 5.5) & 0.999 [0.997, 1.000] & 1.000 [1.000, 1.000] \\
+\art{} $-$ verify-and-repair (Opus 5.5) & 0.999 [0.997, 1.000] & 1.000 [1.000, 1.000] \\
 \bottomrule
 \end{tabular}
 \caption{Verdict accuracy on the 204-claim agentic subsample against the full
@@ -580,33 +580,32 @@ resting on the exact gold set.}
 Table~\ref{tab:cost} gives, per test record, the wall time of the sequential
 harness, the tokens exchanged and the dollar cost from the providers' own
 usage counts at list price with prompt caching; local rows cost GPU time only.
-The contract pipeline makes two calls per record where the Straight-to-SQL
-baseline makes one, so it exchanges about twice the tokens, and the verifier
-adds 10--20\% on top. A full ten-row frontier column on the test set cost
-\$80 (Opus) and \$89 (GPT-5.6, which spends hidden reasoning tokens on the
-test-stage judgment); EHRAgent with GPT-5.6 cost \$56 for its one row
-(4{,}501 calls, 11.3M prompt tokens of which 5.0M cached, 1.4M completion
-tokens, reasoning off); a 31B open model answers a test claim in 14~seconds
-on one workstation GPU and a 27B one in 10.
+\art{} makes two calls per record where EHRSQL-C makes one, so it exchanges
+about twice the tokens, and the verify-and-repair loop adds 10--20\% on top.
+All test-set runs for one frontier model cost \$80 for Opus and \$89 for
+GPT-5.6, which spends hidden reasoning tokens on the test-stage judgment.
+EHRAgent with GPT-5.6 cost \$56 (4{,}501 calls, 11.3M prompt tokens of which
+5.0M cached, 1.4M completion tokens, reasoning off). A 31B open model answers
+a test claim in 14~seconds on one workstation GPU and a 27B one in 10.
 
 \begin{table}[htbp]
 \centering
-\small
-\setlength{\tabcolsep}{4pt}
+\footnotesize
+\setlength{\tabcolsep}{3pt}
 \begin{tabular}{llrrr}
 \toprule
 system & model & s / record & tokens / record & USD / record \\
 \midrule
-D$'$ & Opus 5.5 & 6.0 & 8{,}900 & 0.014 \\
-D$'$ & GPT-5.6 & 5.1 & 5{,}500 & 0.011 \\
-D$'$ & Qwen2.5-32B pair & 12.3 & 5{,}000 & 0 \\
-D$'$ & qwen3.8-27B & 10.1 & 5{,}100 & 0 \\
-D$'$ & gemma4-31B & 14.1 & 5{,}300 & 0 \\
-B & Opus 5.5 & 4.6 & 4{,}600 & 0.011 \\
-B & GPT-5.6 & 5.5 & 3{,}000 & 0.009 \\
-B & Qwen2.5-Coder-32B & 2.8 & 2{,}850 & 0 \\
-B & qwen3.8-27B & 6.2 & 3{,}000 & 0 \\
-B & gemma4-31B & 6.1 & 3{,}100 & 0 \\
+\art{} & Opus 5.5 & 6.0 & 8{,}900 & 0.014 \\
+\art{} & GPT-5.6 & 5.1 & 5{,}500 & 0.011 \\
+\art{} & Qwen2.5-32B pair & 12.3 & 5{,}000 & 0 \\
+\art{} & qwen3.8-27B & 10.1 & 5{,}100 & 0 \\
+\art{} & gemma4-31B & 14.1 & 5{,}300 & 0 \\
+EHRSQL-C & Opus 5.5 & 4.6 & 4{,}600 & 0.011 \\
+EHRSQL-C & GPT-5.6 & 5.5 & 3{,}000 & 0.009 \\
+EHRSQL-C & Qwen2.5-Coder-32B & 2.8 & 2{,}850 & 0 \\
+EHRSQL-C & qwen3.8-27B & 6.2 & 3{,}000 & 0 \\
+EHRSQL-C & gemma4-31B & 6.1 & 3{,}100 & 0 \\
 \bottomrule
 \end{tabular}
 \caption{Cost and latency per record (test set for the local models, usage
