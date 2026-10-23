@@ -316,14 +316,37 @@ The release separates what a system may see from the gold: the verdicts,
 counts, statistics and evidence identifiers sit in a separate file. Every
 report identifier a system can see is a keyed permutation of the public VAERS
 identifier, so pretraining exposure to VAERS cannot serve as a lookup. A
-group-independent \texttt{fact\_id} keys every split. The test set holds
+group-independent \texttt{fact\_id} keys every split. Table~\ref{tab:stats} summarises the release. The test set holds
 1{,}500 cohort and two-cohort claims, 90 per group where the corpus allows,
 class-balanced and fact-disjoint from a 200-instance development set on which
 every prompt and design decision was made; it was run once, after the prompts
 were frozen. A further 180 single-report claims, 20 per report group, form a
 case study, because every capable system reads that tier at 0.98--1.00. The
 full enumerated pool of 8{,}763 instances ships as supplementary material with
-the generator; Appendix~\ref{app:datastats} gives its statistics.
+the generator; Appendix~\ref{app:datastats} gives its full statistics.
+
+\begin{table}[t]
+\centering
+\small
+\setlength{\tabcolsep}{4pt}
+\begin{tabular}{@{}lr@{}}
+\toprule
+Test set (Medium / Hard claims) & 1{,}500 (1{,}418 / 82) \\
+Single-report case study (Easy claims) & 180 \\
+Development set & 200 \\
+Groups / families / difficulty levels & 26 / 7 / 3 \\
+Registers per claim & 4 \\
+Enumerated pool: instances (records) & 8{,}763 (35{,}052) \\
+\quad supported / refuted / insufficient & 3{,}521 / 3{,}521 / 1{,}721 \\
+\quad underpowered / sparse / not-locatable & 605 / 498 / 618 \\
+Test denominator $n$, median (IQR) & 21 (14--41) \\
+$|$Cohen's $h|$ on decisive claims, median & 0.65 \\
+\bottomrule
+\end{tabular}
+\caption{The release at a glance; Appendix~\ref{app:datastats} gives the full
+statistics and the claim catalogue the per-group sizes.}
+\label{tab:stats}
+\end{table}
 
 \section{Method}
 \label{sec:framework}
