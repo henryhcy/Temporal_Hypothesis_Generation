@@ -7,6 +7,7 @@ Contents (claim form only, the paper's evaluation format):
   data/dev/dev_gold_stages.jsonl  gold per instance at every stage from the deterministic oracle:
                                   plan, evidence sets per arm, reference SQL, verdict
   data/codebook.txt, data/dataset_card.txt, data/schema.sql   the texts the models are given
+  data/medtempo_eval.db           the timeline database (pseudonymous ids, no report text), fresh VACUUM copy
 
 The gold-stage file is the rules+compiler run on the dev subset (no model calls):
     PYTHONPATH=src .venv313/bin/python scripts/run_eval.py --pipeline rules+compiler --condition blind-group \
@@ -76,6 +77,12 @@ def main() -> None:
     (out / "codebook.txt").write_text(conventions_block(None) + "\n")
     (out / "dataset_card.txt").write_text(dataset_card(sqlite3.connect(REPO / "data" / "medtempo_eval.db")) + "\n")
     (out / "schema.sql").write_text(llm_sql.load_eval_ddl() + "\n")
+
+    db = out / "medtempo_eval.db"                   # timelines only; VACUUM INTO leaves no free pages behind
+    db.unlink(missing_ok=True)
+    sqlite3.connect(REPO / "data" / "medtempo_eval.db").execute(f"VACUUM INTO '{db}'")
+    names = {r[0] for r in sqlite3.connect(db).execute("SELECT name FROM sqlite_master WHERE type IN ('table','view')")}
+    assert names == {"reports", "level_terms", "first_mention", "first_mention_rank", "report_terms"}, names
 
     for p in a.out.rglob("*"):                      # nothing identifying may leave
         if p.is_file() and ".git" not in p.parts:
