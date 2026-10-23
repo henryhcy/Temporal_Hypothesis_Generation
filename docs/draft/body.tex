@@ -120,69 +120,47 @@ error analysis of the \emph{insufficient} class
 \section{Related Work}
 \label{sec:related}
 
-\paragraph{Statistical reasoning benchmarks.} StatQA \cite{zhu2024statqa}
-scores whether a model knows which test applies, StatFormBench
-\cite{wang2026statformbench} the formulation of a test family, and StatABench
-\cite{zhu2026statabench} the final answer with fixed tool functions. P-Bench
-and Fisher-R1 \cite{miao2026fisher} come closest to our setting: an agent
-receives a hypothesis with its null stated, a CSV of the relevant data and a
-glossary, writes R to compute a $p$-value, and is scored on the decision and
-the $p$-value. In all of these the data are already the relevant subset and
-the null is given or trivial. The step we score first, deciding which
-records a statistic is computed over, has no counterpart, and no
-intermediate stage has gold.
-
-\paragraph{Hypothesis-testing and discovery agents.} VERITAS
-\cite{veritas2026} is a multi-agent co-scientist with a deterministic
-evidence classifier, built for image-derived cohorts; LATCH
-\cite{gim2026latch} runs LLM-chosen analyses through deterministic R
-pipelines on EHR data with the method given; DiscoveryBench and BLADE
+Work on language models and statistical hypotheses ranges from choosing a
+test to running a whole analysis. StatQA \cite{zhu2024statqa} asks which test
+applies, StatFormBench \cite{wang2026statformbench} asks for the formulation
+of a test family, and StatABench \cite{zhu2026statabench} scores the final
+answer of an analysis run with fixed tool functions. P-Bench and Fisher-R1
+\cite{miao2026fisher} are closest to our setting: an agent receives a
+hypothesis with its null stated, a CSV of the relevant data and a glossary,
+writes R to compute a $p$-value, and is scored on the decision and the
+$p$-value. Agentic systems go further and plan the analysis themselves. LATCH
+\cite{gim2026latch} runs LLM-chosen analyses through deterministic R pipelines
+on EHR data with the method given, VERITAS \cite{veritas2026} is a multi-agent
+co-scientist with a deterministic evidence classifier for image-derived
+cohorts, and DiscoveryBench and BLADE
 \cite{majumder2025discoverybench,gu2024blade} evaluate open-ended discovery
-agents against rubrics. They share our plan-then-execute shape and our
-insistence on auditable computation, but none scores the conditioning of the
-evidence, and their hypotheses are about variables in a table rather than
-the order of events within a record. We run DiscoveryBench's reference agent
-as a baseline.
+agents against rubrics. Across this line of work the data are either handed
+over as the relevant subset or left entirely to the agent, the hypotheses
+concern variables in a table, and only the final answer or a rubric is
+scored. None asks the system to decide which records a statistic is computed
+over, and none releases gold for that decision or for the plan and the test
+around it.
 
-\paragraph{Temporal reasoning.} Temporal benchmarks for language models ask
-about the order, duration or frequency of events in a passage or a synthetic
-event graph \cite{wang2024tram,fatemi2025testoftime}, and clinical temporal
-relation extraction labels the order of events within one narrative
-\cite{sun2013i2b2,bethard2016clinicaltempeval}; TIMER \cite{timer2025} and
-CRAFT \cite{craft2026} extract and refine clinical timelines with language
-models. In all of these the answer is a fact about one text or one timeline.
-A temporal hypothesis is a claim about a population of timelines, and
-verifying it adds the decisions this paper scores: which timelines can
-witness the order at all, what chance looks like given how events crowd the
-early stages, and which exact test decides. We use the MedTempo timelines
-released with CRAFT as our data source and start where extraction ends.
-
-\paragraph{Clinical question answering over databases.} EHRSQL
-\cite{lee2022ehrsql} scores one query per question with an abstention option,
-and EHRAgent \cite{shi2024ehragent} answers EHR questions with a
-code-writing agent and error-driven retries; our Straight-to-SQL baselines
-follow the EHRSQL protocol over our schema, and we run EHRAgent's released
-code on our database.
-Open text-to-SQL models such as OmniSQL \cite{li2025omnisql} and XiYanSQL
-\cite{gao2025xiyansql} serve as our retrieval-stage baselines. These tasks
-score a query's answer; a temporal hypothesis needs a query whose rows are
-exactly the reports that can witness the claim, and a test on top of it.
-
-\paragraph{Scoring intermediate steps.} Process supervision shows that
-grading each step of a solution finds errors that outcome grading misses
-\cite{lightman2024verify}, but it relies on human step labels. Here every
-stage has mechanical gold, so a verdict can be checked for whether it is
-right for the right reason: the plan against the gold plan, the counted
-reports against the gold sets, and the test against the exact computation.
-
-\paragraph{Positioning.} Taken together, prior work either hands the system
-the relevant data and scores the answer, or lets an agent choose its own
-analysis and scores a rubric. What is new here is a model-formulated plan,
-including its null, executed deterministically with gold at every stage; a
-scored eligibility rule deciding which records count; and claims about
-event order with the conditioning semantics those claims carry.
-Table~\ref{tab:related-concise} (Appendix~\ref{app:positioning}) compares
-the closest work along these lines.
+Temporal reasoning with language models has mostly been evaluated on single
+texts. Benchmarks ask about the order, duration or frequency of events in a
+passage or a synthetic event graph \cite{wang2024tram,fatemi2025testoftime};
+clinical temporal relation extraction labels the order of events within one
+narrative \cite{sun2013i2b2,bethard2016clinicaltempeval}; and TIMER
+\cite{timer2025} and CRAFT \cite{craft2026} extract and refine clinical
+timelines with language models. Clinical question answering over databases
+likewise asks for one answer per question, with an abstention option in
+EHRSQL \cite{lee2022ehrsql} and with a code-writing agent and error-driven
+retries in EHRAgent \cite{shi2024ehragent}, and open text-to-SQL models such
+as OmniSQL \cite{li2025omnisql} and XiYanSQL \cite{gao2025xiyansql} are built
+for the same setting. In all of these the answer is a fact about one text,
+one timeline or one query. A temporal hypothesis is a claim about a
+population of timelines, and verifying it adds the decisions this paper
+scores: which timelines can witness the order at all, what chance looks like
+when events crowd the early stages, and which exact test decides. \sys{}
+starts where extraction ends, using the MedTempo timelines released with
+CRAFT as its data source, and adapts EHRSQL, EHRAgent and DiscoveryBench as
+baselines (\S\ref{sec:baselines}); Table~\ref{tab:related-concise}
+(Appendix~\ref{app:positioning}) compares the closest work point by point.
 
 \iffalse  % prose positioning table kept in source only (user 2026-10-21); Table~\ref{tab:related-concise} is the live one
 \begin{table*}[t]
@@ -221,7 +199,7 @@ within a record.}
 \label{sec:task}
 
 
-\paragraph{Input and output.} A \emph{record} is a temporal hypothesis
+A \emph{record} is a temporal hypothesis
 stated as a claim in natural language --- a declarative sentence in one of
 four registers --- about a \emph{cohort} (the reports of one vaccine), a
 \emph{contrast} of two cohorts, or one named \emph{report}; and the
@@ -232,7 +210,7 @@ the last sub-typed as \emph{not-locatable} (no report qualifies),
 \emph{sparse} (too few qualify) or \emph{underpowered} (enough qualify, neither
 tail significant). It never sees report text.
 
-\paragraph{What a verdict rests on.} For a cohort-tier claim the gold is
+For a cohort-tier claim the gold is
 computed in three steps that are themselves released: (1) a \emph{plan} ---
 the events named, the quantity compared, the \emph{denominator primitive}
 (which reports count), the number of arms, the null (a fixed proportion, a bar
@@ -244,12 +222,11 @@ direction. \emph{Refuted} requires significance in the opposite direction, never
 ``failed to prove''. A report-tier claim is a single deterministic observation
 over one report and carries no test.
 
-\paragraph{The codebook is part of the task.} Whether a report with both
-events at the same stage counts for ``precedes'', what ``typically'' means,
-whether a tie for ``first'' leaves the denominator, what ``more often than their
-separate rates would predict'' compares --- these are stipulations about the
-corpus, not facts about the sentence, and a system that was never told them
-cannot infer them. The benchmark therefore ships these stipulations as a
+Several readings of a claim are stipulations about the corpus rather than
+facts about the sentence: whether a report with both events at the same stage
+counts for ``precedes'', what ``typically'' means, whether a tie for ``first''
+leaves the denominator, and what ``more often than their separate rates would
+predict'' compares. A system that was never told them cannot infer them. The benchmark therefore ships these stipulations as a
 \emph{codebook}, in the sense of a coding manual: a situation-phrased
 text that any system may be given (\S\ref{sec:frames}); the experiments
 treat ``codebook given'' as a controlled condition. The
@@ -301,7 +278,7 @@ group is realised as a declarative claim in four registers (a canonical
 \textsc{Clinical}) by mechanical slot-filling with no model-generated
 rewriting; answers are \textsc{Bool} or \textsc{Choice}.
 
-\paragraph{Five kinds of null.} Order claims test a proportion against the
+The benchmark uses five kinds of null. Order claims test a proportion against the
 symmetry value $0.5$; argmax claims (``most common first'', ``most common
 ordering'') test the named cell against its strongest competitor; two-arm
 claims test the equality of two rates; threshold claims read their null off
@@ -315,7 +292,7 @@ classification.
 \subsection{Gold labels}
 \label{sec:gold}
 
-\paragraph{Conditioning.} Each family fixes its denominator, and these
+Each family fixes its denominator, and these
 distinctions are the substantive content of the task. \emph{Precedes} counts
 only reports where both events occupy distinct stages. \emph{Co-occurs} counts
 all reports containing both, because co-existence is the event of interest.
@@ -326,7 +303,7 @@ A)$ over the whole cohort. \emph{Immediate} order counts reports where the two
 events are at consecutive occupied stages; \emph{position} drops single-stage
 reports and events on the exact middle stage.
 
-\paragraph{Tests.} All tests are exact, and the claim catalogue
+All tests are exact, and the claim catalogue
 (Table~\ref{tab:catalogue}) gives the test of every group: a one-sided exact binomial against $p_0$ for majority,
 bar and data-derived nulls; modal-versus-runner-up, an exact binomial of the
 named cell against its strongest competitor, for argmax claims; Fisher's
@@ -336,7 +313,7 @@ applied to both arms where two exist. Each instance releases both one-sided
 $p$-values, the Wilson interval \cite{wilson1927} and Cohen's $h$
 \cite{cohen1988} against the null actually used.
 
-\paragraph{The three-decision rule and oriented statistics.} A claim is
+A claim is
 \emph{supported} only when its own one-sided tail is significant at
 $\alpha = 0.05$, \emph{refuted} only when the opposite tail is, and otherwise
 \emph{insufficient} (\emph{underpowered}, \emph{sparse}: $0 < n <$ floor, or
@@ -385,7 +362,7 @@ at a nominal 5\%).
 \subsection{Release, splits and leakage}
 \label{sec:release}
 
-\paragraph{Two files.} The questions file carries one row per rendering and
+The release has two files. The questions file carries one row per rendering and
 only the input fields (identifier, group, level, answer type, register,
 text, options, cohort); the answers file carries one row per instance with the
 gold verdict and sub-type, the oriented counts, both $p$-values, the test, the
@@ -394,13 +371,13 @@ refuses to emit a gold field into the questions file. A group-independent
 \texttt{fact\_id} keys every split, because answer-type twins pose the same
 fact under two groups.
 
-\paragraph{Pseudonymised identifiers.} Every report identifier a system can
+Every report identifier a system can
 see --- in the claim texts, in the released evidence and in the database --- is
 a keyed permutation of the public VAERS identifier. VAERS is public and in
 pretraining corpora; removing the lookup key removes the shortcut without
 touching the timelines.
 
-\paragraph{Splits.} The release is an evaluation benchmark with no training
+The release is an evaluation benchmark with no training
 split: a \emph{development set} of 200 instances (a seeded, class-balanced
 draw over every group and tier, in all four registers) on
 which every prompt and design decision in this paper was made, and a
@@ -416,7 +393,7 @@ made with the same recipe. The release also carries a question-form rendering
 of every record; this paper presents and studies the claim form only. The
 test set was run once, after the prompts were frozen.
 
-\paragraph{Validation.} Six families of mechanical invariants --- evidence
+Six families of mechanical invariants --- evidence
 arithmetic, set algebra, per-family conditioning re-derived from the leveled
 orders, direction, verdict-against-tails including the floor, and independent
 recomputation through a separate database path --- are checked over the whole
@@ -816,8 +793,7 @@ questions are answered in turn.
 \subsection{RQ1: end-to-end verification}
 \label{sec:main}
 
-\paragraph{Frontier models verify the claims once the stipulations are
-stated.} Without the codebook, a single query verifies 0.53--0.88 of the claims across the five
+Without the codebook, a single query verifies 0.53--0.88 of the claims across the five
 models (EHRSQL in Table~\ref{tab:main}); with it, the same query reaches
 0.58--1.00 (EHRSQL-C). The gain grows with the model's ability to apply
 the text: 0.05 for the 2024 pair, 0.16 for qwen3.8, 0.22 for gemma4 and
@@ -829,7 +805,7 @@ admitting most co-existing reports into order denominators but starts
 writing queries that define the eligible set as the supporting set
 ($n = k$, 325 claims), and gains almost nothing.
 
-\paragraph{End-to-end errors are conditioning errors.} Every error a model
+Every error a model
 makes without the codebook is a stipulation about which reports can witness a temporal claim,
 and the attribution of Appendix~\ref{app:attribution} names it per claim.
 The frontier models' errors fall on four such rules: first/last denominators
@@ -842,7 +818,7 @@ larger numbers and add the one the codebook states first, co-existing reports
 in order denominators (281--325 claims). None of these is a failure of SQL:
 the queries run and count the wrong reports.
 
-\paragraph{Agents do not close the gap.} The agents that write and run their
+The agents that write and run their
 own analysis do no better. Without the codebook,
 EHRAgent's retries help the models that also fail the single query, by 0.08
 for the Coder and 0.25 for qwen3.8, but cost GPT-5.6 0.08 (0.792 against
@@ -859,8 +835,7 @@ nothing checks that it did not.
 \subsection{RQ2: the staged pipeline and where errors remain}
 \label{sec:families}
 
-\paragraph{What the contract adds depends on how much the model left on the
-table.} The frontier models have no verdict headroom with the codebook: they
+The frontier models have no verdict headroom with the codebook: they
 score the same under \art{} as end to end, and the verifier costs them a
 little, because its checks flag a few correct $n = k$ statements and the
 pipeline abstains rather than guess. What the pipeline gives them is not
@@ -908,8 +883,8 @@ sizes in parentheses.}
 \label{fig:families-radar}
 \end{figure}
 
-\paragraph{By claim family.} The families do not fail together
-(Figure~\ref{fig:families-radar}). The 2024 pair's losses sit in two
+Accuracy under \art{} varies by claim family, and the families do not fail
+together (Figure~\ref{fig:families-radar}). The 2024 pair's losses sit in two
 families whose rule it cannot carry out: first/last, an argmax over three
 candidates with ties dropped from the denominator, and threshold, where one
 group states its bar in the text. The 2026 open models clear first/last and
@@ -937,7 +912,7 @@ Wilson intervals over claims.}
 \label{fig:tiers}
 \end{figure}
 
-\paragraph{By difficulty level.} The three levels contain different
+The three levels contain different
 families, so their pooled accuracies mix difficulty with family;
 Figure~\ref{fig:tiers} holds the claim shape fixed instead and compares
 \art{} with EHRSQL-C, which differs from it only in the plan, the contract
@@ -955,7 +930,7 @@ $\pm 0.08$.
 \label{sec:evidence}
 \label{sec:insufficient}
 
-\paragraph{Right verdicts often rest on the wrong evidence.} Every
+Every
 prediction records the reports it counted, so each verdict can be checked
 against the gold sets. End to end, verdict accuracy overstates what the
 systems computed: the one-prompt query with the codebook rests 40\% (pair),
@@ -977,7 +952,7 @@ grey where the cause is not observable. Numbers are row totals.}
 \label{fig:insufficient}
 \end{figure}
 
-\paragraph{Abstention fails in two directions.} The three-decision verdict
+The three-decision verdict
 can decide what the data cannot decide or abstain on what it can, and
 Figure~\ref{fig:insufficient} separates the two. Overclaim is the share of the
 505 gold-\emph{insufficient} claims (176 \emph{not-locatable}, 157
@@ -988,7 +963,7 @@ empty denominator claims \emph{not-locatable}, one below the floor
 \emph{sparse}, a testable one \emph{underpowered}. EHRAgent returns a bare
 verdict, so its causes cannot be observed.
 
-\paragraph{Overclaim is the agents' and the one-prompt models' failure.} EHRAgent
+Overclaim comes mostly from the agents and the one-prompt baselines. EHRAgent
 with the Coder decides more than half of the undecidable claims and nearly
 all \emph{underpowered} ones, because it runs its own test. EHRSQL-C
 overclaims mostly on \emph{underpowered} claims, where a wrong denominator
@@ -997,7 +972,7 @@ that do not qualify. \art{} overclaims on a few percent at most, because the
 exact test, not the model, abstains, and its abstentions name the right
 sub-type on 0.87--1.00 of claims against 0.79--1.00 for EHRSQL-C.
 
-\paragraph{Underclaim is the open models' larger loss.} The one-prompt pair
+Underclaim is concentrated in the open models. The one-prompt pair
 abstains on nearly four decisive claims in ten, mostly on a wrong denominator
 or one below the floor; the stronger EHRAgent models trade overclaim for
 underclaim rather than for correct verdicts; under \art{} the pair's
@@ -1065,8 +1040,8 @@ contract.}
 \end{figure*}
 \fi
 
-\paragraph{Stage ceilings and the test stage.} The stage rows in
-Table~\ref{tab:main} fill one stage at a time with the model and leaves the
+The stage rows in
+Table~\ref{tab:main} fill one stage at a time with the model and leave the
 others at gold, so each row is the loss attributable to that stage alone.
 Planning is nearly solved by every model: with the mapping withheld and the
 codebook given, the plan is composed right on at least nine claims in ten,
@@ -1080,7 +1055,7 @@ compute: under the StatQA protocol on the exact counts the open models are
 wrong on a fifth to two fifths of claims, and replacing the exact test with
 the model's verdict on the pipeline's own counts loses 0.2 to 0.3.
 
-\paragraph{Prose versus contract.} The hand-off between S1 and S2 is what the
+The hand-off between S1 and S2 is what the
 stage rows cannot see, because Retrieve receives the gold plan already
 resolved. The \emph{$-$ contract} row hands the same composed plan to S2 as
 prose with the codebook, so the plan, the model and the repair rounds are
@@ -1095,7 +1070,7 @@ contract carries. The development-set
 % version of this comparison (prose below verified EHRSQL-C; contract +~0.3)
 % is kept in the repo only (appendix.tex, commented section app:dev).
 
-\paragraph{Repair rounds.} Figure~\ref{fig:rounds} runs the pipeline with
+Figure~\ref{fig:rounds} runs the pipeline with
 zero to three verify-and-repair rounds. For the 2026 open models the first
 round does almost all of the work, about $+0.13$ in accuracy with evidence
 F1 rising with it, and the next two rounds add a
@@ -1139,7 +1114,7 @@ gains extend to the right, losses to the left.}
 \subsection{Case studies}
 \label{sec:cases}
 
-\paragraph{Single reports.} The report tier asks a system to locate one
+The report tier asks a system to locate one
 report by its pseudonymous identifier and read an ordering from its timeline;
 the plan has one arm and the test stage is a deterministic rule. Every system
 with a 2026 model does this at 0.98--1.00 with or without the contract
@@ -1168,7 +1143,7 @@ single-report claims.}
 \end{table}
 
 
-\paragraph{Paraphrase.} Every test claim also exists in three paraphrase
+Every test claim also exists in three paraphrase
 registers (research, media, clinical), and the case study reruns the three
 open models on all of them (Figure~\ref{fig:registers}); the open models are
 the ones with headroom to lose, and the frontier models, at 0.98--1.00 on the
