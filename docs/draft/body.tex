@@ -918,19 +918,11 @@ Table~\ref{tab:main} fill one stage at a time with the model and leave the
 others at gold, so each row is the loss attributable to that stage alone.
 Planning is nearly solved by every model: with the mapping withheld and the
 codebook given, the plan is composed right on at least nine claims in ten,
-and the gemma4 planner matches the frontier. How the plan is asked for
-matters. A plain prompt with the same codebook and plan schema, but without
-\art{}'s explanations, field rules and verify round, loses 0.06 to 0.09 for
-every open model (0.867, 0.859 and 0.923 against 0.953, 0.917 and 0.992),
-and zero-shot chain-of-thought narrows the gap only for the 2024 pair
-(0.923); every gap is significant on the paired claims (exact McNemar,
-$p < 0.001$). The plain planners lose most on co-occurrence, proximity and
-position claims, mostly by testing in the wrong direction. They are ahead in
-two places: the threshold group that states its bar (H-V5), which \art{}'s
-planners sometimes read as an argmax claim, and, with chain-of-thought, the
-precedes claims that compare two antecedents (P-V2), where \art{}'s pair and
-qwen3.8 plans often fit no claim type (0.49 and 0.21 against 0.94 and 0.70).
-Retrieval is where the 2024
+and the gemma4 planner matches the frontier. A plain prompt with the same
+codebook and plan schema but without \art{}'s explanations, field rules and
+verify round scores 0.86--0.92 with or without zero-shot chain-of-thought,
+below \art{}'s planner for every open model (0.92--0.99; exact McNemar on the
+paired claims, $p < 0.001$). Retrieval is where the 2024
 pair loses, its Coder dropping a sixth of the claims even with the gold
 plan, so the full pipeline compounds planner errors on a stage that was
 already failing. The 2026 models retrieve well with the gold plan, so their
