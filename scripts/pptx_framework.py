@@ -11,6 +11,7 @@ canvas height grown to fit the larger text. Wording follows the paper draft (doc
 """
 from __future__ import annotations
 
+import os
 import subprocess
 from pathlib import Path
 
@@ -24,10 +25,13 @@ from pptx.oxml.ns import qn
 from pptx.util import Inches, Pt
 
 REPO = Path(__file__).resolve().parents[1]
-OUT = REPO / "docs" / "draft" / "Figures" / "STRATA_framework_editable.pptx"
+# SLIDE_STYLE=comic: Comic Sans MS body with Times New Roman titles, as in the hand-drawn figure style the
+# user shared (2026-10-22); written to a separate candidate file. Default: Verdana throughout (Figure 1).
+STYLE = os.environ.get("SLIDE_STYLE", "")
+OUT = REPO / "docs" / "draft" / "Figures" / ("STRATA_framework_editable.pptx" if not STYLE else f"candidates/STRATA_framework_{STYLE}.pptx")
 ICONS = REPO / "docs" / "draft" / "Figures" / "icons"
 ICONS.mkdir(parents=True, exist_ok=True)
-FONT = "Verdana"
+FONT, TITLE_FONT = {"comic": ("Comic Sans MS", "Times New Roman")}.get(STYLE, ("Verdana", "Verdana"))
 
 C = dict(rust="A0522D", wheat="D4B483", slate="4F6B75", gold="A8812E",
          text="2B2B2B", muted="5F5F5F", border="B8BEC4", panel="FFFFFF",
@@ -91,7 +95,8 @@ def text(x, y, w, h, paras, size=None, color=C["text"], bold=False, align=PP_ALI
         runs = para if isinstance(para, list) else [(para, {})]
         for s, kw in runs:
             r = p.add_run(); r.text = s
-            f = r.font; f.name = FONT; f.size = Pt(kw.get("size", size)); f.bold = kw.get("bold", bold); f.italic = kw.get("italic", italic)
+            is_title = kw.get("bold", bold) and kw.get("size", size) >= SZ["panel"]   # band, panel and stage titles
+            f = r.font; f.name = TITLE_FONT if is_title else FONT; f.size = Pt(kw.get("size", size)); f.bold = kw.get("bold", bold); f.italic = kw.get("italic", italic)
             f.color.rgb = rgb(kw.get("color", color))
     return tb
 
