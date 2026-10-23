@@ -183,7 +183,8 @@ class Canvas:
         return yy - size * lh
 
     def image(self, name, x, y, s):
-        png = cairosvg.svg2png(url=str(EMOJI / f"{name}.svg"), output_width=256, output_height=256)
+        flat = EMOJI / f"{name}_flat.svg"          # flat 2D Fluent Emoji (user 2026-10-22: the 3D ones looked off)
+        png = cairosvg.svg2png(url=str(flat if flat.exists() else EMOJI / f"{name}.svg"), output_width=256, output_height=256)
         b64 = base64.b64encode(png).decode()
         self.add(f'<image x="{x:.1f}" y="{y:.1f}" width="{s}" height="{s}" href="data:image/png;base64,{b64}"/>')
 
@@ -317,7 +318,7 @@ def draw(style):
     y = M
     bh = 46
     panel(cv, S, M, y, PW, bh, S["claim"], 1)
-    cv.image("syringe", M + 6, y + 8, 30)
+    cv.image("memo", M + 6, y + 8, 30)
     cv.para(M + 42, y + 15, PW - 48, [(CLAIM, ink, bw)], fam, sz + 1.0, lh=1.12)
     cv.runs_line(M + 42, y + 39.5, [("gold: ", ink, 400), ("supported", S["ok"], bw),
                                    (f",  k = {D['pb']} of n = {D['pb'] + D['ap']},  p = {D['p_gold']:.3f}", ink, 400)], fam, sz - 0.6)
@@ -374,7 +375,7 @@ def draw(style):
     y += ah + 7
     bhh = 97
     panel(cv, S, M, y, PW, bhh, S["pb"], 3)
-    heading(cv, S, M + 8, y + 15, "2  EHRSQL-C: one query", S["P"])
+    heading(cv, S, M + 8, y + 15, "2  A one-query baseline", S["P"])
     cv.image("robot", M + 7, y + 22, 30)
     cv.bubble(M + 44, y + 21, PW - 52, 25, (M + 37, y + 34), "#FFFFFF", ink, sw=S["sw"] * 0.8, sketch=S["sketch"], seed=5)
     cv.para(M + 52, y + 31, PW - 66, [("“I count a report only if", ink, 400), (" Pain comes first", S["P"], bw), (".”", ink, 400)], fam, sz)
@@ -397,7 +398,7 @@ def draw(style):
     y += bhh + 7
     chh = 100
     panel(cv, S, M, y, PW, chh, S["pc"], 4)
-    heading(cv, S, M + 8, y + 15, "3  ART: articulate, retrieve, test", S["ok"])
+    heading(cv, S, M + 8, y + 15, "3  Our staged pipeline", S["ok"])
     cv.image("robot", M + 7, y + 22, 30)
     cv.bubble(M + 44, y + 21, PW - 52, 25, (M + 37, y + 34), "#FFFFFF", ink, sw=S["sw"] * 0.8, sketch=S["sketch"], seed=6)
     cv.para(M + 52, y + 31, PW - 66, [("“Count reports with both at", ink, 400), (" different stages", S["ok"], bw),

@@ -37,15 +37,27 @@ against data: given a claim and a dataset, they choose a statistical method,
 run it and report a conclusion. Benchmarks for this ability
 \cite{miao2026fisher,zhu2024statqa,zhu2026statabench} score the final answer
 and hand the system the relevant data already assembled. In most real
-settings that is the easy half. For the claim \emph{``after the Pfizer
-vaccine, headache tends to precede fatigue''} over the clinical timelines
-of adverse-event reports, a system must first decide \emph{which reports count}
-(a report where the two events co-occur witnesses neither order), \emph{what
-``no effect'' means} (a 50/50 split of the ordered reports) and \emph{which
-test applies} (a one-sided exact binomial with a minimum-count floor). Each
-decision is a stipulation about what the sentence means for this corpus,
-each can be wrong independently, and a verdict can be right while all of
-them are wrong.
+settings that is the easy half. For the claim \emph{``after Moderna, Pain
+typically occurs before Asthenia''} over the clinical timelines of
+adverse-event reports (Figure~\ref{fig:example}), a system must first decide
+\emph{which reports count} (a report where the two events share a stage
+witnesses neither order), \emph{what ``no effect'' means} (a 50/50 split of
+the ordered reports) and \emph{which test applies} (a one-sided exact binomial
+with a minimum-count floor). Each decision is a stipulation about what the
+sentence means for this corpus, each can be wrong independently, and a
+verdict can be right while they are wrong: in Figure~\ref{fig:example} a
+one-query baseline counts only the reports that support the claim and still
+returns the correct verdict.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/worked_example.pdf}
+\caption{One test claim end to end, with real counts. (1) Four Moderna
+reports, one per case, and the counts over the whole cohort. (2) A one-query
+baseline and (3) our staged pipeline, both run with the same open model
+(\S\ref{sec:baselines}, \S\ref{sec:method}).}
+\label{fig:example}
+\end{figure}
 
 This paper makes that chain of decisions the object of evaluation, in a
 setting where every one of them is hard: verifying temporal hypotheses about
@@ -222,18 +234,6 @@ direction. \emph{Refuted} requires significance in the opposite direction, never
 ``failed to prove''. A report-tier claim is a single deterministic observation
 over one report and carries no test. Figure~\ref{fig:example} follows one
 test claim through these steps.
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{Figures/worked_example.pdf}
-\caption{One test claim (P-V1) end to end. (a) Four Moderna reports, one per
-case: counted with Pain first, counted with Asthenia first, excluded because
-the two events share a stage, and excluded because Asthenia is absent; the
-counts below them are over the whole cohort. (b) The EHRSQL-C query and the
-counts it returns. (c) \art{}'s plan, query and test. Both systems use
-qwen3.8; all counts come from the test run.}
-\label{fig:example}
-\end{figure}
 
 Several readings of a claim are stipulations about the corpus rather than
 facts about the sentence: whether a report with both events at the same stage
@@ -943,7 +943,7 @@ against the gold sets. End to end, verdict accuracy overstates what the
 systems computed: the one-prompt query with the codebook rests 40\% (pair),
 69\% (qwen3.8) and 86\% (gemma4) of its right verdicts on the exact
 denominator, so the pair's 0.575 accuracy is 0.23 right for the right
-reason. Figure~\ref{fig:example}(b) shows one such case from qwen3.8: the
+reason. Figure~\ref{fig:example} (panel 2) shows one such case from qwen3.8: the
 query admits only the reports that support the claim, so $n = k$ and the
 verdict is \emph{supported} whatever the data say. Under the contract the same shares are 86\%, 97\% and 94\%, a
 larger gain than in accuracy and largest for the weakest model, and the
