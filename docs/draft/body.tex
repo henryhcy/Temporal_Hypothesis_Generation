@@ -919,8 +919,17 @@ the contract carries.
 % The development-set version of this comparison (prose below verified EHRSQL-C; contract +~0.3)
 % is kept in the repo only (appendix.tex, commented section app:dev).
 
-With zero to three verify-and-repair rounds (Figure~\ref{fig:rounds},
-Appendix~\ref{app:repair}), the first round gives the 2026 open models about
+\begin{figure}[t]
+\centering
+\includegraphics[width=\columnwidth]{Figures/rounds.pdf}
+\caption{What each verify-and-repair round adds: the change in verdict
+accuracy from the previous round, for rounds one to three, on the test set;
+gains extend to the right, losses to the left.}
+\label{fig:rounds}
+\end{figure}
+
+With zero to three verify-and-repair rounds (Figure~\ref{fig:rounds}), the
+first round gives the 2026 open models about
 $+0.13$ and later rounds a few thousandths, while each round costs the
 frontier models a little; two rounds is the operating point for every open
 model.
