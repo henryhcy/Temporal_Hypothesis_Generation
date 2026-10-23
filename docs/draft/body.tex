@@ -99,13 +99,6 @@ test, so that the verdict is a statistical decision rather than a model
 judgment; the plan is handed to retrieval as a contract resolved by the
 harness, each stage has bounded repair, and any stage can be set to gold
 (\S\ref{sec:method}).
-\item \textbf{A study of five models and two agentic systems} under three
-research questions, showing that systems fail at the temporal conditioning
-of the evidence rather than at the verdict, and that open models asked to
-make the statistical call themselves err on a fifth to two fifths of claims
-even with exact counts; with stage and repair-budget ablations, case studies and an
-error analysis of the \emph{insufficient} class
-(\S\ref{sec:experiments}, \S\ref{sec:results}).
 \end{itemize}
 
 \begin{figure}[t]
@@ -432,10 +425,6 @@ often do systems decide claims the data cannot decide, or abstain on claims
 it can?
 \end{itemize}
 
-\S\ref{sec:main}--\S\ref{sec:evidence} answer each in turn; the ablations
-(\S\ref{sec:modular}) separate the stages and the repair budget, and the
-case studies (\S\ref{sec:cases}) cover single reports and paraphrase.
-
 \subsection{Baselines}
 \label{sec:baselines}
 
@@ -487,20 +476,14 @@ answer is right for the right reason. Two abstention measures complete the
 picture: \emph{overclaim}, the share of gold-\emph{insufficient} claims
 given a decisive verdict (deciding what the data cannot decide), and
 \emph{underclaim}, the share of decisive claims answered
-\emph{insufficient}. We also report the sub-type accuracy of abstentions, the
-\emph{co-exist leak} (same-stage reports wrongly admitted to an order
-denominator) and $p$-agreement with the exact computation.
+\emph{insufficient}.
 
 \subsection{Experimental settings}
 \label{sec:setup}
 
-The splits are those of \S\ref{sec:release}: the 200-instance development
-set, on which every prompt decision was made and from which no number enters
-the main table; the 1{,}500-claim test set, run once after the prompts were
-frozen, in the \textsc{Original} register and claim form (the paraphrase
-case study reruns it in the three other registers); and the 180-claim
-report case study, kept apart because every capable system reads a single
-report at 0.98--1.00. Every system is run with each of five models in every
+Every result is on the 1{,}500-claim test set (\S\ref{sec:release}), run
+once in the \textsc{Original} register after every prompt was frozen on the
+development set. Every system is run with each of five models in every
 model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
 Qwen2.5-Coder-32B (SQL) \cite{qwen2025qwen25}; the 2026 open models
 qwen3.8-27B \cite{qwen2026qwen38} and gemma4-31B \cite{gemma2026gemma4}, one
@@ -509,12 +492,8 @@ model for both stages, thinking off; and the frontier models Claude Opus~5.5
 context, frontier models over their APIs with prompt caching. Verdict
 accuracies carry 95\% bootstrap intervals \cite{efron1993bootstrap} over
 instances (1{,}000 resamples),
-about $\pm 0.02$ on the test set and $\pm 0.01$ above 0.98. Per-record cost
-and latency are in Appendix~\ref{app:cost}; a frontier column on the test set
-cost \$80--89 at list price, and the open models answer a claim in 10--14
-seconds on one workstation GPU. Prompts and settings were frozen on the
-development set before any test run; those tuning analyses are released with
-the code.
+about $\pm 0.02$ on the test set and $\pm 0.01$ above 0.98. Per-claim cost
+and latency are in Appendix~\ref{app:cost}.
 
 \section{Results}
 \label{sec:results}
@@ -772,6 +751,13 @@ contract does not remove the cost of the harder level; it cuts it by a
 factor of five or more for the open models. The Hard level has 82 claims, so its intervals are about
 $\pm 0.08$.
 
+On the 180 single-report claims, every system given the codebook scores
+0.98--1.00 with a 2026 or frontier model, and the 2024 pair reaches 1.000
+only under \art{} (0.750 as a single query). Rewording the test claims in the
+three other registers costs the open models up to 0.13 under \art{}, and for
+the 2026 models the planner alone loses the same amount, so paraphrase is
+paid at planning (Figure~\ref{fig:registers}, Appendix~\ref{app:registers}).
+
 \subsection{RQ3: evidence and abstention}
 \label{sec:evidence}
 \label{sec:insufficient}
@@ -943,20 +929,15 @@ gemma4). Without the contract the pair is barely above the one-prompt
 baseline with the same codebook and the same two repair rounds (0.638),
 while the newer models keep most of the decomposition's gain (EHRSQL-C:
 0.748 and 0.859): the weaker the model, the more of the pipeline's gain the
-contract carries. The development-set
-% version of this comparison (prose below verified EHRSQL-C; contract +~0.3)
+contract carries.
+% The development-set version of this comparison (prose below verified EHRSQL-C; contract +~0.3)
 % is kept in the repo only (appendix.tex, commented section app:dev).
 
-Figure~\ref{fig:rounds} (Appendix~\ref{app:repair}) runs the pipeline with
-zero to three verify-and-repair rounds. For the 2026 open models the first
-round does almost all of the work, about $+0.13$ in accuracy with evidence
-F1 rising with it, and the next two rounds add a
-few thousandths; the 2024 pair gains little per round because its Coder
-resubmits the same mistake when told what was wrong. At the frontier every
-round costs a little, since the checks fire on statements that are already
-correct and the pipeline turns a right verdict into an abstention. Two rounds
-is the operating point for every open model; a model that does not need the
-verifier is not helped by it.
+With zero to three verify-and-repair rounds (Figure~\ref{fig:rounds},
+Appendix~\ref{app:repair}), the first round gives the 2026 open models about
+$+0.13$ and later rounds a few thousandths, while each round costs the
+frontier models a little; two rounds is the operating point for every open
+model.
 
 \iffalse  % repair-rounds table kept in source; Figure~\ref{fig:rounds} carries it (user 2026-10-20)
 \begin{table}[t]
@@ -978,53 +959,6 @@ verdict accuracy / evidence F1.}
 \label{tab:rounds}
 \end{table}
 \fi
-
-\subsection{Case studies}
-\label{sec:cases}
-
-The report tier asks a system to locate one
-report by its pseudonymous identifier and read an ordering from its timeline;
-the plan has one arm and the test stage is a deterministic rule. Every system
-with a 2026 model does this at 0.98--1.00 with or without the contract
-(Table~\ref{tab:report}); the 2024 Coder end to end does not, and reaches
-1.000 only under the contract. The level is trivial as statistics and still
-separates systems that read what the contract asks them to read from systems
-that do not.
-
-\begin{table}[t]
-\centering
-\scriptsize
-\setlength{\tabcolsep}{3pt}
-\begin{tabular}{@{}lrrrrr@{}}
-\toprule
-180 single-report claims & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
-\midrule
-EHRSQL & 0.433 & 0.989 & 0.744 & --- & --- \\
-EHRSQL-C & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
-Articulate: \art{} (Retrieve, Test at gold) & 1.000 & 1.000 & 1.000 & --- & --- \\
-\art{} & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
-\bottomrule
-\end{tabular}
-\caption{The report-tier case study: verdict accuracy on the 180
-single-report claims.}
-\label{tab:report}
-\end{table}
-
-
-Every test claim also exists in three paraphrase
-registers (research, media, clinical), and the case study reruns the three
-open models on all of them (Figure~\ref{fig:registers}, Appendix~\ref{app:registers}); the open models are
-the ones with headroom to lose, and the frontier models, at 0.98--1.00 on the
-original wording, would show little, so they are left to future work with
-free paraphrase. The research
-register costs the most, 0.05 to 0.13 of accuracy, the media and clinical
-registers less (at most 0.07). Rerunning the planner alone on the same
-registers (not shown) loses almost exactly what the full pipeline loses for
-the 2026 models, so the cost of paraphrase is paid at planning and passes
-through the contract unchanged; the 2024 pair's pipeline loses less than its
-planner, because its retrieval stage rather than its plan is the bottleneck. gemma4 stays ahead in every register, while
-qwen3.8 and the pair swap places on the research register, where qwen3.8's
-planner loses most. The registers are templated.
 
 \iffalse  % registers table kept in source; Figure~\ref{fig:registers} carries it (user 2026-10-20)
 \begin{table}[t]
