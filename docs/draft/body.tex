@@ -616,7 +616,7 @@ numbers say how often and how evenly a system reaches the right label; they
 cannot say whether it reached it for the right reason, because a verdict can
 be right on the wrong evidence and wrong on the right evidence. Because every
 stage has gold, four evidence measures are therefore reported with the
-verdict; Appendix~\ref{app:families} breaks them down by claim family. \emph{Plan EM} is exact match on the plan's
+verdict; Figure~\ref{fig:families} breaks them down by claim family. \emph{Plan EM} is exact match on the plan's
 fields. \emph{Evidence F1} is the F1 between the set of reports a system
 placed in an arm's denominator and the gold set, averaged over arms: it
 measures whether the system counted the right reports, whatever it concluded
@@ -892,13 +892,7 @@ each misses a different family, qwen3.8 on position and on the precedes
 variant whose null is a data-derived rate, gemma4 only on proximity and
 threshold. Threshold is the one family where the frontier models also drop,
 and their planner-alone rows drop by the same amount, so the loss is in
-composing the bar into the plan, not in retrieval. The evidence behind
-these verdicts (Appendix~\ref{app:families}) tracks the same map with one
-exception the verdict hides: gemma4 is right on 0.97 of proximity claims, but
-a fifth of those right verdicts rest on a denominator that admits
-non-adjacent pairs. The Straight-to-SQL control is weaker on the same
-families: its faithfulness falls to 0.06--0.41 on first/last for every open
-model.
+composing the bar into the plan, not in retrieval.
 
 \begin{figure}[t]
 \centering
@@ -942,6 +936,31 @@ frontier models are exact on all but a handful of claims in both systems.
 The agents cannot be checked at all: EHRAgent and DiscoveryBench's agent
 return a verdict from their own code, so a right verdict from them says
 nothing about which reports it counted.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{Figures/families.pdf}
+\caption{The four evidence measures of \art{} on the test set, by claim
+family and model, drawn as error rates so that 0 is perfect in every panel:
+the share of wrongly counted reports ($1-$evidence F1), of right verdicts
+resting on the wrong evidence ($1-$faithfulness), of undecidable claims
+decided (overclaim) and of decidable claims abstained on (underclaim). The
+colour scale is square-root, so small errors remain visible.}
+\label{fig:families}
+\end{figure*}
+
+Figure~\ref{fig:families} breaks \art{}'s evidence down by claim family. Almost
+every cell is at or near zero error for gemma4 and the frontier models and
+for most families of the 2026 open models, and overclaim stays at a few
+percent everywhere. The dark cells are the failures that remain, and each has
+a cause the plan exposes: the 2024 pair's first/last row, where it retrieves
+the wrong set and abstains on four claims in five rather than decide;
+qwen3.8's overclaim on first/last; and the frontier models' underclaim on
+threshold, the H-V5 slip discussed below. One failure is invisible in the
+verdicts: gemma4 is right on 0.97 of proximity claims, but a fifth of those
+right verdicts rest on a denominator that admits non-adjacent pairs. The
+Straight-to-SQL control is weaker on the same families, with faithfulness of
+0.06--0.41 on first/last for every open model.
 
 \begin{figure}[t]
 \centering
@@ -1070,7 +1089,7 @@ contract carries. The development-set
 % version of this comparison (prose below verified EHRSQL-C; contract +~0.3)
 % is kept in the repo only (appendix.tex, commented section app:dev).
 
-Figure~\ref{fig:rounds} runs the pipeline with
+Figure~\ref{fig:rounds} (Appendix~\ref{app:repair}) runs the pipeline with
 zero to three verify-and-repair rounds. For the 2026 open models the first
 round does almost all of the work, about $+0.13$ in accuracy with evidence
 F1 rising with it, and the next two rounds add a
@@ -1101,15 +1120,6 @@ verdict accuracy / evidence F1.}
 \label{tab:rounds}
 \end{table}
 \fi
-
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{Figures/rounds.pdf}
-\caption{What each verify-and-repair round adds: the change in verdict
-accuracy from the previous round, for rounds one to three, on the test set;
-gains extend to the right, losses to the left.}
-\label{fig:rounds}
-\end{figure}
 
 \subsection{Case studies}
 \label{sec:cases}
