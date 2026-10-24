@@ -286,7 +286,7 @@ for k, (lab, ic, col) in enumerate((("supported", "circle-check", C["slate"]), (
 circle(0.24, ey + 0.08, 0.42, C["slate"], "3", size=14)
 text(0.74, ey + 0.02, 1.2, 0.3, ["Evaluation"], size=SZ["panel"], bold=True, color=C["slate"], anchor=MSO_ANCHOR.MIDDLE)
 text(0.74, ey + 0.3, 1.25, 0.3, ["any stage can be set to gold"], size=SZ["small"] - 1, color=C["muted"], spacing=0.9)
-for (x0, w0), (ic, title, metrics, col) in zip(CX[1:], (("file-check", "Plan correctness", "plan EM, claim-type EM", C["slate"]),
+for (x0, w0), (ic, title, metrics, col) in zip(CX[1:], (("file-check", "Plan correctness", "plan fields vs gold", C["slate"]),
                                                        ("database", "Evidence correctness", "evidence F1, leaks, faithfulness", C["rust"]),
                                                        ("scale", "Verdict", "accuracy, P/R/F1, abstention", C["gold"]))):
     box(x0, ey, w0, eh)

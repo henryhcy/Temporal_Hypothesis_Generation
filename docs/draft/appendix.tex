@@ -32,7 +32,7 @@ EHRAgent \cite{shi2024ehragent} & \cno{none (QA)} & \cno{none} & \cno{agent code
 LATCH \cite{gim2026latch} & \cno{given} & \cno{given by the source study} & \cyes{deterministic R pipelines} & \cno{no} & \cyes{NHANES} & \cna{system} \\
 VERITAS \cite{veritas2026} & \cpart{planned by agent} & \cpart{agent plans} & \cpart{own code + rule} & \cno{no} & \cyes{imaging} & \cna{system} \\
 \midrule
-\textbf{\sys{} + \art{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{derived from the plan} (null, arms); scored by plan EM} & \cyes{\textbf{harness}: three exact tests, floor} & \cyes{\textbf{7 families}} & \cyes{\textbf{VAERS timelines}} & \cyes{\textbf{plan, evidence, $p$, verdict}} \\
+\textbf{\sys{} + \art{} (this work)} & \cyes{\textbf{composed}: kind, $p_0$, population} & \cyes{\textbf{derived from the plan} (null, arms); scored against the gold plan} & \cyes{\textbf{harness}: three exact tests, floor} & \cyes{\textbf{7 families}} & \cyes{\textbf{VAERS timelines}} & \cyes{\textbf{plan, evidence, $p$, verdict}} \\
 \bottomrule
 \end{tabularx}
 \caption{Positioning against related work (a comparison of what each work asks and scores, not of results). \emph{Null}: who states the null and the
@@ -483,8 +483,10 @@ sizes in parentheses.}
 \label{app:registers}
 
 Figure~\ref{fig:registers} gives \art{}'s verdict accuracy in each paraphrase
-register for the three open models, the data behind the paraphrase case study
-in \S\ref{sec:families}.
+register for the three open models, the data behind the paraphrase case study in
+\S\ref{sec:families}. The planner alone, with retrieval and test at gold,
+loses 0.10 (pair), 0.12 (qwen3.8) and 0.13 (gemma4) on the research
+register against 0.04, 0.11 and 0.13 for the full pipeline.
 
 \begin{figure}[htbp]
 \centering
