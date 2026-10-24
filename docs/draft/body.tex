@@ -157,8 +157,7 @@ timelines with language models. Clinical question answering over databases
 likewise asks for one answer per question, with an abstention option in
 EHRSQL \cite{lee2022ehrsql} and with a code-writing agent and error-driven
 retries in EHRAgent \cite{shi2024ehragent}, and open text-to-SQL models such
-as OmniSQL \cite{li2025omnisql} and XiYanSQL \cite{gao2025xiyansql} are built
-for the same setting. In all of these the answer is a fact about one text,
+as OmniSQL \cite{li2025omnisql} are built for the same setting. In all of these the answer is a fact about one text,
 one timeline or one query. A temporal hypothesis is a claim about a
 population of timelines, and verifying it adds the decisions this paper
 scores: which timelines can witness the order at all, what chance looks like
@@ -293,8 +292,8 @@ strongest competitor, which suffices because beating the strongest
 competitor implies beating all of them. Contrasts use Fisher's exact test
 \cite{fisher1935design}. The only gate is a minimum denominator of 10 per
 arm. Each instance releases both one-sided $p$-values, the Wilson interval
-\cite{wilson1927} and Cohen's $h$ \cite{cohen1988}, all describing the
-claim as that instance asserts it.
+\cite{wilson1927} and Cohen's $h$ \cite{cohen1988}, oriented to the claim as
+asserted.
 
 \label{sec:screens}
 Before shipping, every group cleared a permutation null matched to its claim
@@ -421,9 +420,8 @@ model slot.
 \item \textbf{RQ1.} How well do current language models verify these
 temporal hypotheses end to end, as a single query or as an agent, and where
 do they fail?
-\item \textbf{RQ2.} What does the staged pipeline add over single-query
-verification for each model, and which stage and which claim families
-account for the errors that remain?
+\item \textbf{RQ2.} What does the staged pipeline add over a single query,
+and which stages and claim families account for the remaining errors?
 \item \textbf{RQ3.} Do correct verdicts rest on correct evidence, and how
 often do systems decide claims the data cannot decide, or abstain on claims
 it can?
@@ -489,7 +487,7 @@ Qwen2.5-Coder-32B (SQL) \cite{qwen2025qwen25}; the 2026 open models
 qwen3.8-27B \cite{qwen2026qwen38} and gemma4-31B \cite{gemma2026gemma4}, one
 model for both stages, thinking off; and the frontier models Claude Opus~5.5
 \cite{anthropic2026opus55} and GPT-5.6 \cite{openai2026gpt56}. Open models run fully resident on one RTX A5000 with an 8k
-context, frontier models over their APIs with prompt caching. Verdict
+context, frontier models over their APIs. Verdict
 accuracies carry 95\% bootstrap intervals \cite{efron1993bootstrap} over
 instances (1{,}000 resamples). Per-claim cost
 and latency are in Appendix~\ref{app:cost}.
@@ -692,9 +690,8 @@ codebook out of the SQL the model writes, and \S\ref{sec:evidence} shows the
 same gain in the evidence. The frontier models score the same under \art{}
 as end to end. The repair loop costs them a little, because its checks flag
 a few correct $n = k$ statements and \art{} then abstains instead of
-guessing. For them \art{} adds an auditable record, a plan whose fields are
-scored, a report set per arm and a test the harness ran, which a single
-query does not produce.
+guessing. For them \art{} adds an auditable record of plan, report sets and
+test, which a single query does not produce.
 
 \iffalse  % family table kept in source; Figure~\ref{fig:groups} (ours by group) and Figure~\ref{fig:families} (evidence vs B) carry it (user 2026-10-20)
 \begin{table*}[t]
@@ -779,7 +776,9 @@ only the reports that support the claim, so $n = k$ and the verdict is
 weakest model; the frontier models are exact on all but a handful of claims
 in both systems. Over the whole executed trace (both sets in every arm, test,
 null kind and verdict), \art{} is right on 0.62, 0.81 and 0.92 of claims for
-the open models against 0.21, 0.51 and 0.73 for EHRSQL-C. The agents cannot be checked this way, because EHRAgent
+the open models against 0.21, 0.51 and 0.73 for EHRSQL-C. The frontier
+models score 0.95--0.96 against 0.98--1.00 for EHRSQL-C, which is given the
+gold test, and miss mostly on H-V5. The agents cannot be checked this way, because EHRAgent
 and DiscoveryBench's agent return a verdict from their own code without the
 reports behind it.
 
@@ -806,9 +805,8 @@ grey where the cause is not observable. Numbers are row totals.}
 \label{fig:insufficient}
 \end{figure}
 
-The three-decision verdict
-can decide what the data cannot decide or abstain on what it can, and
-Figure~\ref{fig:insufficient} separates the two. Overclaim is the share of the
+Figure~\ref{fig:insufficient} separates deciding what the data cannot decide
+from abstaining on what they can. Overclaim is the share of the
 505 gold-\emph{insufficient} claims (176 \emph{not-locatable}, 157
 \emph{sparse}, 172 \emph{underpowered}) given a decisive verdict. Underclaim
 is the share of the 995 decisive claims answered \emph{insufficient}, split by
@@ -995,11 +993,13 @@ denominator, while models asked to make the statistical call themselves err
 even on exact counts. Benchmarks of this kind should publish their codebook
 with their data and score the evidence with the answer.
 
-The study has four limits. It uses one corpus, so the codebook and the
-primitive definitions are specific to MedTempo, and porting the framework
-means writing them for another corpus. The claims are generated from
+The study has five limits. It uses one corpus, so porting the framework
+means writing the codebook and primitives for another corpus. The claims are generated from
 templates over raw MedDRA terms, so their wording varies only across the four
 registers, and the oracle shows that labels follow from the stated rules, not
 that free-form wording would carry them. Decisive labels carry false positives
-at up to $\alpha$ per direction by construction. And the patterns are statistical
-regularities in spontaneous reports, not causal findings.
+at up to $\alpha$ per direction by construction. In P-V2 and P-V4 a report can
+qualify for both arms, which Fisher's test treats as independent; a
+randomization test that keeps each shared report's two outcomes paired changes
+2 of their 188 test labels and reverses none. And the patterns are regularities in
+spontaneous reports, not causal findings.
