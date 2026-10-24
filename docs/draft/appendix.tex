@@ -147,7 +147,7 @@ Fatigue''. \emph{Reports counted}: the denominator rule. \emph{Null}:
 $0.5$ is the symmetric null; \emph{runner-up} tests the named candidate
 against its strongest competitor; \emph{two rates equal} compares
 two arms; \emph{data-derived} computes chance from the denominator reports
-(the structural early rate, or $2/L$ for adjacency); a \emph{bar in text} is
+(the structural early rate, or the share of a report's distinct-stage event pairs that are adjacent); a \emph{bar in text} is
 read from the wording. \emph{inst.}: released instances; \emph{med.\ $n$}:
 median test denominator. Report-tier claims are read off one timeline with no
 test.}
@@ -261,7 +261,7 @@ F-V3 & C & first argmax & \textsc{Boo} & runner-up & 102 & 34 & 34 & 34 & 11/11/
 T-V1 & C & early half vs.\ structural rate & \textsc{Boo} & data-derived & 102 & 34 & 34 & 34 & 19/0/15 & 68 & 145 \\
 Y-V1 & C & immediate order & \textsc{Boo} & sym.\ 0.5 & 204 & 68 & 68 & 68 & 22/23/23 & 136 & 17 \\
 Y-V2 & C & immediate order & \textsc{Cho} & sym.\ 0.5 & 204 & 68 & 68 & 68 & 22/23/23 & 136 & 17 \\
-Y-V3 & C & adjacency vs.\ $2/L$ & \textsc{Boo} & data-derived & 105 & 35 & 35 & 35 & 11/12/12 & 70 & 26 \\
+Y-V3 & C & adjacency vs.\ chance & \textsc{Boo} & data-derived & 105 & 35 & 35 & 35 & 11/12/12 & 70 & 26 \\
 H-V1 & C & precedes $\geq 2/3$ & \textsc{Boo} & text 0.667 & 105 & 35 & 35 & 35 & 11/12/12 & 101 & 16 \\
 H-V5 & C & first $\geq 1/2$ & \textsc{Boo} & text 0.5 & 66 & 22 & 22 & 22 & 7/7/8 & 61 & 13.5 \\
 \midrule
@@ -451,7 +451,7 @@ argmax: first, last, most common co-occurrence (F-V1--F-V3, C-V3) & named cell v
 two-arm contrast within a cohort: antecedent, pair-vs-pair, association (P-V2, P-V4, C-V2) & equality of two rates & Fisher's exact test & $n \geq 10$ per arm \\
 two-cohort contrast (P-M2) & equality of two cohorts' rates & Fisher's exact test & $n \geq 10$ per cohort \\
 threshold: bar stated in the text (H-V1, H-V5) & $p_0$ read from the wording ($2/3$, $1/2$) & one-sided binomial, tested per orientation & $n \geq 10$ \\
-data-derived: position, proximity rate (T-V1, Y-V3) & $p_0$ computed from the denominator reports (structural early rate; $2/L$ adjacency chance) & one-sided binomial against the summed chance & $n \geq 10$ \\
+data-derived: position, proximity rate (T-V1, Y-V3) & $p_0$ computed from the denominator reports (structural early rate; adjacency chance from the stage sizes) & one-sided binomial against the summed chance & $n \geq 10$ \\
 report tier (9 groups) & none & none: a deterministic reading of one timeline & --- \\
 \bottomrule
 \end{tabularx}
@@ -495,6 +495,22 @@ run; the other registers rerun the same 1{,}500 claims.}
 \label{fig:registers}
 \end{figure}
 
+\section{Verify-and-repair rounds}
+\label{app:repair}
+
+Figure~\ref{fig:rounds} shows what each verify-and-repair round adds to
+\art{}'s verdict accuracy, the data behind the repair-round sentence in
+\S\ref{sec:modular}.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\columnwidth]{Figures/rounds.pdf}
+\caption{What each verify-and-repair round adds: the change in verdict
+accuracy from the previous round, for rounds one to three, on the test set;
+gains extend to the right, losses to the left.}
+\label{fig:rounds}
+\end{figure}
+
 \section{The agentic subsample: every system on the identical 204 claims}
 \label{app:subsample}
 
@@ -513,16 +529,16 @@ numbers, with 95\% bootstrap intervals over claims (2{,}000 resamples).
 system & full test set (1{,}500) & same 204 claims \\
 \midrule
 % VERITAS + codebook, our tests (Coder-32B) & --- & 0.402 [0.333, 0.471] \\  (removed from the paper 2026-10-22; results in ~/veritas_baseline/runs/scored_D.json)
-DiscoveryBench agent + codebook (qwen3.8-27B) & --- & 0.647 [0.583, 0.711] \\
-DiscoveryBench agent + codebook (gemma4-31B) & --- & 0.706 [0.642, 0.770] \\
-EHRAgent, own test (Coder-32B) & 0.605 [0.579, 0.629] & 0.559 [0.490, 0.623] \\
-EHRAgent, own test (qwen3.8-27B) & 0.839 [0.820, 0.857] & 0.868 [0.819, 0.912] \\
-EHRAgent, own test (GPT-5.6) & 0.792 [0.771, 0.812] & 0.784 [0.730, 0.838] \\
-EHRSQL-C (Qwen2.5-32B pair) & 0.575 [0.549, 0.599] & 0.593 [0.525, 0.662] \\
-EHRSQL-C (qwen3.8-27B) & 0.748 [0.725, 0.769] & 0.755 [0.696, 0.809] \\
-EHRSQL-C (gemma4-31B) & 0.859 [0.839, 0.875] & 0.877 [0.833, 0.922] \\
-\art{} (Qwen2.5-32B pair) & 0.810 [0.791, 0.830] & 0.804 [0.750, 0.858] \\
-\art{} (qwen3.8-27B) & 0.872 [0.855, 0.889] & 0.887 [0.843, 0.931] \\
+DiscoveryBench agent + codebook (qwen3.8-27B) & --- & 0.632 [0.564, 0.696] \\
+DiscoveryBench agent + codebook (gemma4-31B) & --- & 0.701 [0.637, 0.760] \\
+EHRAgent, own test (Coder-32B) & 0.597 [0.571, 0.621] & 0.554 [0.485, 0.618] \\
+EHRAgent, own test (qwen3.8-27B) & 0.837 [0.818, 0.855] & 0.858 [0.809, 0.902] \\
+EHRAgent, own test (GPT-5.6) & 0.796 [0.775, 0.817] & 0.784 [0.725, 0.838] \\
+EHRSQL-C (Qwen2.5-32B pair) & 0.579 [0.556, 0.604] & 0.603 [0.534, 0.672] \\
+EHRSQL-C (qwen3.8-27B) & 0.747 [0.726, 0.771] & 0.750 [0.691, 0.809] \\
+EHRSQL-C (gemma4-31B) & 0.857 [0.840, 0.875] & 0.877 [0.828, 0.917] \\
+\art{} (Qwen2.5-32B pair) & 0.812 [0.793, 0.831] & 0.804 [0.745, 0.853] \\
+\art{} (qwen3.8-27B) & 0.869 [0.852, 0.886] & 0.887 [0.843, 0.926] \\
 \art{} (gemma4-31B) & 0.981 [0.974, 0.988] & 0.980 [0.961, 0.995] \\
 \art{} $-$ verify-and-repair (Opus 5.5) & 0.999 [0.997, 1.000] & 1.000 [1.000, 1.000] \\
 \bottomrule
@@ -559,7 +575,7 @@ other omission & 11 & 22 & 3 & 0 & 3 & 36 & 18 & 49 & 0 & 1 & 43 & 28 & 9 & 1 & 
 other over-inclusion & 0 & 0 & 0 & 0 & 0 & 0 & 1 & 0 & 0 & 0 & 0 & 0 & 0 & 0 & 0 \\
 \midrule
 wrong or missing denominators & 1237 & 1124 & 984 & 372 & 273 & 1086 & 702 & 390 & 0 & 1 & 446 & 176 & 105 & 5 & 11 \\
-\quad of which verdict still right & 523 & 471 & 443 & 189 & 121 & 504 & 317 & 127 & 0 & 0 & 119 & 36 & 79 & 3 & 1 \\
+\quad of which verdict still right & 522 & 468 & 444 & 191 & 120 & 509 & 314 & 125 & 0 & 0 & 122 & 35 & 79 & 3 & 1 \\
 \textbf{faithfulness} & 0.26 & 0.41 & 0.51 & 0.86 & 0.91 & 0.40 & 0.69 & 0.86 & 1.00 & 1.00 & 0.86 & 0.97 & 0.94 & 1.00 & 1.00 \\
 \bottomrule
 \end{tabular}

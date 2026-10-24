@@ -1,5 +1,5 @@
 {
-  "generated_from_commit": "27c5d77",
+  "generated_from_commit": "e7f572c",
   "files": {
     "questions": {
       "path": "pilot_instances_questions.jsonl",
@@ -8,8 +8,8 @@
     },
     "answers": {
       "path": "pilot_instances_answers.jsonl",
-      "bytes": 21545760,
-      "sha256": "e70be46fd2ae09ed50e2b5591f0a2b805279d54960e5da2a6a91e923f7a098a1"
+      "bytes": 21546861,
+      "sha256": "419cdf57ed53fc51749a953f485281c0b11a2e83d651a3867896431d7c1f19bd"
     }
   },
   "totals": {
@@ -20,16 +20,16 @@
     "formats": 2,
     "distinct_cores": 5703,
     "distinct_facts": 4761,
-    "supported": 3521,
-    "refuted": 3521,
-    "insufficient": 1721,
+    "supported": 3476,
+    "refuted": 3468,
+    "insufficient": 1819,
     "insufficient_subtypes": {
       "not_locatable": 618,
       "sparse": 498,
-      "underpowered": 605
+      "underpowered": 703
     },
     "negated": 643,
-    "mirror_pairs": 3060,
+    "mirror_pairs": 3007,
     "positional_coverage": 0.388
   },
   "distributions": {
@@ -48,16 +48,16 @@
       "max": 0.811
     },
     "abs_effect_size_decisive": {
-      "q25": 0.4603,
-      "q50": 0.6453,
-      "q75": 0.8634,
+      "q25": 0.4606,
+      "q50": 0.6629,
+      "q75": 0.8672,
       "min": 0.1161,
       "max": 2.4981
     },
     "p_claim_supported": {
       "q25": 0.0011,
-      "q50": 0.0083,
-      "q75": 0.0261,
+      "q50": 0.0082,
+      "q75": 0.0249,
       "min": 0.0,
       "max": 0.0499
     }
@@ -67,15 +67,15 @@
       "groups": 6,
       "instances": 1542,
       "supported": 714,
-      "refuted": 714,
-      "insufficient": 114
+      "refuted": 710,
+      "insufficient": 118
     },
     "pairwise": {
       "groups": 11,
       "instances": 5211,
-      "supported": 1937,
-      "refuted": 1937,
-      "insufficient": 1337
+      "supported": 1902,
+      "refuted": 1902,
+      "insufficient": 1407
     },
     "position": {
       "groups": 2,
@@ -87,16 +87,16 @@
     "proximity": {
       "groups": 4,
       "instances": 913,
-      "supported": 371,
-      "refuted": 371,
-      "insufficient": 171
+      "supported": 361,
+      "refuted": 361,
+      "insufficient": 191
     },
     "sequence": {
       "groups": 3,
       "instances": 412,
       "supported": 204,
-      "refuted": 204,
-      "insufficient": 4
+      "refuted": 200,
+      "insufficient": 8
     },
     "threshold": {
       "groups": 3,
@@ -190,19 +190,19 @@
       "answer_type": "BOOL",
       "instances": 522,
       "records": 4176,
-      "supported": 174,
-      "refuted": 174,
-      "insufficient": 174,
+      "supported": 139,
+      "refuted": 139,
+      "insufficient": 244,
       "insufficient_subtypes": {
+        "underpowered": 128,
         "not_locatable": 58,
-        "sparse": 58,
-        "underpowered": 58
+        "sparse": 58
       },
       "negated": 174,
       "reoriented": 0,
       "distinct_cores": 348,
       "distinct_facts": 348,
-      "decisive_distinct_facts": 174,
+      "decisive_distinct_facts": 139,
       "gold_n": {
         "q25": 13.0,
         "q50": 23.0,
@@ -277,12 +277,12 @@
       "instances": 102,
       "records": 816,
       "supported": 34,
-      "refuted": 34,
-      "insufficient": 34,
+      "refuted": 33,
+      "insufficient": 35,
       "insufficient_subtypes": {
+        "underpowered": 12,
         "not_locatable": 12,
-        "sparse": 11,
-        "underpowered": 11
+        "sparse": 11
       },
       "negated": 0,
       "reoriented": 34,
@@ -306,12 +306,12 @@
       "instances": 138,
       "records": 1104,
       "supported": 46,
-      "refuted": 46,
-      "insufficient": 46,
+      "refuted": 44,
+      "insufficient": 48,
       "insufficient_subtypes": {
+        "underpowered": 17,
         "not_locatable": 16,
-        "sparse": 15,
-        "underpowered": 15
+        "sparse": 15
       },
       "negated": 0,
       "reoriented": 46,
@@ -335,12 +335,12 @@
       "instances": 102,
       "records": 816,
       "supported": 34,
-      "refuted": 34,
-      "insufficient": 34,
+      "refuted": 33,
+      "insufficient": 35,
       "insufficient_subtypes": {
+        "underpowered": 12,
         "not_locatable": 12,
-        "sparse": 11,
-        "underpowered": 11
+        "sparse": 11
       },
       "negated": 0,
       "reoriented": 34,
@@ -653,9 +653,10 @@
       "instances": 6,
       "records": 48,
       "supported": 2,
-      "refuted": 2,
-      "insufficient": 2,
+      "refuted": 0,
+      "insufficient": 4,
       "insufficient_subtypes": {
+        "underpowered": 2,
         "not_locatable": 1,
         "sparse": 1
       },
@@ -681,9 +682,10 @@
       "instances": 6,
       "records": 48,
       "supported": 2,
-      "refuted": 2,
-      "insufficient": 2,
+      "refuted": 0,
+      "insufficient": 4,
       "insufficient_subtypes": {
+        "underpowered": 2,
         "not_locatable": 1,
         "sparse": 1
       },
@@ -832,19 +834,19 @@
       "answer_type": "BOOL",
       "instances": 105,
       "records": 840,
-      "supported": 35,
-      "refuted": 35,
-      "insufficient": 35,
+      "supported": 25,
+      "refuted": 25,
+      "insufficient": 55,
       "insufficient_subtypes": {
+        "underpowered": 31,
         "not_locatable": 12,
-        "sparse": 12,
-        "underpowered": 11
+        "sparse": 12
       },
       "negated": 35,
       "reoriented": 0,
       "distinct_cores": 70,
       "distinct_facts": 70,
-      "decisive_distinct_facts": 35,
+      "decisive_distinct_facts": 25,
       "gold_n": {
         "q25": 12.0,
         "q50": 26.0,

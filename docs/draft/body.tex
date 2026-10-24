@@ -78,7 +78,7 @@ frontier, on a held-out test set of 1{,}500 claims. End to end, even
 frontier models verify the claims only once the codebook is stated, and
 agents that write their own analysis do no better than a single query. Given
 the plan as a contract, open models reach the right verdict on the right
-evidence, and a 31B model comes within 0.02 of the frontier with no
+evidence, and a 31B model comes within 0.01 of the frontier with no
 marginal API fees. Across systems, the errors sit in the temporal
 conditioning of the denominator, the decision of which reports can witness a
 claim, and verdict accuracy does not reveal them: a \emph{verdict--evidence
@@ -92,11 +92,10 @@ shape. Its 26 groups span seven families and three difficulty levels, and
 every instance ships its plan, evidence sets, exact $p$-values and a
 three-decision verdict with sub-typed abstention (\S\ref{sec:dataset}).
 \item \textbf{A generation process that makes the codebook part of the
-task}: claims are enumerated from the timelines by templates, and gold is
+task}: claims are enumerated from the timelines by templates, gold is
 computed by the exact test for each claim shape and validated by permutation
-screens, invariants and an oracle. The rules that turn a temporal sentence
-into a testable population, such as how ties and co-existing events count,
-ship as text (\S\ref{sec:dataset}).
+screens, invariants and an oracle, and the rules that turn a temporal
+sentence into a testable population ship as text (\S\ref{sec:dataset}).
 \item \textbf{A staged verification paradigm}, \art{}, that makes every
 decision an explicit, checkable output: it articulates a claim as a plan naming its conditioning rule, null and test, retrieves the
 conditioned report sets under a contract resolved by the harness, and
@@ -222,9 +221,9 @@ supported when its own one-sided tail is significant at $\alpha = 0.05$ and
 refuted when the opposite tail is. Otherwise it is insufficient, sub-typed
 as \emph{not-locatable} (no report qualifies), \emph{sparse} (fewer than the
 minimum count qualify) or \emph{underpowered} (enough qualify but neither
-tail is significant; two thirds of these test claims have power below 0.8
-at Cohen's $h = 0.5$ \cite{cohen1988}). Under a claim's null a decisive label
-has probability at most 0.10, and 0.048 on average on the test set.
+tail is significant; three in five of these test claims have power below
+0.8 at Cohen's $h = 0.5$ \cite{cohen1988}). Under a claim's null a decisive
+label has probability at most 0.10, and 0.045 on average on the test set.
 
 For a cohort-tier claim the gold is computed in three released steps: (1) a
 \emph{plan}, giving the events, the quantity compared, the \emph{denominator
@@ -272,7 +271,7 @@ lists every group. Each group is rendered in four registers
 mechanical slot-filling, with no model-written text. Every decisive core is
 posed both ways, as a \emph{supported} claim and its \emph{refuted} mirror
 over identical evidence, so a system that supports both directions of one
-fact is caught. Each cohort group ships equal thirds of
+fact is caught. Each cohort group ships near-equal thirds of
 supported, refuted and insufficient claims, so its fixed wording cannot
 predict the label, and a seeded draw caps it at 600 instances while keeping
 mirror pairs together. \emph{Not-locatable} claims are
@@ -291,15 +290,20 @@ the named cell against its strongest competitor for argmax claims, equality
 of two rates for contrasts, a bar read off the wording for threshold claims,
 and a rate derived from the data for position and proximity claims. Order
 and bar claims use a one-sided exact binomial. Data-derived nulls use a
-one-sided binomial at the mean of the per-report chance rates. It is
-conservative whenever its rejection cutoff lies at least one count beyond
-the expected count \cite{hoeffding1956}, which holds in both tails for every
-such test claim; under the exact Poisson-binomial its decisive rate is 0.050,
-and the exact test changes 1 of the 180 labels. Argmax claims use an exact binomial of the named cell against its
+one-sided binomial at the mean of the per-report chance rates, each
+report's chance being its own early-slot share (position) or the share of its
+distinct-stage event pairs that are adjacent (proximity). The binomial is
+conservative whenever its rejection cutoff lies at least one count beyond the
+expected count \cite{hoeffding1956}, which holds in both tails for every
+such test claim: its error is at most 0.039 per direction, and the exact
+Poisson-binomial would decide 9 of the 180 claims that it leaves
+insufficient. Argmax claims use an exact binomial of the named cell against its
 strongest observed competitor. In the claim's direction this is an
 intersection--union test against every competitor, with size at most
 $\alpha$ \cite{berger1982}, because the binomial $p$-value grows with the
-competitor's count. Contrasts use Fisher's exact test
+competitor's count; in the opposite direction any competitor may win, so
+that tail is Bonferroni-adjusted over the competitors, and both directions
+have size at most 0.049 on the test claims. Contrasts use Fisher's exact test
 \cite{fisher1935design}. The only gate is a minimum denominator of 10 per
 arm. Each instance releases both one-sided $p$-values, the Wilson interval
 \cite{wilson1927} and Cohen's $h$ \cite{cohen1988}, oriented to the claim as
@@ -320,9 +324,9 @@ The release (Table~\ref{tab:stats}) contains a 1{,}500-claim test set, a
 seeded verdict-balanced draw of up to 90 claims per cohort group,
 fact-disjoint from a 200-instance development set, a 180-claim single-report
 case study, and the full enumerated pool of 8{,}763 instances with its
-generator. Inputs and gold are in separate files, every report identifier is
-a keyed pseudonym of its VAERS identifier, and a \texttt{fact\_id} keys every
-split. The full release, with the code, follows acceptance.
+generator. Inputs and gold are separate files keyed by \texttt{fact\_id}, with
+pseudonymous report identifiers. The full release, with the code, follows
+acceptance.
 
 \begin{table}[t]
 \centering
@@ -336,8 +340,8 @@ Development set & 200 \\
 Groups / families / difficulty levels & 26 / 7 / 3 \\
 Registers per claim & 4 \\
 Enumerated pool: instances (records) & 8{,}763 (35{,}052) \\
-\quad supported / refuted / insufficient & 3{,}521 / 3{,}521 / 1{,}721 \\
-\quad underpowered / sparse / not-locatable & 605 / 498 / 618 \\
+\quad supported / refuted / insufficient & 3{,}476 / 3{,}468 / 1{,}819 \\
+\quad underpowered / sparse / not-locatable & 703 / 498 / 618 \\
 Test denominator $n$, median (IQR) & 21 (14--41) \\
 $|$Cohen's $h|$ on decisive claims, median & 0.65 \\
 \bottomrule
@@ -369,10 +373,8 @@ includes these loops.
 \label{sec:frames}
 
 From the record (text, level, cohort) the model composes a plan:
-\texttt{events}, \texttt{quantity}, \texttt{denominator} (a named primitive:
-\emph{ordered\_pair}, \emph{both\_present}, \emph{all\_present\_unique\_first},
-\emph{consecutive\_pair}, \emph{present\_offmid}, \emph{presence\_split},
-\emph{single\_report}, \ldots), \texttt{arms}, \texttt{null\_kind} with $p_0$
+\texttt{events}, \texttt{quantity}, \texttt{denominator} (a named primitive
+such as \emph{ordered\_pair} or \emph{all\_present\_unique\_first}), \texttt{arms}, \texttt{null\_kind} with $p_0$
 or a reference population, \texttt{tail}, \texttt{test\_family} and a rule for
 the floor. The prompt states the codebook by situation (``a report with two
 events tied for earliest has no answer and is excluded''; ``order words are
@@ -496,9 +498,9 @@ claims answered \emph{insufficient}.
 
 Every result in Table~\ref{tab:main} is on the 1{,}500-claim test set (\S\ref{sec:release}), run
 once in the \textsc{Original} register after every prompt was frozen on the
-development set. A review copy with the development set, its gold at every
-stage, the timeline database, \art{}'s outputs on the development set and a
-scorer is at \url{https://anonymous.4open.science/r/STRATA-WWW2027/}. Every system is run with each of five models in every
+development set. A review copy (development set with its gold at every
+stage, timeline database, \art{} outputs, scorer) is at
+\url{https://anonymous.4open.science/r/STRATA-WWW2027/}. Every system is run with each of five models in every
 model slot: the 2024 open pair Qwen2.5-32B-Instruct (planning) and
 Qwen2.5-Coder-32B (SQL) \cite{qwen2025qwen25}; the 2026 open models
 qwen3.8-27B \cite{qwen2026qwen38} and gemma4-31B \cite{gemma2026gemma4}, one
@@ -529,27 +531,27 @@ test set, 1{,}500 cohort claims & \multicolumn{4}{c}{\textbf{Qwen2.5-32B pair}} 
  & Acc & P & R & F1 & Acc & P & R & F1 & Acc & P & R & F1 & Acc & P & R & F1 & Acc & P & R & F1 \\
 \midrule
 \multicolumn{21}{@{}l}{\textit{adapted baselines}} \\
-EHRSQL & .529 & .555 & .528 & .518 & .587 & .605 & .587 & .582 & .635 & .647 & .634 & .629 & .878 & .882 & .878 & .878 & .876 & .877 & .876 & .876 \\
-EHRSQL-C & .575 & .604 & .574 & .570 & .748 & .764 & .747 & .748 & .859 & .885 & .858 & .861 & 1.000 & 1.000 & 1.000 & 1.000 & .984 & .984 & .984 & .984 \\
-EHRAgent & .605 & .694 & .606 & .600 & .839 & .863 & .839 & .843 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & .792 & .808 & .792 & .794 \\
-DiscoveryBench$^\dagger$ & \multicolumn{4}{c}{---} & .647 & .812 & .647 & .711 & .706 & .784 & .706 & .729 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+EHRSQL & .530 & .554 & .524 & .518 & .593 & .607 & .588 & .584 & .635 & .646 & .632 & .629 & .879 & .884 & .878 & .880 & .876 & .876 & .875 & .875 \\
+EHRSQL-C & .579 & .608 & .573 & .573 & .747 & .765 & .744 & .747 & .857 & .887 & .854 & .860 & 1.000 & 1.000 & 1.000 & 1.000 & .984 & .984 & .983 & .984 \\
+EHRAgent & .597 & .691 & .603 & .593 & .837 & .857 & .835 & .840 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & .796 & .809 & .795 & .798 \\
+DiscoveryBench$^\dagger$ & \multicolumn{4}{c}{---} & .632 & .790 & .631 & .696 & .701 & .774 & .698 & .725 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 \midrule
 \multicolumn{21}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
-Articulate: \art{} & .953 & .985 & .953 & .969 & .917 & .942 & .917 & .928 & .992 & .992 & .992 & .992 & .993 & .993 & .993 & .993 & .993 & .993 & .993 & .993 \\
-\quad plain prompt & .867 & .920 & .867 & .892 & .859 & .913 & .859 & .882 & .923 & .936 & .922 & .927 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
-\quad plain prompt + chain-of-thought & .923 & .957 & .922 & .938 & .863 & .925 & .862 & .891 & .912 & .920 & .912 & .913 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
-Retrieve: \art{} & .836 & .879 & .835 & .840 & .944 & .945 & .944 & .944 & .989 & .990 & .989 & .989 & \multicolumn{4}{c}{$\geq$.999 on all four} & \multicolumn{4}{c}{$\geq$.999 on all four} \\
-\quad OmniSQL-32B$^\ddagger$ & .772 & .814 & .771 & .775 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+Articulate: \art{} & .952 & .984 & .952 & .967 & .915 & .940 & .914 & .925 & .992 & .992 & .992 & .992 & .991 & .992 & .991 & .991 & .991 & .991 & .990 & .991 \\
+\quad plain prompt & .871 & .924 & .870 & .895 & .856 & .908 & .854 & .878 & .919 & .931 & .917 & .922 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad plain prompt + chain-of-thought & .923 & .958 & .922 & .939 & .859 & .920 & .857 & .887 & .909 & .915 & .907 & .908 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+Retrieve: \art{} & .837 & .884 & .833 & .841 & .944 & .946 & .944 & .944 & .989 & .990 & .989 & .989 & \multicolumn{4}{c}{$\geq$.999 on all four} & \multicolumn{4}{c}{$\geq$.999 on all four} \\
+\quad OmniSQL-32B$^\ddagger$ & .774 & .819 & .769 & .776 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-\quad StatQA & .611 & .706 & .609 & .575 & .619 & .784 & .617 & .539 & .777 & .816 & .776 & .776 & .999 & .999 & .999 & .999 & .999 & .999 & .999 & .999 \\
+\quad StatQA & .620 & .710 & .613 & .582 & .628 & .787 & .620 & .545 & .788 & .821 & .783 & .785 & .981 & .981 & .982 & .981 & .982 & .982 & .983 & .982 \\
 \midrule
 \multicolumn{21}{@{}l}{\textit{ablations of \art{}}} \\
-\quad $-$ verify-and-repair & .761 & .845 & .760 & .777 & .735 & .815 & .734 & .744 & .844 & .886 & .843 & .848 & .999 & .999 & .999 & .999 & .999 & .999 & .999 & .999 \\
-\quad $-$ exact test (model verdict) & .512 & .651 & .510 & .482 & .568 & .612 & .566 & .503 & .770 & .809 & .769 & .769 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
-\quad $-$ contract (plan as prose) & .663 & .704 & .663 & .671 & .841 & .870 & .841 & .851 & .947 & .948 & .947 & .947 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad $-$ verify-and-repair & .763 & .850 & .758 & .778 & .725 & .803 & .719 & .733 & .836 & .878 & .832 & .841 & .999 & .999 & .999 & .999 & .999 & .999 & .999 & .999 \\
+\quad $-$ exact test (model verdict) & .517 & .647 & .507 & .484 & .577 & .615 & .569 & .509 & .781 & .814 & .775 & .778 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
+\quad $-$ contract (plan as prose) & .665 & .702 & .660 & .670 & .837 & .866 & .834 & .846 & .947 & .949 & .946 & .947 & \multicolumn{4}{c}{---} & \multicolumn{4}{c}{---} \\
 \midrule
 \multicolumn{21}{@{}l}{\textit{ours}} \\
-\textbf{\art{}} & \textbf{.810} & \textbf{.876} & \textbf{.809} & \textbf{.827} & \textbf{.872} & \textbf{.895} & \textbf{.872} & \textbf{.882} & \textbf{.981} & \textbf{.982} & \textbf{.981} & \textbf{.981} & \textbf{.993} & \textbf{.993} & \textbf{.993} & \textbf{.993} & \textbf{.983} & \textbf{.983} & \textbf{.983} & \textbf{.983} \\
+\textbf{\art{}} & \textbf{.812} & \textbf{.881} & \textbf{.808} & \textbf{.828} & \textbf{.869} & \textbf{.893} & \textbf{.867} & \textbf{.879} & \textbf{.981} & \textbf{.983} & \textbf{.981} & \textbf{.982} & \textbf{.991} & \textbf{.991} & \textbf{.990} & \textbf{.991} & \textbf{.981} & \textbf{.981} & \textbf{.981} & \textbf{.981} \\
 \bottomrule
 \end{tabular}
 \caption{Main results on the test set. Under each model: verdict accuracy
@@ -575,27 +577,27 @@ test set, 1{,}500 cohort claims & \textbf{Qwen2.5-32B pair} & \textbf{qwen3.8-27
  & \multicolumn{5}{c}{\textit{Verdict accuracy \,(macro precision / recall / F1)}} \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{adapted baselines}} \\
-EHRSQL & 0.529\,{\scriptsize(0.555/0.528/0.518)} & 0.587\,{\scriptsize(0.605/0.587/0.582)} & 0.635\,{\scriptsize(0.647/0.634/0.629)} & 0.878\,{\scriptsize(0.882/0.878/0.878)} & 0.876\,{\scriptsize(0.877/0.876/0.876)} \\
-EHRSQL-C & 0.575\,{\scriptsize(0.604/0.574/0.570)} & 0.748\,{\scriptsize(0.764/0.747/0.748)} & 0.859\,{\scriptsize(0.885/0.858/0.861)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.984/0.984)} \\
-EHRAgent & 0.605\,{\scriptsize(0.694/0.606/0.600)} & 0.839\,{\scriptsize(0.863/0.839/0.843)} & --- & --- & 0.792\,{\scriptsize(0.808/0.792/0.794)} \\
-DiscoveryBench$^\dagger$ & --- & 0.647\,{\scriptsize(0.812/0.647/0.711)} & 0.706\,{\scriptsize(0.784/0.706/0.729)} & --- & --- \\
+EHRSQL & 0.530\,{\scriptsize(0.554/0.524/0.518)} & 0.593\,{\scriptsize(0.607/0.588/0.584)} & 0.635\,{\scriptsize(0.646/0.632/0.629)} & 0.879\,{\scriptsize(0.884/0.878/0.880)} & 0.876\,{\scriptsize(0.876/0.875/0.875)} \\
+EHRSQL-C & 0.579\,{\scriptsize(0.608/0.573/0.573)} & 0.747\,{\scriptsize(0.765/0.744/0.747)} & 0.857\,{\scriptsize(0.887/0.854/0.860)} & 1.000\,{\scriptsize(1.000/1.000/1.000)} & 0.984\,{\scriptsize(0.984/0.983/0.984)} \\
+EHRAgent & 0.597\,{\scriptsize(0.691/0.603/0.593)} & 0.837\,{\scriptsize(0.857/0.835/0.840)} & --- & --- & 0.796\,{\scriptsize(0.809/0.795/0.798)} \\
+DiscoveryBench$^\dagger$ & --- & 0.632\,{\scriptsize(0.790/0.631/0.696)} & 0.701\,{\scriptsize(0.774/0.698/0.725)} & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{adapted stage baselines (other stages at gold)}} \\
-Articulate: \art{} & 0.953\,{\scriptsize(0.985/0.953/0.969)} & 0.917\,{\scriptsize(0.942/0.917/0.928)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} & 0.993\,{\scriptsize(0.993/0.993/0.993)} \\
-\quad plain prompt & 0.867\,{\scriptsize(0.920/0.867/0.892)} & 0.859\,{\scriptsize(0.913/0.859/0.882)} & 0.923\,{\scriptsize(0.936/0.922/0.927)} & --- & --- \\
-\quad plain prompt + chain-of-thought & 0.923\,{\scriptsize(0.957/0.922/0.938)} & 0.863\,{\scriptsize(0.925/0.862/0.891)} & 0.912\,{\scriptsize(0.920/0.912/0.913)} & --- & --- \\
-Retrieve: \art{} & 0.836\,{\scriptsize(0.879/0.835/0.840)} & 0.944\,{\scriptsize(0.945/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
-\quad OmniSQL-32B$^\ddagger$ & 0.772\,{\scriptsize(0.814/0.771/0.775)} & --- & --- & --- & --- \\
+Articulate: \art{} & 0.952\,{\scriptsize(0.984/0.952/0.967)} & 0.915\,{\scriptsize(0.940/0.914/0.925)} & 0.992\,{\scriptsize(0.992/0.992/0.992)} & 0.991\,{\scriptsize(0.992/0.991/0.991)} & 0.991\,{\scriptsize(0.991/0.990/0.991)} \\
+\quad plain prompt & 0.871\,{\scriptsize(0.924/0.870/0.895)} & 0.856\,{\scriptsize(0.908/0.854/0.878)} & 0.919\,{\scriptsize(0.931/0.917/0.922)} & --- & --- \\
+\quad plain prompt + chain-of-thought & 0.923\,{\scriptsize(0.958/0.922/0.939)} & 0.859\,{\scriptsize(0.920/0.857/0.887)} & 0.909\,{\scriptsize(0.915/0.907/0.908)} & --- & --- \\
+Retrieve: \art{} & 0.837\,{\scriptsize(0.884/0.833/0.841)} & 0.944\,{\scriptsize(0.946/0.944/0.944)} & 0.989\,{\scriptsize(0.990/0.989/0.989)} & $\geq$0.999 & $\geq$0.999 \\
+\quad OmniSQL-32B$^\ddagger$ & 0.774\,{\scriptsize(0.819/0.769/0.776)} & --- & --- & --- & --- \\
 Test: \art{} (exact test) & 1.000 & 1.000 & 1.000 & 1.000 & 1.000 \\
-\quad StatQA & 0.611\,{\scriptsize(0.706/0.609/0.575)} & 0.619\,{\scriptsize(0.784/0.617/0.539)} & 0.777\,{\scriptsize(0.816/0.776/0.776)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
+\quad StatQA & 0.620\,{\scriptsize(0.710/0.613/0.582)} & 0.628\,{\scriptsize(0.787/0.620/0.545)} & 0.788\,{\scriptsize(0.821/0.783/0.785)} & 0.981\,{\scriptsize(0.981/0.982/0.981)} & 0.982\,{\scriptsize(0.982/0.983/0.982)} \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ablations of \art{}}} \\
-\quad $-$ verify-and-repair & 0.761\,{\scriptsize(0.845/0.760/0.777)} & 0.735\,{\scriptsize(0.815/0.734/0.744)} & 0.844\,{\scriptsize(0.886/0.843/0.848)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
-\quad $-$ exact test (model verdict) & 0.512\,{\scriptsize(0.651/0.510/0.482)} & 0.568\,{\scriptsize(0.612/0.566/0.503)} & 0.770\,{\scriptsize(0.809/0.769/0.769)} & --- & --- \\
-\quad $-$ contract (plan as prose) & 0.663\,{\scriptsize(0.704/0.663/0.671)} & 0.841\,{\scriptsize(0.870/0.841/0.851)} & 0.947\,{\scriptsize(0.948/0.947/0.947)} & --- & --- \\
+\quad $-$ verify-and-repair & 0.763\,{\scriptsize(0.850/0.758/0.778)} & 0.725\,{\scriptsize(0.803/0.719/0.733)} & 0.836\,{\scriptsize(0.878/0.832/0.841)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} & 0.999\,{\scriptsize(0.999/0.999/0.999)} \\
+\quad $-$ exact test (model verdict) & 0.517\,{\scriptsize(0.647/0.507/0.484)} & 0.577\,{\scriptsize(0.615/0.569/0.509)} & 0.781\,{\scriptsize(0.814/0.775/0.778)} & --- & --- \\
+\quad $-$ contract (plan as prose) & 0.665\,{\scriptsize(0.702/0.660/0.670)} & 0.837\,{\scriptsize(0.866/0.834/0.846)} & 0.947\,{\scriptsize(0.949/0.946/0.947)} & --- & --- \\
 \midrule
 \multicolumn{6}{@{}l}{\textit{ours}} \\
-\textbf{\art{}} & \textbf{0.810\,{\scriptsize(0.876/0.809/0.827)}} & \textbf{0.872\,{\scriptsize(0.895/0.872/0.882)}} & \textbf{0.981\,{\scriptsize(0.982/0.981/0.981)}} & \textbf{0.993\,{\scriptsize(0.993/0.993/0.993)}} & \textbf{0.983\,{\scriptsize(0.983/0.983/0.983)}} \\
+\textbf{\art{}} & \textbf{0.812\,{\scriptsize(0.881/0.808/0.828)}} & \textbf{0.869\,{\scriptsize(0.893/0.867/0.879)}} & \textbf{0.981\,{\scriptsize(0.983/0.981/0.982)}} & \textbf{0.991\,{\scriptsize(0.991/0.990/0.991)}} & \textbf{0.981\,{\scriptsize(0.981/0.981/0.981)}} \\
 \bottomrule
 \end{tabular}
 \caption{Main results on the test set: verdict accuracy, then macro
@@ -663,23 +665,23 @@ Without the codebook, every error is a wrong rule about which reports can
 witness a temporal claim, and Appendix~\ref{app:attribution} names the rule
 for each claim. The frontier models' errors fall on four rules: first/last
 denominators that admit reports missing one of the candidates (102--150
-claims, first/last accuracy 0.66--0.74); adjacency counted across
-co-existing events (35--63 claims, proximity 0.79--0.90); position claims
+claims, first/last accuracy 0.67--0.73); adjacency counted across
+co-existing events (35--63 claims, proximity 0.80--0.90); position claims
 over reports that have no earlier half (up to 31); and order and
 co-occurrence denominators that admit reports with only one of the events.
 The open models make the same errors in larger numbers and add the one the
 codebook states first, co-existing reports in order denominators (281--325
-claims). In each case the query runs and counts the wrong reports.
+claims).
 
 Agents that write and run their own analysis do no better. Without the
 codebook, EHRAgent's retries help the models that also fail the single
-query, by 0.08 for the 2024 pair and 0.25 for qwen3.8, but cost GPT-5.6 0.08
-(0.792 against 0.876). Free to choose, GPT-5.6 keeps ties in first/last
+query, by 0.07 for the 2024 pair and 0.24 for qwen3.8, but cost GPT-5.6 0.08
+(0.796 against 0.876). Free to choose, GPT-5.6 keeps ties in first/last
 denominators, applies multiple-comparison corrections and counts
 co-occurrence over reports with either term, each a defensible convention
 that is not this corpus's. Given the codebook, DiscoveryBench's agent scores
-below the single query with the same model on the same 204 claims: 0.65 and
-0.71 against 0.76 and 0.88 for qwen3.8 and gemma4
+below the single query with the same model on the same 204 claims: 0.63 and
+0.70 against 0.75 and 0.88 for qwen3.8 and gemma4
 (Appendix~\ref{app:subsample}), where every other system scores within its
 own test-set interval. A likely cause is that an agent writes its own
 denominator and test, so it has more places to depart from the codebook, and
@@ -700,13 +702,13 @@ colour scale is square-root, so small errors remain visible.}
 \subsection{RQ2: the staged pipeline and where errors remain}
 \label{sec:families}
 
-Under \art{}, every open model gains 0.12 to 0.24 in verdict accuracy over
-EHRSQL-C, and gemma4-31B comes within 0.02 of the frontier with no marginal API fees.
+Under \art{}, every open model gains 0.12 to 0.23 in verdict accuracy over
+EHRSQL-C, and gemma4-31B comes within 0.01 of the frontier with no marginal API fees.
 The gain comes from the contract and the repair loop together
 (\S\ref{sec:modular}). The contract takes the interpretation of the
 codebook out of the SQL the model writes, and \S\ref{sec:evidence} shows the
-same gain in the evidence. The frontier models score the same under \art{}
-as end to end. The repair loop costs them a little, because its checks flag
+same gain in the evidence. The frontier models score within 0.01 of their
+end-to-end result under \art{}. The repair loop costs them a little, because its checks flag
 a few correct $n = k$ statements and \art{} then abstains instead of
 guessing. For them \art{} adds an auditable record of plan, report sets and
 test, which a single query does not produce.
@@ -743,8 +745,8 @@ whose rule it cannot carry out: first/last, an argmax over three candidates
 with ties dropped from the denominator, and threshold, where one group
 states its bar in the text. The 2026 open models clear first/last. qwen3.8
 misses position, whose null is a data-derived rate, and the precedes variant
-that compares two antecedents (P-V2); gemma4 misses only proximity and
-threshold. Threshold is the one family where the frontier models also drop.
+that compares two antecedents (P-V2); gemma4 scores at least 0.95 on every
+family. Threshold is the one family where the frontier models also drop.
 Their planner-alone rows drop by the same amount, so the loss is in
 composing the bar into the plan, not in retrieval.
 
@@ -786,11 +788,11 @@ Every prediction records the reports it counted, so each verdict can be
 checked against the gold sets. End to end, the verdict overstates what a
 system computed, which is the verdict--evidence gap. EHRSQL-C rests 40\% (pair), 69\% (qwen3.8) and 86\%
 (gemma4) of its right verdicts on the exact denominator, so only 0.23 of
-the pair's 0.575 accuracy is right for the right reason. Panel 2 of
+the pair's 0.579 accuracy is right for the right reason. Panel 2 of
 Figure~\ref{fig:example} shows one such case from qwen3.8: the query admits
 only the reports that support the claim, so $n = k$ and the verdict is
 \emph{supported} whatever the data say. Under \art{} the same shares are
-86\%, 97\% and 94\%, a larger gain than in accuracy and largest for the
+85\%, 97\% and 94\%, a larger gain than in accuracy and largest for the
 weakest model; the frontier models are exact on all but a handful of claims
 in both systems. Over the whole executed trace (both sets in every arm, test,
 null kind and verdict), \art{} is right on 0.62, 0.81 and 0.92 of claims for
@@ -809,7 +811,7 @@ everywhere. Each remaining dark cell has a cause the plan exposes. The 2024
 pair retrieves the wrong set on first/last and abstains on four claims in
 five, qwen3.8 overclaims on first/last, and the frontier models underclaim
 on threshold, the H-V5 slip discussed below. One failure does not show in
-the verdicts: gemma4 is right on 0.97 of proximity claims, but a fifth of
+the verdicts: gemma4 is right on 0.97 of proximity claims, but nearly a third of
 those right verdicts rest on a denominator that admits non-adjacent pairs.
 EHRSQL-C is weaker on the same families, with faithfulness of 0.06--0.41 on
 first/last for every open model.
@@ -825,9 +827,9 @@ grey where the cause is not observable. Numbers are row totals.}
 
 Figure~\ref{fig:insufficient} separates deciding what the data cannot decide
 from abstaining on what they can. Overclaim is the share of the
-505 gold-\emph{insufficient} claims (176 \emph{not-locatable}, 157
-\emph{sparse}, 172 \emph{underpowered}) given a decisive verdict. Underclaim
-is the share of the 995 decisive claims answered \emph{insufficient}, split by
+531 gold-\emph{insufficient} claims (176 \emph{not-locatable}, 157
+\emph{sparse}, 198 \emph{underpowered}) given a decisive verdict. Underclaim
+is the share of the 969 decisive claims answered \emph{insufficient}, split by
 what the prediction shows, which is also the sub-type the system claimed: an
 empty denominator claims \emph{not-locatable}, one below the floor
 \emph{sparse}, a testable one \emph{underpowered}. EHRAgent returns a bare
@@ -840,14 +842,14 @@ overclaims mostly on \emph{underpowered} claims, where a wrong denominator
 moves the tail, and fills \emph{not-locatable} denominators with reports
 that do not qualify. \art{} overclaims on a few percent at most, because the
 exact test, not the model, abstains, and its abstentions name the right
-sub-type on 0.87--1.00 of claims against 0.79--1.00 for EHRSQL-C.
+sub-type on 0.87--1.00 of claims against 0.78--1.00 for EHRSQL-C.
 
 Underclaim is concentrated in the open models. The single query with the
 2024 pair abstains on nearly four decisive claims in ten, mostly on a wrong
 denominator or one below the floor. The stronger EHRAgent models trade
 overclaim for underclaim, not for correct verdicts. Under \art{}, the pair's
 abstentions are mostly queries that still fail after two repairs. The
-frontier models' few abstentions all fall in one group, H-V5, where the plan
+frontier models' few abstentions nearly all fall in one group, H-V5, where the plan
 reads a stated bar as an argmax claim and runs the wrong test on the right
 counts.
 
@@ -932,27 +934,18 @@ The stage rows cannot measure the hand-off between S1 and S2, because
 Retrieve receives the gold plan already resolved. The \emph{$-$ contract}
 row hands the same composed plan to S2 as prose with the codebook, so only
 the resolution of the named primitive into its rule is removed. This costs the 2024 pair 0.15 of
-verdict accuracy (0.810 to 0.663) and the 2026 models 0.03 (0.872 to 0.841
-for qwen3.8, 0.981 to 0.947 for gemma4). Without the contract the pair is
+verdict accuracy (0.812 to 0.665) and the 2026 models 0.03--0.04 (0.869 to
+0.837 for qwen3.8, 0.981 to 0.947 for gemma4). Without the contract the pair is
 barely above a single query with the same codebook and the same two repair
-rounds (0.638), while the 2026 models keep most of \art{}'s gain over
-EHRSQL-C (0.748 and 0.859). The weaker the model, the more of \art{}'s gain
+rounds (0.641), while the 2026 models keep most of \art{}'s gain over
+EHRSQL-C (0.747 and 0.857). The weaker the model, the more of \art{}'s gain
 the contract carries.
 % The development-set version of this comparison (prose below verified EHRSQL-C; contract +~0.3)
 % is kept in the repo only (appendix.tex, commented section app:dev).
 
-\begin{figure}[t]
-\centering
-\includegraphics[width=\columnwidth]{Figures/rounds.pdf}
-\caption{What each verify-and-repair round adds: the change in verdict
-accuracy from the previous round, for rounds one to three, on the test set;
-gains extend to the right, losses to the left.}
-\label{fig:rounds}
-\end{figure}
-
-With zero to three verify-and-repair rounds (Figure~\ref{fig:rounds}), the
-first round gives the 2026 open models about
-$+0.13$ and later rounds a few thousandths, while each round costs the
+With zero to three verify-and-repair rounds (Figure~\ref{fig:rounds},
+Appendix~\ref{app:repair}), the first round gives the 2026 open models about
+$+0.14$ and later rounds at most a hundredth, while each round costs the
 frontier models a little; two rounds is the operating point for every open
 model.
 
@@ -1006,7 +999,7 @@ decisions: which reports can witness a claim, what the null is, which exact
 test applies and what the evidence was. It exposes a verdict--evidence gap:
 systems fail at the first of these, and the verdict does not show it. Frontier models verify the claims once the
 codebook is stated. Open models need the plan as a contract; with it, a 31B
-model on one GPU comes within 0.02 of the frontier with an auditable
+model on one GPU comes within 0.01 of the frontier with an auditable
 denominator, while models asked to make the statistical call themselves err
 even on exact counts. Benchmarks of this kind should publish their codebook
 with their data and score the evidence with the answer.

@@ -152,10 +152,12 @@ def derived_null_chance_sum(executor: ReadOnlyExecutor, mode: str, ids: Iterable
     """Sum over ``ids`` of each report's chance rate for ``mode`` (v1.2 data-derived nulls).
 
     early_bool: the report's early-slot share over all its first-mention terms
-    (the exact middle rank counts for neither half); adj_rate_bool: 2 / L.
+    (the exact middle rank counts for neither half); adj_rate_bool: the share of
+    the report's distinct-stage event pairs that are adjacent (2/L when every
+    stage holds one event; ``corpus.adjacency_chance``).
     Reads ``first_mention`` through the read-only executor in id chunks.
     """
-    from temporal_hypo.generation.corpus import report_half, rank_map
+    from temporal_hypo.generation.corpus import adjacency_chance, report_half
     ids = sorted(int(i) for i in ids)
     terms: dict[int, dict[str, int]] = {}
     for i in range(0, len(ids), 400):
@@ -177,8 +179,7 @@ def derived_null_chance_sum(executor: ReadOnlyExecutor, mode: str, ids: Iterable
             _r, _L, _mid, p_early = report_half(t)
             total += p_early or 0.0
         elif mode == "adj_rate_bool":
-            _r, L = rank_map(t)
-            total += (2.0 / L) if L else 0.0
+            total += adjacency_chance(t)
     return total
 
 

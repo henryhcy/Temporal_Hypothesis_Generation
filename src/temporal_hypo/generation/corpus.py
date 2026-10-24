@@ -434,15 +434,36 @@ def immediate_fraction(
     return ((k / n) if n else None), n
 
 
+def adjacency_chance(terms: dict[str, int]) -> float:
+    """One report's chance that two of its events at DISTINCT stages are adjacent.
+
+    Two events placed uniformly on two distinct event slots of the report, then
+    conditioned on landing at distinct stages: with s_r events at stage r,
+    chance = sum_{|r-q|=1} s_r s_q / sum_{r!=q} s_r s_q. When every stage holds
+    one event this is 2/L; with the corpus's front-loaded stages it is not, which
+    is the same correction the position null makes (``report_half``). Changed
+    from the flat 2/L on 2026-10-24 (decisions.md).
+    """
+    ranks, L = rank_map(terms)
+    if L < 2:
+        return 0.0
+    size = [0] * L
+    for r in ranks.values():
+        size[r] += 1
+    total = sum(size[r] * size[q] for r in range(L) for q in range(L) if r != q)
+    adjacent = 2 * sum(size[r] * size[r + 1] for r in range(L - 1))
+    return (adjacent / total) if total else 0.0
+
+
 def adjacency_rate(
     index: CorpusIndex, a: str, b: str, cohort: list[int]
 ) -> tuple[float | None, int, int, float]:
     """N3 adjacency vs chance: (frac, n, k, exp_sum).
 
     Denominator: reports with A and B at DISTINCT ranks (the ordered-pair
-    denominator). Numerator: the two are adjacent. Each report's chance of
-    adjacency for a distinct pair is 2/L (L(L-1) ordered placements, 2(L-1)
-    adjacent), so the core's null is p0 = exp_sum / n.
+    denominator). Numerator: the two are adjacent. Each report contributes its
+    own chance of adjacency (``adjacency_chance``: 2/L only when every stage holds
+    one event), so the core's null is p0 = exp_sum / n.
     """
     n = k = 0
     exp = 0.0
@@ -456,5 +477,5 @@ def adjacency_rate(
             continue
         n += 1
         k += int(abs(ra - rb) == 1)
-        exp += 2.0 / L
+        exp += adjacency_chance(t)
     return ((k / n) if n else None), n, k, exp

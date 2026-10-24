@@ -104,7 +104,8 @@ H0_BY_MODE: dict[str, str] = {
     "imm_choice": "H0: P({A} directly before {B} | the two are at consecutive stages) = 0.5",
     "rep_imm_bool": "H0: none -- single deterministic observation, no sampling distribution",
     "adj_rate_bool": "H0: P({A} and {B} at consecutive stages | distinct stages) = the mean "
-                     "chance 2/L over those reports (L = the report's stage count; not 0.5)",
+                     "chance over those reports of two distinct-stage events being adjacent "
+                     "(2/L for a report with one event per stage; not 0.5)",
     "precedes_bar": "H0: P({A} precedes {B}) = 2/3 among ordered reports (the stated bar)",
     "cooc_bar": "H0: P({A} and {B} co-occur) = 2/3 among reports containing both (the stated bar)",
     "first_bar": "H0: P({A} is the unique earliest of {A},{B},{C}) = 1/2 (the stated bar)",
@@ -382,8 +383,9 @@ CONVENTIONS_TEXT = (
     "and the denominator is reports with both at consecutive ranks (consecutive_pair). When "
     "a claim is about how OFTEN two events land at consecutive stages at all, the "
     "denominator is reports with both at distinct stages (ordered_pair), the numerator is "
-    "the adjacent ones, and chance is the report's own 2/L (L = its stage count), so the "
-    "null is computed from the data.\n"
+    "the adjacent ones, and chance is the report's own share of distinct-stage event pairs "
+    "that are adjacent (2/L when every stage holds one event), so the null is computed from "
+    "the data.\n"
     "- When a claim is about ONE event falling in the earlier half of a timeline, a report "
     "with a single stage has no halves and an event on the exact middle stage is in "
     "neither half: both leave the denominator (present_offmid). Earlier stages hold more "

@@ -40,7 +40,7 @@ from typing import TYPE_CHECKING, Any, Mapping
 
 from temporal_hypo.core import significance as sig
 from temporal_hypo.core import verdict as vd
-from temporal_hypo.core.answers import Significance, answer_key, core_significance
+from temporal_hypo.core.answers import Significance, answer_key, competitor_count, core_significance
 from temporal_hypo.core.min_n import family_floor, min_n_gate
 from temporal_hypo.framework.claim_schema import (
     DATA_DERIVED_MODES,
@@ -417,11 +417,18 @@ def _honour(core: ViableCore, claim: StructuredClaim, errors: list[str],
         nn = top + runner
         p0m = 0.5 if p.null.p0 is None else float(p.null.p0)
 
+        # The "competitor beats the named cell" direction (alternative "less" on
+        # the named count) is a union over the competitors, so its p is
+        # Bonferroni-adjusted by their number, as in the reference procedure
+        # (core.answers._modal_runner_tails, 2026-10-24).
+        comp = competitor_count(claim.mode, len(claim.terms))
+
         def tails() -> tuple[float | None, float | None]:
             if nn == 0:
                 return None, None
-            return (sig.binom_exact_p(top, nn, p0m, alternative=tail),
-                    sig.binom_exact_p(top, nn, p0m, alternative=opp))
+            p_gt = sig.binom_exact_p(top, nn, p0m, alternative="greater")
+            p_lt = min(1.0, comp * sig.binom_exact_p(top, nn, p0m, alternative="less"))
+            return (p_gt, p_lt) if tail == "greater" else (p_lt, p_gt)
 
     elif p.test == "fisher_exact":
         if n2 is None or k2 is None:

@@ -176,14 +176,14 @@ def check_instance(index, facts, fails: Counter, examples: dict) -> None:
             if ev[0] not in ranks or ev[1] not in ranks or ranks[ev[0]] == ranks[ev[1]]:
                 bad("C: adjacency denominator report is not a distinct-rank pair", f"report {vid}")
             else:
-                exp += 2.0 / L
+                exp += C.adjacency_chance(index.report_terms[vid])   # 2026-10-24: stage-size-aware chance
         for vid in num:
             ranks, _L = _ranks(index, vid)
             if abs(ranks[ev[0]] - ranks[ev[1]]) != 1:
                 bad("D: adjacency numerator report is not adjacent", f"report {vid}")
         p0 = core.extra.get("p0")
         if den and p0 is not None and abs(exp / len(den) - p0) > 1e-9:
-            bad("D: data-derived null does not match the denominator's mean 2/L",
+            bad("D: data-derived null does not match the denominator's mean adjacency chance",
                 f"{exp/len(den)} vs {p0}")
     elif m in _SEQ:
         for vid in den:

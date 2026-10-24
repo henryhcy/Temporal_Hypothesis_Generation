@@ -49,6 +49,7 @@ def analyse(run: Path, gold: dict) -> dict:
         rt = x.get("retrieval") or {}
         if gv == "insufficient":
             c["ins_n"] += 1
+            c[f"ins_{gs}"] += 1
             if resp in ("supported", "refuted"):
                 c["over"] += 1; c[f"over_{gs}"] += 1
             elif resp == "insufficient":
@@ -87,6 +88,7 @@ def analyse_ehragent(path: Path, gold: dict) -> dict | None:
         resp = x.get("pred_raw")
         if gv == "insufficient":
             c["ins_n"] += 1
+            c[f"ins_{gs}"] += 1
             if resp in ("supported", "refuted"):
                 c["over"] += 1; c[f"over_{gs}"] += 1
             elif resp == "insufficient":
@@ -106,9 +108,10 @@ def analyse_ehragent(path: Path, gold: dict) -> dict | None:
 def fmt(c: dict, ehr=False) -> str:
     f = lambda a, b: f"{a / b:.3f}" if b else "---"
     over = f(c["over"], c["ins_n"])
-    o_nl = f(c["over_not_locatable"], 176) if not ehr or True else "---"
-    o_sp = f(c["over_sparse"], 157)
-    o_up = f(c["over_underpowered"], 172)
+    # denominators: the gold sub-type totals (c carries them since 2026-10-24; 176/157/198 on the test set)
+    o_nl = f(c["over_not_locatable"], c.get("ins_not_locatable") or 176)
+    o_sp = f(c["over_sparse"], c.get("ins_sparse") or 157)
+    o_up = f(c["over_underpowered"], c.get("ins_underpowered") or 198)
     sub = f(c["sub_ok"], c["abstain"]) if not ehr else "---"
     under = f(c["under"], c["dec_n"])
     none = f(c["dec_none"] + c["ins_none"], c["ins_n"] + c["dec_n"])

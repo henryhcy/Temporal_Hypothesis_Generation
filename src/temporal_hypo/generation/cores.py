@@ -1093,6 +1093,7 @@ _HALF = 1e-12
 # Contrast the genuinely non-directional shapes (multi_differ_*, multi_same_*, and
 # the retired GOF modes): their negation is a POINT null (p1 = p2, "exactly
 # uniform"), which no evidence can establish, so they can never be refuted.
+_ARGMAX_MODES = {"seq_bool", "modal_choice", "first_choice", "last_choice", "first_bool"}
 _SLOT_ORIENTABLE = {
     "dir_bool", "dir_choice",
     "seq_bool", "modal_choice",
@@ -1160,6 +1161,14 @@ def feasible_polarities(core: ViableCore, group: Group | None = None) -> set[str
         if not dec.decisive:
             return {"insufficient"}
         if m in _SLOT_ORIENTABLE:
+            if m in _ARGMAX_MODES:
+                # 2026-10-24: the mirror names a non-modal cell and its tail is
+                # Bonferroni-adjusted, so "refuted" is offered only when that
+                # oriented decision is in fact refuted.
+                out = {"supported"}
+                if realize(core, "refuted").gold_verdict == "refuted":
+                    out.add("refuted")
+                return out
             return {"supported", "refuted"}
         # Not slot-orientable: the data fixes which class the PLAIN wording gives.
         # NEGATION is the orientation operator for these claims -- asserting the
@@ -1229,7 +1238,13 @@ def realize(core: ViableCore, polarity: str, *,
         if not dec.decisive:
             facts.gold_verdict = "insufficient"
         elif core.mode in _SLOT_ORIENTABLE:
-            facts.gold_verdict = polarity
+            # 2026-10-24: the label is the ORIENTED decision, not the requested
+            # polarity. They coincide for the symmetric tests; for the argmax modes
+            # the mirror's tail is Bonferroni-adjusted over the competitors
+            # (core.answers._modal_runner_tails), so a decisive core's mirror can
+            # be insufficient (underpowered) rather than refuted.
+            from temporal_hypo.core.answers import oriented_significance
+            facts.gold_verdict = oriented_significance(facts).decision.verdict
         else:
             # Not slot-orientable: the data fixes the PLAIN verdict, and negating
             # the claim swaps it because the asserted direction becomes the other

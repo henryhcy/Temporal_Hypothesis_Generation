@@ -1,7 +1,8 @@
 family: proximity
 description: 'v1.2 (decisions.md 2026-10-07, issue 32): how CLOSE two events are. `immediate` conditions
   on CONSECUTIVE first-mention ranks (null 0.5, slot-orientable); `adjacency` tests the adjacency rate
-  of a distinct-rank pair against the per-core chance 2/L (null_ref: structural).'
+  of a distinct-rank pair against the per-core chance of adjacency, each report''s share of
+  distinct-stage event pairs that are adjacent, 2/L when every stage holds one event (null_ref: structural).'
 common:
   registers:
   - original
@@ -101,7 +102,8 @@ groups:
   - A
   - B
   - v
-  notes: The null here is the mean per-report chance of adjacency (2/L), NOT 0.5. A solver that assumes
+  notes: The null here is the mean per-report chance of adjacency (the share of a report''s distinct-stage
+    event pairs that are adjacent; 2/L when every stage holds one event), NOT 0.5. A solver that assumes
     0.5 will systematically over-report support, which is exactly the failure this group is designed to
     expose.
   variants:

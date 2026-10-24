@@ -193,7 +193,7 @@ def arm_plan(claim: StructuredClaim) -> list[dict]:
     if claim.mode == "adj_rate_bool":          # v1.2: ordered-pair denominator, ADJACENCY numerator
         rows = (f"reports of vaccine {v1} containing both {a} and {b} (use first_mention_rank); "
                 f"in_denominator = (ranks differ); in_numerator = (|rank({a}) - rank({b})| = 1); "
-                f"excluded = (same rank); cell NULL. The null (mean 2/L over the denominator) is "
+                f"excluded = (same rank); cell NULL. The null (the mean adjacency chance over the denominator) is "
                 f"computed by the harness from the data; do not return it.")
     elif cond == "consecutive_pair":           # v1.2
         rows = (f"reports of vaccine {v1} containing both {a} and {b} (use first_mention_rank); "

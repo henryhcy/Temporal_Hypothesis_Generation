@@ -3315,3 +3315,45 @@ GPU1 behind the local rounds; it cannot cover 1,500 at ~5 min per claim.
 Neither agentic baseline runs on the report tier. A + verifier and B +
 verifier are REMOVED from the paper's tables (user); the verifier case study
 covers our method's 0/1/2/3-round curve only.
+
+## IMPLEMENTED 2026-10-24: two gold-procedure corrections, release v1.2 relabelled in place (user: "fix them")
+
+Prompted by the 2026-10-23/24 outside reviews of the WWW 2027 draft; measured on the test gold before the
+decision (decisive probability under each claim's own null, worst-case argmax sizes, Poisson-binomial
+sensitivity). Both changes keep every test exact and computable by a system from its own counts.
+
+1. **Argmax tests (modal-vs-runner-up: first/last F-V1/F-V2/F-V3/H-V5-free, C-V3, S-V1/S-V3).** The claim
+   direction ("the named cell is the mode") compares the named cell with its strongest OBSERVED competitor;
+   this is an intersection-union test over the competitors and needs no correction (size <= alpha; Berger
+   1982). The opposite direction ("some competitor beats the named cell") is a union over the competitors, so
+   its p is now Bonferroni-adjusted by their number (`core.answers._modal_runner_tails`,
+   `competitor_count`: n_events-1 for first/last, 2 for C-V3, 5 for the sequence modes); the raw p is kept in
+   `details["p_opposite_raw"]`. `framework/run_test.py` applies the same adjustment on the "less" tail of the
+   named count, so the harness and the generator agree (B0 = 1.000 on test and dev after the change).
+   Measured worst-case size on the test claims: claim direction 0.049, refute direction 0.032 (was up to 0.070).
+   `generation.cores.realize` now takes a slot-orientable cohort instance's gold verdict from the ORIENTED
+   decision (the mirror of a decisive argmax core can be insufficient), and `feasible_polarities` offers
+   "refuted" for an argmax core only when the mirror is in fact refuted.
+
+2. **Adjacency null (Y-V3, `adj_rate_bool`).** Each report's chance of two distinct-stage events being
+   adjacent is now `corpus.adjacency_chance`: sum_{|r-q|=1} s_r s_q / sum_{r!=q} s_r s_q over its stage sizes
+   (2/L only when every stage holds one event), the same correction the position null already made. Used by
+   the generator (`adjacency_rate`), the harness (`retrieve.derived_null_chance_sum`) and the validator. The
+   codebook / prompt wording changed from "the report's own 2/L" to the stage-size phrasing; the finished
+   model runs saw the 2/L wording -- the harness, not the model, computes the chance, so no model decision
+   depends on it (recorded here rather than re-run).
+
+**Release:** `scripts/relabel_release.py` re-enumerates every cohort core, re-realizes each existing row at
+its stored polarity/negation (asserting it reproduces the row's events and flip), and rewrites only the
+statistical fields; the instance set, texts and evidence sets are unchanged (re-sampling the verdict-balanced
+draw would have moved instances). 748 of 8,763 pool rows changed a statistic; 98 labels moved, all to
+insufficient (C-V3 70, Y-V3 20, F-V* 4, S-V* 4); test set 26 (C-V3 12, Y-V3 14), new mix 485/484/531
+(insufficient sub-types 176/157/198). Groups are now near-equal thirds. Log: `data/release/v1.2/relabel_2026-10-24.json`;
+`dataset_statistics.*` regenerated (pool 3,476 / 3,468 / 1,819; underpowered 703).
+
+**Runs:** `scripts/retest_runs.py` re-runs Stage 3 on every finished run from its stored plan and report sets
+(chance_sum recomputed from the denominator ids), keeps the previous `metrics.pre_relabel.json`, and re-scores;
+model-verdict rows (counts-llm, *_s3llm) are only re-scored. EHRAgent and DiscoveryBench are re-scored against
+the new gold (gold maps rebuilt: `~/ehragent_baseline/build_gold_maps.py`; `~/discoverybench_baseline/gold_map.json`).
+Still deferred (post-submission): the P-V2/P-V4 shared-report overlap under Fisher (disclosed in the paper's
+limitations: an overlap-aware randomization test changes 2 of 188 test labels).

@@ -27,6 +27,8 @@ pair into the labeled verdict via ``core.verdict.three_decision``.
 
 from __future__ import annotations
 
+import math
+
 from dataclasses import dataclass, field
 from itertools import permutations
 from typing import Sequence
@@ -104,6 +106,36 @@ _GOF: set[str] = set()
 # separate "candidate tail" reported alongside an omnibus label. The old
 # `_MODAL_RUNNER_CANDIDATE` set and its `p_claim_modal_runner` /
 # `p_opposite_modal_runner` detail keys are gone with the deferral.
+
+
+def competitor_count(mode: str, n_events: int) -> int:
+    """How many cells compete with the named cell in an argmax (modal-vs-runner-up) test.
+
+    first/last: the other candidates (n_events - 1); cooc_modal_bool: before and
+    after (2); the sequence modes: the other orderings of the events (3! - 1 = 5).
+    """
+    if mode == "cooc_modal_bool":
+        return 2
+    if mode in ("seq_bool", "modal_choice"):
+        return math.factorial(n_events) - 1
+    return max(1, n_events - 1)
+
+
+def _modal_runner_tails(named_count: int, best_other: int, competitors: int
+                        ) -> tuple[float, float, float]:
+    """(p_claim, p_opposite, p_opposite_raw) for named vs its strongest competitor.
+
+    The CLAIM tail ("the named cell is the mode") rejects only if the named cell
+    beats its strongest observed competitor: an intersection-union test over the
+    competitors, whose size is at most alpha with the raw binomial p (Berger,
+    1982). The OPPOSITE tail ("some competitor beats the named cell") is a union
+    over the competitors, so its p is Bonferroni-adjusted by their number
+    (2026-10-24, decisions.md); the raw p is returned for the record.
+    """
+    nn = named_count + best_other
+    p_claim = sig.binom_exact_p(named_count, nn, 0.5, alternative="greater")
+    p_opp_raw = sig.binom_exact_p(named_count, nn, 0.5, alternative="less")
+    return p_claim, min(1.0, competitors * p_opp_raw), p_opp_raw
 
 
 @dataclass
@@ -211,12 +243,13 @@ def core_tails(core, *, named=None) -> Significance:
         nn = named_count + runner
         if nn == 0:
             return Significance(None, None, None)
-        p_claim = sig.binom_exact_p(named_count, nn, 0.5, alternative="greater")
-        p_opp = sig.binom_exact_p(named_count, nn, 0.5, alternative="less")
+        comp = competitor_count(m, len(core.events))
+        p_claim, p_opp, p_opp_raw = _modal_runner_tails(named_count, runner, comp)
         return Significance(p_claim, None, "modal_runner",
                             {"null": 0.5, "alternative": "greater",
                              "named": "co_exist", "top": named_count,
-                             "runner": runner, "n_cells": nn},
+                             "runner": runner, "n_cells": nn,
+                             "competitors": comp, "p_opposite_raw": p_opp_raw},
                             p_claim=p_claim, p_opposite=p_opp)
 
     if m in _MODAL_RUNNER:
@@ -229,12 +262,13 @@ def core_tails(core, *, named=None) -> Significance:
         nn = named_count + best_other
         if nn == 0:
             return Significance(None, None, None)
-        p_claim = sig.binom_exact_p(named_count, nn, 0.5, alternative="greater")
-        p_opp = sig.binom_exact_p(named_count, nn, 0.5, alternative="less")
+        comp = competitor_count(m, len(core.events))
+        p_claim, p_opp, p_opp_raw = _modal_runner_tails(named_count, best_other, comp)
         return Significance(p_claim, None, "modal_runner",
                             {"null": 0.5, "alternative": "greater",
                              "named": cell, "top": named_count,
-                             "runner": best_other, "n_cells": nn},
+                             "runner": best_other, "n_cells": nn,
+                             "competitors": comp, "p_opposite_raw": p_opp_raw},
                             p_claim=p_claim, p_opposite=p_opp)
 
     if m in _FISHER:
