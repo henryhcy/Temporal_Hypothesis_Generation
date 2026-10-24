@@ -274,7 +274,9 @@ posed both ways, as a \emph{supported} claim and its \emph{refuted} mirror
 over identical evidence, so a system that supports both directions of one
 fact is caught. Each cohort group ships near-equal thirds of
 supported, refuted and insufficient claims, so its fixed wording cannot
-predict the label, and a seeded draw caps it at 600 instances while keeping
+predict the label (all but two: C-V3 and Y-V3 ship 0.27 and 0.24 per
+decisive class, because their stricter tests leave more claims
+insufficient), and a seeded draw caps it at 600 instances while keeping
 mirror pairs together. \emph{Not-locatable} claims are
 minted from real cohort vocabulary whose joint count is zero, so the claim
 looks answerable and only querying the timelines reveals the empty
@@ -324,8 +326,8 @@ reproduces every gold label, so the labels follow from the stated rules.
 
 \label{sec:release}\label{sec:stats}
 The release (Table~\ref{tab:stats}) contains a 1{,}500-claim test set, a
-seeded verdict-balanced draw of up to 90 claims per cohort group,
-fact-disjoint from a 200-instance development set, a 180-claim single-report
+seeded draw of up to 90 claims per cohort group balanced across the three
+verdicts (485 / 484 / 531), fact-disjoint from a 200-instance development set, a 180-claim single-report
 case study, and the full enumerated pool of 8{,}763 instances with its
 generator. Inputs and gold are separate files keyed by \texttt{fact\_id}, with
 pseudonymous report identifiers. The full release, with the code, follows
@@ -350,7 +352,8 @@ $|$Cohen's $h|$ on decisive claims, median & 0.65 \\
 \bottomrule
 \end{tabular}
 \caption{The release. Per-group sizes are in the claim catalogue
-(Appendix~\ref{app:catalogue}).}
+(Appendix~\ref{app:catalogue}); report-tier claims have no insufficient
+class.}
 \label{tab:stats}
 \end{table}
 
@@ -775,6 +778,9 @@ frontier models stay at or near 1.0 in both systems. The contract cuts the
 cost of the harder level by a factor of 4.7 for the 2024 pair, 4.9 for
 qwen3.8 and 14 for gemma4.
 
+On the 180 single-report claims (Appendix~\ref{app:report}), every system
+given the codebook scores 0.98--1.00 with a 2026 or frontier model, and
+the 2024 pair reaches 1.000 only under \art{} (0.750 as a single query).
 Rewording the test claims in the
 three other registers costs the open models up to 0.13 under \art{}, and for
 the 2026 models the planner alone loses the same amount, so paraphrase is

@@ -513,6 +513,34 @@ gains extend to the right, losses to the left.}
 \label{fig:rounds}
 \end{figure}
 
+\section{The single-report case study}
+\label{app:report}
+
+The 180 report-tier claims (20 per report group) ask for one deterministic
+reading of a named report's timeline, so the test stage is a rule rather
+than a test. Table~\ref{tab:report} gives verdict accuracy for the single
+query without and with the codebook and for \art{}; the Articulate row runs
+the planner with one repair round and the other stages at gold.
+
+\begin{table}[htbp]
+\centering
+\scriptsize
+\setlength{\tabcolsep}{3pt}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+180 single-report claims & Qwen2.5 pair & qwen3.8 & gemma4 & Opus 5.5 & GPT-5.6 \\
+\midrule
+EHRSQL & 0.433 & 0.989 & 0.744 & --- & --- \\
+EHRSQL-C & 0.750 & 1.000 & 1.000 & 1.000 & 1.000 \\
+Articulate: \art{} (Retrieve, Test at gold) & 1.000 & 1.000 & 1.000 & --- & --- \\
+\art{} & 1.000 & 1.000 & 1.000 & 0.983 & 1.000 \\
+\bottomrule
+\end{tabular}
+\caption{The report-tier case study: verdict accuracy on the 180
+single-report claims. A dash marks a run not made.}
+\label{tab:report}
+\end{table}
+
 \section{The agentic subsample: every system on the identical 204 claims}
 \label{app:subsample}
 
