@@ -92,7 +92,7 @@ computed by the exact test for each claim shape and validated by permutation
 screens, invariants and an oracle. The rules that turn a temporal sentence
 into a testable population, such as how ties and co-existing events count,
 ship as text (\S\ref{sec:dataset}).
-\item \textbf{A staged verification method}, \art{}, that articulates a
+\item \textbf{A reference verification pipeline}, \art{}, that articulates a
 claim as a plan naming its conditioning rule, null and test, retrieves the
 conditioned report sets under a contract resolved by the harness, and
 decides with a deterministic exact test, so the verdict is a statistical
@@ -216,7 +216,9 @@ supported when its own one-sided tail is significant at $\alpha = 0.05$ and
 refuted when the opposite tail is. Otherwise it is insufficient, sub-typed
 as \emph{not-locatable} (no report qualifies), \emph{sparse} (fewer than the
 minimum count qualify) or \emph{underpowered} (enough qualify but neither
-tail is significant).
+tail is significant; two thirds of these test claims have power below 0.8
+at Cohen's $h = 0.5$ \cite{cohen1988}). Under a claim's null a decisive label
+has probability at most 0.10, and 0.048 on average on the test set.
 
 For a cohort-tier claim the gold is computed in three released steps: (1) a
 \emph{plan}, giving the events, the quantity compared, the \emph{denominator
@@ -284,8 +286,9 @@ of two rates for contrasts, a bar read off the wording for threshold claims,
 and a rate derived from the data for position and proximity claims. Order
 and bar claims use a one-sided exact binomial. Data-derived nulls use a
 one-sided binomial at the mean of the per-report chance rates, which is
-conservative relative to the exact distribution over reports with unequal
-chances. Argmax claims use an exact binomial of the named cell against its
+conservative relative to the exact Poisson-binomial distribution over reports
+with unequal chances: under that distribution its decisive rate on the test
+claims is 0.050, and the exact test changes 1 of their 180 labels. Argmax claims use an exact binomial of the named cell against its
 strongest competitor, which suffices because beating the strongest
 competitor implies beating all of them. Contrasts use Fisher's exact test
 \cite{fisher1935design}. The only gate is a minimum denominator of 10 per
@@ -295,7 +298,9 @@ claim as that instance asserts it.
 
 \label{sec:screens}
 Before shipping, every group cleared a permutation null matched to its claim
-shape \cite{good2005permutation}. Six families of mechanical invariants are
+shape \cite{good2005permutation}, under which decisive labels fall to about
+$\alpha$ of the cores (5.1--5.3\% for position claims, against 14--15\% with a
+naive null of 0.5). Six families of mechanical invariants are
 checked over the whole enumerated universe of 56{,}138 instances. A
 deterministic oracle that parses each template back into the reference SQL
 reproduces every gold label, so the labels follow from the stated rules.
@@ -452,7 +457,8 @@ zero-shot chain-of-thought \cite{kojima2022zeroshot}. For Retrieve, OmniSQL
 writes the SQL from the gold plan. For Test, the StatQA protocol
 \cite{zhu2024statqa} gives the model the gold counts and the test definitions
 and asks for the test and the verdict. The matching \art{} rows fill the same
-stage with \art{}'s own component.
+stage with \art{}'s own component; the Articulate row, whose plan is compiled
+to SQL and tested exactly, is a deterministic-compilation pipeline.
 
 \subsection{Evaluation metrics}
 \label{sec:metrics}
@@ -466,8 +472,7 @@ fields. Four evidence measures follow (Figure~\ref{fig:families}).
 \emph{Evidence F1} is the F1 between the reports a system placed in an arm's
 denominator and the gold set, averaged over arms. \emph{Faithfulness} is the
 share of correct verdicts whose denominator is exactly the gold set in every
-arm, that is, the share of right answers that are right for the right
-reason. \emph{Overclaim} is the share of gold-\emph{insufficient} claims
+arm. \emph{Overclaim} is the share of gold-\emph{insufficient} claims
 given a decisive verdict, and \emph{underclaim} is the share of decisive
 claims answered \emph{insufficient}.
 
@@ -486,8 +491,7 @@ model for both stages, thinking off; and the frontier models Claude Opus~5.5
 \cite{anthropic2026opus55} and GPT-5.6 \cite{openai2026gpt56}. Open models run fully resident on one RTX A5000 with an 8k
 context, frontier models over their APIs with prompt caching. Verdict
 accuracies carry 95\% bootstrap intervals \cite{efron1993bootstrap} over
-instances (1{,}000 resamples),
-about $\pm 0.02$ on the test set and $\pm 0.01$ above 0.98. Per-claim cost
+instances (1{,}000 resamples). Per-claim cost
 and latency are in Appendix~\ref{app:cost}.
 
 \section{Results}
@@ -743,8 +747,7 @@ Wilson intervals over claims.}
 
 The three levels contain different families, so their pooled accuracies
 would mix difficulty with family. Figure~\ref{fig:tiers} holds the claim
-shape fixed instead and compares \art{} with EHRSQL-C, which differs from it
-only in the plan, the contract and the repair loop. Under \art{} every model
+shape fixed instead and compares \art{} with EHRSQL-C. Under \art{} every model
 verifies the single-report and one-cohort claims, and the open models lose
 0.15 (pair), 0.10 (qwen3.8) and 0.01 (gemma4) when a second cohort adds a
 second denominator and a two-sample test. EHRSQL-C loses 0.68, 0.48 and 0.17
@@ -774,7 +777,9 @@ only the reports that support the claim, so $n = k$ and the verdict is
 \emph{supported} whatever the data say. Under \art{} the same shares are
 86\%, 97\% and 94\%, a larger gain than in accuracy and largest for the
 weakest model; the frontier models are exact on all but a handful of claims
-in both systems. The agents cannot be checked this way, because EHRAgent
+in both systems. Over the whole executed trace (both sets in every arm, test,
+null kind and verdict), \art{} is right on 0.62, 0.81 and 0.92 of claims for
+the open models against 0.21, 0.51 and 0.73 for EHRSQL-C. The agents cannot be checked this way, because EHRAgent
 and DiscoveryBench's agent return a verdict from their own code without the
 reports behind it.
 
@@ -909,9 +914,8 @@ exact test with the model's verdict on \art{}'s own counts loses 0.2 to
 
 The stage rows cannot measure the hand-off between S1 and S2, because
 Retrieve receives the gold plan already resolved. The \emph{$-$ contract}
-row hands the same composed plan to S2 as prose with the codebook. The plan,
-the model and the repair rounds are unchanged; only the resolution of the
-named primitive into its rule is removed. This costs the 2024 pair 0.15 of
+row hands the same composed plan to S2 as prose with the codebook, so only
+the resolution of the named primitive into its rule is removed. This costs the 2024 pair 0.15 of
 verdict accuracy (0.810 to 0.663) and the 2026 models 0.03 (0.872 to 0.841
 for qwen3.8, 0.981 to 0.947 for gemma4). Without the contract the pair is
 barely above a single query with the same codebook and the same two repair
@@ -997,5 +1001,5 @@ means writing them for another corpus. The claims are generated from
 templates over raw MedDRA terms, so their wording varies only across the four
 registers, and the oracle shows that labels follow from the stated rules, not
 that free-form wording would carry them. Decisive labels carry false positives
-at the $\alpha$ rate by construction. And the patterns are statistical
+at up to $\alpha$ per direction by construction. And the patterns are statistical
 regularities in spontaneous reports, not causal findings.
