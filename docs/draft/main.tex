@@ -52,28 +52,27 @@
 
 \begin{abstract}
 Language-model systems increasingly claim to test hypotheses against data,
-but existing benchmarks score only the final answer and hand the system the
-relevant records already assembled. Over a corpus of clinical timelines, a
-claim such as ``after Moderna, Pain typically occurs before Asthenia'' first
-requires deciding \emph{which reports count}, what the null is and which
-exact test applies, and each decision can be wrong while the verdict is
-right. We present \textsc{Strata}, a benchmark and staged evaluation
-framework for verifying temporal hypotheses about clinical event timelines
-by exact statistical tests. Its claims are generated mechanically from the
-timelines by templates, and its gold covers every stage: the plan, the exact
+yet benchmarks still score only the final answer and hand the system the
+relevant records already assembled. We introduce temporal hypothesis
+verification, a task in which the decisions before any test is run are
+themselves evaluated: for a claim such as ``after Moderna, Pain typically
+occurs before Asthenia'', a system must decide \emph{which reports count},
+what the null is and which exact test applies, and each decision can be
+wrong while the verdict is right. \textsc{Strata} is, to our knowledge, the
+first benchmark with gold for every such decision: the plan, the exact
 evidence sets, the exact $p$-values and a three-decision verdict with
-sub-typed abstention, validated by mechanical invariants and a deterministic
-oracle. The corpus codebook, the rules the labels depend on, is released as
-text that any system can be given. The framework verifies a claim in three
-stages, articulate, retrieve and test (\textsc{Art}), each with an output
-contract, a bounded verify-and-repair loop and a gold counterpart, so a
-system is scored on its plan, its evidence and its abstention as well as its
-verdict, and any stage can be filled with gold. Across five models, from a
-2024 open 32B pair to current frontier models, frontier models verify the
-claims once they are given the codebook, and an open model given the plan as
-a contract comes within 0.02 of them with auditable evidence. Systems fail
-mostly at the temporal conditioning of the denominator, and verdict accuracy
-does not reveal it.
+sub-typed abstention, generated mechanically from 3{,}166 clinical
+timelines and reproduced by a deterministic oracle. The corpus codebook, the
+rules the labels depend on, ships as text that any system can be given. We
+also introduce \textsc{Art} (articulate, retrieve, test), a staged
+verification paradigm in which every decision is an explicit output with a
+contract, a bounded verify-and-repair loop and a gold counterpart, so any
+stage can be scored or replaced by gold. Across five models, from a 2024
+open 32B pair to current frontier models, frontier models verify the claims
+once they are given the codebook, and the plan contract carries a 31B open
+model to within 0.02 of them with auditable evidence. The evaluation exposes
+a verdict--evidence gap: systems fail mostly at the temporal conditioning of
+the denominator, and verdict accuracy does not reveal it.
 \end{abstract}
 
 \begin{CCSXML}

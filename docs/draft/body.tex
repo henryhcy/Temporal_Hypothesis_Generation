@@ -38,16 +38,20 @@ wrong on its own. The verdict does not show these errors: in
 Figure~\ref{fig:example}, a single-query baseline counts only the reports
 that support the claim and still returns the correct verdict.
 
-This paper makes that chain of decisions the object of evaluation. We
-study it on temporal hypotheses about clinical event timelines, where every
-decision is hard. A hypothesis that one event tends to precede another,
-follow it immediately, come first among several or fall early in the
-clinical course is a claim about a population of timelines. No single report
-confirms it. It is verified by an exact test over the reports whose
-timelines can witness it, against the null its wording implies.
+This paper introduces \emph{temporal hypothesis verification}, a task in
+which that chain of decisions, not only the verdict, is what a system is
+judged on. A hypothesis that one event tends to precede another, follow it
+immediately, come first among several or fall early in the clinical course
+is a claim about a population of timelines. No single report confirms it. It
+is verified by an exact test over the reports whose timelines can witness
+it, against the null its wording implies. The timelines are the reference,
+as a knowledge base is for fact verification: the task is the reasoning from
+a claim to a statistical verdict over them, and building them from text is a
+separate task \cite{craft2026}.
 
-\sys{} (Staged Temporal-statistical Reasoning Assessment) is a benchmark and
-evaluation framework for this task. It is built on the MedTempo clinical
+\sys{} (Staged Temporal-statistical Reasoning Assessment) is, to our
+knowledge, the first benchmark that scores every decision of statistical
+verification against gold. It is built on the MedTempo clinical
 timelines \cite{craft2026} of 3{,}166 vaccine adverse-event reports, where
 each report's clinical course is a \emph{leveled order} of events. Every
 instance carries its gold verdict (\emph{supported}, \emph{refuted} or a
@@ -58,8 +62,8 @@ and reproduced by a deterministic oracle. The stipulations the labels depend
 on are released as a \emph{codebook}, written as text that any system can be
 given.
 
-We pair the benchmark with an instrumented reference pipeline, \art{}
-(articulate, retrieve, test). Its first stage articulates the claim as a
+We also introduce \art{} (articulate, retrieve, test), a staged
+verification paradigm for the task. Its first stage articulates the claim as a
 plan, the second retrieves the report sets the plan names, and the third
 runs a deterministic exact test; each stage has an output contract and a
 bounded verify-and-repair loop. Any stage can be filled with gold, the
@@ -74,13 +78,14 @@ frontier, on a held-out test set of 1{,}500 claims. End to end, even
 frontier models verify the claims only once the codebook is stated, and
 agents that write their own analysis do no better than a single query. Given
 the plan as a contract, open models reach the right verdict on the right
-evidence, and a 31B model comes within 0.02 of the frontier at zero API
-cost. Across systems, the errors sit in the temporal conditioning of the
-denominator, the decision of which reports can witness a claim, and verdict
-accuracy does not reveal them. Our contributions are:
+evidence, and a 31B model comes within 0.02 of the frontier with no
+marginal API fees. Across systems, the errors sit in the temporal
+conditioning of the denominator, the decision of which reports can witness a
+claim, and verdict accuracy does not reveal them: a \emph{verdict--evidence
+gap} that only stage-level gold can expose. Our contributions are:
 \begin{itemize}
-\item \textbf{A benchmark of temporal hypothesis verification with gold at
-every stage}: claims about the order, adjacency, position and co-occurrence
+\item \textbf{A new task with gold at every stage}: temporal hypothesis
+verification over event timelines, and \sys{}, its benchmark of claims about the order, adjacency, position and co-occurrence
 of clinical events across patients' timelines, each verified by a one-sided
 exact test whose population, null and test follow from the claim's temporal
 shape. Its 26 groups span seven families and three difficulty levels, and
@@ -92,8 +97,8 @@ computed by the exact test for each claim shape and validated by permutation
 screens, invariants and an oracle. The rules that turn a temporal sentence
 into a testable population, such as how ties and co-existing events count,
 ship as text (\S\ref{sec:dataset}).
-\item \textbf{A reference verification pipeline}, \art{}, that articulates a
-claim as a plan naming its conditioning rule, null and test, retrieves the
+\item \textbf{A staged verification paradigm}, \art{}, that makes every
+decision an explicit, checkable output: it articulates a claim as a plan naming its conditioning rule, null and test, retrieves the
 conditioned report sets under a contract resolved by the harness, and
 decides with a deterministic exact test, so the verdict is a statistical
 decision rather than a model judgment (\S\ref{sec:method}).
@@ -203,7 +208,9 @@ within a record.}
 \subsection{Task definition}
 \label{sec:task}
 
-\sys{} gives each decision in the chain of \S\ref{sec:intro} its own gold. A record pairs a
+\sys{} gives each decision in the chain of \S\ref{sec:intro} its own gold, and
+the timelines are its reference: a label is the decision the stipulated
+procedure reaches on them. A record pairs a
 temporal hypothesis, stated in natural language in one of four registers,
 with the timelines: for every report, its vaccine and the stage at which
 each event term is first mentioned. The hypothesis is about a \emph{cohort}
@@ -284,12 +291,15 @@ the named cell against its strongest competitor for argmax claims, equality
 of two rates for contrasts, a bar read off the wording for threshold claims,
 and a rate derived from the data for position and proximity claims. Order
 and bar claims use a one-sided exact binomial. Data-derived nulls use a
-one-sided binomial at the mean of the per-report chance rates, which is
-conservative relative to the exact Poisson-binomial distribution over reports
-with unequal chances: under that distribution its decisive rate on the test
-claims is 0.050, and the exact test changes 1 of their 180 labels. Argmax claims use an exact binomial of the named cell against its
-strongest competitor, which suffices because beating the strongest
-competitor implies beating all of them. Contrasts use Fisher's exact test
+one-sided binomial at the mean of the per-report chance rates. It is
+conservative whenever its rejection cutoff lies at least one count beyond
+the expected count \cite{hoeffding1956}, which holds in both tails for every
+such test claim; under the exact Poisson-binomial its decisive rate is 0.050,
+and the exact test changes 1 of the 180 labels. Argmax claims use an exact binomial of the named cell against its
+strongest observed competitor. In the claim's direction this is an
+intersection--union test against every competitor, with size at most
+$\alpha$ \cite{berger1982}, because the binomial $p$-value grows with the
+competitor's count. Contrasts use Fisher's exact test
 \cite{fisher1935design}. The only gate is a minimum denominator of 10 per
 arm. Each instance releases both one-sided $p$-values, the Wilson interval
 \cite{wilson1927} and Cohen's $h$ \cite{cohen1988}, oriented to the claim as
@@ -300,12 +310,14 @@ Before shipping, every group cleared a permutation null matched to its claim
 shape \cite{good2005permutation}, under which decisive labels fall to about
 $\alpha$ of the cores (5.1--5.3\% for position claims, against 14--15\% with a
 naive null of 0.5). Six families of mechanical invariants are
-checked over the whole enumerated universe of 56{,}138 instances. A
+checked over all 56{,}138 instances the templates enumerate, before the
+per-group cap that leaves the released pool of 8{,}763. A
 deterministic oracle that parses each template back into the reference SQL
 reproduces every gold label, so the labels follow from the stated rules.
 
 \label{sec:release}\label{sec:stats}
-The release (Table~\ref{tab:stats}) contains a 1{,}500-claim test set,
+The release (Table~\ref{tab:stats}) contains a 1{,}500-claim test set, a
+seeded verdict-balanced draw of up to 90 claims per cohort group,
 fact-disjoint from a 200-instance development set, a 180-claim single-report
 case study, and the full enumerated pool of 8{,}763 instances with its
 generator. Inputs and gold are in separate files, every report identifier is
@@ -393,8 +405,11 @@ sets. A statement the database rejects, an arm whose denominator equals its
 numerator, an empty arm beside a full one, and rows that violate the plan's
 primitive (co-existing reports in an order denominator, ties in a first/last
 denominator, non-consecutive pairs in an immediate denominator) trigger a
-re-ask, up to two rounds. The EHRSQL baselines receive the same loop with the
-checks that need no plan.
+re-ask, up to two rounds. The checks are defined against the plan, so the
+loop is part of the staged design: the baselines run as their protocols
+define them, and with only the plan-free checks a single query gains
+0.04--0.06 (the 2024 pair and gemma4) where \art{} gains 0.05--0.14
+(\S\ref{sec:modular}).
 
 \subsection{S3: Test}
 
@@ -445,6 +460,8 @@ agent \cite{majumder2025discoverybench} runs as released on the same tables
 exported as CSV, with the codebook as its domain knowledge, an instruction to
 end on a verdict line and up to 25 steps. At one to two minutes per claim,
 it runs on a stratified 204-claim subsample (Appendix~\ref{app:subsample}).
+The two agents run as released and show how autonomous analysis fares on the
+task; they are not matched controls.
 
 \emph{Stage baselines} replace one stage of \art{} with an established method
 for that step and set the other stages to gold. For Articulate, a plain prompt
@@ -490,7 +507,8 @@ model for both stages, thinking off; and the frontier models Claude Opus~5.5
 context, frontier models over their APIs. Verdict
 accuracies carry 95\% bootstrap intervals \cite{efron1993bootstrap} over
 instances (1{,}000 resamples). Per-claim cost
-and latency are in Appendix~\ref{app:cost}.
+and latency are in Appendix~\ref{app:cost}. All experiments, development
+runs included, took about 355 GPU-hours and \$243 in API fees.
 
 \section{Results}
 \label{sec:results}
@@ -683,7 +701,7 @@ colour scale is square-root, so small errors remain visible.}
 \label{sec:families}
 
 Under \art{}, every open model gains 0.12 to 0.24 in verdict accuracy over
-EHRSQL-C, and gemma4-31B comes within 0.02 of the frontier at zero API cost.
+EHRSQL-C, and gemma4-31B comes within 0.02 of the frontier with no marginal API fees.
 The gain comes from the contract and the repair loop together
 (\S\ref{sec:modular}). The contract takes the interpretation of the
 codebook out of the SQL the model writes, and \S\ref{sec:evidence} shows the
@@ -766,7 +784,7 @@ paid at planning (Figure~\ref{fig:registers}, Appendix~\ref{app:registers}).
 
 Every prediction records the reports it counted, so each verdict can be
 checked against the gold sets. End to end, the verdict overstates what a
-system computed. EHRSQL-C rests 40\% (pair), 69\% (qwen3.8) and 86\%
+system computed, which is the verdict--evidence gap. EHRSQL-C rests 40\% (pair), 69\% (qwen3.8) and 86\%
 (gemma4) of its right verdicts on the exact denominator, so only 0.23 of
 the pair's 0.575 accuracy is right for the right reason. Panel 2 of
 Figure~\ref{fig:example} shows one such case from qwen3.8: the query admits
@@ -983,10 +1001,10 @@ B (Straight-to-SQL control) & 0.640 & 0.587 & 0.600 & 0.557 \\
 \label{sec:limitations}
 \label{sec:conclusion}
 
-\sys{} evaluates temporal hypothesis verification as a chain of scored
+\sys{} turns temporal hypothesis verification into a chain of scored
 decisions: which reports can witness a claim, what the null is, which exact
-test applies and what the evidence was. Systems fail at the first of these,
-and the verdict does not show it. Frontier models verify the claims once the
+test applies and what the evidence was. It exposes a verdict--evidence gap:
+systems fail at the first of these, and the verdict does not show it. Frontier models verify the claims once the
 codebook is stated. Open models need the plan as a contract; with it, a 31B
 model on one GPU comes within 0.02 of the frontier with an auditable
 denominator, while models asked to make the statistical call themselves err
@@ -997,7 +1015,8 @@ The study has five limits. It uses one corpus, so porting the framework
 means writing the codebook and primitives for another corpus. The claims are generated from
 templates over raw MedDRA terms, so their wording varies only across the four
 registers, and the oracle shows that labels follow from the stated rules, not
-that free-form wording would carry them. Decisive labels carry false positives
+that free-form wording would carry them; clinician-written claims and
+held-out templates are the next step. Decisive labels carry false positives
 at up to $\alpha$ per direction by construction. In P-V2 and P-V4 a report can
 qualify for both arms, which Fisher's test treats as independent; a
 randomization test that keeps each shared report's two outcomes paired changes
